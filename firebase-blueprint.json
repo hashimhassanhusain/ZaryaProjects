@@ -1,0 +1,176 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "project-manager", "engineer", "safety-officer", "technical-office"] },
+        "photoURL": { "type": "string", "format": "uri" },
+        "accessiblePages": { "type": "array", "items": { "type": "string" } },
+        "accessibleProjects": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "BOQItem": {
+      "title": "BOQ Item",
+      "description": "A single item in the Bill of Quantities.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "unit": { "type": "string" },
+        "quantity": { "type": "number" },
+        "rate": { "type": "number" },
+        "amount": { "type": "number" },
+        "division": { "type": "string" },
+        "workPackage": { "type": "string" },
+        "location": { "type": "string" },
+        "completion": { "type": "number" }
+      },
+      "required": ["description", "unit", "quantity", "rate", "amount", "division", "workPackage", "location", "completion"]
+    },
+    "PurchaseOrder": {
+      "title": "Purchase Order",
+      "description": "A purchase order for materials or labor.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "poId": { "type": "string" },
+        "supplier": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["Draft", "Pending", "Approved", "Closed"] },
+        "amount": { "type": "number" },
+        "workPackageId": { "type": "string" },
+        "lineItems": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["poId", "supplier", "date", "status", "amount", "workPackageId"]
+    },
+    "DailyReport": {
+      "title": "Daily Progress Report",
+      "description": "A daily report of site activities.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "weather": { "type": "object" },
+        "generalWorks": { "type": "string" },
+        "deliverables": { "type": "string" },
+        "incidents": { "type": "string" },
+        "submittedBy": { "type": "string" }
+      },
+      "required": ["date", "submittedBy"]
+    },
+    "SiteIssue": {
+      "title": "Site Issue",
+      "description": "A technical issue or task assigned to an engineer.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedToId": { "type": "string" },
+        "severity": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "status": { "type": "string", "enum": ["Open", "Resolved"] },
+        "reportId": { "type": "string" }
+      },
+      "required": ["title", "description", "assignedToId", "severity", "status"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A construction or engineering project.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "manager": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "driveFolderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "status"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task within a workspace.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["Todo", "In Progress", "Completed", "Blocked"] },
+        "assigneeId": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High"] }
+      },
+      "required": ["title", "status", "workspaceId"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "A collaborative workspace for tasks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "memberIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name"]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "Project meeting records.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "topic": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "attendeeIds": { "type": "array", "items": { "type": "string" } },
+        "minutes": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["topic", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles indexed by UID."
+    },
+    "/boq/{itemId}": {
+      "schema": "BOQItem",
+      "description": "Bill of Quantities items."
+    },
+    "/purchaseOrders/{poId}": {
+      "schema": "PurchaseOrder",
+      "description": "Purchase orders."
+    },
+    "/dailyReports/{reportId}": {
+      "schema": "DailyReport",
+      "description": "Daily site reports."
+    },
+    "/siteIssues/{issueId}": {
+      "schema": "SiteIssue",
+      "description": "Technical issues and assignments."
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Project metadata and settings."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Project tasks."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Collaborative workspaces."
+    },
+    "/meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Meeting records and minutes."
+    }
+  }
+}
