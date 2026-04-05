@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, LayoutDashboard, FileText, FolderOpen, Search, ChevronDown, Shield, Users, Layout, LogOut } from 'lucide-react';
+import { 
+  ChevronRight, 
+  LayoutDashboard, 
+  FileText, 
+  FolderOpen, 
+  Search, 
+  ChevronDown, 
+  Shield, 
+  Users, 
+  Layout, 
+  LogOut,
+  DraftingCompass,
+  Calendar,
+  Banknote,
+  Package,
+  AlertTriangle,
+  Target
+} from 'lucide-react';
 import { pages, getChildren, getBreadcrumbs } from '../data';
 import { Project } from '../types';
 import { cn, sortDomainPages } from '../lib/utils';
@@ -13,6 +30,21 @@ interface SidebarProps {
   onToggleRtl?: () => void;
   isRtl?: boolean;
 }
+
+const getDomainIcon = (domain?: string, title?: string) => {
+  if (title?.toLowerCase().includes('focus area')) return Target;
+  
+  switch (domain) {
+    case 'governance': return Shield;
+    case 'scope': return DraftingCompass;
+    case 'schedule': return Calendar;
+    case 'finance': return Banknote;
+    case 'stakeholders': return Users;
+    case 'resources': return Package;
+    case 'risk': return AlertTriangle;
+    default: return FolderOpen;
+  }
+};
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -304,7 +336,10 @@ export const Sidebar: React.FC = () => {
                       isActive ? "sidebar-item-active" : "text-slate-400 hover:text-slate-200"
                     )}
                   >
-                    <FolderOpen className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                    {(() => {
+                      const Icon = getDomainIcon(page.searchKey, page.title);
+                      return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />;
+                    })()}
                     <span className="truncate font-semibold">{page.title}</span>
                   </Link>
                 ) : (
@@ -317,7 +352,10 @@ export const Sidebar: React.FC = () => {
                     )}
                   >
                     {page.type === 'hub' ? (
-                      <FolderOpen className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />
+                      (() => {
+                        const Icon = getDomainIcon(page.domain, page.title);
+                        return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />;
+                      })()
                     ) : (
                       <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />
                     )}

@@ -58,7 +58,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectName: project.name,
-          projectCode: project.code
+          projectCode: project.code,
+          charterData: project.charterData
         })
       });
 

@@ -7,6 +7,8 @@ import multer from 'multer';
 import fs from 'fs';
 import cors from 'cors';
 import AdmZip from 'adm-zip';
+import { jsPDF } from 'jspdf';
+import { Readable } from 'stream';
 
 const app = express();
 const PORT = 3000;
@@ -105,28 +107,82 @@ async function createFolder(drive: any, name: string, parentId?: string) {
     {
       requestBody: fileMetadata,
       fields: 'id',
+      supportsAllDrives: true,
     },
     { timeout: 10000 }
   );
   return res.data.id;
 }
 
-async function createFolderTree(drive: any, tree: any, parentId?: string) {
-  for (const folderName of Object.keys(tree)) {
-    const currentFolderId = await createFolder(drive, folderName, parentId);
-    const subfolders = tree[folderName];
-    if (Array.isArray(subfolders)) {
-      for (const sub of subfolders) {
-        if (typeof sub === 'string') {
-          await createFolder(drive, sub, currentFolderId);
-        } else {
-          await createFolderTree(drive, sub, currentFolderId);
-        }
+async function createFolderTree(drive: any, tree: any, parentId?: string): Promise<Record<string, string>> {
+  const folderMap: Record<string, string> = {};
+  
+  if (Array.isArray(tree)) {
+    // For arrays, we can parallelize creation of items
+    const promises = tree.map(async (item) => {
+      if (typeof item === 'string') {
+        const id = await createFolder(drive, item, parentId);
+        return { [item]: id };
+      } else {
+        return await createFolderTree(drive, item, parentId);
       }
-    } else if (typeof subfolders === 'object') {
-      await createFolderTree(drive, subfolders, currentFolderId);
+    });
+    const results = await Promise.all(promises);
+    results.forEach(res => Object.assign(folderMap, res));
+  } else if (typeof tree === 'object') {
+    // For objects, we create the parent then parallelize children
+    const entries = Object.entries(tree);
+    for (const [folderName, subfolders] of entries) {
+      const currentFolderId = await createFolder(drive, folderName, parentId);
+      folderMap[folderName] = currentFolderId;
+      
+      if (subfolders) {
+        const subMap = await createFolderTree(drive, subfolders, currentFolderId);
+        Object.assign(folderMap, subMap);
+      }
     }
   }
+  return folderMap;
+}
+
+function generateProjectCharterPDF(projectName: string, projectCode: string, charterData: any) {
+  const doc = new jsPDF();
+  
+  // Title
+  doc.setFontSize(22);
+  doc.text('PROJECT CHARTER', 105, 20, { align: 'center' });
+  
+  // Project Info
+  doc.setFontSize(16);
+  doc.text(`${projectCode} - ${projectName}`, 105, 30, { align: 'center' });
+  
+  // Content
+  doc.setFontSize(12);
+  let y = 50;
+  
+  if (charterData && Object.keys(charterData).length > 0) {
+    Object.entries(charterData).forEach(([key, value]) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${key}:`, 20, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(String(value), 170);
+      doc.text(lines, 20, y);
+      y += (lines.length * 7) + 5;
+    });
+  } else {
+    doc.text('No charter data available.', 20, y);
+  }
+  
+  // Footer
+  doc.setFontSize(10);
+  doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 285, { align: 'center' });
+  
+  return Buffer.from(doc.output('arraybuffer'));
 }
 
 async function findFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
@@ -138,6 +194,8 @@ async function findFolderByPath(drive: any, rootFolderId: string, pathParts: str
       q: `name = '${part}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
       fields: 'files(id, name)',
       spaces: 'drive',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     const files = response.data.files;
     if (!files || files.length === 0) {
@@ -157,6 +215,8 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
     const response = await drive.files.list({
       q: `name = '${escapedName}' and '${folderId}' in parents and trashed = false`,
       fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     
     const files = response.data.files;
@@ -165,6 +225,8 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
       const archiveResponse = await drive.files.list({
         q: `name = 'Archive' and '${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
       });
       
       let archiveFolderId;
@@ -187,6 +249,7 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
             name: newName
           },
           fields: 'id, parents',
+          supportsAllDrives: true,
         });
       }
     }
@@ -226,6 +289,7 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
         mimeType: file.mimetype,
         body: fs.createReadStream(file.path),
       },
+      supportsAllDrives: true,
     });
     
     fs.unlinkSync(file.path);
@@ -242,7 +306,7 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
 });
 
 app.post('/api/projects/init-drive', async (req: any, res: any) => {
-  const { projectName, projectCode } = req.body;
+  const { projectName, projectCode, charterData } = req.body;
   const { drive, error } = getDriveClient();
   if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
 
@@ -255,19 +319,19 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     const rootFolderId = await createFolder(drive, rootFolderName, parentFolderId);
 
     const folderTree = {
-      "00_ADMIN_AND_CORRESPONDENCE": [
+      "ADMIN_AND_CORRESPONDENCE_00": [
         { "00.1_Incoming_Correspondence": ["Emails", "Letters"] },
         { "00.2_Outgoing_Correspondence": ["Transmittals", "RFIs", "Letters_Sent"] },
         { "00.3_Legal_and_Contracts": ["Client_Main_Contract"] }
       ],
-      "01_PROJECT_MANAGEMENT_FORMS": [
-        { "1.0_Initiating": ["1.1_Governance_Domain", "1.2_Stakeholders_Domain"] },
-        { "2.0_Planning": ["2.1_Governance_Domain", "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"] },
-        { "3.0_Executing": ["3.1_Governance_Domain", "3.2_Stakeholders_Domain", "3.3_Resources_Domain"] },
-        { "4.0_Monitoring_and_Controlling": ["4.1_Governance_Domain", "4.2_Stakeholders_Domain", "4.3_Finance_Domain", "4.4_Risk_Domain"] },
-        { "5.0_Closing": ["5.1_Governance_Domain", "5.2_Finance_Domain"] }
+      "PROJECT_MANAGEMENT_FORMS_01": [
+        { "Initiating_1.0": ["1.1_Governance_Domain", "1.2_Stakeholders_Domain"] },
+        { "Planning_2.0": ["2.1_Governance_Domain", "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"] },
+        { "Executing_3.0": ["3.1_Governance_Domain", "3.2_Stakeholders_Domain", "3.3_Resources_Domain"] },
+        { "Monitoring_and_Controlling_4.0": ["4.1_Governance_Domain", "4.2_Stakeholders_Domain", "4.3_Finance_Domain", "4.4_Risk_Domain"] },
+        { "Closing_5.0": ["5.1_Governance_Domain", "5.2_Finance_Domain"] }
       ],
-      "02_TECHNICAL_DIVISIONS_MASTERFORMAT": [
+      "TECHNICAL_DIVISIONS_MASTERFORMAT_02": [
         { "Division_03_Concrete": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
         { "Division_04_Masonry": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
         { "Division_22_Plumbing": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
@@ -276,25 +340,47 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
         { "Division_27_Communications": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
         { "Division_31_Earthwork": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] }
       ],
-      "03_PROCUREMENT_AND_SUBCONTRACTORS": [
+      "PROCUREMENT_AND_SUBCONTRACTORS_03": [
         "03.1_Vendors_and_Suppliers_Database", 
         "03.2_Purchase_Orders_PO", 
         "03.3_Subcontractors_Hub"
       ],
-      "04_SITE_OPERATIONS": [
+      "SITE_OPERATIONS_04": [
         "04.1_Daily_Site_Reports", 
         "04.2_Progress_Photos_and_Videos", 
         { "04.3_HSE_and_Safety": ["Safety_Reports", "Incident_Logs"] }
       ],
-      "05_MEETINGS_LOG": [
+      "MEETINGS_LOG_05": [
         "05.1_Client_Meetings", 
         "05.2_Internal_Technical_Meetings", 
         "05.3_Subcontractor_Meetings"
       ]
     };
 
-    await createFolderTree(drive, folderTree, rootFolderId);
+    const folderMap = await createFolderTree(drive, folderTree, rootFolderId);
     console.log('Successfully created folder tree for project:', projectName);
+
+    // Generate and upload Project Charter PDF
+    const adminFolderId = folderMap["ADMIN_AND_CORRESPONDENCE_00"];
+    if (adminFolderId) {
+      console.log('Generating Project Charter PDF...');
+      const pdfBuffer = generateProjectCharterPDF(projectName, projectCode, charterData);
+      const fileName = `Project_Charter_${projectCode}.pdf`;
+      
+      await drive.files.create({
+        requestBody: {
+          name: fileName,
+          parents: [adminFolderId],
+        },
+        media: {
+          mimeType: 'application/pdf',
+          body: Readable.from(pdfBuffer),
+        },
+        supportsAllDrives: true,
+      });
+      console.log('Project Charter PDF uploaded successfully');
+    }
+
     res.json({ rootFolderId });
   } catch (error: any) {
     console.error('Failed to create folder tree:', error);
@@ -364,6 +450,7 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
         body: fs.createReadStream(tempPath),
       },
       fields: 'id, name',
+      supportsAllDrives: true,
     });
 
     fs.unlinkSync(tempPath);
@@ -393,7 +480,10 @@ app.post('/api/admin/test-drive', async (req: any, res: any) => {
     }
 
     const folder = await drive.files.get(
-      { fileId: parentId },
+      { 
+        fileId: parentId,
+        supportsAllDrives: true,
+      },
       { timeout: 10000 }
     );
     
@@ -429,6 +519,7 @@ app.post('/api/upload', upload.single('file'), async (req: any, res: any) => {
         mimeType: file.mimetype,
         body: fs.createReadStream(file.path),
       },
+      supportsAllDrives: true,
     });
     fs.unlinkSync(file.path); // Delete temp file
     res.json({ fileId: resDrive.data.id });
@@ -448,6 +539,8 @@ app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
       q: `'${folderId}' in parents and trashed = false`,
       fields: 'files(id, name, mimeType, size, webViewLink, iconLink, modifiedTime, createdTime, version, lastModifyingUser(displayName, photoLink))',
       orderBy: 'folder,name',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     res.json({ files: response.data.files });
   } catch (error) {
@@ -497,7 +590,10 @@ async function startServer() {
           if (parentId) {
             // Add a timeout to the request
             const folder = await drive.files.get(
-              { fileId: parentId },
+              { 
+                fileId: parentId,
+                supportsAllDrives: true,
+              },
               { timeout: 10000 }
             );
             console.log('✅ Background connection test successful. Parent folder:', folder.data.name);

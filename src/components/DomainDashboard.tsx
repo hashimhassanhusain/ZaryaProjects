@@ -5,7 +5,8 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
-  DollarSign, Users, ShieldAlert, Target, Info
+  DollarSign, Users, ShieldAlert, Target, Info,
+  Shield, DraftingCompass, Calendar, Banknote, Package
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Page } from '../types';
@@ -18,7 +19,8 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const ICON_MAP: Record<string, any> = {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
-  DollarSign, Users, ShieldAlert, Target, Info
+  DollarSign, Users, ShieldAlert, Target, Info,
+  Shield, DraftingCompass, Calendar, Banknote, Package
 };
 
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page }) => {

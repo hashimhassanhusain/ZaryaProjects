@@ -14,9 +14,14 @@ import {
   ShieldCheck,
   Calendar,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Shield,
+  DraftingCompass,
+  Banknote,
+  Package
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { AIAssistant } from './AIAssistant';
 
 const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color }: any) => (
   <motion.div 
@@ -84,10 +89,10 @@ export const ProjectDashboard: React.FC = () => {
     if (id === 'p1') {
       return {
         kpis: [
-          { title: 'Budget Status', value: '$2.4M', subValue: '/ $3.0M', trend: 'up', trendValue: '12%', icon: DollarSign, color: 'bg-blue-600' },
-          { title: 'Schedule Health', value: 'On Track', subValue: '92%', trend: 'up', trendValue: '2%', icon: Clock, color: 'bg-emerald-500' },
-          { title: 'Safety Record', value: '184', subValue: 'Days LTI Free', trend: 'up', trendValue: '100%', icon: ShieldCheck, color: 'bg-orange-500' },
-          { title: 'Team Efficiency', value: '88%', subValue: 'Avg', trend: 'down', trendValue: '3%', icon: Users, color: 'bg-purple-500' },
+          { title: 'Governance Status', value: '98.4%', subValue: 'Compliance', trend: 'up', trendValue: '1.2%', icon: Shield, color: 'bg-blue-600' },
+          { title: 'Scope Health', value: '100%', subValue: 'Matched', trend: 'up', trendValue: '0%', icon: DraftingCompass, color: 'bg-emerald-500' },
+          { title: 'Schedule Status', value: '94%', subValue: 'Completion', trend: 'up', trendValue: '2%', icon: Calendar, color: 'bg-orange-500' },
+          { title: 'Finance Status', value: '$2.4M', subValue: 'Spent', trend: 'down', trendValue: '3%', icon: Banknote, color: 'bg-purple-500' },
         ],
         alerts: [
           { type: 'warning', msg: 'Concrete delivery delayed for Block A foundations.' },
@@ -98,10 +103,10 @@ export const ProjectDashboard: React.FC = () => {
     
     return {
       kpis: [
-        { title: 'Budget Status', value: '$0.0M', subValue: '/ $0.0M', icon: DollarSign, color: 'bg-slate-400' },
-        { title: 'Schedule Health', value: 'N/A', subValue: '0%', icon: Clock, color: 'bg-slate-400' },
-        { title: 'Safety Record', value: '0', subValue: 'Days', icon: ShieldCheck, color: 'bg-slate-400' },
-        { title: 'Team Efficiency', value: '0%', subValue: 'Avg', icon: Users, color: 'bg-slate-400' },
+        { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
+        { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
+        { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
+        { title: 'Finance', value: '$0', subValue: 'N/A', icon: Banknote, color: 'bg-slate-400' },
       ],
       alerts: []
     };
@@ -134,6 +139,8 @@ export const ProjectDashboard: React.FC = () => {
           </div>
         </div>
       </header>
+
+      <AIAssistant />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {data.kpis.map((kpi: any, idx: number) => (
