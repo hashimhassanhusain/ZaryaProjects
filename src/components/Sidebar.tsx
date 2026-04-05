@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronRight, 
+  ChevronUp,
   LayoutDashboard, 
   FileText, 
   FolderOpen, 
@@ -444,10 +445,7 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
         {isAdmin && (
           <div className="px-2">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
-              Administration
-            </div>
-            <div className="space-y-1">
+            <div className="gap-1 flex flex-col-reverse">
               <button
                 onClick={() => setIsAdminExpanded(!isAdminExpanded)}
                 className={cn(
@@ -459,11 +457,11 @@ export const Sidebar: React.FC = () => {
                   <Shield className={cn("w-4 h-4 mr-2 transition-colors", isAdminExpanded ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
                   <span className="font-medium text-xs">Admin Settings</span>
                 </div>
-                {isAdminExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                {isAdminExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               </button>
               
               {isAdminExpanded && (
-                <div className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-1">
+                <div className="ml-4 border-l border-white/5 pl-2 mb-1 space-y-1">
                   <Link
                     to="/admin/users"
                     className={cn(

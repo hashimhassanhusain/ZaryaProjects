@@ -18,10 +18,9 @@ import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth } from './firebase';
+import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
 
 import { Loader2 } from 'lucide-react';
 import { cn, sortDomainPages } from './lib/utils';
@@ -212,9 +211,9 @@ export default function App() {
               accessibleProjects: []
             });
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Failed to sync user to Firestore:", err);
-          // Don't block app initialization if Firestore is offline
+          handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
         }
       }
       setUser(user);

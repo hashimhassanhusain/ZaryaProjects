@@ -98,6 +98,7 @@ const getDriveClient = () => {
 
 // Recursive folder creation
 async function createFolder(drive: any, name: string, parentId?: string) {
+  console.log(`Creating folder: "${name}" (Parent: ${parentId || 'ROOT'})`);
   const fileMetadata = {
     name,
     mimeType: 'application/vnd.google-apps.folder',
@@ -130,17 +131,21 @@ async function createFolderTree(drive: any, tree: any, parentId?: string): Promi
     const results = await Promise.all(promises);
     results.forEach(res => Object.assign(folderMap, res));
   } else if (typeof tree === 'object') {
-    // For objects, we create the parent then parallelize children
+    // For objects, we parallelize the creation of each entry
     const entries = Object.entries(tree);
-    for (const [folderName, subfolders] of entries) {
+    const promises = entries.map(async ([folderName, subfolders]) => {
       const currentFolderId = await createFolder(drive, folderName, parentId);
-      folderMap[folderName] = currentFolderId;
+      const localMap: Record<string, string> = { [folderName]: currentFolderId };
       
       if (subfolders) {
         const subMap = await createFolderTree(drive, subfolders, currentFolderId);
-        Object.assign(folderMap, subMap);
+        Object.assign(localMap, subMap);
       }
-    }
+      return localMap;
+    });
+    
+    const results = await Promise.all(promises);
+    Object.assign(folderMap, ...results);
   }
   return folderMap;
 }
@@ -359,26 +364,37 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
 
     const folderMap = await createFolderTree(drive, folderTree, rootFolderId);
     console.log('Successfully created folder tree for project:', projectName);
+    console.log('Folder Map Keys:', Object.keys(folderMap));
 
     // Generate and upload Project Charter PDF
     const adminFolderId = folderMap["ADMIN_AND_CORRESPONDENCE_00"];
     if (adminFolderId) {
-      console.log('Generating Project Charter PDF...');
-      const pdfBuffer = generateProjectCharterPDF(projectName, projectCode, charterData);
-      const fileName = `Project_Charter_${projectCode}.pdf`;
-      
-      await drive.files.create({
-        requestBody: {
-          name: fileName,
-          parents: [adminFolderId],
-        },
-        media: {
-          mimeType: 'application/pdf',
-          body: Readable.from(pdfBuffer),
-        },
-        supportsAllDrives: true,
-      });
-      console.log('Project Charter PDF uploaded successfully');
+      console.log('Admin folder found:', adminFolderId);
+      try {
+        console.log('Generating Project Charter PDF...');
+        const pdfBuffer = generateProjectCharterPDF(projectName, projectCode, charterData);
+        console.log('PDF Buffer generated, size:', pdfBuffer.length);
+        const fileName = `Project_Charter_${projectCode}.pdf`;
+        
+        console.log(`Uploading PDF "${fileName}" to folder ${adminFolderId}...`);
+        const uploadRes = await drive.files.create({
+          requestBody: {
+            name: fileName,
+            parents: [adminFolderId],
+          },
+          media: {
+            mimeType: 'application/pdf',
+            body: Readable.from(pdfBuffer),
+          },
+          supportsAllDrives: true,
+        });
+        console.log('Project Charter PDF uploaded successfully, file ID:', uploadRes.data.id);
+      } catch (pdfError: any) {
+        console.error('Error during PDF generation/upload:', pdfError.message);
+        // We don't fail the whole process if PDF fails, but we log it
+      }
+    } else {
+      console.warn('ADMIN_AND_CORRESPONDENCE_00 folder not found in folderMap');
     }
 
     res.json({ rootFolderId });

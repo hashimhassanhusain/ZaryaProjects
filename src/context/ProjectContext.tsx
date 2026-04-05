@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project } from '../types';
-import { db } from '../firebase';
+import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 interface ProjectContextType {
@@ -61,6 +61,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(false);
     }, (error) => {
       console.error("Error fetching projects:", error);
+      handleFirestoreError(error, OperationType.LIST, 'projects');
       setLoading(false);
     });
 

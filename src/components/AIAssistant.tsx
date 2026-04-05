@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, Bot } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const AIAssistant: React.FC = () => {
@@ -16,13 +16,8 @@ export const AIAssistant: React.FC = () => {
       <div className="relative z-10 flex flex-col items-center text-center space-y-6">
         {/* Avatar */}
         <div className="relative">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-500/50 shadow-lg shadow-blue-500/20">
-            <img 
-              src="https://images.unsplash.com/photo-1675435466821-4675989500d1?w=400&h=400&fit=crop" 
-              alt="Zarya AI" 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
+          <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-500/50 shadow-lg shadow-blue-500/20 bg-blue-600 flex items-center justify-center">
+            <Bot className="w-10 h-10 text-white" />
           </div>
           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-sm" />
         </div>
