@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, Layout, Calendar, ArrowLeft, MoreVertical, CheckCircle2, Clock, Loader2, ShieldAlert, Download, CloudUpload } from 'lucide-react';
+import { Plus, Search, Trash2, Layout, Calendar, ArrowLeft, MoreVertical, CheckCircle2, Clock, Loader2, ShieldAlert, Download, CloudUpload, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth, OperationType, handleFirestoreError } from '../firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
@@ -245,7 +245,7 @@ export const AdminProjectsView: React.FC = () => {
             {isBackingUp ? 'Backing up...' : 'Backup Codebase'}
           </button>
           <button 
-            onClick={() => navigate('/page/1.1.1?new=true')}
+            onClick={() => navigate('/admin/projects/new')}
             className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> Create New Project
@@ -270,12 +270,23 @@ export const AdminProjectsView: React.FC = () => {
                   }`}>
                     {project.name.charAt(0)}
                   </div>
-                  <button 
-                    className="p-2 text-slate-300 hover:text-red-500 rounded-lg transition-all" 
-                    onClick={(e) => handleDeleteProject(project.id, e)}
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex gap-1">
+                    <button 
+                      className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/admin/projects/${project.id}`);
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" 
+                      onClick={(e) => handleDeleteProject(project.id, e)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>

@@ -21,8 +21,20 @@ export interface BOQItem {
   division: string; // Master Format 2024
   workPackage: string;
   location: string; // Area/Zone/Building
+  wbsId?: string; // Reference to terminal WBS level
   poNumber?: string;
   completion: number; // 0-100
+}
+
+export interface WBSLevel {
+  id: string;
+  projectId: string;
+  parentId?: string;
+  title: string;
+  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Other';
+  level: number; // 1, 2, 3...
+  code: string; // e.g. Z1, Z1-A1
+  status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
 }
 
 export interface POLineItem {
@@ -43,6 +55,29 @@ export interface PurchaseOrder {
   amount: number;
   workPackageId: string;
   lineItems: POLineItem[];
+}
+
+export interface Activity {
+  id: string;
+  projectId: string;
+  wbsId: string;
+  boqItemId?: string; // Link to BOQ item
+  workPackage: string;
+  description: string;
+  unit: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  status: 'Planned' | 'In Progress' | 'Completed' | 'Converted to PO';
+  activityType?: 'Task' | 'Milestone';
+  charterMilestoneId?: string; // Link to milestone defined in Charter
+  poId?: string;
+  poLineItemId?: string;
+  startDate?: string;
+  duration?: number; // in days
+  finishDate?: string;
+  predecessorId?: string; // Parent Activity
+  successorId?: string; // Child Activity
 }
 
 export interface WeatherData {
@@ -131,6 +166,21 @@ export interface Task {
   endDate: string;
   priority: 'Low' | 'Medium' | 'High';
   history?: TaskActivity[];
+  sourceType?: 'assumption_constraint' | 'meeting' | 'manual';
+  sourceId?: string;
+}
+
+export interface AssumptionConstraintEntry {
+  id: string;
+  projectId: string;
+  category: string;
+  description: string;
+  responsiblePartyId: string;
+  dueDate: string;
+  actions: string;
+  status: 'Pending' | 'Completed';
+  comments: string;
+  taskId?: string;
 }
 
 export interface Workspace {
@@ -166,7 +216,7 @@ export interface POItem {
   uom: string;
 }
 
-export interface CharterVersion {
+export interface PageVersion {
   version: number;
   date: string;
   data: Record<string, string>;
@@ -188,11 +238,18 @@ export interface Project {
   name: string;
   code?: string;
   manager?: string;
+  sponsor?: string;
+  customer?: string;
   status: 'active' | 'archived';
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+  description?: string;
   driveFolderId?: string;
   charterData?: Record<string, string>;
-  charterHistory?: CharterVersion[];
+  charterHistory?: PageVersion[];
   pageData?: Record<string, Record<string, string>>;
+  pageHistory?: Record<string, PageVersion[]>;
   savedDocuments?: SavedDocument[];
 }
 

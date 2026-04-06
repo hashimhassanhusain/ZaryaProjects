@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Page, Project, CharterVersion } from '../types';
-import { getParent, pages } from '../data';
+import html2canvas from 'html2canvas';
+import { Page, Project, PageVersion } from '../types';
+import { getParent, pages, getFocusArea } from '../data';
 import { 
   Table, 
   FileText, 
@@ -29,13 +30,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 
 interface DetailViewProps {
   page: Page;
 }
 
+import { CharterMilestones } from './CharterMilestones';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -44,13 +46,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isNewProject = page.id === '1.1.1' && searchParams.get('new') === 'true';
   const isCharterPage = page.id === '1.1.1';
   
   const [isCreating, setIsCreating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [charterMilestones, setCharterMilestones] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
   const generatePDF = async (saveToDrive = false): Promise<any> => {
@@ -64,33 +66,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
       
-      // Helper for drawing a field in the new style (Table-like row)
-      const drawField = (label: string, value: string, x: number, y: number, width: number) => {
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(100, 100, 100);
-        doc.text(label.toUpperCase(), x, y);
-        
-        const fieldY = y + 2;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        
-        const textPadding = 0;
-        const splitText = doc.splitTextToSize(value || 'N/A', width);
-        const lineHeight = 5;
-        const textHeight = (splitText.length * lineHeight);
-        
-        doc.text(splitText, x, fieldY + 4);
-        
-        // Draw a bottom border line
-        doc.setDrawColor(230, 230, 230);
-        doc.setLineWidth(0.1);
-        doc.line(x, fieldY + textHeight + 2, x + width, fieldY + textHeight + 2);
-        
-        return textHeight + 12; // Return height used + spacing
-      };
-
       // Helper for drawing Approvals block in the new style
       const drawApprovalBlock = (x: number, y: number) => {
         doc.setFontSize(12);
@@ -125,6 +100,31 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         return 65; // Height used
       };
 
+      const drawField = (label: string, value: string, x: number, y: number, width: number) => {
+        const labelWidth = width / 2;
+        const valueWidth = width / 2;
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 82, 136); // Zarya Blue
+        doc.text(label.toUpperCase(), x + 5, y + 6.5);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        const splitValue = doc.splitTextToSize(value, valueWidth - 10);
+        doc.text(splitValue, x + labelWidth + 5, y + 6.5);
+        
+        const rowHeight = Math.max(10, (splitValue.length * 5) + 5);
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.1);
+        doc.rect(x, y, width, rowHeight);
+        doc.line(x + labelWidth, y, x + labelWidth, y + rowHeight);
+        
+        return rowHeight;
+      };
+
       // --- HEADER REDESIGN ---
       // Logo on Left
       try {
@@ -153,48 +153,40 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       // --- TITLE AND METADATA SECTION ---
       let currentY = 55;
       
-      // Title on Right
+      // Title Centered (As requested)
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 82, 136); // Zarya Blue
       const titleText = page.title.toUpperCase();
-      doc.text(titleText, rightAlignX, currentY, { align: 'right' });
+      doc.text(titleText, pageWidth / 2, currentY, { align: 'center' });
       
-      // Metadata below Title
+      currentY += 15;
+      
+      // Metadata (Left and Right as requested)
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`CODE: #${selectedProject.code}`, rightAlignX, currentY + 10, { align: 'right' });
-      
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Date Prepared:`, rightAlignX - 30, currentY + 18, { align: 'right' });
-      doc.setTextColor(0, 0, 0);
-      doc.text(new Date().toLocaleDateString('en-GB'), rightAlignX, currentY + 18, { align: 'right' });
-      
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Project Status:`, rightAlignX - 30, currentY + 24, { align: 'right' });
-      doc.setTextColor(0, 0, 0);
-      doc.text('ACTIVE / INITIATING', rightAlignX, currentY + 24, { align: 'right' });
-
-      // Recipient/Project Info on Left
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(100, 100, 100);
-      doc.text('PROJECT DETAILS', margin, currentY);
-      
-      doc.setFontSize(12);
       doc.setTextColor(0, 82, 136); // Zarya Blue
-      doc.text(selectedProject.name.toUpperCase(), margin, currentY + 8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(selectedProject.name.toUpperCase(), margin, currentY);
+      doc.text(`CODE: #${selectedProject.code}`, rightAlignX, currentY, { align: 'right' });
+      
+      currentY += 8;
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80, 80, 80);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Date Prepared: ${new Date().toLocaleDateString('en-GB')}`, margin, currentY);
+      doc.text(`Project Status: ACTIVE / INITIATING`, rightAlignX, currentY, { align: 'right' });
+
+      currentY += 12;
+
+      // Project Description
       const projectDesc = selectedProject.description || 'No description provided for this project.';
-      const splitDesc = doc.splitTextToSize(projectDesc, 80);
-      doc.text(splitDesc, margin, currentY + 15);
+      const splitDesc = doc.splitTextToSize(projectDesc, contentWidth);
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(splitDesc, margin, currentY);
       
-      currentY += 45;
+      currentY += (splitDesc.length * 5) + 15;
 
       if (isLogPage) {
         const headers = page.formFields || [];
@@ -210,30 +202,81 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       } else {
-        // CONTENT HEADER
-        doc.setFillColor(0, 82, 136); // Zarya Blue
-        doc.rect(margin, currentY, contentWidth, 10, 'F');
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.text('FIELD DESCRIPTION', margin + 5, currentY + 6.5);
-        doc.text('VALUE / DETAILS', margin + (contentWidth / 2) + 5, currentY + 6.5);
-        
-        currentY += 15;
-        const fields = page.formFields || [];
-        
-        for (let i = 0; i < fields.length; i++) {
-          const field = fields[i];
-          if (field.toLowerCase() === 'approvals') continue;
-
-          const val = formData[field] || selectedProject.charterData?.[field] || 'N/A';
+        // CONTENT SECTION USING HTML2CANVAS FOR ARABIC SUPPORT & WRAPPING
+        const element = document.getElementById('pdf-content');
+        if (element) {
+          // Temporarily show hidden elements for capture
+          const hiddenElements = element.querySelectorAll('.hidden');
+          hiddenElements.forEach(el => (el as HTMLElement).style.display = 'block');
           
-          if (currentY > pageHeight - 40) {
-            doc.addPage();
-            currentY = 25;
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+          });
+          
+          // Restore hidden elements
+          hiddenElements.forEach(el => (el as HTMLElement).style.display = '');
+          
+          const imgData = canvas.toDataURL('image/png');
+          const imgProps = (doc as any).getImageProperties(imgData);
+          const pdfWidth = pageWidth - (margin * 2);
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          
+          // Handle multi-page if content is too long
+          let heightLeft = pdfHeight;
+          let position = currentY;
+          let pageHeightLimit = pageHeight - 40;
+          
+          // If it fits on the first page
+          if (heightLeft < (pageHeightLimit - currentY)) {
+            doc.addImage(imgData, 'PNG', margin, position, pdfWidth, pdfHeight);
+            currentY += pdfHeight + 10;
+          } else {
+            // Slice the image for multiple pages
+            const sliceHeight = (pageHeightLimit - currentY) * (imgProps.height / pdfHeight);
+            doc.addImage(imgData, 'PNG', margin, position, pdfWidth, (sliceHeight * pdfWidth) / imgProps.width, undefined, 'FAST');
+            
+            heightLeft -= (pageHeightLimit - currentY);
+            position = 25;
+            
+            while (heightLeft > 0) {
+              doc.addPage();
+              const currentSliceHeight = Math.min(heightLeft * (imgProps.height / pdfHeight), (pageHeight - 50) * (imgProps.height / pdfHeight));
+              doc.addImage(imgData, 'PNG', margin, position, pdfWidth, (currentSliceHeight * pdfWidth) / imgProps.width, undefined, 'FAST');
+              heightLeft -= (pageHeight - 50);
+              if (heightLeft <= 0) {
+                currentY = position + ((currentSliceHeight * pdfWidth) / imgProps.width) + 10;
+              }
+            }
           }
+        } else {
+          // Fallback to manual drawing if element not found
+          doc.setFillColor(0, 82, 136); // Zarya Blue
+          doc.rect(margin, currentY, contentWidth, 10, 'F');
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(255, 255, 255);
+          doc.text('FIELD DESCRIPTION', margin + 5, currentY + 6.5);
+          doc.text('VALUE / DETAILS', margin + (contentWidth / 2) + 5, currentY + 6.5);
+          
+          currentY += 15;
+          const fields = page.formFields || [];
+          
+          for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (field.toLowerCase() === 'approvals') continue;
 
-          currentY += drawField(field, val, margin, currentY, contentWidth);
+            const val = formData[field] || selectedProject.charterData?.[field] || 'N/A';
+            
+            if (currentY > pageHeight - 40) {
+              doc.addPage();
+              currentY = 25;
+            }
+
+            currentY += drawField(field, val, margin, currentY, contentWidth);
+          }
         }
       }
 
@@ -293,22 +336,32 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         const pdfBlob = doc.output('blob');
         
         // --- AUTOMATED STORAGE ROUTING ---
-        let drivePath = '01_PROJECT_MANAGEMENT_FORMS';
-        const pathParts = page.id.split('.');
-        if (pathParts.length >= 2) {
-          const focusAreaId = `${pathParts[0]}.0`;
-          const focusArea = pages.find(p => p.id === focusAreaId);
-          if (focusArea) {
-            const focusTitle = focusArea.title.replace(' Focus Area', '');
-            const focusFolderName = `${focusArea.id}_${focusTitle.replace(/\s+/g, '_')}`;
-            drivePath += `/${focusFolderName}`;
-            
-            if (pathParts.length >= 3) {
-              const domainHubId = `${pathParts[0]}.${pathParts[1]}`;
-              const domainHub = pages.find(p => p.id === domainHubId);
-              if (domainHub) {
-                const domainFolderName = `${domainHub.id}_${domainHub.title.replace(/\s+/g, '_')}`;
-                drivePath += `/${domainFolderName}`;
+        let drivePath = 'PROJECT_MANAGEMENT_FORMS_01';
+        
+        // Special Case: Project Charter (1.1.1) goes to ADMIN_AND_CORRESPONDENCE_00
+        if (page.id === '1.1.1') {
+          drivePath = 'ADMIN_AND_CORRESPONDENCE_00';
+        } else {
+          const pathParts = page.id.split('.');
+          if (pathParts.length >= 2) {
+            const focusAreaId = `${pathParts[0]}.0`;
+            const focusArea = pages.find(p => p.id === focusAreaId);
+            if (focusArea) {
+              let focusTitle = focusArea.title.replace(' Focus Area', '');
+              // Special case for 4.0 to match server.ts folder naming
+              if (focusAreaId === '4.0') focusTitle = 'Monitoring and Controlling';
+              
+              const focusFolderName = `${focusTitle.replace(/\s+/g, '_')}_${focusArea.id}`;
+              drivePath += `/${focusFolderName}`;
+              
+              if (pathParts.length >= 3) {
+                const domainHubId = `${pathParts[0]}.${pathParts[1]}`;
+                const domainHub = pages.find(p => p.id === domainHubId);
+                if (domainHub) {
+                  // Ensure domain hub naming matches server.ts (ID_Title)
+                  const domainFolderName = `${domainHub.id}_${domainHub.title.replace(/\s+/g, '_')}`;
+                  drivePath += `/${domainFolderName}`;
+                }
               }
             }
           }
@@ -324,24 +377,52 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           body: uploadData
         });
         
-        if (res.ok) {
+        let errorData: any = null;
+        const contentType = res.headers.get('content-type');
+        
+        if (res.ok && contentType && contentType.includes('application/json')) {
           const driveData = await res.json();
+          
           // Fetch file metadata to get webViewLink
-          const filesRes = await fetch(`/api/drive/files/${driveData.folderId}`);
-          const filesData = await filesRes.json();
-          const uploadedFile = filesData.files.find((f: any) => f.id === driveData.fileId);
+          try {
+            const filesRes = await fetch(`/api/drive/files/${driveData.folderId}`);
+            if (filesRes.ok) {
+              const filesData = await filesRes.json();
+              const uploadedFile = filesData.files.find((f: any) => f.id === driveData.fileId);
+              
+              return {
+                id: driveData.fileId,
+                name: fileName,
+                url: uploadedFile?.webViewLink || '',
+                date: new Date().toISOString(),
+                author: auth.currentUser?.email || 'Unknown',
+                pageId: page.id
+              };
+            }
+          } catch (metaErr) {
+            console.warn('Failed to fetch file metadata, returning partial data:', metaErr);
+          }
           
           return {
             id: driveData.fileId,
             name: fileName,
-            url: uploadedFile?.webViewLink || '',
+            url: '', // Fallback if metadata fetch fails
             date: new Date().toISOString(),
             author: auth.currentUser?.email || 'Unknown',
             pageId: page.id
           };
         } else {
-          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || 'Failed to save to Drive');
+          // Handle non-JSON or error responses
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await res.json().catch(() => null);
+          } else {
+            const text = await res.text().catch(() => 'No response body');
+            console.error('Server returned non-JSON error:', text);
+            errorData = { error: 'Server Error', message: text.substring(0, 200) };
+          }
+          
+          const finalError = errorData?.message || errorData?.error || `Upload failed with status ${res.status}`;
+          throw new Error(finalError);
         }
       } else {
         doc.save(fileName);
@@ -376,14 +457,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   useEffect(() => {
     if (isCharterPage && selectedProject?.charterData) {
       setFormData(selectedProject.charterData);
+      try {
+        const ms = JSON.parse(selectedProject.charterData['milestones_json'] || '[]');
+        setCharterMilestones(ms);
+      } catch (e) {
+        setCharterMilestones([]);
+      }
     } else if (!isCharterPage && selectedProject?.pageData?.[page.id]) {
       setFormData(selectedProject.pageData[page.id]);
-    } else if (isNewProject) {
-      setFormData({});
     } else {
       setFormData({});
+      setCharterMilestones([]);
     }
-  }, [isCharterPage, selectedProject?.id, page.id, isNewProject]);
+  }, [isCharterPage, selectedProject?.id, page.id]);
 
   const parent = getParent(page.id);
   const isLogPage = page.title.toLowerCase().includes('log') || 
@@ -391,100 +477,119 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     page.title.toLowerCase().includes('list') ||
                     page.title.toLowerCase().includes('matrix');
 
-  const handleUpdateProject = async (asNewVersion: boolean) => {
-    if (!selectedProject) return;
 
+
+  const handleSaveDocument = async (asNewVersion: boolean) => {
+    if (!selectedProject) return;
     setIsCreating(true);
     try {
       const projectRef = doc(db, 'projects', selectedProject.id);
       const now = new Date().toISOString();
       const author = auth.currentUser?.email || 'Unknown';
+      
+      const updates: any = {};
 
-      const updates: any = {
-        charterData: formData,
-        name: formData['Project Title'] || selectedProject.name,
-        code: formData['Project Number'] || selectedProject.code,
-        manager: formData['Project Manager'] || selectedProject.manager,
-      };
+      if (isCharterPage) {
+        const updatedFormData = {
+          ...formData,
+          milestones_json: JSON.stringify(charterMilestones)
+        };
+        updates.charterData = updatedFormData;
+        // Update project metadata from charter fields
+        updates.name = formData['Project Title'] || selectedProject.name;
+        updates.code = formData['Project Code'] || selectedProject.code;
+        updates.manager = formData['Project Manager'] || selectedProject.manager;
+        updates.sponsor = formData['Project Sponsor'] || selectedProject.sponsor;
+        updates.customer = formData['Project Customer'] || selectedProject.customer;
+        updates.startDate = formData['Date Prepared'] || selectedProject.startDate;
+        updates.description = formData['Project Description'] || selectedProject.description;
 
-      // 1. Generate and save PDF to Drive FIRST to get metadata
-      let newDoc = null;
+        // Sync Milestones to Activities
+        const activitiesRef = collection(db, 'activities');
+        const q = query(activitiesRef, where('projectId', '==', selectedProject.id), where('charterMilestoneId', '!=', null));
+        const existingMilestonesSnap = await getDocs(q);
+        const existingMilestones = existingMilestonesSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+
+        // Delete milestones that were removed from charter
+        for (const em of existingMilestones) {
+          if (!charterMilestones.find(m => m.id === em.charterMilestoneId)) {
+            await deleteDoc(doc(db, 'activities', em.id));
+          }
+        }
+
+        // Add or update milestones from charter
+        for (const m of charterMilestones) {
+          const existing = existingMilestones.find(em => em.charterMilestoneId === m.id);
+          const activityData = {
+            projectId: selectedProject.id,
+            description: m.description,
+            startDate: m.date,
+            finishDate: m.date,
+            duration: 0,
+            amount: 0,
+            status: 'Planned',
+            activityType: 'Milestone',
+            charterMilestoneId: m.id
+          };
+
+          if (existing) {
+            await updateDoc(doc(db, 'activities', existing.id), activityData);
+          } else {
+            await addDoc(activitiesRef, activityData);
+          }
+        }
+
+        if (asNewVersion) {
+          const history = selectedProject.charterHistory || [];
+          const nextVersion = history.length > 0 ? Math.max(...history.map(h => h.version)) + 1 : 1;
+          const newVersion: PageVersion = {
+            version: nextVersion,
+            date: now,
+            data: updatedFormData,
+            author: author
+          };
+          updates.charterHistory = [...history, newVersion];
+        }
+      } else {
+        const pageData = selectedProject.pageData || {};
+        updates.pageData = {
+          ...pageData,
+          [page.id]: formData
+        };
+
+        if (asNewVersion) {
+          const pageHistory = selectedProject.pageHistory || {};
+          const history = pageHistory[page.id] || [];
+          const nextVersion = history.length > 0 ? Math.max(...history.map(h => h.version)) + 1 : 1;
+          const newVersion: PageVersion = {
+            version: nextVersion,
+            date: now,
+            data: formData,
+            author: author
+          };
+          updates.pageHistory = {
+            ...pageHistory,
+            [page.id]: [...history, newVersion]
+          };
+        }
+      }
+
+      // Generate and save PDF to Drive
       try {
         const pdfMetadata = await generatePDF(true);
         if (pdfMetadata) {
           const savedDocs = selectedProject.savedDocuments || [];
           const nextDocVersion = savedDocs.filter(d => d.pageId === page.id).length + 1;
-          newDoc = { ...pdfMetadata, version: nextDocVersion };
+          const newDoc = { ...pdfMetadata, version: nextDocVersion };
           updates.savedDocuments = [...savedDocs, newDoc];
         }
       } catch (pdfErr) {
         console.error('Auto-PDF generation failed:', pdfErr);
       }
 
-      if (asNewVersion) {
-        const history = selectedProject.charterHistory || [];
-        const nextVersion = history.length > 0 ? Math.max(...history.map(h => h.version)) + 1 : 1;
-        
-        const newVersion: CharterVersion = {
-          version: nextVersion,
-          date: now,
-          data: formData,
-          author: author
-        };
-        
-        updates.charterHistory = [...history, newVersion];
-      }
-
-      await updateDoc(projectRef, updates);
-      
-      alert(asNewVersion ? 'New version saved successfully and uploaded to Drive!' : 'Project updated successfully and uploaded to Drive!');
-      setIsEditing(false);
-    } catch (error: any) {
-      console.error('Error updating project:', error);
-      handleFirestoreError(error, OperationType.UPDATE, `projects/${selectedProject.id}`);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleSaveDocument = async () => {
-    if (!selectedProject) return;
-    setIsCreating(true);
-    try {
-      const projectRef = doc(db, 'projects', selectedProject.id);
-      
-      // For generic pages, we might want to store the data in a map by pageId
-      const pageData = selectedProject.pageData || {};
-      const updatedPageData = {
-        ...pageData,
-        [page.id]: formData
-      };
-
-      // 1. Generate and save PDF to Drive FIRST to get metadata
-      let newDoc = null;
-      try {
-        const pdfMetadata = await generatePDF(true);
-        if (pdfMetadata) {
-          const savedDocs = selectedProject.savedDocuments || [];
-          const nextDocVersion = savedDocs.filter(d => d.pageId === page.id).length + 1;
-          newDoc = { ...pdfMetadata, version: nextDocVersion };
-        }
-      } catch (pdfErr) {
-        console.error('Auto-PDF generation failed:', pdfErr);
-      }
-
-      const updates: any = {
-        pageData: updatedPageData
-      };
-
-      if (newDoc) {
-        const savedDocs = selectedProject.savedDocuments || [];
-        updates.savedDocuments = [...savedDocs, newDoc];
-      }
-
       await updateDoc(projectRef, updates);
 
-      alert('Document saved and uploaded to Drive successfully!');
+      alert(asNewVersion ? 'New version saved and uploaded to Drive successfully!' : 'Document updated and uploaded to Drive successfully!');
       setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving document:', error);
@@ -496,31 +601,75 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   const renderVersionHistory = () => {
     const relevantDocs = selectedProject?.savedDocuments?.filter(d => d.pageId === page.id) || [];
-    if (relevantDocs.length === 0) return null;
+    const dataHistory = isCharterPage 
+      ? selectedProject?.charterHistory || []
+      : selectedProject?.pageHistory?.[page.id] || [];
+    
+    if (relevantDocs.length === 0 && dataHistory.length === 0) return null;
 
     return (
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-        <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
-          <History className="w-5 h-5 text-blue-500" />
-          <h3 className="text-lg font-bold text-slate-900">Version History & Saved PDFs</h3>
+        <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-blue-500" />
+            <h3 className="text-lg font-bold text-slate-900">Version History & Saved Records</h3>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
+            <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {relevantDocs.length} PDFs</span>
+            <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3" /> {dataHistory.length} Data Versions</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">File Name</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Details</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date Saved</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Author</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
+              {/* Combine and sort both histories if needed, but here we'll show data versions first as they are more relevant for "Restore" */}
+              {dataHistory.slice().reverse().map((v, idx) => (
+                <tr key={`data-${idx}`} className="hover:bg-blue-50/30 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">v{v.version}</span>
+                      <span className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter bg-blue-50 px-1 rounded">DATA</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    Data snapshot with {Object.keys(v.data).length} fields
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-400 font-mono text-[11px]">{new Date(v.date).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">{v.author}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button 
+                      onClick={() => {
+                        if (confirm('Restore this version? Current unsaved changes will be lost.')) {
+                          setFormData(v.data);
+                          setIsEditing(true);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-white border border-slate-200 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-50 transition-all shadow-sm"
+                    >
+                      Restore Data
+                    </button>
+                  </td>
+                </tr>
+              ))}
               {relevantDocs.slice().reverse().map((doc, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900">v{doc.version}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{doc.name}</td>
-                  <td className="px-6 py-4 text-sm text-slate-400">{new Date(doc.date).toLocaleString()}</td>
+                <tr key={`doc-${idx}`} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold">v{doc.version}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-50 px-1 rounded">PDF</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 font-mono text-[11px] truncate max-w-[200px]">{doc.name}</td>
+                  <td className="px-6 py-4 text-sm text-slate-400 font-mono text-[11px]">{new Date(doc.date).toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-slate-600">{doc.author}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
@@ -659,55 +808,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       </div>
     );
   };
-  const handleCreateProject = async () => {
-    const projectName = formData['Project Title'];
-    const projectCode = formData['Project Number'] || `ZRY-${Math.floor(Math.random() * 1000)}`;
-
-    if (!projectName) {
-      alert('Project Title is mandatory!');
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      // 1. Initialize Google Drive Folders
-      const driveRes = await fetch('/api/projects/init-drive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectName: projectName,
-          projectCode: projectCode
-        })
-      });
-
-      if (!driveRes.ok) {
-        const errorData = await driveRes.json().catch(() => ({ error: 'Failed to initialize Google Drive' }));
-        throw new Error(errorData.error);
-      }
-      const { rootFolderId } = await driveRes.json();
-
-      // 2. Save to Firestore
-      const projectData = {
-        name: projectName,
-        code: projectCode,
-        manager: formData['Project Manager'] || 'Unassigned',
-        status: 'active',
-        driveFolderId: rootFolderId,
-        charterData: formData,
-        createdAt: new Date().toISOString()
-      };
-
-      const docRef = await addDoc(collection(db, 'projects'), projectData);
-      alert('Project created successfully with Google Drive workspace!');
-      navigate(`/project/${docRef.id}`);
-    } catch (error: any) {
-      console.error('Error creating project:', error);
-      alert(`Failed to create project: ${error.message || 'Unknown error'}`);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   const renderTable = () => {
     if (!page.formFields) return null;
 
@@ -788,273 +888,237 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     );
   };
 
+  const renderReadingView = () => {
+    return (
+      <div id="pdf-content" className="space-y-6 py-8 px-4 md:px-8 bg-white rounded-3xl border border-slate-100 shadow-sm">
+        {page.formFields?.map((field, index) => {
+          const val = formData[field] || 'Not specified';
+          const isArabic = /[\u0600-\u06FF]/.test(val);
+          
+          return (
+            <motion.div 
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="max-w-3xl mx-auto"
+            >
+              <h4 className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-2">
+                {field}
+              </h4>
+              <div className={cn(
+                "text-lg font-normal text-slate-900 leading-relaxed",
+                isArabic ? "text-right font-sans" : "text-left"
+              )}>
+                {val}
+              </div>
+              <div className="mt-4 h-px bg-slate-50 w-full" />
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 pb-20">
       {/* Form Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div>
-          <h2 className="text-3xl font-semibold text-slate-900 tracking-tight mb-2">
-            {parent && <span className="text-slate-400 font-medium">{parent.title} &gt; </span>}
-            <span>{page.title}</span>
-          </h2>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Updated: 02/04/2026</span>
-            <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> Verified by: Zarya System</span>
+      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {page.title}
+            </h2>
+            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span>REF: {page.id}</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+              <span>v1.0</span>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => generatePDF(false)}
-            disabled={isExporting}
-            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm disabled:opacity-50"
-            title="Print PDF"
-          >
-            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                if (isLogPage) {
-                  exportToExcel();
-                } else {
-                  await generatePDF(true);
-                  alert('Saved to Drive successfully!');
-                }
-              } catch (err: any) {
-                alert(`Failed to save to Drive: ${err.message}`);
-              }
-            }}
-            disabled={isExporting}
-            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm disabled:opacity-50"
-            title={isLogPage ? "Export to Excel" : "Save to Drive"}
-          >
-            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          </button>
-          <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
-            <Share2 className="w-4 h-4" />
-          </button>
+
+        <div className="flex items-center gap-3">
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleSaveDocument(false)}
+                disabled={isCreating}
+                className="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Update
+              </button>
+              <button 
+                onClick={() => handleSaveDocument(true)}
+                disabled={isCreating}
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save New Version
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Plan
+              </button>
+              <div className="w-px h-6 bg-slate-200 mx-2" />
+              <button 
+                onClick={() => generatePDF(false)}
+                disabled={isExporting}
+                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+              >
+                <Printer className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => generatePDF(true)}
+                disabled={isExporting}
+                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       {isLogPage ? (
         renderTable()
       ) : (
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="space-y-8">
-            {/* Main Form Content */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+        <div className="max-w-5xl mx-auto space-y-12">
+          {isEditing ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden"
+            >
+              <div className="p-8 bg-slate-50 border-b border-slate-100">
+                <h3 className="text-lg font-bold text-slate-900">Editing Plan Information</h3>
+                <p className="text-sm text-slate-500">Update the fields below to modify the {page.title}.</p>
+              </div>
+              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {page.formFields?.map((field, index) => (
+                  <div key={index} className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{field}</label>
+                    <textarea 
+                      value={formData[field] || ''}
+                      onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                      placeholder={`Enter ${field.toLowerCase()}...`}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all min-h-[120px]"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-4">
+                <button 
+                  onClick={() => setIsEditing(false)}
+                  className="px-6 py-2 text-slate-500 font-bold"
+                >
+                  Discard Changes
+                </button>
+                <button 
+                  onClick={() => handleSaveDocument(false)}
+                  className="px-8 py-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            renderReadingView()
+          )}
+
+          {/* Version History Section */}
+          {renderVersionHistory()}
+
+          {isCharterPage && (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+              <CharterMilestones 
+                milestones={charterMilestones}
+                onChange={setCharterMilestones}
+                isEditing={isEditing}
+              />
+            </div>
+          )}
+
+          {/* Relocated and Functional Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    {isCharterPage && !isNewProject && !isEditing ? 'Charter Summary' : 'General Information'}
-                  </h3>
+                  <BarChart3 className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-sm font-semibold">Form Status</h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  {isCharterPage && !isNewProject && (
-                    <button 
-                      onClick={() => setIsEditing(!isEditing)}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                        isEditing 
-                          ? "bg-slate-200 text-slate-600 hover:bg-slate-300" 
-                          : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200"
-                      )}
-                    >
-                      {isEditing ? <RefreshCw className="w-3 h-3" /> : <Edit2 className="w-3 h-3" />}
-                      {isEditing ? 'Cancel Editing' : 'Edit Charter'}
-                    </button>
-                  )}
-                  <span className="text-[10px] font-mono text-slate-400">REF: {page.id}</span>
+                <div className={cn(
+                  "px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider",
+                  (() => {
+                    const filled = page.formFields?.filter(f => formData[f])?.length || 0;
+                    const total = page.formFields?.length || 0;
+                    const integrity = total > 0 ? (filled / total) : 1;
+                    return integrity === 1 ? "bg-emerald-500/20 text-emerald-400" : "bg-orange-500/20 text-orange-400";
+                  })()
+                )}>
+                  {(() => {
+                    const filled = page.formFields?.filter(f => formData[f])?.length || 0;
+                    const total = page.formFields?.length || 0;
+                    const integrity = total > 0 ? (filled / total) : 1;
+                    return integrity === 1 ? "Approved" : "Draft";
+                  })()}
                 </div>
               </div>
-              <div className="p-8 space-y-6">
-                <div className="prose prose-slate max-w-none">
-                  <p className="text-slate-600 leading-relaxed">
-                    {isCharterPage && !isNewProject && !isEditing 
-                      ? "Below is the current approved version of the Project Charter. You can view the history or edit the information using the controls above."
-                      : (page.content || "This document contains the official records and data for " + page.title + ". Please ensure all entries are validated against the project master plan.")
-                    }
-                  </p>
-                </div>
-
-                {isCharterPage && !isNewProject && !isEditing ? (
-                  renderCharterSummary()
-                ) : (
-                  <>
-                    {/* Dynamic Form Fields */}
-                    <div className="mt-8">
-                      <h4 className="text-sm font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                        <Table className="w-4 h-4 text-blue-500" />
-                        {isEditing ? 'Update Charter Information' : 'Data Entry & Records'}
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {page.formFields?.map((field, index) => {
-                          const isAutomated = page.automatedFields?.includes(field);
-                          return (
-                            <div key={index} className="space-y-1.5">
-                              <label className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                {field}
-                                {isAutomated && <span className="text-[8px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">AUTO</span>}
-                              </label>
-                              {isAutomated ? (
-                                <div className="w-full px-4 py-2.5 bg-blue-50/30 border border-blue-100 rounded-xl text-sm text-slate-700 font-medium flex justify-between items-center">
-                                  <span>Calculated from Master Data</span>
-                                  <RefreshCw className="w-3 h-3 text-blue-400 animate-pulse" />
-                                </div>
-                              ) : (
-                                <input 
-                                  type={field.toLowerCase().includes('date') ? 'date' : 'text'}
-                                  value={formData[field] || ''}
-                                  onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                                  placeholder={`Enter ${field.toLowerCase()}...`}
-                                  className={cn(
-                                    "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all",
-                                    isNewProject && (field === 'Project Title' || field === 'Project Number') && !formData[field] && "border-orange-300 bg-orange-50/30"
-                                  )}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                        {!page.formFields && (
-                          <div className="col-span-full p-8 border-2 border-dashed border-slate-100 rounded-2xl text-center">
-                            <p className="text-sm text-slate-400 italic">No specific data fields defined for this document.</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {isEditing && (
-                        <div className="mt-12 p-8 bg-blue-50 rounded-3xl border border-blue-100 flex flex-col items-center gap-6 text-center">
-                          <div className="space-y-1">
-                            <h4 className="font-semibold text-blue-900">Save Charter Changes</h4>
-                            <p className="text-sm text-blue-600">Choose how you want to save the updated information.</p>
-                          </div>
-                          <div className="flex flex-wrap justify-center gap-4">
-                            <button 
-                              onClick={() => handleUpdateProject(false)}
-                              disabled={isCreating}
-                              className="px-6 py-3 bg-white text-blue-600 border border-blue-200 rounded-xl font-semibold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
-                            >
-                              {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                              Update Current Version
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateProject(true)}
-                              disabled={isCreating}
-                              className="px-8 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                            >
-                              {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                              Save as New Version
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {!isCharterPage && !isNewProject && (
-                        <div className="mt-12 flex justify-end">
-                          <button 
-                            onClick={handleSaveDocument}
-                            disabled={isCreating}
-                            className="px-8 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                          >
-                            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            Save Changes & Upload to Drive
-                          </button>
-                        </div>
-                      )}
-
-                      {isNewProject && (
-                        <div className="mt-12 p-8 bg-blue-50 rounded-3xl border border-blue-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                          <div className="space-y-1">
-                            <h4 className="font-semibold text-blue-900">Ready to Initialize Project?</h4>
-                            <p className="text-sm text-blue-600">This will create the project in Firestore and initialize the Google Drive workspace.</p>
-                          </div>
-                          <button 
-                            onClick={handleCreateProject}
-                            disabled={isCreating}
-                            className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-semibold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                          >
-                            {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                            {isCreating ? 'Initializing Workspace...' : 'Create Project & Initialize Drive'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-
-            {/* Version History Section */}
-            {renderVersionHistory()}
-
-            {/* Relocated and Functional Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-semibold">Form Status</h3>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                    <span>Data Integrity</span>
+                    <span>
+                      {(() => {
+                        const filled = page.formFields?.filter(f => formData[f])?.length || 0;
+                        const total = page.formFields?.length || 0;
+                        return total > 0 ? Math.round((filled / total) * 100) : 100;
+                      })()}%
+                    </span>
                   </div>
-                  <div className={cn(
-                    "px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider",
-                    (() => {
-                      const filled = page.formFields?.filter(f => formData[f])?.length || 0;
-                      const total = page.formFields?.length || 0;
-                      const integrity = total > 0 ? (filled / total) : 1;
-                      return integrity === 1 ? "bg-emerald-500/20 text-emerald-400" : "bg-orange-500/20 text-orange-400";
-                    })()
-                  )}>
-                    {(() => {
-                      const filled = page.formFields?.filter(f => formData[f])?.length || 0;
-                      const total = page.formFields?.length || 0;
-                      const integrity = total > 0 ? (filled / total) : 1;
-                      return integrity === 1 ? "Approved" : "Draft";
-                    })()}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-                      <span>Data Integrity</span>
-                      <span>
-                        {(() => {
+                  <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ 
+                        width: `${(() => {
                           const filled = page.formFields?.filter(f => formData[f])?.length || 0;
                           const total = page.formFields?.length || 0;
                           return total > 0 ? Math.round((filled / total) * 100) : 100;
-                        })()}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ 
-                          width: `${(() => {
-                            const filled = page.formFields?.filter(f => formData[f])?.length || 0;
-                            const total = page.formFields?.length || 0;
-                            return total > 0 ? Math.round((filled / total) * 100) : 100;
-                          })()}%` 
-                        }}
-                        className="bg-emerald-500 h-full transition-all duration-500" 
-                      />
-                    </div>
+                        })()}%` 
+                      }}
+                      className="bg-emerald-500 h-full transition-all duration-500" 
+                    />
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 bg-emerald-50 rounded-xl shrink-0">
-                  <ShieldCheck className="w-6 h-6 text-emerald-500" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Security & Compliance</h3>
-                  <p className="text-[11px] text-slate-500 leading-tight mb-2">
-                    Encrypted and stored according to Zarya's security protocols.
-                  </p>
-                  <div className="text-[9px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100 inline-block">
-                    ID: {page.details?.documentation || 'ZARYA-DOC-' + page.id}
-                  </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 rounded-xl shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Security & Compliance</h3>
+                <p className="text-[11px] text-slate-500 leading-tight mb-2">
+                  Encrypted and stored according to Zarya's security protocols.
+                </p>
+                <div className="text-[9px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100 inline-block">
+                  ID: {page.details?.documentation || 'ZARYA-DOC-' + page.id}
                 </div>
               </div>
             </div>

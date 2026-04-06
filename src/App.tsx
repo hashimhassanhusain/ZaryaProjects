@@ -7,15 +7,21 @@ import { DashboardView } from './components/DashboardView';
 import { DetailView } from './components/DetailView';
 import { ZaryaPOTracker } from './components/ZaryaPOTracker';
 import { BOQView } from './components/BOQView';
+import { WBSView } from './components/WBSView';
 import { EVMReportView } from './components/EVMReportView';
 import { ProgressReportView } from './components/ProgressReportView';
 import { UserFormView } from './components/UserFormView';
 import { AdminUsersView } from './components/AdminUsersView';
 import { AdminProjectsView } from './components/AdminProjectsView';
+import { ProjectFormView } from './components/ProjectFormView';
 import { TasksView } from './components/TasksView';
 import { MeetingsView } from './components/MeetingsView';
 import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
+import { ActivityListView } from './components/ActivityListView';
+import { ProjectScheduleView } from './components/ProjectScheduleView';
+import { AssumptionConstraintView } from './components/AssumptionConstraintView';
+import { MilestoneListView } from './components/MilestoneListView';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
@@ -91,13 +97,18 @@ const PageRenderer = () => {
 
   if (!page) return <Navigate to="/page/planning" />;
 
-  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5'].includes(page.id);
+  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(page.id);
   const isTasksPage = page.id === '2.6.21';
   const isMeetingsPage = page.id === '2.6.22';
   const isFilesPage = page.id === 'files';
   const isBOQPage = page.id === '2.4.0';
+  const isWBSPage = page.id === '2.2.9';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
+  const isActivityListPage = page.id === '2.3.3';
+  const isSchedulePage = page.id === '2.3.7';
+  const isAssumptionLogPage = page.id === '2.2.1';
+  const isMilestoneListPage = page.id === '2.3.5';
 
   return (
     <AnimatePresence mode="wait">
@@ -120,10 +131,20 @@ const PageRenderer = () => {
           <ZaryaPOTracker page={page} />
         ) : isBOQPage ? (
           <BOQView />
+        ) : isWBSPage ? (
+          <WBSView />
         ) : isEVMPage ? (
           <EVMReportView page={page} />
         ) : isProgressReportPage ? (
           <ProgressReportView page={page} />
+        ) : isActivityListPage ? (
+          <ActivityListView page={page} />
+        ) : isSchedulePage ? (
+          <ProjectScheduleView page={page} />
+        ) : isAssumptionLogPage ? (
+          <AssumptionConstraintView page={page} />
+        ) : isMilestoneListPage ? (
+          <MilestoneListView page={page} />
         ) : page.type === 'hub' ? (
           <DashboardView page={page} />
         ) : (
@@ -179,6 +200,7 @@ const AppLayout = () => {
             <Route path="/admin/users" element={<AdminUsersView />} />
             <Route path="/admin/users/:uid" element={<UserFormView />} />
             <Route path="/admin/projects" element={<AdminProjectsView />} />
+            <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={<ProjectDashboard />} />
           </Routes>

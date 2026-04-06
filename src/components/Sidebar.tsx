@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   Target
 } from 'lucide-react';
-import { pages, getChildren, getBreadcrumbs } from '../data';
+import { pages, getChildren, getBreadcrumbs, getFocusArea } from '../data';
 import { Project } from '../types';
 import { cn, sortDomainPages } from '../lib/utils';
 import { auth, db } from '../firebase';
@@ -56,7 +56,7 @@ export const Sidebar: React.FC = () => {
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('focus');
+  const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('domain');
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -360,7 +360,14 @@ export const Sidebar: React.FC = () => {
                     ) : (
                       <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />
                     )}
-                    <span className="truncate">{page.title}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate">{page.title}</span>
+                      {viewMode === 'domain' && !page.isCanonical && (
+                        <span className="text-[9px] text-slate-500 font-medium truncate">
+                          {getFocusArea(page.id)?.title}
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 )}
                 {hasChildren && (
@@ -405,15 +412,6 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <div className="flex bg-white/5 p-1 rounded-xl mb-6">
-        <button
-          onClick={() => setViewMode('focus')}
-          className={cn(
-            "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'focus' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
-          )}
-        >
-          FOCUS AREAS
-        </button>
         <button
           onClick={() => setViewMode('domain')}
           className={cn(

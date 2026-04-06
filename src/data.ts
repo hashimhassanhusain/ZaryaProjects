@@ -162,27 +162,11 @@ export const pages: Page[] = [
   { id: '2.2.5', title: 'Requirements Management Plan', parentId: '2.2', type: 'terminal', content: 'How requirements will be analyzed, documented, and managed.', formFields: ['Collection', 'Analysis', 'Categories', 'Documentation', 'Prioritization', 'Metrics', 'Traceability Structure', 'Tracking', 'Reporting', 'Validation', 'Configuration Management'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Req Plan' } },
   { id: '2.2.6', title: 'Requirements Traceability Matrix', parentId: '2.2', type: 'terminal', content: 'Tracing requirements to deliverables.', formFields: ['ID', 'Requirement', 'Priority', 'Category', 'Source', 'Objective', 'WBS Deliverable', 'Metric', 'Validation'], details: { variance: '0%', performance: 'Complete', documentation: 'RTM v2' } },
   { id: '2.2.7', title: 'Scope Management Plan', parentId: '2.2', type: 'terminal', content: 'How scope will be defined, developed, monitored, and controlled.', formFields: ['Scope Statement Development', 'WBS Structure', 'WBS Dictionary', 'Scope Baseline Maintenance', 'Scope Change', 'Deliverable Acceptance', 'Scope and Requirements Integration'], details: { variance: 'None', performance: 'Stable', documentation: 'Scope Plan' } },
-  { id: '2.2.8', title: 'WBS Dictionary', parentId: '2.2', type: 'terminal', content: 'Detailed information about each component in the WBS.', formFields: ['Work Package Name', 'Code of Account', 'Description of Work', 'Assumptions and Constraints', 'Milestones', 'Due Dates', 'ID', 'Activity', 'Resource', 'Labor', 'Hours', 'Rate', 'Total', 'Material', 'Units', 'Cost', 'Total Cost', 'Quality Requirements', 'Acceptance Criteria', 'Technical Information', 'Agreement Information'], details: { variance: 'N/A', performance: 'Complete', documentation: 'WBS Dict' } },
-  { id: '2.2.9', title: 'Work Breakdown Structure', parentId: '2.2', type: 'terminal', content: 'Hierarchical decomposition of the total scope of work.', formFields: ['Project', 'Major Deliverable', 'Control Account', 'Work package'], details: { variance: 'N/A', performance: 'Stable', documentation: 'WBS Chart' } },
+  { id: '2.2.9', title: 'WBS', parentId: '2.2', type: 'terminal', content: 'Hierarchical decomposition of the total scope of work.', formFields: ['Project', 'Major Deliverable', 'MasterFormat', 'Work package'], details: { variance: 'N/A', performance: 'Stable', documentation: 'WBS Chart' } },
   
-  { 
-    id: '2.3', 
-    title: 'Schedule Domain', 
-    parentId: '2.0', 
-    type: 'hub', 
-    domain: 'schedule',
-    summary: 'Managing the timely completion of the project.',
-    kpis: [
-      { label: 'Schedule Health', value: 'Good', status: 'success', icon: 'Clock' },
-      { label: 'Milestones Defined', value: '100%', status: 'success', icon: 'Target' }
-    ]
-  },
-  { id: '2.3.1', title: 'Activity Attributes', parentId: '2.3', type: 'terminal', content: 'Detailed information about each schedule activity.', formFields: ['ID', 'Activity', 'Description of Work', 'Predecessors', 'Relationship', 'Lead or Lag', 'Successor', 'Number and Type of Resources Required', 'Skill Requirements', 'Other Required Resources', 'Type of Effort', 'Location of Performance', 'Imposed Dates or Other Constraints', 'Assumptions'], details: { variance: 'None', performance: 'On Time', documentation: 'Attributes' } },
-  { id: '2.3.2', title: 'Activity Duration Estimates', parentId: '2.3', type: 'terminal', content: 'Quantitative assessments of the likely number of time periods.', formFields: ['WBS ID', 'Activity Description', 'Effort Hours', 'Duration Estimate'], details: { variance: 'Minimal', performance: 'Stable', documentation: 'Estimates' } },
+  { id: '2.3', title: 'Schedule Domain', parentId: '2.0', type: 'hub', domain: 'schedule', summary: 'Managing the timely completion of the project.', kpis: [{ label: 'Schedule Health', value: 'Good', status: 'success', icon: 'Clock' }, { label: 'Milestones Defined', value: '100%', status: 'success', icon: 'Target' }] },
   { id: '2.3.3', title: 'Activity List', parentId: '2.3', type: 'terminal', content: 'Comprehensive list of all schedule activities required.', formFields: ['ID', 'Activity', 'Description of Work'], details: { variance: 'None', performance: 'On Time', documentation: 'Activities v2' } },
-  { id: '2.3.4', title: 'Duration Estimating Worksheet', parentId: '2.3', type: 'terminal', content: 'Tool for calculating activity durations.', formFields: ['Parametric Estimates', 'WBS ID', 'Effort Hours', 'Resource Quantity', '% Available', 'Performance Factor', 'Duration Estimate', 'Analogous Estimates', 'Previous Activity', 'Previous Duration', 'Current Activity', 'Multiplier', 'Three Point Estimates', 'Optimistic Duration', 'Most Likely Duration', 'Pessimistic Duration', 'Weighting Equation', 'Expected Duration Estimate'], details: { variance: 'N/A', performance: 'Active', documentation: 'Worksheet' } },
   { id: '2.3.5', title: 'Milestone List', parentId: '2.3', type: 'terminal', content: 'Significant points or events in the project.', formFields: ['Milestone', 'Milestone Description', 'Type'], details: { variance: 'On Track', performance: 'Stable', documentation: 'Milestones' } },
-  { id: '2.3.6', title: 'Network Diagram', parentId: '2.3', type: 'terminal', content: 'Graphical representation of the project schedule activities.', formFields: ['Logic Flow', 'Precedence Relationships', 'Leads and Lags'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Diagram' } },
   { id: '2.3.7', title: 'Project Schedule', parentId: '2.3', type: 'terminal', content: 'Planned dates for performing activities and meeting milestones.', formFields: ['Gantt Chart', 'Milestone Chart', 'WBS', 'Task Name', 'Start', 'Finish'], details: { variance: 'Minimal', performance: 'High', documentation: 'Schedule v4' } },
   { id: '2.3.8', title: 'Schedule Management Plan', parentId: '2.3', type: 'terminal', content: 'How the project schedule will be planned, developed, and controlled.', formFields: ['Schedule Methodology', 'Schedule Tools', 'Level of Accuracy', 'Units of Measure', 'Variance Thresholds', 'Schedule Reporting and Format', 'Process Management', 'Activity identification', 'Activity sequencing', 'Estimating resources', 'Estimating effort and duration', 'Updating, monitoring, and controlling'], details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan' } },
   
@@ -198,11 +182,7 @@ export const pages: Page[] = [
       { label: 'Cost Estimates', value: 'Completed', status: 'success', icon: 'CheckCircle2' }
     ]
   },
-  { id: '2.4.0', title: 'BOQ Management', parentId: '2.4', type: 'terminal', content: 'Detailed Bill of Quantities and cost tracking based on Master Format 2024.' },
-  { id: '2.4.1', title: 'Activity Cost Estimates', parentId: '2.4', type: 'terminal', content: 'Quantitative assessments of the likely costs of project activities.', formFields: ['WBS ID', 'Resource', 'Direct Costs', 'Indirect Costs', 'Reserve', 'Estimate', 'Method', 'Assumptions/ Constraints', 'Additional Information', 'Range', 'Confidence Level'], details: { variance: '0%', performance: 'Stable', documentation: 'Cost Est' } },
-  { id: '2.4.2', title: 'Bottom Up Cost Estimating Worksheet', parentId: '2.4', type: 'terminal', content: 'Detailed cost estimation tool.', formFields: ['WBS ID', 'Labor Hours', 'Labor Rates', 'Total Labor', 'Material', 'Supplies', 'Equipment', 'Travel', 'Other Direct Costs', 'Indirect Costs', 'Reserve', 'Estimate'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Worksheet' } },
-  { id: '2.4.3', title: 'Cost Baseline', parentId: '2.4', type: 'terminal', content: 'Approved version of the time-phased project budget.', formFields: ['S-Curve Chart', 'Cumulative Cost', 'Time Periods'], details: { variance: '0%', performance: 'Stable', documentation: 'Baseline v1' } },
-  { id: '2.4.4', title: 'Cost Estimating Worksheet', parentId: '2.4', type: 'terminal', content: 'Tool for calculating project costs.', formFields: ['Parametric Estimates', 'WBS ID', 'Cost Variable', 'Cost per Unit', 'Number of Units', 'Cost Estimate', 'Analogous Estimates', 'Previous Activity', 'Previous Cost', 'Current Activity', 'Multiplier', 'Three Point Estimates', 'Optimistic Cost', 'Most Likely Cost', 'Pessimistic Cost', 'Weighting Equation', 'Expected Cost Estimate'], details: { variance: 'N/A', performance: 'Active', documentation: 'Worksheet' } },
+  { id: '2.4.0', title: 'BOQ', parentId: '2.4', type: 'terminal', content: 'Detailed Bill of Quantities and cost tracking based on Master Format 2024.' },
   { id: '2.4.5', title: 'Cost Management Plan', parentId: '2.4', type: 'terminal', content: 'How project costs will be planned, structured, and controlled.', formFields: ['Level of Accuracy', 'Units of Measure', 'Control Thresholds', 'Rules for Performance Measurement', 'Cost Reporting and Format', 'Process Management', 'Estimating costs', 'Developing the budget', 'Updating, monitoring and controlling'], details: { variance: 'None', performance: 'Optimal', documentation: 'Cost Plan' } },
   { id: '2.4.6', title: 'Procurement Management Plan', parentId: '2.4', type: 'terminal', content: 'How procurement processes will be managed.', formFields: ['Procurement Authority', 'Roles and Responsibilities', 'Project Manager', 'Procurement Department', 'Standard Procurement Documents', 'Contract Type', 'Bonding and Insurance Requirements', 'Selection Criteria', 'Weight', 'Criteria', 'Procurement Assumptions and Constraints', 'Integration Requirements', 'WBS', 'Schedule', 'Documentation', 'Risk', 'Performance Reporting', 'Performance Metrics', 'Domain', 'Metric Measurement'], details: { variance: 'None', performance: 'Stable', documentation: 'Proc Plan' } },
   
@@ -351,7 +331,8 @@ export const pages: Page[] = [
     ]
   },
   { id: '4.2.5', title: 'PO Control Dashboard', parentId: '4.2', type: 'terminal', content: 'Smart alerts and budget control for Zarya Purchase Orders.', formFields: ['Budget Utilization', 'Critical Alerts', 'Financial Summary'], details: { variance: 'Alerts', performance: 'Real-time', documentation: 'ZARYA-DASH' } },
-  { id: '4.2.4', title: 'Cumulative PO Tracking', parentId: '4.2', type: 'terminal', content: 'Zarya Master PO Tracking and Cumulative Expenditure.', formFields: ['Code', 'Description', 'Total PO Amount', 'Received Qty', 'Received Amount', 'Control Qty', 'Control Amount', 'Status'], details: { variance: 'IQD', performance: 'Critical', documentation: 'ZARYA-PO-MASTER' } },
+  { id: '4.2.6', title: 'Purchase Orders List', parentId: '4.2', type: 'terminal', content: 'Comprehensive list of all project purchase orders grouped by work package.', details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PO-LIST' } },
+  { id: '4.2.4', title: 'Cumulative PO Tracking', parentId: '4.2', type: 'terminal', content: 'Zarya Master PO Tracking and Cumulative Expenditure.', formFields: ['Code', 'Description', 'Total PO Amount', 'Received Qty', 'Received Amount', 'MasterFormat Qty', 'MasterFormat Amount', 'Status'], details: { variance: 'IQD', performance: 'Critical', documentation: 'ZARYA-PO-MASTER' } },
   { id: '4.2.3', title: 'Payment Certificate', parentId: '4.2', type: 'terminal', content: 'Zarya Payment Certificate for current installments.', formFields: ['Supplier Name', 'PO Number', 'Payment Number', 'Project Name', 'Currency', 'Code', 'Description', 'Received Qty', 'Price', 'UOM', 'Net Amount'], automatedFields: ['Net Amount', 'PO Number', 'Supplier Name'], details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PC-001' } },
   { id: '4.2.1', title: 'Contractor Status Report', parentId: '4.2', type: 'terminal', content: 'Status updates from project contractors.', formFields: ['Scope Performance', 'Quality Performance', 'Schedule Performance', 'Cost Performance', 'Forecast Performance', 'Claims or Disputes', 'Risks', 'Planned Corrective or Preventive Action', 'Issues', 'Comments'], details: { variance: 'None', performance: 'Stable', documentation: 'Contractor Rep' } },
   { id: '4.2.2', title: 'Earned Value Status Report', parentId: '4.2', type: 'terminal', content: 'Analysis of project performance using EVM metrics.', formFields: ['Budget at Completion', 'Planned value', 'Earned value', 'Actual cost', 'Schedule variance', 'Cost variance', 'Schedule performance index', 'Cost performance index', 'Root Cause', 'Schedule Impact', 'Budget Impact', 'Percent planned', 'Percent earned', 'Percent spent', 'Estimates at Completion', 'TCPI'], details: { variance: '+2%', performance: 'On Target', documentation: 'EV Report' } },
@@ -435,6 +416,51 @@ export const getBreadcrumbs = (id: string): Page[] => {
   }
   return crumbs;
 };
+
+export const getFocusArea = (id: string): Page | undefined => {
+  let current = pages.find(p => p.id === id);
+  while (current && current.parentId) {
+    current = pages.find(p => p.id === current.parentId);
+  }
+  return current;
+};
+
+export const masterFormatDivisions = [
+  { id: '00', title: 'Procurement and Contracting Requirements' },
+  { id: '01', title: 'General Requirements' },
+  { id: '02', title: 'Existing Conditions' },
+  { id: '03', title: 'Concrete' },
+  { id: '04', title: 'Masonry' },
+  { id: '05', title: 'Metals' },
+  { id: '06', title: 'Wood, Plastics, and Composites' },
+  { id: '07', title: 'Thermal and Moisture Protection' },
+  { id: '08', title: 'Openings' },
+  { id: '09', title: 'Finishes' },
+  { id: '10', title: 'Specialties' },
+  { id: '11', title: 'Equipment' },
+  { id: '12', title: 'Furnishings' },
+  { id: '13', title: 'Special Construction' },
+  { id: '14', title: 'Conveying Equipment' },
+  { id: '21', title: 'Fire Suppression' },
+  { id: '22', title: 'Plumbing' },
+  { id: '23', title: 'Heating, Ventilating, and Air Conditioning (HVAC)' },
+  { id: '25', title: 'Integrated Automation' },
+  { id: '26', title: 'Electrical' },
+  { id: '27', title: 'Communications' },
+  { id: '28', title: 'Electronic Safety and Security' },
+  { id: '31', title: 'Earthwork' },
+  { id: '32', title: 'Exterior Improvements' },
+  { id: '33', title: 'Utilities' },
+  { id: '34', title: 'Transportation' },
+  { id: '35', title: 'Waterway and Marine Construction' },
+  { id: '40', title: 'Process Interconnections' },
+  { id: '41', title: 'Material Processing and Handling Equipment' },
+  { id: '42', title: 'Process Heating, Cooling, and Drying Equipment' },
+  { id: '43', title: 'Process Gas and Liquid Handling, Purification, and Storage Equipment' },
+  { id: '44', title: 'Pollution and Waste Control Equipment' },
+  { id: '45', title: 'Industry-Specific Manufacturing Equipment' },
+  { id: '48', title: 'Electrical Power Generation' },
+];
 
 export const boqData: BOQItem[] = [
   { id: 'b1', description: 'Excavation for foundations', unit: 'm3', quantity: 500, rate: 15, amount: 7500, division: 'Div. 02 - Sitework', workPackage: 'Earthworks', location: 'Villa 2', completion: 100 },

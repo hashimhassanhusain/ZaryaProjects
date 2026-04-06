@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatCurrency(amount: number, currency: string = 'IQD') {
+  return new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount) + ' ' + currency;
+}
+
 export function sortDomainPages(items: any[], domainKey: string) {
   return [...items].sort((a, b) => {
     const getWeight = (p: any) => {

@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, Filter, Loader2 } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
 
 export const TasksView: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { selectedProject } = useProject();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(workspaces[0].id);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'assumption_constraint'>('all');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState<Partial<Task>>({
@@ -21,46 +27,87 @@ export const TasksView: React.FC = () => {
     endDate: new Date().toISOString().split('T')[0],
   });
 
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const q = query(
+      collection(db, 'tasks'),
+      where('projectId', '==', selectedProject.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Task[];
+      setTasks(data);
+      setIsLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'tasks');
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject?.id]);
+
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
 
   const filteredTasks = tasks.filter(t => 
     t.workspaceId === selectedWorkspaceId &&
+    (filterType === 'all' || t.sourceType === 'assumption_constraint') &&
     (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
      t.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const columns: TaskStatus[] = ['Todo', 'In Progress', 'Completed', 'Blocked'];
 
-  const handleAddTask = () => {
-    if (!newTask.title) return;
-    const task: Task = {
-      ...newTask as Task,
-      id: 't' + (tasks.length + 1),
-      history: [{ id: 'h' + Date.now(), userId: currentUser.uid, action: 'Created the task', timestamp: new Date().toLocaleString() }]
-    };
-    setTasks([...tasks, task]);
-    setIsAddingTask(false);
-    setNewTask({
-      status: 'Todo',
-      priority: 'Medium',
-      workspaceId: selectedWorkspaceId,
-      assigneeId: currentUser.uid,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
-    });
+  const handleAddTask = async () => {
+    if (!newTask.title || !selectedProject) return;
+    
+    try {
+      const taskData = {
+        ...newTask,
+        projectId: selectedProject.id,
+        history: [{ id: 'h' + Date.now(), userId: currentUser.uid, action: 'Created the task', timestamp: new Date().toLocaleString() }]
+      };
+      await addDoc(collection(db, 'tasks'), taskData);
+      setIsAddingTask(false);
+      setNewTask({
+        status: 'Todo',
+        priority: 'Medium',
+        workspaceId: selectedWorkspaceId,
+        assigneeId: currentUser.uid,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'tasks');
+    }
   };
 
-  const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(tasks.map(t => {
-      if (t.id === taskId) {
-        const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString() };
-        return { ...t, status: newStatus, history: [...(t.history || []), historyItem] };
-      }
-      return t;
-    }));
+  const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString() };
+      await updateDoc(doc(db, 'tasks', taskId), {
+        status: newStatus,
+        history: [...(task.history || []), historyItem]
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'tasks');
+    }
   };
 
   const getAssignee = (uid: string) => users.find(u => u.uid === uid);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -114,6 +161,17 @@ export const TasksView: React.FC = () => {
           </select>
         </div>
         <div className="h-6 w-[1px] bg-slate-200 hidden md:block"></div>
+        <div className="flex items-center gap-2">
+          <select 
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value as any)}
+            className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
+          >
+            <option value="all">All Tasks</option>
+            <option value="assumption_constraint">Assumption & Constraint</option>
+          </select>
+        </div>
+        <div className="h-6 w-[1px] bg-slate-200 hidden md:block"></div>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
@@ -154,13 +212,21 @@ export const TasksView: React.FC = () => {
                     className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                        task.priority === 'High' ? "bg-red-50 text-red-600" :
-                        task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                      )}>
-                        {task.priority}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                          task.priority === 'High' ? "bg-red-50 text-red-600" :
+                          task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                        )}>
+                          {task.priority}
+                        </span>
+                        {task.sourceType === 'assumption_constraint' && (
+                          <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            A&C
+                          </span>
+                        )}
+                      </div>
                       <button className="text-slate-300 hover:text-slate-600 transition-colors">
                         <MoreVertical className="w-4 h-4" />
                       </button>
@@ -208,8 +274,18 @@ export const TasksView: React.FC = () => {
                   className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
-                    <div className="font-bold text-slate-800 text-sm">{task.title}</div>
-                    <div className="text-xs text-slate-400 truncate max-w-[200px]">{task.description}</div>
+                    <div className="flex flex-col">
+                      <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        {task.title}
+                        {task.sourceType === 'assumption_constraint' && (
+                          <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            A&C
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-400 truncate max-w-[200px]">{task.description}</div>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className={cn(

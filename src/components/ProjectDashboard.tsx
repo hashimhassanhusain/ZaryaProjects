@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { motion } from 'motion/react';
 import { useParams } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -18,9 +20,11 @@ import {
   Shield,
   DraftingCompass,
   Banknote,
-  Package
+  Package,
+  Building,
+  MapPin
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 import { AIAssistant } from './AIAssistant';
 
 const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color }: any) => (
@@ -56,6 +60,7 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
 export const ProjectDashboard: React.FC = () => {
   const { selectedProject, setSelectedProject, projects, loading } = useProject();
   const { projectId } = useParams();
+  const [boqTotal, setBoqTotal] = useState(0);
 
   useEffect(() => {
     if (projectId && projects.length > 0) {
@@ -65,6 +70,18 @@ export const ProjectDashboard: React.FC = () => {
       }
     }
   }, [projectId, projects, selectedProject, setSelectedProject]);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const q = query(collection(db, 'boq'), where('projectId', '==', selectedProject.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const total = snapshot.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+      setBoqTotal(total);
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject]);
 
   if (loading) {
     return (
@@ -106,7 +123,7 @@ export const ProjectDashboard: React.FC = () => {
         { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
         { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
         { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
-        { title: 'Finance', value: '$0', subValue: 'N/A', icon: Banknote, color: 'bg-slate-400' },
+        { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
       ],
       alerts: []
     };
@@ -116,31 +133,47 @@ export const ProjectDashboard: React.FC = () => {
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-blue-600 font-semibold text-xs uppercase tracking-widest">
-            <Target className="w-4 h-4" />
-            Project Executive Dashboard
+      <header className="flex flex-col xl:flex-row xl:items-start justify-between gap-8">
+        <div className="space-y-4 flex-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-blue-600 font-semibold text-xs uppercase tracking-widest">
+              <Target className="w-4 h-4" />
+              Project Executive Dashboard
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+              {selectedProject.name}
+            </h1>
+            <div className="flex flex-wrap items-center gap-4 text-slate-500 font-medium text-sm">
+              <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">{selectedProject.code}</span>
+              {selectedProject.customer && <span className="flex items-center gap-1.5"><Building className="w-4 h-4 text-slate-400" /> {selectedProject.customer}</span>}
+              {selectedProject.location && <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-400" /> {selectedProject.location}</span>}
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">
-            {selectedProject.name}
-          </h1>
-          <p className="text-slate-500 max-w-2xl font-medium">
-            Real-time performance metrics and strategic indicators for {selectedProject.name} [{selectedProject.code}].
+          <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+            {selectedProject.description || `Real-time performance metrics and strategic indicators for ${selectedProject.name}.`}
           </p>
+          
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+              <Calendar className="w-4 h-4 text-blue-500" />
+              <div className="text-sm font-semibold text-slate-800">
+                {selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString('en-GB') : 'N/A'} 
+                {selectedProject.endDate && ` - ${new Date(selectedProject.endDate).toLocaleDateString('en-GB')}`}
+              </div>
+            </div>
+            {selectedProject.sponsor && (
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <div className="text-sm font-semibold text-slate-800">{selectedProject.sponsor}</div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="p-3 bg-slate-50 rounded-xl">
-            <Calendar className="w-5 h-5 text-slate-400" />
-          </div>
-          <div className="pr-4">
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Current Period</div>
-            <div className="text-sm font-semibold text-slate-800">April 2026</div>
-          </div>
+        
+        <div className="shrink-0 flex justify-center xl:justify-end">
+          <AIAssistant compact />
         </div>
       </header>
-
-      <AIAssistant />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {data.kpis.map((kpi: any, idx: number) => (

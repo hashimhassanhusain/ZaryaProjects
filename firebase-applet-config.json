@@ -3,8 +3,8 @@
   "appId": "1:531338499796:web:00dacbfd97e7af93440d41",
   "apiKey": "AIzaSyDNQhFT1UkPYXuFQrpwNx95GiZB6WEC9ys",
   "authDomain": "zaryaprojects.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-6eb2fe49-0056-4dd9-bd05-6de9da68d4cd",
   "storageBucket": "zaryaprojects.firebasestorage.app",
   "messagingSenderId": "531338499796",
-  "measurementId": "",
-  "firestoreDatabaseId": "zaryaprojects"
+  "measurementId": ""
 }

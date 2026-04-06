@@ -15,6 +15,7 @@ const PORT = 3000;
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // Google Drive Auth
@@ -295,6 +296,8 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
         body: fs.createReadStream(file.path),
       },
       supportsAllDrives: true,
+      // @ts-ignore
+      uploadType: 'multipart',
     });
     
     fs.unlinkSync(file.path);
@@ -333,7 +336,7 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
         { "Initiating_1.0": ["1.1_Governance_Domain", "1.2_Stakeholders_Domain"] },
         { "Planning_2.0": ["2.1_Governance_Domain", "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"] },
         { "Executing_3.0": ["3.1_Governance_Domain", "3.2_Stakeholders_Domain", "3.3_Resources_Domain"] },
-        { "Monitoring_and_Controlling_4.0": ["4.1_Governance_Domain", "4.2_Stakeholders_Domain", "4.3_Finance_Domain", "4.4_Risk_Domain"] },
+        { "Monitoring_and_Controlling_4.0": ["4.1_Governance_Domain", "4.2_Finance_Domain", "4.3_Stakeholders_Domain", "4.4_Risk_Domain"] },
         { "Closing_5.0": ["5.1_Governance_Domain", "5.2_Finance_Domain"] }
       ],
       "TECHNICAL_DIVISIONS_MASTERFORMAT_02": [
@@ -387,6 +390,8 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
             body: Readable.from(pdfBuffer),
           },
           supportsAllDrives: true,
+          // @ts-ignore
+          uploadType: 'multipart',
         });
         console.log('Project Charter PDF uploaded successfully, file ID:', uploadRes.data.id);
       } catch (pdfError: any) {
@@ -467,6 +472,8 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
       },
       fields: 'id, name',
       supportsAllDrives: true,
+      // @ts-ignore
+      uploadType: 'multipart',
     });
 
     fs.unlinkSync(tempPath);
@@ -536,6 +543,8 @@ app.post('/api/upload', upload.single('file'), async (req: any, res: any) => {
         body: fs.createReadStream(file.path),
       },
       supportsAllDrives: true,
+      // @ts-ignore
+      uploadType: 'multipart',
     });
     fs.unlinkSync(file.path); // Delete temp file
     res.json({ fileId: resDrive.data.id });
@@ -574,6 +583,11 @@ app.get('/api/admin/drive-status', (req: any, res: any) => {
     hasParentFolder: !!parentId,
     parentFolderId: parentId
   });
+});
+
+// Catch-all for undefined API routes to prevent falling through to SPA fallback
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
 });
 
 async function startServer() {
