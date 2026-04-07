@@ -22,6 +22,7 @@ import { ActivityListView } from './components/ActivityListView';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
 import { MilestoneListView } from './components/MilestoneListView';
+import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
@@ -109,6 +110,7 @@ const PageRenderer = () => {
   const isSchedulePage = page.id === '2.3.7';
   const isAssumptionLogPage = page.id === '2.2.1';
   const isMilestoneListPage = page.id === '2.3.5';
+  const isPoliciesPage = page.id === '1.1.2';
 
   return (
     <AnimatePresence mode="wait">
@@ -145,6 +147,8 @@ const PageRenderer = () => {
           <AssumptionConstraintView page={page} />
         ) : isMilestoneListPage ? (
           <MilestoneListView page={page} />
+        ) : isPoliciesPage ? (
+          <GovernancePoliciesView page={page} />
         ) : page.type === 'hub' ? (
           <DashboardView page={page} />
         ) : (

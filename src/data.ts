@@ -104,6 +104,7 @@ export const pages: Page[] = [
     ]
   },
   { id: '1.1.1', title: 'Project Charter', parentId: '1.1', type: 'terminal', content: 'Official document that authorizes the existence of the project.', formFields: ['Project Title', 'Project Code', 'Project Sponsor', 'Date Prepared', 'Project Manager', 'Project Customer', 'Project Purpose or Justification', 'Project Description', 'High-Level Requirements', 'High-Level Risks', 'Project Objectives', 'Success Criteria', 'Person Approving', 'Scope', 'Time', 'Cost', 'Other', 'Summary Milestones', 'Due Date', 'Estimated Budget', 'Stakeholder(s)', 'Role', 'Project Manager Authority Level', 'Staffing Decisions', 'Budget Management and Variance', 'Technical Decisions', 'Conflict Resolution', 'Approvals'], details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } },
+  { id: '1.1.2', title: 'Policies & Procedures', parentId: '1.1', type: 'terminal', content: 'Project Management Policies and Procedures Manual.', domain: 'governance', details: { variance: 'None', performance: 'Active', documentation: 'Manual v1.0' } },
   
   { 
     id: '1.2', 
@@ -331,7 +332,7 @@ export const pages: Page[] = [
     ]
   },
   { id: '4.2.5', title: 'PO Control Dashboard', parentId: '4.2', type: 'terminal', content: 'Smart alerts and budget control for Zarya Purchase Orders.', formFields: ['Budget Utilization', 'Critical Alerts', 'Financial Summary'], details: { variance: 'Alerts', performance: 'Real-time', documentation: 'ZARYA-DASH' } },
-  { id: '4.2.6', title: 'Purchase Orders List', parentId: '4.2', type: 'terminal', content: 'Comprehensive list of all project purchase orders grouped by work package.', details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PO-LIST' } },
+  { id: '4.2.6', title: 'PO Log', parentId: '4.2', type: 'terminal', content: 'Comprehensive log of all project purchase orders with detailed financial and status tracking.', details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PO-LOG' } },
   { id: '4.2.4', title: 'Cumulative PO Tracking', parentId: '4.2', type: 'terminal', content: 'Zarya Master PO Tracking and Cumulative Expenditure.', formFields: ['Code', 'Description', 'Total PO Amount', 'Received Qty', 'Received Amount', 'MasterFormat Qty', 'MasterFormat Amount', 'Status'], details: { variance: 'IQD', performance: 'Critical', documentation: 'ZARYA-PO-MASTER' } },
   { id: '4.2.3', title: 'Payment Certificate', parentId: '4.2', type: 'terminal', content: 'Zarya Payment Certificate for current installments.', formFields: ['Supplier Name', 'PO Number', 'Payment Number', 'Project Name', 'Currency', 'Code', 'Description', 'Received Qty', 'Price', 'UOM', 'Net Amount'], automatedFields: ['Net Amount', 'PO Number', 'Supplier Name'], details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PC-001' } },
   { id: '4.2.1', title: 'Contractor Status Report', parentId: '4.2', type: 'terminal', content: 'Status updates from project contractors.', formFields: ['Scope Performance', 'Quality Performance', 'Schedule Performance', 'Cost Performance', 'Forecast Performance', 'Claims or Disputes', 'Risks', 'Planned Corrective or Preventive Action', 'Issues', 'Comments'], details: { variance: 'None', performance: 'Stable', documentation: 'Contractor Rep' } },

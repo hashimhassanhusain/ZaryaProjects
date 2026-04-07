@@ -30,7 +30,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
-import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 
 interface DetailViewProps {
@@ -38,6 +38,8 @@ interface DetailViewProps {
 }
 
 import { CharterMilestones } from './CharterMilestones';
+import { ActivityAttributesModal } from './ActivityAttributesModal';
+import { Activity, BOQItem, WBSLevel } from '../types';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -52,8 +54,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [charterMilestones, setCharterMilestones] = useState<any[]>([]);
+  const [charterMilestones, setCharterMilestones] = useState<Activity[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Activity | null>(null);
+  const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
+  const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
 
   const generatePDF = async (saveToDrive = false): Promise<any> => {
     if (!selectedProject) return;
@@ -455,20 +461,58 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   // Initialize formData from selectedProject
   useEffect(() => {
-    if (isCharterPage && selectedProject?.charterData) {
-      setFormData(selectedProject.charterData);
-      try {
-        const ms = JSON.parse(selectedProject.charterData['milestones_json'] || '[]');
-        setCharterMilestones(ms);
-      } catch (e) {
+    const loadData = async () => {
+      if (isCharterPage && selectedProject) {
+        setFormData(selectedProject.charterData || {});
+        // Fetch milestones from activities collection to ensure sync
+        try {
+          const q = query(
+            collection(db, 'activities'), 
+            where('projectId', '==', selectedProject.id),
+            where('activityType', '==', 'Milestone')
+          );
+          const snap = await getDocs(q);
+          const ms = snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity));
+          
+          if (ms.length > 0) {
+            setCharterMilestones(ms);
+          } else if (selectedProject.charterData?.milestones_json) {
+            // Fallback to JSON if no activities found (e.g. first time)
+            const legacyMs = JSON.parse(selectedProject.charterData.milestones_json);
+            setCharterMilestones(legacyMs.map((m: any) => ({
+              id: m.id || crypto.randomUUID(),
+              description: m.description,
+              finishDate: m.date,
+              activityType: 'Milestone',
+              status: 'Planned',
+              projectId: selectedProject.id
+            } as Activity)));
+          } else {
+            setCharterMilestones([]);
+          }
+
+          // Fetch extra data for modal
+          const boqSnap = await getDocs(query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)));
+          setBoqItems(boqSnap.docs.map(d => ({ id: d.id, ...d.data() } as BOQItem)));
+          
+          const wbsSnap = await getDocs(query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id)));
+          setWbsLevels(wbsSnap.docs.map(d => ({ id: d.id, ...d.data() } as WBSLevel)));
+          
+          const allSnap = await getDocs(query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)));
+          setAllActivities(allSnap.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
+        } catch (e) {
+          console.error('Error loading milestones:', e);
+          setCharterMilestones([]);
+        }
+      } else if (!isCharterPage && selectedProject?.pageData?.[page.id]) {
+        setFormData(selectedProject.pageData[page.id]);
+      } else {
+        setFormData({});
         setCharterMilestones([]);
       }
-    } else if (!isCharterPage && selectedProject?.pageData?.[page.id]) {
-      setFormData(selectedProject.pageData[page.id]);
-    } else {
-      setFormData({});
-      setCharterMilestones([]);
-    }
+    };
+
+    loadData();
   }, [isCharterPage, selectedProject?.id, page.id]);
 
   const parent = getParent(page.id);
@@ -930,6 +974,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {getParent(page.id) && (
+                <span className="text-slate-400 font-normal">{getParent(page.id)?.title} &gt; </span>
+              )}
               {page.title}
             </h2>
             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
@@ -1050,9 +1097,32 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 milestones={charterMilestones}
                 onChange={setCharterMilestones}
                 isEditing={isEditing}
+                onEditAttributes={(m) => setEditingMilestone(m)}
               />
             </div>
           )}
+
+          <AnimatePresence>
+            {editingMilestone && (
+              <ActivityAttributesModal 
+                activity={editingMilestone}
+                allActivities={allActivities}
+                boqItems={boqItems}
+                wbsLevels={wbsLevels}
+                onClose={() => setEditingMilestone(null)}
+                onSave={async (updated) => {
+                  try {
+                    await setDoc(doc(db, 'activities', updated.id), updated);
+                    setEditingMilestone(null);
+                    // Update local state
+                    setCharterMilestones(prev => prev.map(m => m.id === updated.id ? updated : m));
+                  } catch (err) {
+                    handleFirestoreError(err, OperationType.WRITE, 'activities');
+                  }
+                }}
+              />
+            )}
+          </AnimatePresence>
 
           {/* Relocated and Functional Stats Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

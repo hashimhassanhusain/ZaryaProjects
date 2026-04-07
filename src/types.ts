@@ -55,6 +55,28 @@ export interface PurchaseOrder {
   amount: number;
   workPackageId: string;
   lineItems: POLineItem[];
+  // Extra fields for PO Log
+  company?: string;
+  buyFromPartner?: string;
+  purchaseOffice?: string;
+  projectName?: string;
+  buyer?: string;
+  buyerName?: string;
+  serAmount?: number;
+  currency?: string;
+  forCommingling?: string;
+  workflowStatus?: string;
+  divisions?: string;
+  completion?: number;
+  location?: string;
+}
+
+export type DependencyType = 'FS' | 'SS' | 'FF' | 'SF';
+
+export interface ActivityDependency {
+  id: string; // The ID of the predecessor activity
+  type: DependencyType;
+  lag: number; // in days, can be negative for lead
 }
 
 export interface Activity {
@@ -68,16 +90,22 @@ export interface Activity {
   quantity: number;
   rate: number;
   amount: number;
+  actualAmount?: number; // Actual Cost
+  division?: string; // Master Format 2024 Division Code (e.g. "01", "03")
   status: 'Planned' | 'In Progress' | 'Completed' | 'Converted to PO';
   activityType?: 'Task' | 'Milestone';
   charterMilestoneId?: string; // Link to milestone defined in Charter
   poId?: string;
   poLineItemId?: string;
-  startDate?: string;
-  duration?: number; // in days
-  finishDate?: string;
-  predecessorId?: string; // Parent Activity
-  successorId?: string; // Child Activity
+  startDate?: string; // Planned Start
+  duration?: number; // Planned Duration in days
+  finishDate?: string; // Planned Finish
+  actualStartDate?: string;
+  actualFinishDate?: string;
+  actualDuration?: number;
+  predecessors?: ActivityDependency[];
+  predecessorId?: string; // Legacy field for simple FS
+  successorId?: string; // Legacy field
 }
 
 export interface WeatherData {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getParent } from '../data';
 import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc } from 'firebase/firestore';
@@ -11,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
+import { ActivityAttributesModal } from './ActivityAttributesModal';
 
 interface ActivityListViewProps {
   page: Page;
@@ -77,6 +79,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           quantity: item.quantity,
           rate: item.rate,
           amount: item.amount,
+          division: item.division || '01',
           status: 'Planned'
         };
         await setDoc(doc(db, 'activities', activity.id), activity);
@@ -167,8 +170,13 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     <div className="space-y-8">
       <header className="flex justify-between items-end">
         <div>
-          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">Schedule Domain</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{page.title}</h2>
+          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">{getParent(page.id)?.title || 'Schedule Domain'}</div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+            {getParent(page.id) && (
+              <span className="text-slate-400 font-normal">{getParent(page.id)?.title} &gt; </span>
+            )}
+            {page.title}
+          </h2>
           <p className="text-slate-500">Activities derived from BOQ and linked to Purchase Orders.</p>
         </div>
         <div className="flex gap-3">
@@ -220,14 +228,10 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                 <thead>
                   <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                     <th className="px-6 py-3">Description</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">WBS / BOQ</th>
-                    <th className="px-6 py-3">Start Date</th>
-                    <th className="px-6 py-3">Duration</th>
-                    <th className="px-6 py-3">Finish Date</th>
-                    <th className="px-6 py-3 text-right">Qty</th>
-                    <th className="px-6 py-3">Unit</th>
-                    <th className="px-6 py-3 text-right">Total</th>
+                    <th className="px-6 py-3">Planned Dates</th>
+                    <th className="px-6 py-3">Actual Dates</th>
+                    <th className="px-6 py-3 text-right">Planned Cost</th>
+                    <th className="px-6 py-3 text-right">Actual Cost</th>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3 text-center">Actions</th>
                   </tr>
@@ -237,27 +241,29 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                     <tr key={act.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="text-sm font-bold text-slate-900">{act.description}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={cn(
-                          "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
-                          act.activityType === 'Milestone' ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700"
-                        )}>
-                          {act.activityType || 'Task'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-[10px] text-slate-500 font-mono">
-                          {act.wbsId && <div className="flex items-center gap-1"><Database className="w-3 h-3" /> {act.wbsId}</div>}
-                          {act.boqItemId && <div className="flex items-center gap-1 mt-1"><Link2 className="w-3 h-3" /> {act.boqItemId}</div>}
+                        <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded uppercase">{act.activityType || 'Task'}</span>
+                          <span>{act.division || '01'}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{act.startDate || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{act.duration ? `${act.duration} days` : '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{act.finishDate || '-'}</td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-600 font-mono">{act.quantity}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{act.unit}</td>
-                      <td className="px-6 py-4 text-right text-sm font-bold text-slate-900 font-mono">{formatCurrency(act.amount)}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-[11px] font-mono text-slate-600">
+                          {act.startDate || 'TBD'}
+                          <div className="text-slate-400">{act.finishDate || 'TBD'}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[11px] font-mono text-emerald-600">
+                          {act.actualStartDate || 'Not Started'}
+                          {act.actualFinishDate && <div className="text-emerald-400">{act.actualFinishDate}</div>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-bold text-slate-900 font-mono">
+                        {formatCurrency(act.amount)}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 font-mono">
+                        {formatCurrency(act.actualAmount || 0)}
+                      </td>
                       <td className="px-6 py-4">
                         <span className={cn(
                           "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
@@ -265,9 +271,6 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                         )}>
                           {act.status}
                         </span>
-                        {act.poId && (
-                          <div className="text-[10px] text-slate-400 mt-1 font-mono">{act.poId}</div>
-                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
@@ -307,242 +310,5 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         )}
       </AnimatePresence>
     </div>
-  );
-};
-
-interface ActivityAttributesModalProps {
-  activity: Activity;
-  onClose: () => void;
-  onSave: (activity: Activity) => void;
-  boqItems: BOQItem[];
-  wbsLevels: WBSLevel[];
-  allActivities: Activity[];
-}
-
-export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = ({ 
-  activity, onClose, onSave, boqItems, wbsLevels, allActivities 
-}) => {
-  const [formData, setFormData] = useState<Activity>({ ...activity });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    let updatedData = { ...formData, [name]: name === 'duration' ? (value ? parseInt(value) : undefined) : value };
-
-    // Automatic Date/Duration Calculation
-    if (name === 'startDate' || name === 'duration' || name === 'finishDate') {
-      const start = updatedData.startDate ? new Date(updatedData.startDate) : null;
-      const finish = updatedData.finishDate ? new Date(updatedData.finishDate) : null;
-      const dur = updatedData.duration;
-
-      if (name === 'startDate' || name === 'duration') {
-        if (start && dur) {
-          const newFinish = new Date(start);
-          newFinish.setDate(newFinish.getDate() + dur);
-          updatedData.finishDate = newFinish.toISOString().split('T')[0];
-        }
-      } else if (name === 'finishDate') {
-        if (start && finish) {
-          const diffTime = Math.abs(finish.getTime() - start.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          updatedData.duration = diffDays;
-        }
-      }
-    }
-
-    // BOQ Item as Parent Logic
-    if (name === 'boqItemId' && value) {
-      const selectedBOQ = boqItems.find(item => item.id === value);
-      if (selectedBOQ) {
-        // In this context, selecting a BOQ item makes it the "parent" or primary reference
-        // We can also auto-fill some fields if they are empty
-        if (!updatedData.description) updatedData.description = selectedBOQ.description;
-        if (!updatedData.wbsId) updatedData.wbsId = selectedBOQ.wbsId || '';
-      }
-    }
-
-    setFormData(updatedData);
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-      >
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">Activity Attributes</h3>
-            <p className="text-xs text-slate-500 mt-1">Configure detailed properties for this activity.</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
-
-        <div className="p-8 overflow-y-auto space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
-              <textarea 
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[80px]"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 pt-4">
-              <input 
-                type="checkbox"
-                id="isMilestone"
-                checked={formData.activityType === 'Milestone'}
-                onChange={(e) => {
-                  const isMilestone = e.target.checked;
-                  setFormData(prev => ({
-                    ...prev,
-                    activityType: isMilestone ? 'Milestone' : 'Task',
-                    duration: isMilestone ? 0 : prev.duration
-                  }));
-                }}
-                className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="isMilestone" className="text-sm font-bold text-slate-700 cursor-pointer">
-                Milestone (Duration will be set to 0)
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">WBS Level</label>
-              <select 
-                name="wbsId"
-                value={formData.wbsId}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              >
-                <option value="">Select WBS Level</option>
-                {wbsLevels.map(wbs => (
-                  <option key={wbs.id} value={wbs.id}>{wbs.code} - {wbs.title}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Linked BOQ Item</label>
-              <select 
-                name="boqItemId"
-                value={formData.boqItemId || ''}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              >
-                <option value="">Select BOQ Item</option>
-                {boqItems.map(item => (
-                  <option key={item.id} value={item.id}>{item.description} ({item.workPackage})</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate || ''}
-                  onChange={handleInputChange}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Duration (Days)</label>
-              <div className="relative">
-                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="number"
-                  name="duration"
-                  value={formData.duration || ''}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 5"
-                  disabled={formData.activityType === 'Milestone'}
-                  className={cn(
-                    "w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all",
-                    formData.activityType === 'Milestone' && "opacity-50 cursor-not-allowed bg-slate-100"
-                  )}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Finish Date</label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="date"
-                  name="finishDate"
-                  value={formData.finishDate || ''}
-                  onChange={handleInputChange}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Predecessor (Parent)</label>
-              <select 
-                name="predecessorId"
-                value={formData.predecessorId || ''}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              >
-                <option value="">None</option>
-                {allActivities.filter(a => a.id !== activity.id).map(a => (
-                  <option key={a.id} value={a.id}>{a.description}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Successor (Child)</label>
-              <select 
-                name="successorId"
-                value={formData.successorId || ''}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              >
-                <option value="">None</option>
-                {allActivities.filter(a => a.id !== activity.id).map(a => (
-                  <option key={a.id} value={a.id}>{a.description}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
-          <button 
-            onClick={onClose}
-            className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-2xl transition-all"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={() => onSave(formData)}
-            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-          >
-            <Save className="w-4 h-4" />
-            Save Attributes
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 };

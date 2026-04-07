@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { cn } from '../lib/utils';
-import { ActivityAttributesModal } from './ActivityListView';
+import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { AnimatePresence } from 'motion/react';
 
 interface MilestoneListViewProps {
@@ -130,7 +130,8 @@ export const MilestoneListView: React.FC<MilestoneListViewProps> = ({ page }) =>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Milestone</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Planned Date</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual Date</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -138,7 +139,7 @@ export const MilestoneListView: React.FC<MilestoneListViewProps> = ({ page }) =>
             <tbody className="divide-y divide-slate-50">
               {filteredMilestones.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
                     No milestones found. Mark activities as "Milestone" in the Activity List or Schedule to see them here.
                   </td>
                 </tr>
@@ -154,13 +155,19 @@ export const MilestoneListView: React.FC<MilestoneListViewProps> = ({ page }) =>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-slate-600">{m.description}</div>
+                      <div className="text-sm text-slate-600 font-bold">{m.description}</div>
                       <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{m.workPackage}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         {m.finishDate || 'TBD'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-sm text-emerald-600 font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                        {m.actualFinishDate || 'Not Reached'}
                       </div>
                     </td>
                     <td className="px-6 py-4">

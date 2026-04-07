@@ -1,25 +1,36 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Target, Calendar } from 'lucide-react';
+import { Plus, Trash2, Target, Calendar, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
-
-interface Milestone {
-  id: string;
-  description: string;
-  date: string;
-}
+import { Activity } from '../types';
 
 interface CharterMilestonesProps {
-  milestones: Milestone[];
-  onChange: (milestones: Milestone[]) => void;
+  milestones: Activity[];
+  onChange: (milestones: Activity[]) => void;
   isEditing: boolean;
+  onEditAttributes?: (milestone: Activity) => void;
 }
 
-export const CharterMilestones: React.FC<CharterMilestonesProps> = ({ milestones, onChange, isEditing }) => {
+export const CharterMilestones: React.FC<CharterMilestonesProps> = ({ milestones, onChange, isEditing, onEditAttributes }) => {
   const [newMilestone, setNewMilestone] = useState({ description: '', date: '' });
 
   const addMilestone = () => {
     if (!newMilestone.description || !newMilestone.date) return;
-    onChange([...milestones, { ...newMilestone, id: crypto.randomUUID() }]);
+    const milestone: Activity = {
+      id: crypto.randomUUID(),
+      description: newMilestone.description,
+      finishDate: newMilestone.date,
+      activityType: 'Milestone',
+      duration: 0,
+      status: 'Planned',
+      projectId: '', // Will be set by parent if needed
+      wbsId: '',
+      workPackage: 'General',
+      unit: 'LS',
+      quantity: 1,
+      rate: 0,
+      amount: 0
+    };
+    onChange([...milestones, milestone]);
     setNewMilestone({ description: '', date: '' });
   };
 
@@ -89,20 +100,39 @@ export const CharterMilestones: React.FC<CharterMilestonesProps> = ({ milestones
                 </div>
                 <div>
                   <p className="text-sm font-bold text-slate-900">{m.description}</p>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                    <Calendar className="w-3 h-3" />
-                    {m.date}
+                  <div className="flex items-center gap-4 mt-1">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                      <Calendar className="w-3 h-3" />
+                      PLN: {m.finishDate || 'TBD'}
+                    </div>
+                    {m.actualFinishDate && (
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                        <Target className="w-3 h-3" />
+                        ACT: {m.actualFinishDate}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-              {isEditing && (
-                <button 
-                  onClick={() => removeMilestone(m.id)}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {onEditAttributes && (
+                  <button 
+                    onClick={() => onEditAttributes(m)}
+                    className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                    title="Activity Attributes"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                )}
+                {isEditing && (
+                  <button 
+                    onClick={() => removeMilestone(m.id)}
+                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           ))
         )}

@@ -47,8 +47,101 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   }, [pos]);
 
   const seedData = async () => {
+    const samplePOs: PurchaseOrder[] = [
+      {
+        id: 'COS001649',
+        supplier: 'Fuad Hama Saed',
+        date: '2023-05-11',
+        status: 'Approved',
+        amount: 8250000,
+        workPackageId: '6.1.3.1',
+        company: '511',
+        buyFromPartner: 'SUP000140',
+        purchaseOffice: 'P16314',
+        projectName: 'Villa 2',
+        buyer: 'BAWAN',
+        buyerName: 'Bawan Jamal',
+        currency: 'IQD',
+        workflowStatus: 'Approved',
+        divisions: 'Div. 03 - Concrete',
+        completion: 100,
+        location: 'Villa 2',
+        lineItems: [
+          { id: 'li1', description: 'Wooden Formwork Panels', quantity: 100, unit: 'pcs', rate: 50000, amount: 5000000, status: 'Received' },
+          { id: 'li2', description: 'Nails and Accessories', quantity: 50, unit: 'kg', rate: 65000, amount: 3250000, status: 'Received' },
+        ]
+      },
+      {
+        id: 'COS001650',
+        supplier: 'Fuad Hama Saed',
+        date: '2023-05-11',
+        status: 'Approved',
+        amount: 2560000,
+        workPackageId: '6.1.3.1',
+        company: '511',
+        buyFromPartner: 'SUP000140',
+        purchaseOffice: 'P16314',
+        projectName: 'Villa 2',
+        buyer: 'BAWAN',
+        buyerName: 'Bawan Jamal',
+        currency: 'IQD',
+        workflowStatus: 'Approved',
+        divisions: 'Div. 03 - Concrete',
+        completion: 100,
+        location: 'Villa 2',
+        lineItems: [
+          { id: 'li3', description: 'Formwork Labor', quantity: 1, unit: 'job', rate: 2560000, amount: 2560000, status: 'Completed' },
+        ]
+      },
+      {
+        id: 'COS001701',
+        supplier: 'Fuad Hama Saed',
+        date: '2023-05-24',
+        status: 'Approved',
+        amount: 5500000,
+        workPackageId: '6.1.3.2',
+        company: '511',
+        buyFromPartner: 'SUP000140',
+        purchaseOffice: 'P16314',
+        projectName: 'Villa 2',
+        buyer: 'BAWAN',
+        buyerName: 'Bawan Jamal',
+        currency: 'IQD',
+        workflowStatus: 'Approved',
+        divisions: 'Div. 03 - Concrete',
+        completion: 85,
+        location: 'Villa 2',
+        lineItems: [
+          { id: 'li4', description: 'Reinforcement Steel 12mm', quantity: 5, unit: 'ton', rate: 800000, amount: 4000000, status: 'Received' },
+          { id: 'li5', description: 'Binding Wire', quantity: 10, unit: 'roll', rate: 150000, amount: 1500000, status: 'Received' },
+        ]
+      },
+      {
+        id: 'COS001822',
+        supplier: 'Wasta Noory Restaurant',
+        date: '2023-06-15',
+        status: 'Approved',
+        amount: 1250000,
+        workPackageId: '6.5.1',
+        company: '511',
+        buyFromPartner: 'SUP000210',
+        purchaseOffice: 'P16314',
+        projectName: 'Villa 2',
+        buyer: 'BAWAN',
+        buyerName: 'Bawan Jamal',
+        currency: 'IQD',
+        workflowStatus: 'Approved',
+        divisions: 'Div. 01 - General',
+        completion: 100,
+        location: 'Site Office',
+        lineItems: [
+          { id: 'li6', description: 'Staff Meals - June', quantity: 1, unit: 'month', rate: 1250000, amount: 1250000, status: 'Received' },
+        ]
+      }
+    ];
+
     try {
-      for (const po of purchaseOrders) {
+      for (const po of samplePOs) {
         await setDoc(doc(db, 'purchaseOrders', po.id), po);
       }
       alert('PO Data Seeded Successfully');
@@ -301,111 +394,92 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     </div>
   );
 
-  const renderPOList = () => {
-    // Group POs by Work Package
-    const groupedPOs = pos.reduce((acc, po) => {
-      const wp = po.workPackageId || 'Unassigned';
-      if (!acc[wp]) acc[wp] = [];
-      acc[wp].push(po);
-      return acc;
-    }, {} as Record<string, PurchaseOrder[]>);
-
+  const renderPOLog = () => {
     return (
-      <div className="space-y-8">
-        {Object.keys(groupedPOs).length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-3xl p-20 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShoppingCart className="w-10 h-10 text-slate-300" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Purchase Orders Found</h3>
-              <p className="text-slate-500 mb-8">Create your first purchase order or generate them from the Activity List.</p>
-            </div>
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-slate-900">PO Log - Detailed Tracking</h3>
+          <div className="flex gap-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full uppercase tracking-widest">Master Record</span>
           </div>
-        ) : (
-          Object.keys(groupedPOs).map(wp => (
-            <div key={wp} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                    <Database className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900">{wp}</h4>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">Work Package</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total POs</div>
-                  <div className="text-sm font-bold text-slate-900">{groupedPOs[wp].length}</div>
-                </div>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {groupedPOs[wp].map(po => (
-                  <div key={po.id} className="p-6 hover:bg-slate-50/50 transition-colors group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold font-mono uppercase tracking-widest">
-                            {po.id}
-                          </span>
-                          <h5 className="text-lg font-bold text-slate-900">{po.supplier}</h5>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {po.date}</span>
-                          <span className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                            po.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                          )}>
-                            {po.status}
-                          </span>
-                        </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[10px] border-collapse">
+            <thead className="bg-slate-100 text-slate-500 font-bold uppercase tracking-wider">
+              <tr className="divide-x divide-slate-200">
+                <th className="px-3 py-3 whitespace-nowrap">Company</th>
+                <th className="px-3 py-3 whitespace-nowrap">Order</th>
+                <th className="px-3 py-3 whitespace-nowrap">Order Date</th>
+                <th className="px-3 py-3 whitespace-nowrap">Buy-from BP</th>
+                <th className="px-3 py-3 whitespace-nowrap">Suppliers</th>
+                <th className="px-3 py-3 whitespace-nowrap">Purchase Office</th>
+                <th className="px-3 py-3 whitespace-nowrap">Project Name</th>
+                <th className="px-3 py-3 whitespace-nowrap">Buyer</th>
+                <th className="px-3 py-3 whitespace-nowrap">Buyer Name</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right">Ser Amount (IQD)</th>
+                <th className="px-3 py-3 whitespace-nowrap">Currency</th>
+                <th className="px-3 py-3 whitespace-nowrap">For Commingling</th>
+                <th className="px-3 py-3 whitespace-nowrap">Status</th>
+                <th className="px-3 py-3 whitespace-nowrap">Workflow Status</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right">Order Amount (IQD)</th>
+                <th className="px-3 py-3 whitespace-nowrap">WorkPackage</th>
+                <th className="px-3 py-3 whitespace-nowrap">Divisions</th>
+                <th className="px-3 py-3 whitespace-nowrap text-center">% Completion</th>
+                <th className="px-3 py-3 whitespace-nowrap">Location</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {pos.map((po, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors divide-x divide-slate-100">
+                  <td className="px-3 py-3 font-medium text-slate-600">{po.company || '511'}</td>
+                  <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
+                  <td className="px-3 py-3 text-slate-500">{po.date}</td>
+                  <td className="px-3 py-3 text-slate-600">{po.buyFromPartner || 'SUP000140'}</td>
+                  <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
+                  <td className="px-3 py-3 text-slate-500">{po.purchaseOffice || 'P16314'}</td>
+                  <td className="px-3 py-3 text-slate-600">{po.projectName || 'Villa 2'}</td>
+                  <td className="px-3 py-3 text-slate-500">{po.buyer || 'BAWAN'}</td>
+                  <td className="px-3 py-3 text-slate-500">{po.buyerName || 'Bawan Jamal'}</td>
+                  <td className="px-3 py-3 text-right font-mono">{po.amount.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-center text-slate-400">{po.currency || 'IQD'}</td>
+                  <td className="px-3 py-3 text-center text-slate-400">{po.forCommingling || 'No'}</td>
+                  <td className="px-3 py-3">
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
+                      po.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                    )}>
+                      {po.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-slate-500">{po.workflowStatus || 'Approved'}</td>
+                  <td className="px-3 py-3 text-right font-bold text-slate-900 font-mono">{po.amount.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-slate-500 truncate max-w-[100px]">{po.workPackageId}</td>
+                  <td className="px-3 py-3">
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-medium whitespace-nowrap">
+                      {po.divisions || 'Div. 01 - General'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden min-w-[40px]">
+                        <div 
+                          className="h-full bg-emerald-500 transition-all"
+                          style={{ width: `${po.completion || 100}%` }}
+                        />
                       </div>
-                      <div className="text-right">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">PO Amount</div>
-                        <div className="text-lg font-bold text-slate-900 font-mono">{formatCurrency(po.amount)}</div>
-                      </div>
+                      <span className="font-bold text-slate-700">{(po.completion || 100)}%</span>
                     </div>
-                    
-                    <div className="overflow-hidden rounded-xl border border-slate-100">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                          <tr>
-                            <th className="px-4 py-2">Item Description</th>
-                            <th className="px-4 py-2 text-right">Qty</th>
-                            <th className="px-4 py-2">Unit</th>
-                            <th className="px-4 py-2 text-right">Rate</th>
-                            <th className="px-4 py-2 text-right">Total</th>
-                            <th className="px-4 py-2">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {po.lineItems.map(li => (
-                            <tr key={li.id}>
-                              <td className="px-4 py-3 text-slate-700 font-medium">{li.description}</td>
-                              <td className="px-4 py-3 text-right font-mono">{li.quantity}</td>
-                              <td className="px-4 py-3">{li.unit}</td>
-                              <td className="px-4 py-3 text-right font-mono">{formatCurrency(li.rate)}</td>
-                              <td className="px-4 py-3 text-right font-bold text-slate-900 font-mono">{formatCurrency(li.amount)}</td>
-                              <td className="px-4 py-3">
-                                <span className={cn(
-                                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                  li.status === 'Received' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
-                                )}>
-                                  {li.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-bold uppercase">
+                      {po.location || 'Villa'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -435,7 +509,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       {page.id === '4.2.3' && renderPaymentCertificate()}
       {page.id === '4.2.4' && renderCumulativeTracking()}
       {page.id === '4.2.5' && renderDashboard()}
-      {page.id === '4.2.6' && renderPOList()}
+      {page.id === '4.2.6' && renderPOLog()}
 
       <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-blue-500 mt-0.5" />
