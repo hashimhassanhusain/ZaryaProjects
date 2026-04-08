@@ -1,6 +1,5 @@
 import express from 'express';
 import 'dotenv/config';
-import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { google } from 'googleapis';
@@ -584,49 +583,6 @@ app.get('/api/admin/drive-status', (req: any, res: any) => {
     hasParentFolder: !!parentId,
     parentFolderId: parentId
   });
-});
-
-// Gemini AI proxy — keeps the API key server-side
-app.post('/api/ai/analyze-document', upload.single('file'), async (req: any, res: any) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Secrets.' });
-  }
-
-  const { prompt, schema } = req.body;
-  const file = req.file;
-
-  if (!file || !prompt) {
-    return res.status(400).json({ error: 'Missing file or prompt.' });
-  }
-
-  try {
-    const base64Data = fs.readFileSync(file.path).toString('base64');
-    const mimeType = file.mimetype || 'application/pdf';
-
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inlineData: { data: base64Data, mimeType } }
-          ]
-        }
-      ],
-      config: {
-        responseMimeType: 'application/json',
-        ...(schema ? { responseSchema: JSON.parse(schema) } : {})
-      }
-    });
-
-    fs.unlinkSync(file.path);
-    res.json({ result: response.text });
-  } catch (err: any) {
-    if (req.file?.path) fs.unlinkSync(req.file.path);
-    res.status(500).json({ error: err.message });
-  }
 });
 
 // Catch-all for undefined API routes to prevent falling through to SPA fallback

@@ -421,8 +421,7 @@ export const getBreadcrumbs = (id: string): Page[] => {
 export const getFocusArea = (id: string): Page | undefined => {
   let current = pages.find(p => p.id === id);
   while (current && current.parentId) {
-    const parentId = current.parentId;
-    current = pages.find(p => p.id === parentId);
+    current = pages.find(p => p.id === current.parentId);
   }
   return current;
 };

@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
+import { GoogleGenAI, Type } from "@google/genai";
 
 export const WBSView: React.FC = () => {
   const { selectedProject } = useProject();
@@ -54,21 +55,37 @@ export const WBSView: React.FC = () => {
       });
       const base64Data = await base64Promise;
 
-      const prompt = `Analyze this project document and generate a comprehensive Work Breakdown Structure (WBS) for the project: ${selectedProject.name}.
-              The WBS should be hierarchical (Zone -> Area -> Building -> Floor).
-              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Floor, or Other), and parentTitle (if applicable).`;
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            parts: [
+              { text: `Analyze this project document and generate a comprehensive Work Breakdown Structure (WBS) for the project: ${selectedProject.name}. 
+              The WBS should be hierarchical (Zone -> Area -> Building -> Floor). 
+              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Floor, or Other), and parentTitle (if applicable).` },
+              { inlineData: { data: base64Data, mimeType: file.type } }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                type: { type: Type.STRING, enum: ['Zone', 'Area', 'Building', 'Floor', 'Other'] },
+                parentTitle: { type: Type.STRING }
+              },
+              required: ['title', 'type']
+            }
+          }
+        }
+      });
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('prompt', prompt);
-
-      const res = await fetch('/api/ai/analyze-document', { method: 'POST', body: formData });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Server AI request failed');
-      }
-      const { result } = await res.json();
-      const generatedWbs = JSON.parse(result || '[]');
+      const generatedWbs = JSON.parse(response.text || '[]');
       
       // Map to store created IDs by title to handle hierarchy
       const titleToId: Record<string, string> = {};

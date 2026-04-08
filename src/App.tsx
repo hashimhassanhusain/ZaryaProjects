@@ -238,7 +238,7 @@ export default function App() {
           const userRef = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
-            const isAdminEmail = user.email === import.meta.env.VITE_ADMIN_EMAIL;
+            const isAdminEmail = user.email === 'hashim.h.husain@gmail.com';
             await setDoc(userRef, {
               uid: user.uid,
               name: user.displayName || 'New User',

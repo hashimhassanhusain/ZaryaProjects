@@ -13,6 +13,7 @@ import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GoogleGenAI, Type } from "@google/genai";
 
 export const BOQView: React.FC = () => {
   const { selectedProject } = useProject();
@@ -112,6 +113,22 @@ export const BOQView: React.FC = () => {
     setIsAnalyzing(true);
     
     try {
+      // Read file as base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const base64Data = await base64Promise;
+
+      // Initialize Gemini
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const model = "gemini-3-flash-preview";
+
       const prompt = `Extract all Bill of Quantities (BOQ) items from the provided document.
       For each item, identify:
       - MasterFormat 16 Divisions ID (e.g., '01', '03', '09')
@@ -120,23 +137,48 @@ export const BOQView: React.FC = () => {
       - Quantity (number)
       - Unit (e.g., 'm3', 'ton', 'm2', 'LS')
       - Unit Rate (number, in IQD)
-
+      
       If Quantity, Unit, or Rate are not explicitly listed but a Total Amount is provided, set Quantity to 1, Unit to 'LS', and Rate to the Total Amount.
       If a row represents a sub-item or a detail, include it as a separate item.
       Return the result as a JSON array of objects.
       The document may have multiple pages, please extract everything.`;
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('prompt', prompt);
+      const response = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: file.type || 'application/pdf'
+                }
+              }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                division: { type: Type.STRING, description: "MasterFormat 16 Divisions ID" },
+                workPackage: { type: Type.STRING, description: "Work Package name" },
+                description: { type: Type.STRING, description: "Detailed description of the item" },
+                quantity: { type: Type.NUMBER, description: "Quantity of the item" },
+                unit: { type: Type.STRING, description: "Unit of measurement" },
+                rate: { type: Type.NUMBER, description: "Unit rate in IQD" }
+              },
+              required: ["division", "workPackage", "description", "quantity", "unit", "rate"]
+            }
+          }
+        }
+      });
 
-      const res = await fetch('/api/ai/analyze-document', { method: 'POST', body: formData });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Server AI request failed');
-      }
-      const { result } = await res.json();
-      const extractedItems = JSON.parse(result || "[]");
+      const extractedItems = JSON.parse(response.text || "[]");
       
       if (extractedItems.length === 0) {
         alert("No items could be extracted from the PDF. Please ensure it's a valid BOQ document.");
