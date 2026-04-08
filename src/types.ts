@@ -31,10 +31,19 @@ export interface WBSLevel {
   projectId: string;
   parentId?: string;
   title: string;
-  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Other';
+  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Division' | 'Other';
   level: number; // 1, 2, 3...
   code: string; // e.g. Z1, Z1-A1
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
+  plannedStart?: string;
+  plannedFinish?: string;
+  plannedDuration?: number;
+  actualStart?: string;
+  actualFinish?: string;
+  actualDuration?: number;
+  plannedCost?: number;
+  actualCost?: number;
+  progress?: number;
 }
 
 export interface POLineItem {
@@ -89,15 +98,17 @@ export interface ActivityDependency {
 export interface Activity {
   id: string;
   projectId: string;
-  wbsId: string;
+  wbsId: string; // This is the Floor ID
+  divisionId?: string; // Link to Division WBS node
   boqItemId?: string; // Link to BOQ item
   workPackage: string;
   description: string;
   unit: string;
   quantity: number;
   rate: number;
-  amount: number;
-  actualAmount?: number; // Actual Cost
+  amount: number; // Manual Planned Cost
+  plannedCost?: number; // Rolled up from POs
+  actualAmount?: number; // Actual Cost (Rolled up from POs)
   division?: string; // Master Format 2024 Division Code (e.g. "01", "03")
   status: 'Planned' | 'In Progress' | 'Completed' | 'Converted to PO';
   activityType?: 'Task' | 'Milestone';

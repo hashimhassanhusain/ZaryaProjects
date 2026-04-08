@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
+import { rollupToParent } from '../services/rollupService';
 
 interface ZaryaPOTrackerProps {
   page: Page;
@@ -176,7 +177,12 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
       await setDoc(doc(db, 'purchaseOrders', poData.id), poData);
 
-      // Sync with Activity
+      // Trigger rollup from PO level
+      if (poData.workPackageId) {
+        await rollupToParent('po', poData.workPackageId);
+      }
+
+      // Sync with Activity (Work Package) - This is partially redundant now with rollup but good for immediate UI feedback
       if (poData.activityId) {
         const activityRef = doc(db, 'activities', poData.activityId);
         await updateDoc(activityRef, {

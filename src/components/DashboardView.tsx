@@ -114,23 +114,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
             const focusArea = getFocusArea(page.id);
             const parent = getParent(page.id);
             return (
-              <div className="flex items-center gap-2 text-slate-400 font-medium mb-1">
+              <div className="flex items-center gap-2 text-sm font-medium text-blue-600 mb-1 uppercase tracking-wider">
                 {focusArea && focusArea.id !== page.id && (
                   <>
                     <span>{focusArea.title}</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
                   </>
                 )}
                 {parent && parent.id !== focusArea?.id && parent.id !== page.id && (
                   <>
                     <span>{parent.title}</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
                   </>
                 )}
               </div>
             );
           })()}
-          <h2 className="text-3xl font-semibold text-slate-900 tracking-tight mb-2">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
             {page.title}
           </h2>
         <p className="text-slate-500 max-w-2xl font-medium">{page.summary}</p>
@@ -170,7 +170,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   )}>
                     {loc.type}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{loc.code}</span>
                 </div>
                 <div className="text-xl font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
                 <div className="text-sm font-bold text-emerald-600 font-mono">{formatCurrency(loc.total)}</div>

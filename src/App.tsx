@@ -110,7 +110,7 @@ const PageRenderer = () => {
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isActivityListPage = page.id === '2.3.3';
-  const isSchedulePage = page.id === '2.3.7' || page.id === '2.3';
+  const isSchedulePage = page.id === '2.3.7';
   const isAssumptionLogPage = page.id === '2.2.1';
   const isMilestoneListPage = page.id === '2.3.5';
   const isPoliciesPage = page.id === '1.1.2';

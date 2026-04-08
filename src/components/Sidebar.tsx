@@ -57,7 +57,7 @@ export const Sidebar: React.FC = () => {
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('domain');
+  const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('focus');
   const { sidebarWidth, setSidebarWidth } = useUI();
   const [isResizing, setIsResizing] = useState(false);
 
@@ -419,6 +419,15 @@ export const Sidebar: React.FC = () => {
 
       <div className="flex bg-white/5 p-1 rounded-xl mb-6">
         <button
+          onClick={() => setViewMode('focus')}
+          className={cn(
+            "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
+            viewMode === 'focus' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+          )}
+        >
+          HIERARCHY
+        </button>
+        <button
           onClick={() => setViewMode('domain')}
           className={cn(
             "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
@@ -434,7 +443,7 @@ export const Sidebar: React.FC = () => {
             viewMode === 'files' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          EXPLORER
+          DRIVE
         </button>
       </div>
       
