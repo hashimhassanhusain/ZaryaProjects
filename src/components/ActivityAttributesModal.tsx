@@ -118,7 +118,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     }));
   };
 
-  const updatePredecessor = (index: number, field: keyof ActivityDependency, value: any) => {
+  const updatePredecessor = (index: number, field: keyof ActivityDependency, value: ActivityDependency[keyof ActivityDependency]) => {
     setFormData(prev => {
       const newPredecessors = [...(prev.predecessors || [])];
       newPredecessors[index] = { ...newPredecessors[index], [field]: value };
@@ -170,11 +170,12 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       }
     });
 
-    if (latestStart) {
-      const startStr = latestStart.toISOString().split('T')[0];
+    if (latestStart !== null) {
+      const resolvedStart: Date = latestStart;
+      const startStr = resolvedStart.toISOString().split('T')[0];
       const dur = formData.duration || 0;
-      const finishDate = new Date(latestStart);
-      finishDate.setDate(latestStart.getDate() + dur);
+      const finishDate = new Date(resolvedStart);
+      finishDate.setDate(resolvedStart.getDate() + dur);
       const finishStr = finishDate.toISOString().split('T')[0];
 
       setFormData(prev => ({
