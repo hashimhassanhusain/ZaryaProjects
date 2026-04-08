@@ -26,6 +26,7 @@ import { auth, db } from '../firebase';
 import { signOut, User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
+import { useUI } from '../context/UIContext';
 
 interface SidebarProps {
   onToggleRtl?: () => void;
@@ -57,7 +58,7 @@ export const Sidebar: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('domain');
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const { sidebarWidth, setSidebarWidth } = useUI();
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
@@ -393,13 +394,18 @@ export const Sidebar: React.FC = () => {
   return (
     <aside 
       style={{ width: sidebarWidth }}
-      className="h-screen bg-(--color-sidebar) border-r border-white/10 p-4 flex flex-col relative group/sidebar shrink-0"
+      className="h-screen bg-slate-900 border-r border-white/10 p-4 flex flex-col relative group/sidebar shrink-0"
     >
       {/* Resize Handle */}
       <div
         onMouseDown={() => setIsResizing(true)}
-        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors z-50"
-      />
+        className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 transition-all z-50 group-hover/sidebar:bg-white/5"
+      >
+        <div className={cn(
+          "absolute right-0 top-0 w-0.5 h-full transition-colors",
+          isResizing ? "bg-blue-500" : "group-hover:bg-blue-500/30"
+        )} />
+      </div>
       <div className="relative mb-6 mt-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
         <input

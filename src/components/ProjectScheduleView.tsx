@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getParent, masterFormatDivisions } from '../data';
-import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder } from '../types';
+import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder, Vendor } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, where, setDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
+import { ActivityListView } from './ActivityListView';
+import { MilestoneListView } from './MilestoneListView';
 import { 
   Calendar, Clock, Database, ChevronRight, ChevronDown,
   Loader2, Edit2, Search, Filter, Download, Printer,
   BarChart3, DollarSign, CheckCircle2, AlertCircle,
-  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2
+  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2,
+  ZoomIn, ZoomOut, ShoppingCart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
@@ -18,8 +22,13 @@ interface ProjectScheduleViewProps {
   page: Page;
 }
 
+type ZoomLevel = 'day' | 'week' | 'month' | 'quarter';
+type ScheduleTab = 'gantt' | 'activities' | 'milestones';
+type ViewLevel = 'wbs' | 'masterformat' | 'workpackage' | 'po' | 'poitem';
+
 export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -27,8 +36,96 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedWbs, setExpandedWbs] = useState<Record<string, boolean>>({});
-  const [viewMode, setViewMode] = useState<'table' | 'gantt'>('gantt');
+  const [activeTab, setActiveTab] = useState<ScheduleTab>('gantt');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('month');
+  const [viewLevel, setViewLevel] = useState<ViewLevel>('masterformat');
+  const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showColumnsMenu, setShowColumnsMenu] = useState(false);
+
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    plannedStart: true,
+    plannedDuration: true,
+    plannedFinish: true,
+    actualStart: true,
+    actualDuration: true,
+    actualFinish: true,
+    progress: true,
+    supplier: true,
+    plannedCost: true,
+    poCost: true,
+    actualCost: true
+  });
+
+  const [activityColWidth, setActivityColWidth] = useState(350);
+  const [isResizingCol, setIsResizingCol] = useState(false);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    activityWbs: 250,
+    plannedStart: 100,
+    actualStart: 100,
+    plannedDuration: 80,
+    actualDuration: 80,
+    plannedFinish: 100,
+    actualFinish: 100,
+    progress: 80,
+    supplier: 150,
+    plannedCost: 100,
+    poCost: 100,
+    actualCost: 100
+  });
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+
+  // Refs for scrolling and dependency lines
+  const containerRef = useRef<HTMLDivElement>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const ganttContainerRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>, source: 'left' | 'right') => {
+    if (source === 'left' && rightPanelRef.current) {
+      rightPanelRef.current.scrollTop = e.currentTarget.scrollTop;
+    } else if (source === 'right' && leftPanelRef.current) {
+      leftPanelRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizingCol && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const newWidth = e.clientX - rect.left;
+        if (newWidth > 150 && newWidth < 1600) {
+          setActivityColWidth(newWidth);
+        }
+      } else if (resizingColumn) {
+        setColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: Math.max(50, prev[resizingColumn] + e.movementX)
+        }));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingCol(false);
+      setResizingColumn(null);
+    };
+
+    if (isResizingCol || resizingColumn) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingCol]);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -62,13 +159,565 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
       }
     );
 
+    const vendorUnsubscribe = onSnapshot(
+      query(collection(db, 'vendors'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setVendors(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Vendor)));
+      }
+    );
+
     return () => {
       actUnsubscribe();
       wbsUnsubscribe();
       poUnsubscribe();
       boqUnsubscribe();
+      vendorUnsubscribe();
     };
   }, [selectedProject]);
+
+  const generateFromBOQ = async () => {
+    if (!selectedProject || boqItems.length === 0) return;
+    setIsGenerating(true);
+
+    try {
+      for (const item of boqItems) {
+        const existing = activities.find(a => a.description === item.description && a.workPackage === item.workPackage);
+        if (existing) continue;
+
+        const activity: Activity = {
+          id: crypto.randomUUID(),
+          projectId: selectedProject.id,
+          wbsId: item.wbsId || '',
+          workPackage: item.workPackage,
+          description: item.description,
+          unit: item.unit,
+          quantity: item.quantity,
+          rate: item.rate,
+          amount: item.amount,
+          division: item.division || '01',
+          status: 'Planned',
+          percentComplete: 0
+        };
+        await setDoc(doc(db, 'activities', activity.id), activity);
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'activities');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const getDateColor = (actual: string | undefined, planned: string | undefined) => {
+    if (!actual || !planned || actual === '-' || planned === 'TBD') return 'text-slate-500';
+    const aDate = new Date(actual);
+    const pDate = new Date(planned);
+    return aDate <= pDate ? 'text-emerald-600' : 'text-orange-500';
+  };
+
+  const getDurationColor = (actual: number | undefined, planned: number | undefined) => {
+    if (actual === undefined || planned === undefined) return 'text-slate-500';
+    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
+  };
+
+  const getCostColor = (actual: number | undefined, planned: number | undefined) => {
+    if (actual === undefined || planned === undefined) return 'text-slate-900';
+    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
+  };
+
+  const renderBar = (activity: Activity) => {
+    if (!activity.startDate || !activity.finishDate) return null;
+    
+    const startOffset = getDayOffset(activity.startDate);
+    const duration = Math.ceil((new Date(activity.finishDate).getTime() - new Date(activity.startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1;
+    const progress = getProgress(activity);
+    const isMilestone = activity.duration === 0;
+
+    return (
+      <div 
+        className="relative h-6 flex items-center group/bar"
+        style={{ 
+          marginLeft: `${startOffset * dayWidth}px`,
+          width: `${Math.max(dayWidth, duration * dayWidth)}px`
+        }}
+      >
+        {/* Planned Bar */}
+        <div className={cn(
+          "absolute inset-y-1 rounded-full opacity-30",
+          activity.isCritical ? "bg-red-200" : "bg-blue-200"
+        )} style={{ width: '100%' }} />
+        
+        {/* Actual Progress Bar */}
+        <div 
+          className={cn(
+            "absolute inset-y-1 rounded-full shadow-sm transition-all",
+            activity.isCritical ? "bg-red-500" : "bg-blue-500"
+          )}
+          style={{ width: `${progress}%` }}
+        />
+
+        {/* Milestone Marker */}
+        {isMilestone && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rotate-45 w-3 h-3 bg-red-600 shadow-sm" />
+        )}
+
+        {/* Label */}
+        <div className="absolute left-full ml-2 opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+          <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-xl flex items-center gap-2">
+            <span className="font-bold">{activity.description}</span>
+            <span className="text-slate-400">|</span>
+            <span className="text-blue-300">{progress}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderScheduleContent = () => {
+    if (viewLevel === 'wbs') {
+      return wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
+        <WbsRow 
+          key={wbs.id}
+          wbs={wbs}
+          allWbs={wbsLevels}
+          activities={activities}
+          boqItems={boqItems}
+          expanded={expandedWbs}
+          expandedActivities={expandedActivities}
+          onToggle={toggleWbs}
+          onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+          getProgress={getProgress}
+          searchQuery={searchQuery}
+          activeTab={activeTab}
+          purchaseOrders={purchaseOrders}
+          vendors={vendors}
+          calculateWbsProgress={calculateWbsProgress}
+          calculateDivisionProgress={calculateDivisionProgress}
+          navigate={navigate}
+          setEditingActivity={setEditingActivity}
+          rowRefs={rowRefs}
+          visibleColumns={visibleColumns}
+          activityColWidth={activityColWidth}
+          columnWidths={columnWidths}
+        />
+      ));
+    }
+
+    if (viewLevel === 'masterformat') {
+      const activitiesByDiv: Record<string, Activity[]> = {};
+      activities.forEach(act => {
+        const div = act.division || '01';
+        if (!activitiesByDiv[div]) activitiesByDiv[div] = [];
+        activitiesByDiv[div].push(act);
+      });
+
+      return masterFormatDivisions.filter(div => activitiesByDiv[div.id]).map(div => {
+        const divActivities = activitiesByDiv[div.id];
+        const divKey = `mf-${div.id}`;
+        const isExpanded = expandedWbs[divKey] ?? true;
+        const divProgress = calculateDivisionProgress(divActivities);
+
+        return (
+          <React.Fragment key={div.id}>
+            <div 
+              className="h-10 flex items-center bg-slate-50/50 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100"
+              onClick={() => toggleWbs(divKey)}
+            >
+              <div className="flex items-center h-full divide-x divide-slate-200">
+                <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs }}>
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />}
+                  <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
+                  <span className="text-xs font-bold text-slate-700 truncate">{div.id} {div.title}</span>
+                </div>
+                {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full" />}
+                {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full" />}
+                {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full" />}
+                {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full" />}
+                {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full" />}
+                {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full" />}
+                {visibleColumns.progress && (
+                  <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+                    <span className="text-[10px] font-bold text-blue-600 mb-0.5">{divProgress}%</span>
+                    <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${divProgress}%` }} />
+                    </div>
+                  </div>
+                )}
+                {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
+                {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900">
+                  {formatCurrency(divActivities.reduce((sum, a) => sum + a.amount, 0))}
+                </div>}
+                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
+                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600">
+                  {formatCurrency(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0))}
+                </div>}
+              </div>
+            </div>
+            {isExpanded && divActivities.map(act => (
+              <ActivityRow 
+                key={act.id}
+                act={act}
+                wbsLevel={1}
+                columnWidths={columnWidths}
+                visibleColumns={visibleColumns}
+                purchaseOrders={purchaseOrders}
+                vendors={vendors}
+                setEditingActivity={setEditingActivity}
+                onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+                isActExpanded={expandedActivities[act.id]}
+                navigate={navigate}
+                rowRefs={rowRefs}
+                activityColWidth={activityColWidth}
+                getProgress={getProgress}
+                getDateColor={getDateColor}
+                getDurationColor={getDurationColor}
+                getCostColor={getCostColor}
+              />
+            ))}
+          </React.Fragment>
+        );
+      });
+    }
+
+    if (viewLevel === 'workpackage') {
+      return activities.map(act => (
+        <ActivityRow 
+          key={act.id}
+          act={act}
+          wbsLevel={0}
+          columnWidths={columnWidths}
+          visibleColumns={visibleColumns}
+          purchaseOrders={purchaseOrders}
+          vendors={vendors}
+          setEditingActivity={setEditingActivity}
+          onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+          isActExpanded={expandedActivities[act.id]}
+          navigate={navigate}
+          rowRefs={rowRefs}
+          activityColWidth={activityColWidth}
+          getProgress={getProgress}
+          getDateColor={getDateColor}
+          getDurationColor={getDurationColor}
+          getCostColor={getCostColor}
+        />
+      ));
+    }
+
+    if (viewLevel === 'po') {
+      return purchaseOrders.map(po => {
+        const poActivities = activities.filter(a => a.poId === po.id);
+        const poKey = `po-${po.id}`;
+        const isExpanded = expandedWbs[poKey] ?? true;
+        
+        return (
+          <React.Fragment key={po.id}>
+            <div 
+              className="h-10 flex items-center bg-slate-50/50 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100"
+              onClick={() => toggleWbs(poKey)}
+            >
+              <div className="flex items-center h-full divide-x divide-slate-200">
+                <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs }}>
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />}
+                  <ShoppingCart className="w-3.5 h-3.5 text-blue-500 mr-2" />
+                  <span className="text-xs font-bold text-slate-700 truncate">PO: {po.id} - {po.supplier}</span>
+                </div>
+                {/* Simplified columns for PO level */}
+                <div className="flex-1" />
+                <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+                  <span className="text-[10px] font-bold text-blue-600 mb-0.5">{po.completion || 0}%</span>
+                  <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500" style={{ width: `${po.completion || 0}%` }} />
+                  </div>
+                </div>
+                <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600">
+                  {formatCurrency(po.amount)}
+                </div>
+              </div>
+            </div>
+            {isExpanded && poActivities.map(act => (
+              <ActivityRow 
+                key={act.id}
+                act={act}
+                wbsLevel={1}
+                columnWidths={columnWidths}
+                visibleColumns={visibleColumns}
+                purchaseOrders={purchaseOrders}
+                vendors={vendors}
+                setEditingActivity={setEditingActivity}
+                onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+                isActExpanded={expandedActivities[act.id]}
+                navigate={navigate}
+                rowRefs={rowRefs}
+                activityColWidth={activityColWidth}
+                getProgress={getProgress}
+                getDateColor={getDateColor}
+                getDurationColor={getDurationColor}
+                getCostColor={getCostColor}
+              />
+            ))}
+          </React.Fragment>
+        );
+      });
+    }
+
+    return null;
+  };
+
+  const renderGanttContent = () => {
+    if (viewLevel === 'wbs') {
+      return wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
+        <GanttRow 
+          key={wbs.id}
+          wbs={wbs}
+          allWbs={wbsLevels}
+          activities={activities}
+          expanded={expandedWbs}
+          expandedActivities={expandedActivities}
+          renderBar={renderBar}
+          rowRefs={rowRefs}
+          purchaseOrders={purchaseOrders}
+          visibleColumns={visibleColumns}
+        />
+      ));
+    }
+
+    if (viewLevel === 'masterformat') {
+      const activitiesByDiv: Record<string, Activity[]> = {};
+      activities.forEach(act => {
+        const div = act.division || '01';
+        if (!activitiesByDiv[div]) activitiesByDiv[div] = [];
+        activitiesByDiv[div].push(act);
+      });
+
+      return masterFormatDivisions.filter(div => activitiesByDiv[div.id]).map(div => {
+        const divActivities = activitiesByDiv[div.id];
+        const divKey = `mf-${div.id}`;
+        const isExpanded = expandedWbs[divKey] ?? true;
+
+        return (
+          <React.Fragment key={div.id}>
+            <div className="h-10 border-b border-slate-100" />
+            {isExpanded && divActivities.map(act => (
+              <div key={act.id} className="h-10 border-b border-slate-100 relative">
+                {renderBar(act)}
+              </div>
+            ))}
+          </React.Fragment>
+        );
+      });
+    }
+
+    if (viewLevel === 'workpackage') {
+      return activities.map(act => (
+        <div key={act.id} className="h-10 border-b border-slate-100 relative">
+          {renderBar(act)}
+        </div>
+      ));
+    }
+
+    if (viewLevel === 'po') {
+      return purchaseOrders.map(po => {
+        const poActivities = activities.filter(a => a.poId === po.id);
+        const poKey = `po-${po.id}`;
+        const isExpanded = expandedWbs[poKey] ?? true;
+        
+        return (
+          <React.Fragment key={po.id}>
+            <div className="h-10 border-b border-slate-100" />
+            {isExpanded && poActivities.map(act => (
+              <div key={act.id} className="h-10 border-b border-slate-100 relative">
+                {renderBar(act)}
+              </div>
+            ))}
+          </React.Fragment>
+        );
+      });
+    }
+
+    return null;
+  };
+
+  const handlePrint = async () => {
+    if (!selectedProject) return;
+    setIsPrinting(true);
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+
+      // Logo centered
+      try {
+        pdf.addImage(
+          'https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7',
+          'PNG', (pdfWidth / 2) - 20, 5, 40, 14
+        );
+      } catch(e) { /* skip if logo fails */ }
+
+      // Title
+      pdf.setFontSize(16);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('Project Schedule', 14, 28);
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`${selectedProject.name} [${selectedProject.code}]`, 14, 35);
+      pdf.setFontSize(8);
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pdfWidth - 14, 10, { align: 'right' });
+
+      // KPI Cards
+      const totalPlanned = activities.reduce((sum, a) => sum + (a.amount || 0), 0);
+      const totalActual  = activities.reduce((sum, a) => sum + (a.actualAmount || 0), 0);
+      const avgProgress  = activities.length > 0
+        ? Math.round(activities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / activities.length)
+        : 0;
+
+      const kpis = [
+        { label: 'Overall Progress', value: `${avgProgress}%`, color: [59, 130, 246], icon: '%' },
+        { label: 'Planned Cost', value: formatCurrency(totalPlanned), color: [30, 64, 175], icon: '$' },
+        { label: 'Actual Cost', value: formatCurrency(totalActual), color: [16, 185, 129], icon: 'A' },
+        { label: 'Activities', value: `${activities.length}`, color: [100, 116, 139], icon: '#' }
+      ];
+
+      const cardWidth = (pdfWidth - 28 - 9) / 4;
+      const cardY = 40;
+      const cardHeight = 25;
+
+      kpis.forEach((kpi, i) => {
+        const x = 14 + (i * (cardWidth + 3));
+        
+        // Card Background
+        pdf.setDrawColor(226, 232, 240);
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(x, cardY, cardWidth, cardHeight, 3, 3, 'FD');
+
+        // Icon Circle
+        pdf.setFillColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+        pdf.circle(x + 8, cardY + 8, 4, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(5);
+        pdf.text(kpi.icon, x + 8, cardY + 9.5, { align: 'center' });
+
+        // Value (Large)
+        pdf.setFontSize(12);
+        pdf.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(kpi.value, x + (cardWidth / 2), cardY + 14, { align: 'center' });
+
+        // Label (Small, below)
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 116, 139);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(kpi.label, x + (cardWidth / 2), cardY + 21, { align: 'center' });
+      });
+
+      // Activities table and Gantt Chart side-by-side using autoTable
+      const tableData = activities.map(act => {
+        const progress = getProgress(act);
+        const linkedPO = purchaseOrders.find(po => po.id === act.poId);
+        const poCost = linkedPO ? linkedPO.amount : 0;
+        const actualCost = (progress / 100) * poCost;
+        
+        return [
+          act.description || '',
+          act.startDate || 'TBD',
+          act.actualStartDate || '-',
+          `${act.duration || 0}d`,
+          `${act.actualDuration || 0}d`,
+          act.finishDate || 'TBD',
+          act.actualFinishDate || '-',
+          `${progress}%`,
+          formatCurrency(act.amount),
+          formatCurrency(actualCost),
+          '' // Empty column for Gantt Chart
+        ];
+      });
+
+      const ganttColWidth = 60; // Width for the Gantt column
+      
+      autoTable(pdf, {
+        startY: cardY + cardHeight + 10,
+        head: [['Activity', 'P. Start', 'A. Start', 'P. Dur', 'A. Dur', 'P. Finish', 'A. Finish', '%', 'P. Cost', 'A. Cost', 'Timeline']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 5, cellPadding: 1 },
+        headStyles: { 
+          fillColor: [30, 64, 175], 
+          textColor: 255,
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 15, halign: 'center' },
+          2: { cellWidth: 15, halign: 'center' },
+          3: { cellWidth: 10, halign: 'center' },
+          4: { cellWidth: 10, halign: 'center' },
+          5: { cellWidth: 15, halign: 'center' },
+          6: { cellWidth: 15, halign: 'center' },
+          7: { cellWidth: 10, halign: 'center' },
+          8: { cellWidth: 20, halign: 'right' },
+          9: { cellWidth: 20, halign: 'right' },
+          10: { cellWidth: ganttColWidth } // Gantt column
+        },
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 10) {
+            const act = activities[data.row.index];
+            if (!act || !act.startDate || !act.finishDate) return;
+
+            const cell = data.cell;
+            const padding = 1;
+            const chartX = cell.x + padding;
+            const chartY = cell.y + padding;
+            const chartWidth = cell.width - (padding * 2);
+            const chartHeight = cell.height - (padding * 2);
+
+            // Calculate offsets relative to project timeline
+            const projectStart = new Date(Math.min(...activities.filter(a => a.startDate).map(a => new Date(a.startDate!).getTime())));
+            const projectEnd = new Date(Math.max(...activities.filter(a => a.finishDate).map(a => new Date(a.finishDate!).getTime())));
+            const totalDays = Math.ceil((projectEnd.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+
+            const getX = (dateStr: string) => {
+              const date = new Date(dateStr);
+              const diff = date.getTime() - projectStart.getTime();
+              const days = diff / (1000 * 60 * 60 * 24);
+              return chartX + (days / totalDays) * chartWidth;
+            };
+
+            // Draw Planned Bar
+            const pStartX = getX(act.startDate);
+            const pEndX = getX(act.finishDate);
+            const pWidth = Math.max(1, pEndX - pStartX);
+            
+            pdf.setFillColor(219, 234, 254); // blue-100
+            pdf.rect(pStartX, chartY, pWidth, chartHeight / 2, 'F');
+
+            // Draw Actual Bar if exists
+            if (act.actualStartDate) {
+              const aStartX = getX(act.actualStartDate);
+              const aEndX = act.actualFinishDate ? getX(act.actualFinishDate) : getX(new Date().toISOString());
+              const aWidth = Math.max(1, aEndX - aStartX);
+              
+              const progress = getProgress(act);
+              const isAhead = new Date(act.actualStartDate) <= new Date(act.startDate!);
+              if (isAhead) {
+                pdf.setFillColor(16, 185, 129); // emerald-500
+              } else {
+                pdf.setFillColor(245, 158, 11); // amber-500
+              }
+              pdf.rect(aStartX, chartY + (chartHeight / 2), aWidth, chartHeight / 2, 'F');
+            }
+          }
+        }
+      });
+
+      pdf.save(`${selectedProject.code}_Schedule_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   const toggleWbs = (id: string) => {
     setExpandedWbs(prev => ({ ...prev, [id]: !prev[id] }));
@@ -110,25 +759,107 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
     return months;
   }, [projectDates]);
 
+  const getDayOffset = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const diffTime = date.getTime() - projectDates.start.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const timelineDays = useMemo(() => {
+    const days: Date[] = [];
+    let current = new Date(projectDates.start);
+    while (current <= projectDates.end) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  }, [projectDates]);
+
   const totalDays = useMemo(() => {
     const diffTime = Math.abs(projectDates.end.getTime() - projectDates.start.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }, [projectDates]);
 
+  const dayWidth = useMemo(() => {
+    switch (zoomLevel) {
+      case 'day': return 40;
+      case 'week': return 10;
+      case 'month': return 3;
+      case 'quarter': return 1;
+      default: return 40;
+    }
+  }, [zoomLevel]);
+
   const getProgress = (activity: Activity) => {
-    // Logic to link progress to POs if applicable
-    if (activity.status === 'Completed') return 100;
-    if (activity.status === 'In Progress') return 50;
+    if (activity.percentComplete !== undefined) return activity.percentComplete;
     
-    // Find linked PO line items to get more granular progress if available
+    // Fallback to PO status if no explicit progress
     const linkedPO = purchaseOrders.find(po => po.id === activity.poId);
     if (linkedPO) {
+      if (linkedPO.completion !== undefined) return linkedPO.completion;
       const lineItem = linkedPO.lineItems.find(li => li.description === activity.description);
       if (lineItem && lineItem.status === 'Completed') return 100;
       if (lineItem && lineItem.status === 'In Progress') return 50;
     }
+
+    if (activity.actualFinishDate) return 100;
+    if (activity.actualStartDate && activity.finishDate) {
+      const today = new Date();
+      const start = new Date(activity.actualStartDate);
+      const finish = new Date(activity.finishDate);
+      if (start >= finish) return 0;
+      const progress = Math.min(100, Math.round(((today.getTime() - start.getTime()) / (finish.getTime() - start.getTime())) * 100));
+      return Math.max(0, progress);
+    }
     
     return 0;
+  };
+
+  const calculateWbsProgress = (wbsId: string): number => {
+    const wbsActivities = activities.filter(a => a.wbsId === wbsId);
+    const children = wbsLevels.filter(w => w.parentId === wbsId);
+    
+    let totalAmount = wbsActivities.reduce((sum, a) => sum + a.amount, 0);
+    let weightedProgress = wbsActivities.reduce((sum, a) => sum + (a.amount * getProgress(a)), 0);
+    
+    children.forEach(child => {
+      const childActivities = activities.filter(a => a.wbsId === child.id);
+      const childAmount = childActivities.reduce((sum, a) => sum + a.amount, 0);
+      const childProgress = calculateWbsProgress(child.id);
+      totalAmount += childAmount;
+      weightedProgress += (childAmount * childProgress);
+    });
+    
+    return totalAmount > 0 ? Math.round(weightedProgress / totalAmount) : 0;
+  };
+
+  const calculateDivisionProgress = (divActivities: Activity[]) => {
+    const totalAmount = divActivities.reduce((sum, a) => sum + a.amount, 0);
+    const weightedProgress = divActivities.reduce((sum, a) => sum + (a.amount * getProgress(a)), 0);
+    return totalAmount > 0 ? Math.round(weightedProgress / totalAmount) : 0;
+  };
+
+  const todayOffset = useMemo(() => {
+    const today = new Date();
+    if (today < projectDates.start || today > projectDates.end) return null;
+    const offset = Math.ceil((today.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
+    return offset * dayWidth;
+  }, [projectDates, dayWidth]);
+
+  const updateActivityDates = async (id: string, start: string, finish: string) => {
+    try {
+      await updateDoc(doc(db, 'activities', id), { startDate: start, finishDate: finish });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `activities/${id}`);
+    }
+  };
+
+  const updateActivityProgress = async (id: string, progress: number) => {
+    try {
+      await updateDoc(doc(db, 'activities', id), { percentComplete: progress });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `activities/${id}`);
+    }
   };
 
   const handleSaveAttributes = async (updatedActivity: Activity) => {
@@ -142,70 +873,75 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
 
   const renderGanttBar = (activity: Activity) => {
     if (!activity.startDate || !activity.finishDate) return null;
-    
-    const start = new Date(activity.startDate);
-    const finish = new Date(activity.finishDate);
-    
-    const startOffset = Math.ceil((start.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
-    const duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const left = (startOffset / totalDays) * 100;
-    const width = (duration / totalDays) * 100;
-    const progress = getProgress(activity);
 
-    // Actual Bar Data
-    const actualStart = activity.actualStartDate ? new Date(activity.actualStartDate) : null;
-    const actualFinish = activity.actualFinishDate ? new Date(activity.actualFinishDate) : null;
-    let actualLeft = 0;
-    let actualWidth = 0;
+    const isMilestone = activity.duration === 0;
+    const startOffset = getDayOffset(activity.startDate);
+    const duration = activity.duration || 0;
+    const left = startOffset * dayWidth;
+    const width = duration * dayWidth;
 
-    if (actualStart && actualFinish) {
-      const actualStartOffset = Math.ceil((actualStart.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
-      const actualDur = Math.ceil((actualFinish.getTime() - actualStart.getTime()) / (1000 * 60 * 60 * 24));
-      actualLeft = (actualStartOffset / totalDays) * 100;
-      actualWidth = (actualDur / totalDays) * 100;
+    // Actual bar calculation
+    const actualStart = activity.actualStartDate || activity.startDate;
+    const actualFinish = activity.actualFinishDate || activity.finishDate;
+    const actualStartOffset = getDayOffset(actualStart);
+    const actualDuration = activity.actualDuration || duration;
+    const actualLeft = actualStartOffset * dayWidth;
+    const actualWidth = actualDuration * dayWidth;
+
+    const progress = activity.percentComplete || 0;
+
+    if (isMilestone) {
+      return (
+        <div className="relative h-12 flex items-center group">
+          <div 
+            className="absolute z-30 flex items-center"
+            style={{ left: `${left}px` }}
+          >
+            {/* Milestone Circle */}
+            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow-sm" />
+            
+            {/* Milestone Date Label */}
+            <div className="absolute left-6 text-[10px] font-bold text-red-600 whitespace-nowrap bg-white/80 px-1 rounded">
+              {activity.startDate}
+            </div>
+          </div>
+        </div>
+      );
     }
 
     return (
-      <div className="relative w-full h-10 flex flex-col justify-center gap-1">
-        {/* Planned Bar */}
+      <div className="relative h-12 flex flex-col justify-center group">
+        {/* Planned Bar (Grey) */}
         <div 
-          className="absolute h-3 bg-blue-100 rounded-sm border border-blue-200 group cursor-pointer hover:border-blue-400 transition-all flex items-center justify-between px-1 overflow-hidden top-1"
-          style={{ left: `${left}%`, width: `${width}%` }}
-          title={`Planned: ${activity.startDate} to ${activity.finishDate}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditingActivity(activity);
-          }}
+          className="absolute h-3 bg-slate-200 rounded-full border border-slate-300 z-10"
+          style={{ left: `${left}px`, width: `${width}px`, top: '10px' }}
         >
-          <div 
-            className="absolute inset-0 bg-blue-500 transition-all opacity-20"
-            style={{ width: `${progress}%` }}
-          />
-          <span className="text-[6px] font-bold text-blue-700 z-10 truncate">{activity.duration}d</span>
+          {/* Labels for Planned Bar */}
+          <div className="absolute -left-20 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 whitespace-nowrap pr-2">
+            {activity.startDate}
+          </div>
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-500 pointer-events-none">
+            {duration}d
+          </div>
+          <div className="absolute -right-20 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 whitespace-nowrap pl-2">
+            {activity.finishDate}
+          </div>
         </div>
 
-        {/* Actual Bar */}
-        {actualStart && actualFinish && (
+        {/* Actual Bar (Blue) */}
+        <div 
+          className="absolute h-3 bg-blue-500 rounded-full border border-blue-600 z-20 shadow-sm overflow-hidden"
+          style={{ left: `${actualLeft}px`, width: `${actualWidth}px`, top: '22px' }}
+        >
+          {/* Progress Overlay */}
           <div 
-            className="absolute h-3 bg-emerald-100 rounded-sm border border-emerald-200 group cursor-pointer hover:border-emerald-400 transition-all flex items-center justify-between px-1 overflow-hidden bottom-1"
-            style={{ left: `${actualLeft}%`, width: `${actualWidth}%` }}
-            title={`Actual: ${activity.actualStartDate} to ${activity.actualFinishDate}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditingActivity(activity);
-            }}
-          >
-            <div 
-              className="absolute inset-0 bg-emerald-500 transition-all opacity-40"
-              style={{ width: '100%' }}
-            />
-            <span className="text-[6px] font-bold text-emerald-800 z-10 truncate">ACTUAL</span>
+            className="h-full bg-blue-400/30"
+            style={{ width: `${progress}%` }}
+          />
+          {/* Progress Label */}
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-black text-white pointer-events-none">
+            {progress}%
           </div>
-        )}
-
-        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap text-[9px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          {progress}% Complete | {formatCurrency(activity.amount)}
         </div>
       </div>
     );
@@ -217,265 +953,330 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
     <div className="space-y-6 pb-20">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">Planning Focus Area</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{page.title}</h2>
+          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">
+            {getParent(page.id)?.title || 'Schedule Domain'}
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+            {getParent(page.id) && page.id !== '2.3' && (
+              <span className="text-slate-400 font-normal">{getParent(page.id)?.title} &gt; </span>
+            )}
+            {page.title}
+          </h2>
           <p className="text-slate-500">Comprehensive project timeline, WBS hierarchy, and performance tracking.</p>
         </div>
         <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
           <button 
-            onClick={() => setViewMode('table')}
+            onClick={() => setActiveTab('gantt')}
             className={cn(
               "px-4 py-2 rounded-lg text-xs font-bold transition-all",
-              viewMode === 'table' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            Table View
-          </button>
-          <button 
-            onClick={() => setViewMode('gantt')}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs font-bold transition-all",
-              viewMode === 'gantt' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              activeTab === 'gantt' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
             Gantt Chart
           </button>
+          <button 
+            onClick={() => setActiveTab('activities')}
+            className={cn(
+              "px-4 py-2 rounded-lg text-xs font-bold transition-all",
+              activeTab === 'activities' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            Activity List
+          </button>
+          <button 
+            onClick={() => setActiveTab('milestones')}
+            className={cn(
+              "px-4 py-2 rounded-lg text-xs font-bold transition-all",
+              activeTab === 'milestones' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            Milestones
+          </button>
         </div>
       </header>
 
-      {/* Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search activities or WBS..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><Filter className="w-4 h-4" /></button>
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><Download className="w-4 h-4" /></button>
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><Printer className="w-4 h-4" /></button>
-        </div>
-        <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block" />
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Actual</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded-full" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Planned</span>
-          </div>
-        </div>
-      </div>
+      {activeTab === 'gantt' && (
+        <>
+          {/* Toolbar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search activities or WBS..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+              <button 
+                onClick={() => setZoomLevel('day')}
+                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'day' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              >Day</button>
+              <button 
+                onClick={() => setZoomLevel('week')}
+                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'week' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              >Week</button>
+              <button 
+                onClick={() => setZoomLevel('month')}
+                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'month' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              >Month</button>
+              <button 
+                onClick={() => setZoomLevel('quarter')}
+                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'quarter' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              >Quarter</button>
+            </div>
 
-      {/* Main Content Area */}
-      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col">
-        <div className="flex overflow-x-auto relative">
-          {/* Relationship Lines SVG Overlay */}
-          {viewMode === 'gantt' && (
-            <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full">
-              <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
-                </marker>
-              </defs>
-              {(() => {
-                const visibleActivities: { id: string, top: number, left: number, width: number }[] = [];
-                let currentRow = 0;
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+                <select 
+                  value={viewLevel}
+                  onChange={(e) => setViewLevel(e.target.value as ViewLevel)}
+                  className="bg-transparent border-none text-[10px] font-bold text-slate-600 px-3 py-1.5 focus:ring-0 cursor-pointer outline-none"
+                >
+                  <option value="wbs">WBS Level</option>
+                  <option value="masterformat">MasterFormat Level</option>
+                  <option value="workpackage">Work Package Level</option>
+                  <option value="po">Purchase Order Level</option>
+                  <option value="poitem">PO Items Level</option>
+                </select>
+              </div>
+
+              <div className="relative">
+                <button 
+                  onClick={() => setShowColumnsMenu(!showColumnsMenu)}
+                  className={cn(
+                    "p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1",
+                    showColumnsMenu && "bg-slate-100 text-blue-600"
+                  )}
+                >
+                  <Filter className="w-4 h-4" />
+                  <span className="text-[10px] font-bold">Columns</span>
+                </button>
                 
-                const processWbs = (wbsId: string | undefined, level: number) => {
-                  const currentWbs = wbsLevels.filter(w => w.parentId === wbsId);
-                  currentWbs.forEach(w => {
-                    currentRow++; // WBS Row
-                    if (expandedWbs[w.id]) {
-                      processWbs(w.id, level + 1);
-                      const wbsActs = activities.filter(a => a.wbsId === w.id);
-                      
-                      // Group by division
-                      const groups: Record<string, Activity[]> = {};
-                      wbsActs.forEach(act => {
-                        const div = act.division || '01';
-                        if (!groups[div]) groups[div] = [];
-                        groups[div].push(act);
-                      });
-                      const activeDivs = Object.keys(groups).sort();
-
-                      activeDivs.forEach(divId => {
-                        currentRow++; // Division Row
-                        const divKey = `${w.id}-${divId}`;
-                        if (expandedWbs[divKey] ?? true) {
-                          groups[divId].forEach(act => {
-                            if (act.startDate && act.finishDate) {
-                              const start = new Date(act.startDate);
-                              const finish = new Date(act.finishDate);
-                              const startOffset = Math.ceil((start.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
-                              const duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-                              
-                              visibleActivities.push({
-                                id: act.id,
-                                top: currentRow * 40 + 40 + 8, // 40 is row height, 40 is header, 8 is bar offset
-                                left: (startOffset / totalDays) * 100,
-                                width: (duration / totalDays) * 100
-                              });
-                            }
-                            currentRow++; // Activity Row
-                          });
-                        }
-                      });
-                    }
-                  });
-                };
-
-                processWbs(undefined, 0);
-
-                return activities.flatMap(act => {
-                  if (!act.predecessors || act.predecessors.length === 0) return [];
-                  
-                  return act.predecessors.map((dep, idx) => {
-                    const pred = visibleActivities.find(a => a.id === dep.id);
-                    const curr = visibleActivities.find(a => a.id === act.id);
-                    
-                    if (!pred || !curr) return null;
-
-                    let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-
-                    switch (dep.type) {
-                      case 'FS':
-                        x1 = pred.left + pred.width;
-                        y1 = pred.top + 6;
-                        x2 = curr.left;
-                        y2 = curr.top + 6;
-                        break;
-                      case 'SS':
-                        x1 = pred.left;
-                        y1 = pred.top + 6;
-                        x2 = curr.left;
-                        y2 = curr.top + 6;
-                        break;
-                      case 'FF':
-                        x1 = pred.left + pred.width;
-                        y1 = pred.top + 6;
-                        x2 = curr.left + curr.width;
-                        y2 = curr.top + 6;
-                        break;
-                      case 'SF':
-                        x1 = pred.left;
-                        y1 = pred.top + 6;
-                        x2 = curr.left + curr.width;
-                        y2 = curr.top + 6;
-                        break;
-                    }
-
-                    return (
-                      <g key={`link-${act.id}-${dep.id}-${idx}`}>
-                        <path 
-                          d={`M ${x1}% ${y1} L ${x1 + 0.5}% ${y1} L ${x1 + 0.5}% ${y2} L ${x2}% ${y2}`}
-                          fill="none"
-                          stroke="#94a3b8"
-                          strokeWidth="1"
-                          markerEnd="url(#arrowhead)"
-                          className="opacity-40"
-                        />
-                      </g>
-                    );
-                  });
-                });
-              })()}
-            </svg>
-          )}
-
-          {/* Left Side: WBS & Activity Info */}
-          <div className="w-[400px] shrink-0 border-r border-slate-200 bg-slate-50/30">
-            <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 h-10 flex items-center px-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WBS / Activity Name</span>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {wbsLevels.filter(w => !w.parentId).map(rootWbs => (
-                <WbsRow 
-                  key={rootWbs.id} 
-                  wbs={rootWbs} 
-                  allWbs={wbsLevels} 
-                  activities={activities}
-                  boqItems={boqItems}
-                  expanded={expandedWbs}
-                  onToggle={toggleWbs}
-                  searchQuery={searchQuery}
-                  viewMode={viewMode}
-                  purchaseOrders={purchaseOrders}
-                  setEditingActivity={setEditingActivity}
-                />
-              ))}
+                {showColumnsMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowColumnsMenu(false)}
+                    />
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
+                      {Object.keys(visibleColumns).map(col => (
+                        <label key={col} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={visibleColumns[col]} 
+                            onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-xs font-medium text-slate-600 capitalize">{col.replace(/([A-Z])/g, ' $1')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <button 
+                onClick={handlePrint}
+                disabled={isPrinting}
+                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1"
+              >
+                {isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                <span className="text-[10px] font-bold">Print PDF</span>
+              </button>
             </div>
           </div>
 
-          {/* Right Side: Gantt Chart or Detailed Table */}
-          <div className="flex-1 overflow-x-auto">
-            {viewMode === 'gantt' ? (
-              <div className="min-w-[1000px]">
-                {/* Gantt Header */}
-                <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 h-10 flex">
-                  {timeScale.map((month, i) => (
+          <div 
+            ref={containerRef}
+            className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex h-[70vh] relative"
+          >
+            {/* Left Panel: WBS & Activity List */}
+            <div 
+              ref={leftPanelRef}
+              onScroll={(e) => handleScroll(e, 'left')}
+              style={{ width: activityColWidth }}
+              className="border-r border-slate-200 overflow-y-auto overflow-x-auto flex-shrink-0 relative bg-slate-50/30 no-scrollbar"
+            >
+              <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 h-12 flex items-center">
+                <div className="flex items-center h-full divide-x divide-slate-200">
+                  <div 
+                    style={{ width: columnWidths.activityWbs }}
+                    className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[300px] h-full flex items-center relative group"
+                  >
+                    Activity / WBS
                     <div 
-                      key={i} 
-                      className="border-r border-slate-200 flex-shrink-0 flex flex-col items-center justify-center"
-                      style={{ width: `${(month.days / totalDays) * 100}%` }}
+                      onMouseDown={(e) => { e.stopPropagation(); setResizingColumn('activityWbs'); }}
+                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
+                    />
+                  </div>
+                  {[
+                    { id: 'plannedStart', label: 'P. Start' },
+                    { id: 'actualStart', label: 'A. Start' },
+                    { id: 'plannedDuration', label: 'P. Dur' },
+                    { id: 'actualDuration', label: 'A. Dur' },
+                    { id: 'plannedFinish', label: 'P. Finish' },
+                    { id: 'actualFinish', label: 'A. Finish' },
+                    { id: 'progress', label: '%' },
+                    { id: 'supplier', label: 'Supplier' },
+                    { id: 'plannedCost', label: 'P. Cost', align: 'right' },
+                    { id: 'poCost', label: 'PO Cost', align: 'right' },
+                    { id: 'actualCost', label: 'A. Cost', align: 'right' }
+                  ].map(col => visibleColumns[col.id] && (
+                    <div 
+                      key={col.id} 
+                      style={{ width: columnWidths[col.id] }}
+                      className={cn(
+                        "px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest h-full flex items-center relative group",
+                        col.align === 'right' ? "justify-end text-right" : "justify-center text-center"
+                      )}
                     >
-                      <span className="text-[10px] font-bold text-slate-500">{month.name}</span>
+                      {col.label}
+                      <div 
+                        onMouseDown={(e) => { e.stopPropagation(); setResizingColumn(col.id); }}
+                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
+                      />
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {renderScheduleContent()}
+              </div>
+            </div>
+
+            {/* Main Middle Resize Handle */}
+            <div 
+              onMouseDown={() => setIsResizingCol(true)}
+              className={cn(
+                "absolute top-0 bottom-0 w-2 cursor-col-resize z-40 transition-all group/resize bg-slate-200/50 hover:bg-blue-500/30",
+                isResizingCol && "bg-blue-500 w-2.5 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+              )}
+              style={{ left: activityColWidth - 1 }}
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-slate-400/50 rounded-full group-hover/resize:bg-blue-400 transition-colors" />
+            </div>
+
+            {/* Right Panel: Gantt Chart & Details */}
+            <div 
+              ref={rightPanelRef}
+              onScroll={(e) => handleScroll(e, 'right')}
+              className="flex-1 overflow-auto relative custom-scrollbar"
+            >
+              <div ref={ganttContainerRef} className="min-w-full">
+                {/* Timeline Header */}
+                <div className="sticky top-0 z-20 bg-white border-b border-slate-200 flex h-12">
+                  {timelineDays.map((day, i) => {
+                    const isFirstOfMonth = day.getDate() === 1;
+                    const isMonday = day.getDay() === 1;
+                    const showLabel = zoomLevel === 'day' || (zoomLevel === 'week' && isMonday) || (zoomLevel === 'month' && isFirstOfMonth);
+
+                    return (
+                      <div 
+                        key={i}
+                        style={{ width: dayWidth, flexShrink: 0 }}
+                        className={cn(
+                          "border-r border-slate-100 flex flex-col justify-center items-center",
+                          isFirstOfMonth && "border-l-2 border-l-slate-300 bg-slate-50/50"
+                        )}
+                      >
+                        {showLabel && (
+                          <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">
+                            {zoomLevel === 'month' ? day.toLocaleString('default', { month: 'short' }) : day.getDate()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Relationship Lines SVG Overlay */}
+                <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full">
+                  <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                    </marker>
+                  </defs>
+                  {activities.flatMap(act => {
+                    if (!act.predecessors || act.predecessors.length === 0) return [];
+                    
+                    return act.predecessors.map((dep, idx) => {
+                      const predAct = activities.find(a => a.id === dep.id);
+                      if (!predAct || !predAct.startDate || !predAct.finishDate || !act.startDate) return null;
+
+                      const predRow = rowRefs.current.get(`gantt-${dep.id}`);
+                      const currRow = rowRefs.current.get(`gantt-${act.id}`);
+                      const container = ganttContainerRef.current;
+                      
+                      if (!predRow || !currRow || !container) return null;
+
+                      const containerRect = container.getBoundingClientRect();
+                      const predRect = predRow.getBoundingClientRect();
+                      const currRect = currRow.getBoundingClientRect();
+
+                      // Calculate relative Y positions
+                      const y1 = predRect.top - containerRect.top + 20;
+                      const y2 = currRect.top - containerRect.top + 20;
+
+                      // Calculate relative X positions based on timeline offsets
+                      const pFinishOff = getDayOffset(predAct.finishDate) * dayWidth;
+                      const pStartOff = getDayOffset(predAct.startDate) * dayWidth;
+                      const cStartOff = getDayOffset(act.startDate) * dayWidth;
+                      const cFinishOff = getDayOffset(act.finishDate!) * dayWidth;
+
+                      let d = "";
+                      switch (dep.type) {
+                        case 'FS':
+                          d = `M ${pFinishOff} ${y1} L ${pFinishOff + 10} ${y1} L ${pFinishOff + 10} ${y2} L ${cStartOff} ${y2}`;
+                          break;
+                        case 'SS':
+                          d = `M ${pStartOff} ${y1} L ${pStartOff - 10} ${y1} L ${pStartOff - 10} ${y2} L ${cStartOff} ${y2}`;
+                          break;
+                        case 'FF':
+                          d = `M ${pFinishOff} ${y1} L ${pFinishOff + 15} ${y1} L ${pFinishOff + 15} ${y2} L ${cFinishOff} ${y2}`;
+                          break;
+                        case 'SF':
+                          d = `M ${pStartOff} ${y1} L ${pStartOff - 15} ${y1} L ${pStartOff - 15} ${y2} L ${cFinishOff} ${y2}`;
+                          break;
+                        default:
+                          d = `M ${pFinishOff} ${y1} L ${pFinishOff + 10} ${y1} L ${pFinishOff + 10} ${y2} L ${cStartOff} ${y2}`;
+                      }
+
+                      return (
+                        <g key={`link-${act.id}-${dep.id}-${idx}`}>
+                          <path 
+                            d={d}
+                            fill="none"
+                            stroke={act.isCritical ? "#fca5a5" : "#94a3b8"}
+                            strokeWidth="1.5"
+                            markerEnd="url(#arrowhead)"
+                            className="opacity-60"
+                          />
+                        </g>
+                      );
+                    });
+                  })}
+                </svg>
+
                 {/* Gantt Rows */}
                 <div className="divide-y divide-slate-100">
-                  {wbsLevels.filter(w => !w.parentId).map(rootWbs => (
-                    <GanttRow 
-                      key={rootWbs.id} 
-                      wbs={rootWbs} 
-                      allWbs={wbsLevels} 
-                      activities={activities}
-                      expanded={expandedWbs}
-                      renderBar={renderGanttBar}
-                    />
-                  ))}
+                  {renderGanttContent()}
                 </div>
               </div>
-            ) : (
-              <div className="min-w-[1200px]">
-                <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 h-10 flex items-center px-6">
-                  <div className="grid grid-cols-10 w-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span className="col-span-2">Planned Dates</span>
-                    <span className="col-span-2">Actual Dates</span>
-                    <span>Duration</span>
-                    <span>MasterFormat</span>
-                    <span className="text-right">Planned Cost</span>
-                    <span className="text-right">Actual Cost</span>
-                    <span className="text-center">Progress</span>
-                    <span className="text-right">Status</span>
-                  </div>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {wbsLevels.filter(w => !w.parentId).map(rootWbs => (
-                    <TableDetailRow 
-                      key={rootWbs.id} 
-                      wbs={rootWbs} 
-                      allWbs={wbsLevels} 
-                      activities={activities}
-                      boqItems={boqItems}
-                      expanded={expandedWbs}
-                      purchaseOrders={purchaseOrders}
-                      setEditingActivity={setEditingActivity}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
+
+      {activeTab === 'activities' && (
+        <ActivityListView page={page} />
+      )}
+
+      {activeTab === 'milestones' && (
+        <MilestoneListView page={page} />
+      )}
 
       <AnimatePresence>
         {editingActivity && (
@@ -501,14 +1302,178 @@ interface WbsRowProps {
   activities: Activity[];
   boqItems: BOQItem[];
   expanded: Record<string, boolean>;
+  expandedActivities: Record<string, boolean>;
   onToggle: (id: string) => void;
+  onToggleActivity: (id: string) => void;
+  getProgress: (activity: Activity) => number;
   searchQuery: string;
-  viewMode: 'table' | 'gantt';
+  activeTab: ScheduleTab;
   purchaseOrders: PurchaseOrder[];
+  vendors: Vendor[];
+  calculateWbsProgress: (id: string) => number;
+  calculateDivisionProgress: (divActivities: Activity[]) => number;
+  navigate: (path: string, state?: any) => void;
   setEditingActivity: (act: Activity) => void;
+  rowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  visibleColumns: Record<string, boolean>;
+  activityColWidth: number;
+  columnWidths: Record<string, number>;
 }
 
-const WbsRow: React.FC<WbsRowProps> = ({ wbs, allWbs, activities, boqItems, expanded, onToggle, searchQuery, viewMode, purchaseOrders, setEditingActivity }) => {
+const ActivityRow: React.FC<{
+  act: Activity;
+  wbsLevel: number;
+  columnWidths: Record<string, number>;
+  visibleColumns: Record<string, boolean>;
+  purchaseOrders: PurchaseOrder[];
+  vendors: Vendor[];
+  setEditingActivity: (act: Activity) => void;
+  onToggleActivity: (id: string) => void;
+  isActExpanded: boolean;
+  navigate: (path: string, state?: any) => void;
+  rowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  activityColWidth: number;
+  getProgress: (act: Activity) => number;
+  getDateColor: (actual: string | undefined, planned: string | undefined) => string;
+  getDurationColor: (actual: number | undefined, planned: number | undefined) => string;
+  getCostColor: (actual: number | undefined, planned: number | undefined) => string;
+}> = ({ 
+  act, wbsLevel, columnWidths, visibleColumns, purchaseOrders, vendors, 
+  setEditingActivity, onToggleActivity, isActExpanded, navigate, rowRefs, 
+  activityColWidth, getProgress, getDateColor, getDurationColor, getCostColor 
+}) => {
+  const linkedPO = purchaseOrders.find(po => po.id === act.poId);
+  const progress = getProgress(act);
+  const poCost = linkedPO ? linkedPO.amount : 0;
+  const actualCost = (progress / 100) * poCost;
+  const isMilestone = act.duration === 0;
+
+  return (
+    <React.Fragment key={act.id}>
+      <div 
+        ref={el => { if (el) rowRefs.current.set(act.id, el); }}
+        className="h-10 flex items-center bg-white hover:bg-blue-50/30 transition-colors border-l-2 border-transparent hover:border-blue-500 cursor-pointer border-b border-slate-100"
+        onClick={() => setEditingActivity(act)}
+      >
+        <div className="flex items-center h-full divide-x divide-slate-200">
+          <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(wbsLevel + 1) * 16}px` }}>
+            <div className="flex items-center gap-2 mr-2">
+              {linkedPO ? (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleActivity(act.id);
+                  }}
+                  className="p-1 hover:bg-slate-100 rounded"
+                >
+                  {isActExpanded ? <ChevronDown className="w-3 h-3 text-blue-500" /> : <ChevronRight className="w-3 h-3 text-blue-500" />}
+                </button>
+              ) : (
+                <div className="w-5" />
+              )}
+              <div className={cn(
+                "w-4 h-4 rounded-full flex items-center justify-center",
+                isMilestone ? "bg-red-100" : "bg-blue-100"
+              )}>
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isMilestone ? "bg-red-500" : "bg-blue-500"
+                )} />
+              </div>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-[11px] font-medium truncate",
+                  isMilestone ? "text-red-600 font-bold" : "text-slate-600"
+                )}>{act.description}</span>
+                {act.predecessors && act.predecessors.length > 0 && <Link2 className="w-2.5 h-2.5 text-slate-400" title="Has Predecessors" />}
+                {linkedPO && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/page/4.2.3', { state: { editPOId: linkedPO.id } });
+                    }}
+                    className="p-1 hover:bg-blue-50 rounded transition-colors group/po"
+                    title={`Open PO: ${linkedPO.id}`}
+                  >
+                    <ShoppingCart className="w-2.5 h-2.5 text-blue-400 group-hover/po:text-blue-600" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{act.startDate || 'TBD'}</div>}
+          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualStartDate, act.startDate))}>{act.actualStartDate || '-'}</div>}
+          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center justify-center text-[9px] font-bold text-slate-500">{isMilestone ? '-' : `${act.duration || 0}d`}</div>}
+          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className={cn("h-full flex items-center justify-center text-[9px] font-bold", getDurationColor(act.actualDuration, act.duration))}>{isMilestone ? '-' : `${act.actualDuration || 0}d`}</div>}
+          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{isMilestone ? '-' : (act.finishDate || 'TBD')}</div>}
+          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualFinishDate, act.finishDate))}>{isMilestone ? '-' : (act.actualFinishDate || '-')}</div>}
+          {visibleColumns.progress && (
+            <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+              <span className="text-[10px] font-bold text-blue-600 mb-0.5">{progress}%</span>
+              <div className="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          )}
+          {visibleColumns.supplier && (
+            <div style={{ width: columnWidths.supplier }} className="h-full flex items-center px-2 text-[9px] text-slate-500 truncate">
+              {vendors.find(v => v.id === act.supplierId)?.name || linkedPO?.supplier || '-'}
+            </div>
+          )}
+          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatCurrency(act.amount)}</div>}
+          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatCurrency(poCost)}</div>}
+          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className={cn("h-full flex items-center justify-end px-2 text-[10px] font-bold font-mono", getCostColor(actualCost, poCost))}>{formatCurrency(actualCost)}</div>}
+        </div>
+      </div>
+
+      {isActExpanded && linkedPO && (
+        <div className="bg-slate-50/50 border-l-2 border-blue-200 ml-4">
+          {linkedPO.lineItems.map((li, liIdx) => (
+            <div 
+              key={li.id} 
+              className="h-8 flex items-center px-4 text-[10px] text-slate-500 hover:bg-slate-100 transition-colors border-b border-slate-50"
+            >
+              <div className="flex items-center h-full divide-x divide-slate-200">
+                <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: activityColWidth - 16, paddingLeft: `${(wbsLevel + 2) * 16}px` }}>
+                  <div className="w-3 h-3 rounded-full border border-slate-300 mr-2 flex items-center justify-center">
+                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
+                  </div>
+                  <span className="flex-1 truncate">{li.description}</span>
+                </div>
+                {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full" />}
+                {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full" />}
+                {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full" />}
+                {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full" />}
+                {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full" />}
+                {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full" />}
+                {visibleColumns.progress && (
+                  <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+                    <span className="text-[10px] font-bold text-emerald-600 mb-0.5">{li.completion || 0}%</span>
+                    <div className="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${li.completion || 0}%` }} />
+                    </div>
+                  </div>
+                )}
+                {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
+                {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full" />}
+                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 font-mono">{formatCurrency(li.amount)}</div>}
+                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 font-mono text-emerald-600">{formatCurrency((li.completion || 0) / 100 * li.amount)}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </React.Fragment>
+  );
+};
+const WbsRow: React.FC<WbsRowProps> = ({ 
+  wbs, allWbs, activities, boqItems, expanded, expandedActivities, onToggle, 
+  onToggleActivity, getProgress, searchQuery, activeTab, purchaseOrders, vendors, 
+  calculateWbsProgress, calculateDivisionProgress, navigate, setEditingActivity, 
+  rowRefs, visibleColumns, activityColWidth, columnWidths 
+}) => {
   const children = allWbs.filter(w => w.parentId === wbs.id);
   const wbsActivities = activities.filter(a => a.wbsId === wbs.id);
   const isExpanded = expanded[wbs.id];
@@ -530,21 +1495,63 @@ const WbsRow: React.FC<WbsRowProps> = ({ wbs, allWbs, activities, boqItems, expa
     return null;
   }
 
+  const getDateColor = (actual: string | undefined, planned: string | undefined) => {
+    if (!actual || !planned || actual === '-' || planned === 'TBD') return 'text-slate-500';
+    const aDate = new Date(actual);
+    const pDate = new Date(planned);
+    return aDate <= pDate ? 'text-emerald-600' : 'text-orange-500';
+  };
+
+  const getDurationColor = (actual: number | undefined, planned: number | undefined) => {
+    if (actual === undefined || planned === undefined) return 'text-slate-500';
+    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
+  };
+
+  const getCostColor = (actual: number | undefined, planned: number | undefined) => {
+    if (actual === undefined || planned === undefined) return 'text-slate-900';
+    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
+  };
+
+  const wbsProgress = calculateWbsProgress(wbs.id);
+  const wbsPlannedCost = wbsActivities.reduce((sum, a) => sum + a.amount, 0) + children.reduce((sum, c) => sum + activities.filter(a => a.wbsId === c.id).reduce((s, a) => s + a.amount, 0), 0);
+  const wbsActualCost = wbsActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0);
+
   return (
     <>
       <div 
         className={cn(
-          "h-10 flex items-center px-4 cursor-pointer hover:bg-slate-100 transition-colors",
+          "h-10 flex items-center cursor-pointer hover:bg-slate-100 transition-colors border-b border-slate-100",
           wbs.level === 1 ? "bg-slate-50/50" : ""
         )}
-        style={{ paddingLeft: `${wbs.level * 16}px` }}
         onClick={() => onToggle(wbs.id)}
       >
-        {(children.length > 0 || wbsActivities.length > 0) ? (
-          isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />
-        ) : <div className="w-6" />}
-        <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
-        <span className="text-xs font-bold text-slate-700 truncate">{wbs.code} {wbs.title}</span>
+        <div className="flex items-center h-full divide-x divide-slate-200">
+          <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${wbs.level * 16}px` }}>
+            {(children.length > 0 || wbsActivities.length > 0) ? (
+              isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />
+            ) : <div className="w-6" />}
+            <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
+            <span className="text-xs font-bold text-slate-700 truncate">{wbs.code} {wbs.title}</span>
+          </div>
+          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full" />}
+          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full" />}
+          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full" />}
+          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full" />}
+          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full" />}
+          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full" />}
+          {visibleColumns.progress && (
+            <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+              <span className="text-[10px] font-bold text-blue-600 mb-0.5">{wbsProgress}%</span>
+              <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500" style={{ width: `${wbsProgress}%` }} />
+              </div>
+            </div>
+          )}
+          {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
+          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatCurrency(wbsPlannedCost)}</div>}
+          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
+          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatCurrency(wbsActualCost)}</div>}
+        </div>
       </div>
       
       {isExpanded && (
@@ -557,54 +1564,194 @@ const WbsRow: React.FC<WbsRowProps> = ({ wbs, allWbs, activities, boqItems, expa
               activities={activities} 
               boqItems={boqItems}
               expanded={expanded} 
+              expandedActivities={expandedActivities}
               onToggle={onToggle}
+              onToggleActivity={onToggleActivity}
+              getProgress={getProgress}
               searchQuery={searchQuery}
-              viewMode={viewMode}
+              activeTab={activeTab}
               purchaseOrders={purchaseOrders}
+              vendors={vendors}
+              calculateWbsProgress={calculateWbsProgress}
+              calculateDivisionProgress={calculateDivisionProgress}
+              navigate={navigate}
               setEditingActivity={setEditingActivity}
+              rowRefs={rowRefs}
+              visibleColumns={visibleColumns}
+              activityColWidth={activityColWidth}
+              columnWidths={columnWidths}
             />
           ))}
           {activeDivisions.map(divId => {
             const division = masterFormatDivisions.find(d => d.id === divId);
             const divActivities = activitiesByDivision[divId];
             const divKey = `${wbs.id}-${divId}`;
-            const isDivExpanded = expanded[divKey] ?? true; // Default to expanded for divisions
+            const isDivExpanded = expanded[divKey] ?? true;
+            const divProgress = calculateDivisionProgress(divActivities);
 
             return (
               <React.Fragment key={divKey}>
                 <div 
-                  className="h-10 flex items-center px-4 bg-slate-50/30 hover:bg-slate-100 transition-colors cursor-pointer"
-                  style={{ paddingLeft: `${(wbs.level + 1) * 16}px` }}
+                  className="h-10 flex items-center bg-slate-50/30 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100"
                   onClick={() => onToggle(divKey)}
                 >
-                  {isDivExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
-                  <Database className="w-3 h-3 text-slate-400 mr-2" />
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    {divId} {division?.title || 'Unknown Division'}
-                  </span>
+                  <div className="flex items-center h-full divide-x divide-slate-200">
+                    <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(wbs.level + 1) * 16}px` }}>
+                      {isDivExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
+                      <Database className="w-3 h-3 text-slate-400 mr-2" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                        {divId} {division?.title || 'Unknown Division'}
+                      </span>
+                    </div>
+                    {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full" />}
+                    {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full" />}
+                    {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full" />}
+                    {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full" />}
+                    {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full" />}
+                    {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full" />}
+                    {visibleColumns.progress && (
+                      <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+                        <span className="text-[10px] font-bold text-blue-400 mb-0.5">{divProgress}%</span>
+                        <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-400" style={{ width: `${divProgress}%` }} />
+                        </div>
+                      </div>
+                    )}
+                    {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
+                    {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-400">
+                      {formatCurrency(divActivities.reduce((sum, a) => sum + a.amount, 0))}
+                    </div>}
+                    {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
+                    {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-400">
+                      {formatCurrency(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0))}
+                    </div>}
+                  </div>
                 </div>
                 
                 {isDivExpanded && divActivities.map(act => {
                   const boqItem = boqItems.find(b => b.id === act.boqItemId);
+                  const linkedPO = purchaseOrders.find(po => po.id === act.poId);
+                  const isActExpanded = expandedActivities[act.id];
+                  const progress = getProgress(act);
+                  const poCost = linkedPO ? linkedPO.amount : 0;
+                  const actualCost = (progress / 100) * poCost;
+                  const isMilestone = act.duration === 0;
+
                   return (
-                    <div 
-                      key={act.id} 
-                      className="h-10 flex items-center px-4 bg-white hover:bg-blue-50/30 transition-colors border-l-2 border-transparent hover:border-blue-500 cursor-pointer"
-                      style={{ paddingLeft: `${(wbs.level + 2) * 16}px` }}
-                      onClick={() => setEditingActivity(act)}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-medium text-slate-600 truncate">{act.description}</span>
-                          {act.predecessorId && <Link2 className="w-2.5 h-2.5 text-slate-400" title="Has Predecessor" />}
-                          {act.successorId && <ArrowRight className="w-2.5 h-2.5 text-slate-400" title="Has Successor" />}
+                    <React.Fragment key={act.id}>
+                      <div 
+                        ref={el => { if (el) rowRefs.current.set(act.id, el); }}
+                        className="h-10 flex items-center bg-white hover:bg-blue-50/30 transition-colors border-l-2 border-transparent hover:border-blue-500 cursor-pointer border-b border-slate-100"
+                        onClick={() => setEditingActivity(act)}
+                      >
+                        <div className="flex items-center h-full divide-x divide-slate-200">
+                          <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(wbs.level + 2) * 16}px` }}>
+                            <div className="flex items-center gap-2 mr-2">
+                              {linkedPO ? (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleActivity(act.id);
+                                  }}
+                                  className="p-1 hover:bg-slate-100 rounded"
+                                >
+                                  {isActExpanded ? <ChevronDown className="w-3 h-3 text-blue-500" /> : <ChevronRight className="w-3 h-3 text-blue-500" />}
+                                </button>
+                              ) : (
+                                <div className="w-5" />
+                              )}
+                              <div className={cn(
+                                "w-4 h-4 rounded-full flex items-center justify-center",
+                                isMilestone ? "bg-red-100" : "bg-blue-100"
+                              )}>
+                                <div className={cn(
+                                  "w-1.5 h-1.5 rounded-full",
+                                  isMilestone ? "bg-red-500" : "bg-blue-500"
+                                )} />
+                              </div>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "text-[11px] font-medium truncate",
+                                  isMilestone ? "text-red-600 font-bold" : "text-slate-600"
+                                )}>{act.description}</span>
+                                {act.predecessors && act.predecessors.length > 0 && <Link2 className="w-2.5 h-2.5 text-slate-400" title="Has Predecessors" />}
+                                {linkedPO && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate('/page/4.2.3', { state: { editPOId: linkedPO.id } });
+                                    }}
+                                    className="p-1 hover:bg-blue-50 rounded transition-colors group/po"
+                                    title={`Open PO: ${linkedPO.id}`}
+                                  >
+                                    <ShoppingCart className="w-2.5 h-2.5 text-blue-400 group-hover/po:text-blue-600" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{act.startDate || 'TBD'}</div>}
+                          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualStartDate, act.startDate))}>{act.actualStartDate || '-'}</div>}
+                          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center justify-center text-[9px] font-bold text-slate-500">{isMilestone ? '-' : `${act.duration || 0}d`}</div>}
+                          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className={cn("h-full flex items-center justify-center text-[9px] font-bold", getDurationColor(act.actualDuration, act.duration))}>{isMilestone ? '-' : `${act.actualDuration || 0}d`}</div>}
+                          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{isMilestone ? '-' : (act.finishDate || 'TBD')}</div>}
+                          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualFinishDate, act.finishDate))}>{isMilestone ? '-' : (act.actualFinishDate || '-')}</div>}
+                          {visibleColumns.progress && (
+                            <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
+                              <span className="text-[10px] font-bold text-blue-600 mb-0.5">{progress}%</span>
+                              <div className="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
+                              </div>
+                            </div>
+                          )}
+                          {visibleColumns.supplier && (
+                            <div style={{ width: columnWidths.supplier }} className="h-full flex items-center px-2 text-[9px] text-slate-500 truncate">
+                              {vendors.find(v => v.id === act.supplierId)?.name || linkedPO?.supplier || '-'}
+                            </div>
+                          )}
+                          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatCurrency(act.amount)}</div>}
+                          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatCurrency(poCost)}</div>}
+                          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className={cn("h-full flex items-center justify-end px-2 text-[10px] font-bold font-mono", getCostColor(actualCost, poCost))}>{formatCurrency(actualCost)}</div>}
                         </div>
-                        {boqItem && <span className="text-[8px] text-slate-400 font-mono truncate">{boqItem.division}</span>}
                       </div>
-                    </div>
+
+                      {isActExpanded && linkedPO && (
+                        <div className="bg-slate-50/50 border-l-2 border-blue-200 ml-4">
+                          {linkedPO.lineItems.map((li, liIdx) => (
+                            <div 
+                              key={li.id} 
+                              className="h-8 flex items-center px-4 text-[10px] text-slate-500 hover:bg-slate-100 transition-colors border-b border-slate-50"
+                            >
+                              <div className="flex items-center h-full divide-x divide-slate-200">
+                                <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: activityColWidth - 16, paddingLeft: `${(wbs.level + 3) * 16}px` }}>
+                                  <div className="w-3 h-3 rounded-full border border-slate-300 mr-2 flex items-center justify-center">
+                                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
+                                  </div>
+                                  <span className="flex-1 truncate">{li.description}</span>
+                                </div>
+                                {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full" />}
+                                {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full" />}
+                                {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full" />}
+                                {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full" />}
+                                {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full" />}
+                                {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full" />}
+                                {visibleColumns.progress && (
+                                  <div style={{ width: columnWidths.progress }} className="h-full flex items-center justify-center text-[9px] font-bold text-emerald-600">
+                                    {li.completion || 0}%
+                                  </div>
+                                )}
+                                {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
+                                {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full" />}
+                                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 font-mono">{formatCurrency(li.amount)}</div>}
+                                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 font-mono text-emerald-600">{formatCurrency((li.completion || 0) / 100 * li.amount)}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </React.Fragment>
@@ -621,10 +1768,14 @@ interface GanttRowProps {
   allWbs: WBSLevel[];
   activities: Activity[];
   expanded: Record<string, boolean>;
+  expandedActivities: Record<string, boolean>;
   renderBar: (activity: Activity) => React.ReactNode;
+  rowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  purchaseOrders: PurchaseOrder[];
+  visibleColumns: Record<string, boolean>;
 }
 
-const GanttRow: React.FC<GanttRowProps> = ({ wbs, allWbs, activities, expanded, renderBar }) => {
+const GanttRow: React.FC<GanttRowProps> = ({ wbs, allWbs, activities, expanded, expandedActivities, renderBar, rowRefs, purchaseOrders, visibleColumns }) => {
   const children = allWbs.filter(w => w.parentId === wbs.id);
   const wbsActivities = activities.filter(a => a.wbsId === wbs.id);
   const isExpanded = expanded[wbs.id];
@@ -643,11 +1794,22 @@ const GanttRow: React.FC<GanttRowProps> = ({ wbs, allWbs, activities, expanded, 
 
   return (
     <>
-      <div className={cn("h-10 border-b border-slate-50", wbs.level === 1 ? "bg-slate-50/50" : "")} />
+      <div className={cn("h-10 border-b border-slate-100", wbs.level === 1 ? "bg-slate-50/50" : "")} />
       {isExpanded && (
         <>
           {children.map(child => (
-            <GanttRow key={child.id} wbs={child} allWbs={allWbs} activities={activities} expanded={expanded} renderBar={renderBar} />
+            <GanttRow 
+              key={child.id} 
+              wbs={child} 
+              allWbs={allWbs} 
+              activities={activities} 
+              expanded={expanded} 
+              expandedActivities={expandedActivities}
+              renderBar={renderBar} 
+              rowRefs={rowRefs} 
+              purchaseOrders={purchaseOrders}
+              visibleColumns={visibleColumns}
+            />
           ))}
           {activeDivisions.map(divId => {
             const divActivities = activitiesByDivision[divId];
@@ -657,149 +1819,28 @@ const GanttRow: React.FC<GanttRowProps> = ({ wbs, allWbs, activities, expanded, 
             return (
               <React.Fragment key={divKey}>
                 {/* Division Header Row in Gantt */}
-                <div className="h-10 border-b border-slate-50 bg-slate-50/10" />
+                <div className="h-10 border-b border-slate-100 bg-slate-50/10" />
                 
-                {isDivExpanded && divActivities.map(act => (
-                  <div key={act.id} className="h-10 flex items-center px-4 bg-white relative">
-                    <div className="absolute inset-0 grid grid-cols-[repeat(100,1fr)] pointer-events-none opacity-10">
-                      {Array.from({ length: 20 }).map((_, i) => <div key={i} className="border-r border-slate-200" />)}
-                    </div>
-                    {renderBar(act)}
-                  </div>
-                ))}
-              </React.Fragment>
-            );
-          })}
-        </>
-      )}
-    </>
-  );
-};
-
-interface TableDetailRowProps {
-  wbs: WBSLevel;
-  allWbs: WBSLevel[];
-  activities: Activity[];
-  boqItems: BOQItem[];
-  expanded: Record<string, boolean>;
-  purchaseOrders: PurchaseOrder[];
-  setEditingActivity: (act: Activity) => void;
-}
-
-const TableDetailRow: React.FC<TableDetailRowProps> = ({ wbs, allWbs, activities, boqItems, expanded, purchaseOrders, setEditingActivity }) => {
-  const children = allWbs.filter(w => w.parentId === wbs.id);
-  const wbsActivities = activities.filter(a => a.wbsId === wbs.id);
-  const isExpanded = expanded[wbs.id];
-
-  const activitiesByDivision = useMemo(() => {
-    const groups: Record<string, Activity[]> = {};
-    wbsActivities.forEach(act => {
-      const div = act.division || '01';
-      if (!groups[div]) groups[div] = [];
-      groups[div].push(act);
-    });
-    return groups;
-  }, [wbsActivities]);
-
-  const activeDivisions = Object.keys(activitiesByDivision).sort();
-
-  const getProgress = (activity: Activity) => {
-    if (activity.status === 'Completed') return 100;
-    if (activity.status === 'In Progress') return 50;
-    const linkedPO = purchaseOrders.find(po => po.id === activity.poId);
-    if (linkedPO) {
-      const lineItem = linkedPO.lineItems.find(li => li.description === activity.description);
-      if (lineItem && lineItem.status === 'Completed') return 100;
-      if (lineItem && lineItem.status === 'In Progress') return 50;
-    }
-    return 0;
-  };
-
-  return (
-    <>
-      <div className={cn("h-10 border-b border-slate-50 flex items-center px-6", wbs.level === 1 ? "bg-slate-50/50" : "")}>
-        <div className="grid grid-cols-10 w-full">
-          <span className="col-span-2 text-[10px] text-slate-400">-</span>
-          <span className="col-span-2 text-[10px] text-slate-400">-</span>
-          <span className="text-[10px] text-slate-400">-</span>
-          <span className="text-[10px] text-slate-400">-</span>
-          <span className="text-[10px] font-bold text-slate-900 text-right">
-            {formatCurrency(wbsActivities.reduce((sum, a) => sum + a.amount, 0) + children.reduce((sum, c) => sum + activities.filter(a => a.wbsId === c.id).reduce((s, a) => s + a.amount, 0), 0))}
-          </span>
-          <span className="text-[10px] font-bold text-emerald-600 text-right">
-            {formatCurrency(wbsActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0))}
-          </span>
-          <div className="flex justify-center">
-            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <span className="text-right">-</span>
-        </div>
-      </div>
-      {isExpanded && (
-        <>
-          {children.map(child => (
-            <TableDetailRow key={child.id} wbs={child} allWbs={allWbs} activities={activities} boqItems={boqItems} expanded={expanded} purchaseOrders={purchaseOrders} setEditingActivity={setEditingActivity} />
-          ))}
-          {activeDivisions.map(divId => {
-            const divActivities = activitiesByDivision[divId];
-            const divKey = `${wbs.id}-${divId}`;
-            const isDivExpanded = expanded[divKey] ?? true;
-
-            return (
-              <React.Fragment key={divKey}>
-                {/* Division Header Row in Table */}
-                <div className="h-10 border-b border-slate-50 flex items-center px-6 bg-slate-50/10">
-                  <div className="grid grid-cols-10 w-full">
-                    <span className="col-span-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Database className="w-3 h-3" />
-                      Division {divId} - {masterFormatDivisions.find(d => d.id === divId)?.title}
-                    </span>
-                    <span className="text-[10px] text-slate-400">-</span>
-                    <span className="text-[10px] text-slate-400">-</span>
-                    <span className="text-right font-bold text-slate-400">
-                      {formatCurrency(divActivities.reduce((sum, a) => sum + a.amount, 0))}
-                    </span>
-                    <span className="text-right font-bold text-emerald-400">
-                      {formatCurrency(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0))}
-                    </span>
-                    <span className="text-center">-</span>
-                    <span className="text-right">-</span>
-                  </div>
-                </div>
-
                 {isDivExpanded && divActivities.map(act => {
+                  const isActExpanded = expandedActivities[act.id];
+                  const linkedPO = purchaseOrders.find(po => po.id === act.poId);
+
                   return (
-                    <div 
-                      key={act.id} 
-                      className="h-10 flex items-center px-6 bg-white hover:bg-blue-50/30 transition-colors cursor-pointer"
-                      onClick={() => setEditingActivity(act)}
-                    >
-                      <div className="grid grid-cols-10 w-full text-[11px] text-slate-600 items-center">
-                        <span className="col-span-2 font-mono text-[9px]">{act.startDate || 'TBD'} - {act.finishDate || 'TBD'}</span>
-                        <span className="col-span-2 font-mono text-[9px] text-emerald-600">
-                          {act.actualStartDate ? `${act.actualStartDate} - ${act.actualFinishDate || '...'}` : 'Not Started'}
-                        </span>
-                        <span className="font-bold">{act.duration || 0}d</span>
-                        <span className="text-[9px] text-slate-400 truncate">{act.division || '01'}</span>
-                        <span className="text-right font-bold text-slate-900">{formatCurrency(act.amount)}</span>
-                        <span className="text-right font-bold text-emerald-600">{formatCurrency(act.actualAmount || 0)}</span>
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 transition-all" style={{ width: `${getProgress(act)}%` }} />
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className={cn(
-                            "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
-                            act.status === 'Completed' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                          )}>
-                            {act.status}
-                          </span>
-                        </div>
+                    <React.Fragment key={act.id}>
+                      <div 
+                        ref={el => { if (el) rowRefs.current.set(`gantt-${act.id}`, el); }}
+                        className="h-10 flex items-center bg-white relative border-b border-slate-100"
+                      >
+                        {renderBar(act)}
                       </div>
-                    </div>
+                      {isActExpanded && linkedPO && (
+                        <div className="bg-slate-50/30">
+                          {linkedPO.lineItems.map(li => (
+                            <div key={li.id} className="h-8 border-b border-slate-50/50" />
+                          ))}
+                        </div>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </React.Fragment>
@@ -810,3 +1851,4 @@ const TableDetailRow: React.FC<TableDetailRowProps> = ({ wbs, allWbs, activities
     </>
   );
 };
+

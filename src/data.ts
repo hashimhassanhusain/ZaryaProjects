@@ -103,8 +103,7 @@ export const pages: Page[] = [
       { type: 'info', msg: 'Project Charter version 1.0 has been formally approved.' }
     ]
   },
-  { id: '1.1.1', title: 'Project Charter', parentId: '1.1', type: 'terminal', content: 'Official document that authorizes the existence of the project.', formFields: ['Project Title', 'Project Code', 'Project Sponsor', 'Date Prepared', 'Project Manager', 'Project Customer', 'Project Purpose or Justification', 'Project Description', 'High-Level Requirements', 'High-Level Risks', 'Project Objectives', 'Success Criteria', 'Person Approving', 'Scope', 'Time', 'Cost', 'Other', 'Summary Milestones', 'Due Date', 'Estimated Budget', 'Stakeholder(s)', 'Role', 'Project Manager Authority Level', 'Staffing Decisions', 'Budget Management and Variance', 'Technical Decisions', 'Conflict Resolution', 'Approvals'], details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } },
-  { id: '1.1.2', title: 'Policies & Procedures', parentId: '1.1', type: 'terminal', content: 'Project Management Policies and Procedures Manual.', domain: 'governance', details: { variance: 'None', performance: 'Active', documentation: 'Manual v1.0' } },
+  { id: '2.0.1', title: 'Project Management Plan', parentId: '1.1', type: 'terminal', content: 'Comprehensive document that defines how the project is executed, monitored, controlled, and closed.' },
   
   { 
     id: '1.2', 
@@ -118,8 +117,7 @@ export const pages: Page[] = [
       { label: 'Engagement Level', value: 'High', status: 'success', icon: 'TrendingUp' }
     ]
   },
-  { id: '1.2.1', title: 'Stakeholder Register', parentId: '1.2', type: 'terminal', content: 'List of all parties interested in or affected by the project.', formFields: ['Name', 'Position', 'Role', 'Contact Information', 'Requirements', 'Expectations', 'Influence', 'Classification'], details: { variance: 'N/A', performance: 'Active', documentation: 'Stakeholder List' } },
-  { id: '1.2.2', title: 'Stakeholder Analysis Matrix', parentId: '1.2', type: 'terminal', content: 'Assessment of stakeholder influence and interest.', formFields: ['Interest', 'Power'], details: { variance: 'N/A', performance: 'Updated', documentation: 'Analysis Matrix' } },
+  { id: '1.2.1', title: 'Stakeholder Management', parentId: '1.2', type: 'terminal', content: 'List of all parties interested in or affected by the project with assessment of influence and interest.', formFields: ['Name', 'Position', 'Role', 'Contact Information', 'Requirements', 'Expectations', 'Influence', 'Classification', 'Interest', 'Power'], details: { variance: 'N/A', performance: 'Active', documentation: 'Stakeholder List' } },
   
   // --- PLANNING FOCUS AREA ---
   { id: '2.0', title: 'Planning Focus Area', type: 'hub', summary: 'Establishing the total scope of the effort and defining the course of action.' },
@@ -139,9 +137,6 @@ export const pages: Page[] = [
       { type: 'warning', msg: 'Integration of Resource Management Plan is pending final review.' }
     ]
   },
-  { id: '2.1.1', title: 'Change Management Plan', parentId: '2.1', type: 'terminal', content: 'Process for managing changes to project baselines.', formFields: ['Change Management Approach', 'Definitions of Change', 'Schedule change', 'Budget change', 'Scope change', 'Project document changes', 'Change Control Board', 'Name', 'Role', 'Responsibility', 'Authority', 'Change Control Process', 'Change request submittal', 'Change request tracking', 'Change request review', 'Change request disposition'], details: { variance: 'Low', performance: 'Stable', documentation: 'CMP v2' } },
-  { id: '2.1.2', title: 'Project Management Plan', parentId: '2.1', type: 'terminal', content: 'Comprehensive document that defines how the project is executed.', formFields: ['Project Life Cycle', 'Phase', 'Key Deliverables', 'Project Management Processes and Tailoring Decisions', 'Knowledge Area', 'Processes', 'Tailoring Decisions', 'Process Tools and Techniques', 'Tools and Techniques', 'Variances and Baseline Management', 'Scope Variance', 'Scope Baseline Management', 'Schedule Variance', 'Schedule Baseline Management', 'Cost Variance', 'Cost Baseline Management', 'Project Reviews'], details: { variance: 'None', performance: 'On Track', documentation: 'PMP Final' } },
-  { id: '2.1.3', title: 'Quality Management Plan', parentId: '2.1', type: 'terminal', content: 'Standards and quality control measures.', formFields: ['Quality Roles and Responsibilities', 'Role', 'Responsibilities', 'Quality Planning Approach', 'Quality Assurance Approach', 'Quality Control Approach', 'Quality Improvement Approach'], details: { variance: 'None', performance: 'High', documentation: 'QMP v1' } },
   { id: '2.1.4', title: 'Quality Metrics', parentId: '2.1', type: 'terminal', content: 'Specific attributes to be measured and how.', formFields: ['ID', 'Item', 'Metric', 'Measurement Method'], details: { variance: 'N/A', performance: 'Defined', documentation: 'Metrics Log' } },
 
   { 
@@ -160,16 +155,13 @@ export const pages: Page[] = [
   { id: '2.2.2', title: 'Inter Requirements Traceability Matrix', parentId: '2.2', type: 'terminal', content: 'Linking product requirements from their origin to the deliverables.', formFields: ['ID', 'Business Requirement', 'Priority', 'Source', 'Technical Requirement'], details: { variance: '0%', performance: 'Complete', documentation: 'RTM v1' } },
   { id: '2.2.3', title: 'Project Scope Statement', parentId: '2.2', type: 'terminal', content: 'Detailed description of the project scope and major deliverables.', formFields: ['Product Scope Description', 'Project Deliverables', 'Project Acceptance Criteria', 'Project Exclusions', 'Project Constraints', 'Project Assumptions'], details: { variance: 'None', performance: 'Approved', documentation: 'Scope Doc' } },
   { id: '2.2.4', title: 'Requirements Documentation', parentId: '2.2', type: 'terminal', content: 'Collection of all project requirements.', formFields: ['ID', 'Requirement', 'Stakeholder', 'Category', 'Priority', 'Acceptance Criteria', 'Validation Method'], details: { variance: 'N/A', performance: 'Stable', documentation: 'Req Doc' } },
-  { id: '2.2.5', title: 'Requirements Management Plan', parentId: '2.2', type: 'terminal', content: 'How requirements will be analyzed, documented, and managed.', formFields: ['Collection', 'Analysis', 'Categories', 'Documentation', 'Prioritization', 'Metrics', 'Traceability Structure', 'Tracking', 'Reporting', 'Validation', 'Configuration Management'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Req Plan' } },
   { id: '2.2.6', title: 'Requirements Traceability Matrix', parentId: '2.2', type: 'terminal', content: 'Tracing requirements to deliverables.', formFields: ['ID', 'Requirement', 'Priority', 'Category', 'Source', 'Objective', 'WBS Deliverable', 'Metric', 'Validation'], details: { variance: '0%', performance: 'Complete', documentation: 'RTM v2' } },
-  { id: '2.2.7', title: 'Scope Management Plan', parentId: '2.2', type: 'terminal', content: 'How scope will be defined, developed, monitored, and controlled.', formFields: ['Scope Statement Development', 'WBS Structure', 'WBS Dictionary', 'Scope Baseline Maintenance', 'Scope Change', 'Deliverable Acceptance', 'Scope and Requirements Integration'], details: { variance: 'None', performance: 'Stable', documentation: 'Scope Plan' } },
   { id: '2.2.9', title: 'WBS', parentId: '2.2', type: 'terminal', content: 'Hierarchical decomposition of the total scope of work.', formFields: ['Project', 'Major Deliverable', 'MasterFormat', 'Work package'], details: { variance: 'N/A', performance: 'Stable', documentation: 'WBS Chart' } },
   
   { id: '2.3', title: 'Schedule Domain', parentId: '2.0', type: 'hub', domain: 'schedule', summary: 'Managing the timely completion of the project.', kpis: [{ label: 'Schedule Health', value: 'Good', status: 'success', icon: 'Clock' }, { label: 'Milestones Defined', value: '100%', status: 'success', icon: 'Target' }] },
   { id: '2.3.3', title: 'Activity List', parentId: '2.3', type: 'terminal', content: 'Comprehensive list of all schedule activities required.', formFields: ['ID', 'Activity', 'Description of Work'], details: { variance: 'None', performance: 'On Time', documentation: 'Activities v2' } },
   { id: '2.3.5', title: 'Milestone List', parentId: '2.3', type: 'terminal', content: 'Significant points or events in the project.', formFields: ['Milestone', 'Milestone Description', 'Type'], details: { variance: 'On Track', performance: 'Stable', documentation: 'Milestones' } },
   { id: '2.3.7', title: 'Project Schedule', parentId: '2.3', type: 'terminal', content: 'Planned dates for performing activities and meeting milestones.', formFields: ['Gantt Chart', 'Milestone Chart', 'WBS', 'Task Name', 'Start', 'Finish'], details: { variance: 'Minimal', performance: 'High', documentation: 'Schedule v4' } },
-  { id: '2.3.8', title: 'Schedule Management Plan', parentId: '2.3', type: 'terminal', content: 'How the project schedule will be planned, developed, and controlled.', formFields: ['Schedule Methodology', 'Schedule Tools', 'Level of Accuracy', 'Units of Measure', 'Variance Thresholds', 'Schedule Reporting and Format', 'Process Management', 'Activity identification', 'Activity sequencing', 'Estimating resources', 'Estimating effort and duration', 'Updating, monitoring, and controlling'], details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan' } },
   
   { 
     id: '2.4', 
@@ -183,9 +175,7 @@ export const pages: Page[] = [
       { label: 'Cost Estimates', value: 'Completed', status: 'success', icon: 'CheckCircle2' }
     ]
   },
-  { id: '2.4.0', title: 'BOQ', parentId: '2.4', type: 'terminal', content: 'Detailed Bill of Quantities and cost tracking based on Master Format 2024.' },
-  { id: '2.4.5', title: 'Cost Management Plan', parentId: '2.4', type: 'terminal', content: 'How project costs will be planned, structured, and controlled.', formFields: ['Level of Accuracy', 'Units of Measure', 'Control Thresholds', 'Rules for Performance Measurement', 'Cost Reporting and Format', 'Process Management', 'Estimating costs', 'Developing the budget', 'Updating, monitoring and controlling'], details: { variance: 'None', performance: 'Optimal', documentation: 'Cost Plan' } },
-  { id: '2.4.6', title: 'Procurement Management Plan', parentId: '2.4', type: 'terminal', content: 'How procurement processes will be managed.', formFields: ['Procurement Authority', 'Roles and Responsibilities', 'Project Manager', 'Procurement Department', 'Standard Procurement Documents', 'Contract Type', 'Bonding and Insurance Requirements', 'Selection Criteria', 'Weight', 'Criteria', 'Procurement Assumptions and Constraints', 'Integration Requirements', 'WBS', 'Schedule', 'Documentation', 'Risk', 'Performance Reporting', 'Performance Metrics', 'Domain', 'Metric Measurement'], details: { variance: 'None', performance: 'Stable', documentation: 'Proc Plan' } },
+  { id: '2.4.0', title: 'BOQ', parentId: '2.4', type: 'terminal', content: 'Detailed Bill of Quantities and cost tracking based on MasterFormat 16 Divisions.' },
   
   { 
     id: '2.5', 
@@ -199,8 +189,6 @@ export const pages: Page[] = [
       { label: 'Comms Channels', value: 'Active', status: 'success', icon: 'TrendingUp' }
     ]
   },
-  { id: '2.5.1', title: 'Communications Management Plan', parentId: '2.5', type: 'terminal', content: 'How project communications will be managed.', formFields: ['Stakeholder', 'Information', 'Method', 'Timing or Frequency', 'Sender', 'Assumptions', 'Constraints', 'Glossary of Terms or Acronyms'], details: { variance: 'None', performance: 'Stable', documentation: 'Comms Plan' } },
-  { id: '2.5.2', title: 'Stakeholder Management Plan', parentId: '2.5', type: 'terminal', content: 'How stakeholders will be engaged throughout the project.', formFields: ['Stakeholder', 'Unaware', 'Resistant', 'Neutral', 'Supportive', 'Leading', 'Communication Needs', 'Method/Medium', 'Timing/Frequency', 'Pending Stakeholder Changes', 'Stakeholder Relationships', 'Stakeholder Engagement Approach', 'Approach'], details: { variance: 'None', performance: 'Stable', documentation: 'Stakeholder Plan' } },
   
   { 
     id: '2.6', 
@@ -215,10 +203,8 @@ export const pages: Page[] = [
     ]
   },
   { id: '2.6.1', title: 'Activity Resource Requirements', parentId: '2.6', type: 'terminal', content: 'Types and quantities of resources required.', formFields: ['WBS ID', 'Type of Resource', 'Quantity', 'Assumptions', 'Comments'], details: { variance: 'None', performance: 'Stable', documentation: 'Resource Req' } },
-  { id: '2.6.2', title: 'Human Resource Management Plan', parentId: '2.6', type: 'terminal', content: 'How human resources will be managed.', formFields: ['Roles, Responsibilities, and Authority', 'Role', 'Responsibility', 'Authority', 'Project Organizational Structure', 'Staffing Management Plan', 'Staff Acquisition', 'Staff Release', 'Resource Calendars', 'Training Requirements', 'Rewards and Recognition', 'Regulations, Standards, and Policy Compliance', 'Safety'], details: { variance: 'None', performance: 'Stable', documentation: 'HR Plan' } },
   { id: '2.6.21', title: 'Task Management', parentId: '2.6', type: 'terminal', content: 'Track personal and team tasks with Kanban and List views.' },
   { id: '2.6.22', title: 'Meetings & Minutes', parentId: '2.6', type: 'terminal', content: 'Schedule meetings and generate minutes with actionable tasks.' },
-  { id: '2.6.3', title: 'Process Improvement Plan', parentId: '2.6', type: 'terminal', content: 'How project processes will be improved.', formFields: ['Process Description', 'Process Boundaries', 'Process Starting Point', 'Process Ending Point', 'Inputs', 'Outputs', 'Stakeholders', 'Process Owner', 'Other Stakeholders', 'Process Metrics', 'Metric', 'Control Limit', 'Targets for Improvement', 'Process Improvement Approach'], details: { variance: 'None', performance: 'Stable', documentation: 'Process Plan' } },
   { id: '2.6.4', title: 'Resource Breakdown Structure', parentId: '2.6', type: 'terminal', content: 'Hierarchical representation of resources.', formFields: ['Project', 'People', 'Quantity of Role', 'Quantity of Level', 'Equipment', 'Quantity of Type', 'Materials', 'Quantity of Material', 'Quantity of Grade', 'Supplies', 'Quantity of Supply', 'Locations', 'Location'], details: { variance: 'N/A', performance: 'Complete', documentation: 'RBS' } },
   { id: '2.6.5', title: 'Responsibility Assignment Matrix', parentId: '2.6', type: 'terminal', content: 'Mapping of project work to team members.', formFields: ['Work package', 'Person', 'R = Responsible', 'A = Accountable', 'C = Consult', 'I = Inform'], details: { variance: 'N/A', performance: 'Complete', documentation: 'RAM' } },
   { id: '2.6.6', title: 'Roles and Responsibilities', parentId: '2.6', type: 'terminal', content: 'Defining roles and responsibilities for team members.', formFields: ['Resource Role Description', 'Authority', 'Responsibility', 'Qualifications', 'Requirements'], details: { variance: 'None', performance: 'Stable', documentation: 'Roles' } },
@@ -236,11 +222,25 @@ export const pages: Page[] = [
       { label: 'Risk Plan', value: 'Approved', status: 'success', icon: 'CheckCircle2' }
     ]
   },
-  { id: '2.7.5', title: 'Risk Register', parentId: '2.7', type: 'terminal', content: 'Repository for all identified risks.', formFields: ['Risk ID', 'Risk Statement', 'Probability', 'Impact', 'Score', 'Response', 'Revised Probability', 'Revised Impact', 'Revised Score', 'Responsible Party', 'Actions', 'Status', 'Comments'], details: { variance: 'Low', performance: 'Active', documentation: 'Risk Log' } },
-  { id: '2.7.3', title: 'Risk Data Sheet', parentId: '2.7', type: 'terminal', content: 'Detailed information about each risk.', formFields: ['Risk ID', 'Risk Description', 'Status', 'Risk Cause', 'Probability', 'Impact', 'Score', 'Responses', 'Revised Probability', 'Revised Impact', 'Revised Score', 'Responsible Party', 'Actions', 'Secondary Risks', 'Residual Risk', 'Contingency Plan', 'Contingency Funds', 'Contingency Time', 'Fallback Plans', 'Comments'], details: { variance: 'Low', performance: 'Active', documentation: 'Data Sheet' } },
+  { id: '2.7.5', title: 'Risk Management', parentId: '2.7', type: 'terminal', content: 'Repository for all identified risks with detailed assessment and response plans.', formFields: ['Risk ID', 'Risk Statement', 'Risk Description', 'Status', 'Risk Cause', 'Probability', 'Impact', 'Score', 'Response', 'Revised Probability', 'Revised Impact', 'Revised Score', 'Responsible Party', 'Actions', 'Secondary Risks', 'Residual Risk', 'Contingency Plan', 'Contingency Funds', 'Contingency Time', 'Fallback Plans', 'Comments'], details: { variance: 'Low', performance: 'Active', documentation: 'Risk Log' } },
   { id: '2.7.1', title: 'Probability and Impact Assessment', parentId: '2.7', type: 'terminal', content: 'Evaluating the likelihood and impact of risks.', formFields: ['Scope Impact', 'Quality Impact', 'Schedule Impact', 'Cost Impact', 'Probability', 'Risk Rating', 'Very High', 'High', 'Medium', 'Low', 'Very Low'], details: { variance: 'Low', performance: 'Active', documentation: 'Assessment' } },
   { id: '2.7.2', title: 'Probability and Impact Matrix', parentId: '2.7', type: 'terminal', content: 'Mapping risks based on probability and impact.', formFields: ['Probability', 'Impact', 'Very High', 'High', 'Medium', 'Low', 'Very Low'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Matrix' } },
-  { id: '2.7.4', title: 'Risk Management Plan', parentId: '2.7', type: 'terminal', content: 'How risk management activities will be performed.', formFields: ['Methodology', 'Roles and Responsibilities', 'Risk Categories', 'Risk Management Funding', 'Contingency Protocols', 'Frequency and Timing', 'Stakeholder Risk Tolerances', 'Tracking and Audit', 'Definitions of Probability', 'Definitions of Impact by Objective', 'Probability and Impact Matrix'], details: { variance: 'None', performance: 'Stable', documentation: 'Risk Plan' } },
+
+  // Hidden terminal pages (used by ProjectManagementPlanView)
+  { id: '1.1.1', title: 'Project Charter', type: 'terminal', content: 'Official document that authorizes the existence of the project.', formFields: ['Project Title', 'Project Code', 'Project Sponsor', 'Date Prepared', 'Project Manager', 'Project Customer', 'Project Purpose or Justification', 'Project Description', 'High-Level Requirements', 'High-Level Risks', 'Project Objectives', 'Success Criteria', 'Person Approving', 'Scope', 'Time', 'Cost', 'Other', 'Summary Milestones', 'Due Date', 'Estimated Budget', 'Stakeholder(s)', 'Role', 'Project Manager Authority Level', 'Staffing Decisions', 'Budget Management and Variance', 'Technical Decisions', 'Conflict Resolution', 'Approvals'], details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } },
+  { id: '1.1.2', title: 'Policies & Procedures', type: 'terminal', content: 'Project Management Policies and Procedures Manual.', domain: 'governance', details: { variance: 'None', performance: 'Active', documentation: 'Manual v1.0' } },
+  { id: '2.1.1', title: 'Change Management Plan', type: 'terminal', content: 'Process for managing changes to project baselines.', formFields: ['Change Management Approach', 'Definitions of Change', 'Schedule change', 'Budget change', 'Scope change', 'Project document changes', 'Change Control Board', 'Name', 'Role', 'Responsibility', 'Authority', 'Change Control Process', 'Change request submittal', 'Change request tracking', 'Change request review', 'Change request disposition'], details: { variance: 'Low', performance: 'Stable', documentation: 'CMP v2' } },
+  { id: '2.1.3', title: 'Quality Management Plan', type: 'terminal', content: 'Standards and quality control measures.', formFields: ['Quality Roles and Responsibilities', 'Role', 'Responsibilities', 'Quality Planning Approach', 'Quality Assurance Approach', 'Quality Control Approach', 'Quality Improvement Approach'], details: { variance: 'None', performance: 'High', documentation: 'QMP v1' } },
+  { id: '2.2.5', title: 'Requirements Management Plan', type: 'terminal', content: 'How requirements will be analyzed, documented, and managed.', formFields: ['Collection', 'Analysis', 'Categories', 'Documentation', 'Prioritization', 'Metrics', 'Traceability Structure', 'Tracking', 'Reporting', 'Validation', 'Configuration Management'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Req Plan' } },
+  { id: '2.2.7', title: 'Scope Management Plan', type: 'terminal', content: 'How scope will be defined, developed, monitored, and controlled.', formFields: ['Scope Statement Development', 'WBS Structure', 'WBS Dictionary', 'Scope Baseline Maintenance', 'Scope Change', 'Deliverable Acceptance', 'Scope and Requirements Integration'], details: { variance: 'None', performance: 'Stable', documentation: 'Scope Plan' } },
+  { id: '2.3.8', title: 'Schedule Management Plan', type: 'terminal', content: 'How the project schedule will be planned, developed, and controlled.', formFields: ['Schedule Methodology', 'Schedule Tools', 'Level of Accuracy', 'Units of Measure', 'Variance Thresholds', 'Schedule Reporting and Format', 'Process Management', 'Activity identification', 'Activity sequencing', 'Estimating resources', 'Estimating effort and duration', 'Updating, monitoring, and controlling'], details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan' } },
+  { id: '2.4.5', title: 'Cost Management Plan', type: 'terminal', content: 'How project costs will be planned, structured, and controlled.', formFields: ['Level of Accuracy', 'Units of Measure', 'Control Thresholds', 'Rules for Performance Measurement', 'Cost Reporting and Format', 'Process Management', 'Estimating costs', 'Developing the budget', 'Updating, monitoring and controlling'], details: { variance: 'None', performance: 'Optimal', documentation: 'Cost Plan' } },
+  { id: '2.4.6', title: 'Procurement Management Plan', type: 'terminal', content: 'How procurement processes will be managed.', formFields: ['Procurement Authority', 'Roles and Responsibilities', 'Project Manager', 'Procurement Department', 'Standard Procurement Documents', 'Contract Type', 'Bonding and Insurance Requirements', 'Selection Criteria', 'Weight', 'Criteria', 'Procurement Assumptions and Constraints', 'Integration Requirements', 'WBS', 'Schedule', 'Documentation', 'Risk', 'Performance Reporting', 'Performance Metrics', 'Domain', 'Metric Measurement'], details: { variance: 'None', performance: 'Stable', documentation: 'Proc Plan' } },
+  { id: '2.5.1', title: 'Communications Management Plan', type: 'terminal', content: 'How project communications will be managed.', formFields: ['Stakeholder', 'Information', 'Method', 'Timing or Frequency', 'Sender', 'Assumptions', 'Constraints', 'Glossary of Terms or Acronyms'], details: { variance: 'None', performance: 'Stable', documentation: 'Comms Plan' } },
+  { id: '2.5.2', title: 'Stakeholder Management Plan', type: 'terminal', content: 'How stakeholders will be engaged throughout the project.', formFields: ['Stakeholder', 'Unaware', 'Resistant', 'Neutral', 'Supportive', 'Leading', 'Communication Needs', 'Method/Medium', 'Timing/Frequency', 'Pending Stakeholder Changes', 'Stakeholder Relationships', 'Stakeholder Engagement Approach', 'Approach'], details: { variance: 'None', performance: 'Stable', documentation: 'Stakeholder Plan' } },
+  { id: '2.6.2', title: 'Human Resource Management Plan', type: 'terminal', content: 'How human resources will be managed.', formFields: ['Roles, Responsibilities, and Authority', 'Role', 'Responsibility', 'Authority', 'Project Organizational Structure', 'Staffing Management Plan', 'Staff Acquisition', 'Staff Release', 'Resource Calendars', 'Training Requirements', 'Rewards and Recognition', 'Regulations, Standards, and Policy Compliance', 'Safety'], details: { variance: 'None', performance: 'Stable', documentation: 'HR Plan' } },
+  { id: '2.6.3', title: 'Process Improvement Plan', type: 'terminal', content: 'How project processes will be improved.', formFields: ['Process Description', 'Process Boundaries', 'Process Starting Point', 'Process Ending Point', 'Inputs', 'Outputs', 'Stakeholders', 'Process Owner', 'Other Stakeholders', 'Process Metrics', 'Metric', 'Control Limit', 'Targets for Improvement', 'Process Improvement Approach'], details: { variance: 'None', performance: 'Stable', documentation: 'Process Plan' } },
+  { id: '2.7.4', title: 'Risk Management Plan', type: 'terminal', content: 'How risk management activities will be performed.', formFields: ['Methodology', 'Roles and Responsibilities', 'Risk Categories', 'Risk Management Funding', 'Contingency Protocols', 'Frequency and Timing', 'Stakeholder Risk Tolerances', 'Tracking and Audit', 'Definitions of Probability', 'Definitions of Impact by Objective', 'Probability and Impact Matrix'], details: { variance: 'None', performance: 'Stable', documentation: 'Risk Plan' } },
 
   // --- EXECUTING FOCUS AREA ---
   { id: '3.0', title: 'Executing Focus Area', type: 'hub', summary: 'Completing the work defined in the project management plan.' },
@@ -260,8 +260,7 @@ export const pages: Page[] = [
       { type: 'warning', msg: 'One Quality Audit is overdue for the Civil Works package.' }
     ]
   },
-  { id: '3.1.1', title: 'Change Log', parentId: '3.1', type: 'terminal', content: 'Tracking all change requests and their status.', formFields: ['Change ID', 'Category', 'Description of Change', 'Submitted by', 'Submission Date', 'Status', 'Disposition'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Log Q2' } },
-  { id: '3.1.2', title: 'Change Request', parentId: '3.1', type: 'terminal', content: 'Formal proposal to modify any document, deliverable, or baseline.', formFields: ['Project Title', 'Date Prepared', 'Person Requesting Change', 'Change Number', 'Category of Change', 'Detailed Description of Proposed Change', 'Justification for Proposed Change', 'Impacts of Change', 'Scope', 'Grade', 'Requirements', 'Cost', 'Schedule', 'Stakeholder Impact', 'Project Documents', 'Comments', 'Disposition', 'Justification', 'Change Control Board Signatures', 'Name', 'Role', 'Signature', 'Date'], details: { variance: 'N/A', performance: 'Pending', documentation: 'CR Form' } },
+  { id: '3.1.1', title: 'Change Management', parentId: '3.1', type: 'terminal', content: 'Tracking all change requests and their status with formal proposal forms.', formFields: ['Change ID', 'Category', 'Description of Change', 'Submitted by', 'Submission Date', 'Status', 'Disposition', 'Project Title', 'Date Prepared', 'Person Requesting Change', 'Change Number', 'Category of Change', 'Detailed Description of Proposed Change', 'Justification for Proposed Change', 'Impacts of Change', 'Scope', 'Grade', 'Requirements', 'Cost', 'Schedule', 'Stakeholder Impact', 'Project Documents', 'Comments', 'Disposition', 'Justification', 'Change Control Board Signatures', 'Name', 'Role', 'Signature', 'Date'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Log Q2' } },
   { id: '3.1.3', title: 'Decision Log', parentId: '3.1', type: 'terminal', content: 'Tracking all project decisions.', formFields: ['ID', 'Category', 'Decision', 'Responsible Party', 'Date', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Decision Log' } },
   { id: '3.1.4', title: 'Quality Audit', parentId: '3.1', type: 'terminal', content: 'Structured review of quality management activities.', formFields: ['Area Audited', 'Project', 'Product', 'Process', 'Good Practices to Share', 'Areas for Improvement', 'Deficiencies or Defects', 'ID', 'Defect', 'Action', 'Responsible Party', 'Due Date', 'Comments'], details: { variance: 'None', performance: 'Verified', documentation: 'Audit' } },
 
@@ -277,7 +276,7 @@ export const pages: Page[] = [
       { label: 'Engagement Score', value: '8.5', status: 'success', icon: 'TrendingUp' }
     ]
   },
-  { id: '3.2.1', title: 'Issue Log', parentId: '3.2', type: 'terminal', content: 'Tracking all project issues.', formFields: ['Issue ID', 'Category', 'Issue', 'Impact on Objectives', 'Urgency', 'Responsible Party', 'Actions', 'Status', 'Due Date', 'Comments'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Issue Log' } },
+  { id: '3.2.1', title: 'Issue Management', parentId: '3.2', type: 'terminal', content: 'Tracking all project issues and their resolution.', formFields: ['Issue ID', 'Category', 'Issue', 'Impact on Objectives', 'Urgency', 'Responsible Party', 'Actions', 'Status', 'Due Date', 'Comments'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Issue Log' } },
 
   { 
     id: '3.3', 
@@ -295,6 +294,7 @@ export const pages: Page[] = [
   { id: '3.3.5', title: 'Team Operating Agreement', parentId: '3.3', type: 'terminal', content: 'Guidelines for team interaction.', formFields: ['Team Values and Principles', 'Meeting Guidelines', 'Communication Guidelines', 'Decision-Making Process', 'Conflict Management Approach', 'Other Agreements', 'Signature', 'Date'], details: { variance: 'None', performance: 'Stable', documentation: 'Agreement' } },
   { id: '3.3.2', title: 'Team Member Performance Assessment', parentId: '3.3', type: 'terminal', content: 'Evaluation of individual team member effectiveness.', formFields: ['Technical Performance', 'Interpersonal Competency', 'Leadership', 'Strengths', 'Weaknesses', 'Areas for Development', 'Additional Comments'], details: { variance: 'Positive', performance: 'High', documentation: 'Assessment' } },
   { id: '3.3.6', title: 'Team Performance Assessment', parentId: '3.3', type: 'terminal', content: 'Evaluation of the project team effectiveness.', formFields: ['Technical Performance', 'Scope', 'Quality', 'Schedule', 'Cost', 'Interpersonal Competency', 'Communication', 'Collaboration', 'Conflict Management', 'Decision Making', 'Team Morale', 'Areas for Development'], details: { variance: 'Positive', performance: 'High', documentation: 'Assessment Q1' } },
+  { id: '3.3.4', title: 'Vendor Master Register', parentId: '3.3', type: 'terminal', content: 'Comprehensive database of all project vendors, contractors, and suppliers with financial performance tracking.', domain: 'resources', details: { variance: 'Real-time', performance: 'Active', documentation: 'Vendor DB' } },
   { id: '3.3.3', title: 'Progress Reports', parentId: '3.3', type: 'terminal', content: 'Daily, Weekly, and Monthly progress reporting for site activities.', details: { variance: 'None', performance: 'Daily', documentation: 'PR-2026' } },
 
   // --- MONITORING FOCUS AREA ---
@@ -313,7 +313,7 @@ export const pages: Page[] = [
       { label: 'Validation Rate', value: '75%', status: 'info', icon: 'Target' }
     ]
   },
-  { id: '4.1.1', title: 'Formal Acceptance Form', parentId: '4.1', type: 'terminal', content: 'Official sign-off for project deliverables.', formFields: ['ID', 'Requirement', 'Acceptance Criteria', 'Validation Method', 'Status', 'Comments', 'Signoff'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Acceptance' } },
+  { id: '4.1.1', title: 'Deliverable Acceptance', parentId: '4.1', type: 'terminal', content: 'Official sign-off for project deliverables tracking.', formFields: ['ID', 'Requirement', 'Acceptance Criteria', 'Validation Method', 'Status', 'Comments', 'Signoff'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Acceptance' } },
 
   { 
     id: '4.2', 
@@ -332,7 +332,7 @@ export const pages: Page[] = [
     ]
   },
   { id: '4.2.5', title: 'PO Control Dashboard', parentId: '4.2', type: 'terminal', content: 'Smart alerts and budget control for Zarya Purchase Orders.', formFields: ['Budget Utilization', 'Critical Alerts', 'Financial Summary'], details: { variance: 'Alerts', performance: 'Real-time', documentation: 'ZARYA-DASH' } },
-  { id: '4.2.6', title: 'PO Log', parentId: '4.2', type: 'terminal', content: 'Comprehensive log of all project purchase orders with detailed financial and status tracking.', details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PO-LOG' } },
+  { id: '4.2.6', title: 'PO Management', parentId: '4.2', type: 'terminal', content: 'Comprehensive log of all project purchase orders with detailed financial and status tracking.', details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PO-LOG' } },
   { id: '4.2.4', title: 'Cumulative PO Tracking', parentId: '4.2', type: 'terminal', content: 'Zarya Master PO Tracking and Cumulative Expenditure.', formFields: ['Code', 'Description', 'Total PO Amount', 'Received Qty', 'Received Amount', 'MasterFormat Qty', 'MasterFormat Amount', 'Status'], details: { variance: 'IQD', performance: 'Critical', documentation: 'ZARYA-PO-MASTER' } },
   { id: '4.2.3', title: 'Payment Certificate', parentId: '4.2', type: 'terminal', content: 'Zarya Payment Certificate for current installments.', formFields: ['Supplier Name', 'PO Number', 'Payment Number', 'Project Name', 'Currency', 'Code', 'Description', 'Received Qty', 'Price', 'UOM', 'Net Amount'], automatedFields: ['Net Amount', 'PO Number', 'Supplier Name'], details: { variance: 'IQD', performance: 'Active', documentation: 'ZARYA-PC-001' } },
   { id: '4.2.1', title: 'Contractor Status Report', parentId: '4.2', type: 'terminal', content: 'Status updates from project contractors.', formFields: ['Scope Performance', 'Quality Performance', 'Schedule Performance', 'Cost Performance', 'Forecast Performance', 'Claims or Disputes', 'Risks', 'Planned Corrective or Preventive Action', 'Issues', 'Comments'], details: { variance: 'None', performance: 'Stable', documentation: 'Contractor Rep' } },
@@ -427,40 +427,22 @@ export const getFocusArea = (id: string): Page | undefined => {
 };
 
 export const masterFormatDivisions = [
-  { id: '00', title: 'Procurement and Contracting Requirements' },
   { id: '01', title: 'General Requirements' },
-  { id: '02', title: 'Existing Conditions' },
+  { id: '02', title: 'Site Construction' },
   { id: '03', title: 'Concrete' },
   { id: '04', title: 'Masonry' },
   { id: '05', title: 'Metals' },
-  { id: '06', title: 'Wood, Plastics, and Composites' },
+  { id: '06', title: 'Wood and Plastics' },
   { id: '07', title: 'Thermal and Moisture Protection' },
-  { id: '08', title: 'Openings' },
+  { id: '08', title: 'Doors and Windows' },
   { id: '09', title: 'Finishes' },
   { id: '10', title: 'Specialties' },
   { id: '11', title: 'Equipment' },
   { id: '12', title: 'Furnishings' },
   { id: '13', title: 'Special Construction' },
-  { id: '14', title: 'Conveying Equipment' },
-  { id: '21', title: 'Fire Suppression' },
-  { id: '22', title: 'Plumbing' },
-  { id: '23', title: 'Heating, Ventilating, and Air Conditioning (HVAC)' },
-  { id: '25', title: 'Integrated Automation' },
-  { id: '26', title: 'Electrical' },
-  { id: '27', title: 'Communications' },
-  { id: '28', title: 'Electronic Safety and Security' },
-  { id: '31', title: 'Earthwork' },
-  { id: '32', title: 'Exterior Improvements' },
-  { id: '33', title: 'Utilities' },
-  { id: '34', title: 'Transportation' },
-  { id: '35', title: 'Waterway and Marine Construction' },
-  { id: '40', title: 'Process Interconnections' },
-  { id: '41', title: 'Material Processing and Handling Equipment' },
-  { id: '42', title: 'Process Heating, Cooling, and Drying Equipment' },
-  { id: '43', title: 'Process Gas and Liquid Handling, Purification, and Storage Equipment' },
-  { id: '44', title: 'Pollution and Waste Control Equipment' },
-  { id: '45', title: 'Industry-Specific Manufacturing Equipment' },
-  { id: '48', title: 'Electrical Power Generation' },
+  { id: '14', title: 'Conveying Systems' },
+  { id: '15', title: 'Mechanical' },
+  { id: '16', title: 'Electrical' },
 ];
 
 export const boqData: BOQItem[] = [
@@ -474,6 +456,7 @@ export const boqData: BOQItem[] = [
 export const purchaseOrders: PurchaseOrder[] = [
   {
     id: 'COS001649',
+    projectId: 'p1',
     supplier: 'Fuad Hama Saed',
     date: '2023-05-11',
     status: 'Approved',
@@ -486,6 +469,7 @@ export const purchaseOrders: PurchaseOrder[] = [
   },
   {
     id: 'COS001650',
+    projectId: 'p1',
     supplier: 'Fuad Hama Saed',
     date: '2023-05-11',
     status: 'Approved',
@@ -497,6 +481,7 @@ export const purchaseOrders: PurchaseOrder[] = [
   },
   {
     id: 'COS001701',
+    projectId: 'p1',
     supplier: 'Fuad Hama Saed',
     date: '2023-05-24',
     status: 'Approved',

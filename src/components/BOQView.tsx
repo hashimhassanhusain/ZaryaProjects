@@ -131,7 +131,7 @@ export const BOQView: React.FC = () => {
 
       const prompt = `Extract all Bill of Quantities (BOQ) items from the provided document.
       For each item, identify:
-      - MasterFormat 2024 Division ID (e.g., '01', '03', '31')
+      - MasterFormat 16 Divisions ID (e.g., '01', '03', '09')
       - Work Package name (e.g., 'Earthworks', 'Concrete Structure')
       - Detailed Description of the item
       - Quantity (number)
@@ -165,7 +165,7 @@ export const BOQView: React.FC = () => {
             items: {
               type: Type.OBJECT,
               properties: {
-                division: { type: Type.STRING, description: "MasterFormat 2024 Division ID" },
+                division: { type: Type.STRING, description: "MasterFormat 16 Divisions ID" },
                 workPackage: { type: Type.STRING, description: "Work Package name" },
                 description: { type: Type.STRING, description: "Detailed description of the item" },
                 quantity: { type: Type.NUMBER, description: "Quantity of the item" },
@@ -201,7 +201,7 @@ export const BOQView: React.FC = () => {
       }
 
       setIsAnalyzing(false);
-      alert(`AI Analysis complete: ${extractedItems.length} items identified and categorized by MasterFormat 2024.`);
+      alert(`AI Analysis complete: ${extractedItems.length} items identified and categorized by MasterFormat 16 Divisions.`);
     } catch (err) {
       console.error("AI Analysis failed:", err);
       setIsAnalyzing(false);
@@ -396,7 +396,7 @@ export const BOQView: React.FC = () => {
             </div>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Bill of Quantities</h2>
           </div>
-          <p className="text-slate-500">MasterFormat 2024 structured cost planning linked to WBS levels.</p>
+          <p className="text-slate-500">MasterFormat 16 Divisions structured cost planning linked to WBS levels.</p>
         </div>
         
         <div className="flex items-center gap-3 bg-slate-100 p-1 rounded-2xl">
@@ -712,7 +712,7 @@ export const BOQView: React.FC = () => {
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Export?</h3>
                   <p className="text-slate-500">
-                    Generate a professional BOQ document organized by MasterFormat 2024 divisions.
+                    Generate a professional BOQ document organized by MasterFormat 16 Divisions.
                   </p>
                 </div>
                 
@@ -731,7 +731,7 @@ export const BOQView: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 text-sm text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    MasterFormat 2024 Compliant
+                    MasterFormat 16 Divisions Compliant
                   </div>
                 </div>
 

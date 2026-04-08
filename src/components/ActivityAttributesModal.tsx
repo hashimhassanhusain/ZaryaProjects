@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType } from '../types';
+import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor } from '../types';
 import { masterFormatDivisions } from '../data';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 
 interface ActivityAttributesModalProps {
@@ -26,21 +28,61 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     ...activity,
     predecessors: activity.predecessors || []
   });
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+
+  useEffect(() => {
+    if (!activity.projectId) return;
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'vendors'), where('projectId', '==', activity.projectId)),
+      (snapshot) => {
+        setVendors(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Vendor)));
+      }
+    );
+    return () => unsubscribe();
+  }, [activity.projectId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const updatedData = { ...formData, [name]: value };
 
-    // Auto-calculate finish date if start and duration exist
-    if (name === 'startDate' || name === 'duration') {
+    // Auto-calculate logic for Planned Schedule
+    if (name === 'startDate' || name === 'duration' || name === 'finishDate') {
       const start = name === 'startDate' ? value : updatedData.startDate;
+      const finish = name === 'finishDate' ? value : updatedData.finishDate;
       const dur = name === 'duration' ? parseInt(value) : updatedData.duration;
-      
-      if (start && !isNaN(dur)) {
-        const startDate = new Date(start);
-        const finishDate = new Date(startDate);
-        finishDate.setDate(startDate.getDate() + dur);
-        updatedData.finishDate = finishDate.toISOString().split('T')[0];
+
+      if (name === 'startDate') {
+        // If start changes, we usually keep duration and move finish
+        if (start && !isNaN(dur)) {
+          const startDate = new Date(start);
+          const finishDate = new Date(startDate);
+          finishDate.setDate(startDate.getDate() + dur);
+          updatedData.finishDate = finishDate.toISOString().split('T')[0];
+        } else if (start && finish) {
+          // If no duration but finish exists, calculate duration
+          const startDate = new Date(start);
+          const finishDate = new Date(finish);
+          const diffTime = finishDate.getTime() - startDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          updatedData.duration = Math.max(0, diffDays);
+        }
+      } else if (name === 'duration') {
+        // If duration changes, update finish
+        if (start && !isNaN(dur)) {
+          const startDate = new Date(start);
+          const finishDate = new Date(startDate);
+          finishDate.setDate(startDate.getDate() + dur);
+          updatedData.finishDate = finishDate.toISOString().split('T')[0];
+        }
+      } else if (name === 'finishDate') {
+        // If finish changes, update duration
+        if (start && finish) {
+          const startDate = new Date(start);
+          const finishDate = new Date(finish);
+          const diffTime = finishDate.getTime() - startDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          updatedData.duration = Math.max(0, diffDays);
+        }
       }
     }
 
@@ -179,7 +221,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[60px]"
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
+                  placeholder="Enter detailed activity description..."
                 />
               </div>
               <div>
@@ -194,6 +238,23 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Supplier / Vendor</label>
+                <div className="relative">
+                  <ShoppingCart className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <select 
+                    name="supplierId"
+                    value={formData.supplierId || ''}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  >
+                    <option value="">Select Supplier...</option>
+                    {vendors.map(v => (
+                      <option key={v.id} value={v.id}>{v.name} ({v.vendorCode})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="flex items-center gap-3 pt-4">
                 <input 
@@ -212,6 +273,18 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 />
                 <label htmlFor="isMilestone" className="text-sm font-bold text-slate-700 cursor-pointer">
                   Milestone
+                </label>
+              </div>
+              <div className="flex items-center gap-3 pt-4">
+                <input 
+                  type="checkbox"
+                  id="isCritical"
+                  checked={formData.isCritical || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isCritical: e.target.checked }))}
+                  className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                />
+                <label htmlFor="isCritical" className="text-sm font-bold text-slate-700 cursor-pointer">
+                  Critical Path Activity
                 </label>
               </div>
             </div>
@@ -369,6 +442,21 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     placeholder="0.00"
                     className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                   />
+                </div>
+              </div>
+              <div className="col-span-3">
+                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Manual Progress Update (%)</label>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="range"
+                    name="percentComplete"
+                    min="0"
+                    max="100"
+                    value={formData.percentComplete || 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, percentComplete: parseInt(e.target.value) }))}
+                    className="flex-1 h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                  <span className="text-sm font-bold text-emerald-600 w-12 text-right">{formData.percentComplete || 0}%</span>
                 </div>
               </div>
             </div>

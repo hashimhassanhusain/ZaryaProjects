@@ -23,6 +23,9 @@ import { ProjectScheduleView } from './components/ProjectScheduleView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
 import { MilestoneListView } from './components/MilestoneListView';
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
+import { VendorMasterRegister } from './components/VendorMasterRegister';
+import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
+import { LogManagementView } from './components/LogManagementView';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
@@ -107,10 +110,13 @@ const PageRenderer = () => {
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isActivityListPage = page.id === '2.3.3';
-  const isSchedulePage = page.id === '2.3.7';
+  const isSchedulePage = page.id === '2.3.7' || page.id === '2.3';
   const isAssumptionLogPage = page.id === '2.2.1';
   const isMilestoneListPage = page.id === '2.3.5';
   const isPoliciesPage = page.id === '1.1.2';
+  const isVendorRegisterPage = page.id === '3.3.4';
+  const isPMPPage = page.id === '2.0.1';
+  const isLogManagementPage = ['1.2.1', '2.7.5', '3.1.1', '3.2.1', '4.1.1', '4.2.6'].includes(page.id);
 
   return (
     <AnimatePresence mode="wait">
@@ -120,7 +126,7 @@ const PageRenderer = () => {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -10 }}
         transition={{ duration: 0.2 }}
-        className="max-w-6xl mx-auto"
+        className={cn("mx-auto", !isSchedulePage && "max-w-6xl")}
       >
         <Breadcrumbs currentPageId={page.id} />
         {isTasksPage ? (
@@ -149,6 +155,12 @@ const PageRenderer = () => {
           <MilestoneListView page={page} />
         ) : isPoliciesPage ? (
           <GovernancePoliciesView page={page} />
+        ) : isVendorRegisterPage ? (
+          <VendorMasterRegister page={page} />
+        ) : isPMPPage ? (
+          <ProjectManagementPlanView page={page} />
+        ) : isLogManagementPage ? (
+          <LogManagementView page={page} />
         ) : page.type === 'hub' ? (
           <DashboardView page={page} />
         ) : (
@@ -160,7 +172,7 @@ const PageRenderer = () => {
 };
 
 const AppLayout = () => {
-  const { isSidebarOpen, closeSidebar } = useUI();
+  const { isSidebarOpen, closeSidebar, sidebarWidth } = useUI();
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
@@ -181,7 +193,7 @@ const AppLayout = () => {
       <motion.div
         initial={false}
         animate={{ 
-          width: isSidebarOpen ? 280 : 0,
+          width: isSidebarOpen ? sidebarWidth : 0,
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
@@ -189,7 +201,7 @@ const AppLayout = () => {
           isSidebarOpen ? "translate-x-0 opacity-100" : "-translate-x-full lg:translate-x-0 opacity-0 lg:opacity-0"
         )}
       >
-        <div className="w-[280px] h-full shrink-0">
+        <div style={{ width: sidebarWidth }} className="h-full shrink-0">
           <Sidebar />
         </div>
       </motion.div>

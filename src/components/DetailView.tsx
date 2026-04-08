@@ -27,7 +27,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, generateZaryaFileName } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc } from 'firebase/firestore';
@@ -321,22 +321,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       }
 
       // --- FILE NAMING CONVENTION (FNC) ---
-      // Syntax: [ProjectID]-[Category/Division]-[DocumentType]-[Sequence/Date]-[Status]
-      const projectId = selectedProject.code;
+      const zaryaName = generateZaryaFileName({
+        projectCode: selectedProject.code || 'P00000',
+        category: 'management',
+        dept: page.id.startsWith('1.') ? 'INIT' : 
+              page.id.startsWith('2.') ? 'PLAN' : 
+              page.id.startsWith('3.') ? 'EXEC' : 
+              page.id.startsWith('4.') ? 'MON' : 'CLS',
+        type: 'FRM',
+        description: page.title,
+        version: 'V01'
+      });
       
-      // Determine Category/Division based on page ID
-      let category = 'MISC';
-      if (page.id.startsWith('1.')) category = 'INIT';
-      else if (page.id.startsWith('2.')) category = 'PLAN';
-      else if (page.id.startsWith('3.')) category = 'EXEC';
-      else if (page.id.startsWith('4.')) category = 'MON';
-      else if (page.id.startsWith('5.')) category = 'CLS';
-      
-      const docType = 'FRM';
-      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      const status = 'P'; // Pending
-      
-      const fileName = `${projectId}-${category}-${docType}-${dateStr}-${status}.pdf`;
+      const fileName = `${zaryaName}.pdf`;
 
       if (saveToDrive && selectedProject.driveFolderId) {
         const pdfBlob = doc.output('blob');

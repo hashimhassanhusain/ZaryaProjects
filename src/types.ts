@@ -45,10 +45,15 @@ export interface POLineItem {
   rate: number;
   amount: number;
   status: string;
+  completion?: number; // 0-100
 }
 
 export interface PurchaseOrder {
   id: string;
+  projectId: string;
+  wbsId?: string;
+  activityId?: string;
+  masterFormat?: string;
   supplier: string;
   date: string;
   status: string;
@@ -69,6 +74,8 @@ export interface PurchaseOrder {
   divisions?: string;
   completion?: number;
   location?: string;
+  actualStartDate?: string;
+  actualFinishDate?: string;
 }
 
 export type DependencyType = 'FS' | 'SS' | 'FF' | 'SF';
@@ -103,6 +110,9 @@ export interface Activity {
   actualStartDate?: string;
   actualFinishDate?: string;
   actualDuration?: number;
+  percentComplete?: number;
+  isCritical?: boolean;
+  supplierId?: string;
   predecessors?: ActivityDependency[];
   predecessorId?: string; // Legacy field for simple FS
   successorId?: string; // Legacy field
@@ -284,4 +294,19 @@ export interface Project {
 export interface BreadcrumbItem {
   title: string;
   path: string;
+}
+
+export interface Vendor {
+  id: string;
+  projectId: string;
+  vendorCode: string;
+  name: string;
+  contactDetails: {
+    address: string;
+    phone: string;
+    email: string;
+  };
+  discipline: string; // MasterFormat Division
+  status: 'Active' | 'Contract Ended' | 'Suspended';
+  contractUrl?: string;
 }

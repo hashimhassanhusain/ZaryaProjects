@@ -104,6 +104,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     
     const newPO: PurchaseOrder = {
       id: poId,
+      projectId: selectedProject.id,
       supplier: 'TBD',
       date: new Date().toISOString().split('T')[0],
       status: 'Draft',

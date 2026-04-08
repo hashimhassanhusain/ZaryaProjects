@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, File, Upload, ChevronRight, ChevronDown, Loader2, HardDrive, Search, Filter, MoreVertical, Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, Plus } from 'lucide-react';
+import { Folder, File, Upload, ChevronRight, ChevronDown, Loader2, HardDrive, Search, Filter, MoreVertical, Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, Plus, Clock, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Project } from '../types';
+import { generateZaryaFileName, cn } from '../lib/utils';
 
 interface FileExplorerProps {
   projectId: string;
@@ -15,6 +17,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{ id: string, name: string }[]>([]);
+  const [showNamingModal, setShowNamingModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [namingParams, setNamingParams] = useState({
+    category: 'management' as 'technical' | 'management',
+    division: '',
+    dept: 'MGT',
+    type: 'REP',
+    refNo: '',
+    description: '',
+    version: 'V01'
+  });
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
@@ -117,7 +130,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const fetchFiles = async (folderId: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/drive/files/${folderId}`);
+      const res = await fetch(`/api/drive/files/${folderId}?details=true`);
       if (res.ok) {
         const data = await res.json();
         setFiles(data.files || []);
@@ -143,13 +156,26 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     fetchFiles(target.id);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentFolderId) return;
+    setPendingFile(file);
+    setShowNamingModal(true);
+  };
+
+  const handleFileUpload = async () => {
+    if (!pendingFile || !currentFolderId || !project) return;
 
     setUploading(true);
+    const zaryaName = generateZaryaFileName({
+      projectCode: project.code,
+      ...namingParams
+    });
+    const extension = pendingFile.name.split('.').pop();
+    const finalName = `${zaryaName}.${extension}`;
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', pendingFile, finalName);
     formData.append('folderId', currentFolderId);
 
     try {
@@ -158,7 +184,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         body: formData,
       });
       if (res.ok) {
-        alert('File uploaded successfully to Google Drive!');
+        alert(`File uploaded successfully as: ${finalName}`);
+        setShowNamingModal(false);
+        setPendingFile(null);
         fetchFiles(currentFolderId);
       }
     } catch (error) {
@@ -169,10 +197,29 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     }
   };
 
-  if (isLoading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
+  const formatSize = (bytes?: string) => {
+    if (!bytes) return 'N/A';
+    const b = parseInt(bytes);
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading && !uploading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[700px]">
       <header className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
@@ -211,7 +258,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
           <label className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all cursor-pointer flex items-center gap-2">
             {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
             Upload File
-            <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+            <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
           </label>
         </div>
       </header>
@@ -271,13 +318,24 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         )}
 
         {driveStatus?.isConfigured && project?.driveFolderId && files.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
-            <Folder className="w-16 h-16 opacity-20" />
-            <p className="text-sm font-medium">This folder is empty</p>
+          <div className="flex flex-col items-center justify-center h-full space-y-6">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-200">
+              <CloudUpload className="w-10 h-10" />
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-sm font-bold text-slate-600">This folder is empty</p>
+              <p className="text-xs text-slate-400">Drag and drop files here or use the button above</p>
+            </div>
+            <label className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all cursor-pointer flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Upload First File
+              <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
+            </label>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Folders Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
           {files.filter(f => f.mimeType === 'application/vnd.google-apps.folder').map(folder => (
             <div 
               key={folder.id} 
@@ -294,39 +352,206 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
           ))}
         </div>
 
+        {/* Files Table */}
         {files.some(f => f.mimeType !== 'application/vnd.google-apps.folder') && (
-          <div className="mt-12">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Files</h4>
-            <div className="space-y-2">
-              {files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').map(file => (
-                <div key={file.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
-                      {file.iconLink ? <img src={file.iconLink} className="w-5 h-5" referrerPolicy="no-referrer" /> : <File className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">{file.name}</p>
-                      <p className="text-[10px] text-slate-400">
-                        {file.size ? `${(parseInt(file.size) / 1024 / 1024).toFixed(2)} MB` : 'Size unknown'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <a 
-                      href={file.webViewLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-              ))}
+          <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">File Name</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Author</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Size</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').map((file, idx) => (
+                    <tr key={file.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4 text-xs text-slate-400 font-mono">{idx + 1}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
+                            {file.iconLink ? <img src={file.iconLink} className="w-4 h-4" referrerPolicy="no-referrer" /> : <File className="w-4 h-4" />}
+                          </div>
+                          <a 
+                            href={file.webViewLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-slate-700 truncate max-w-[300px] hover:text-blue-600 transition-colors"
+                          >
+                            {file.name}
+                          </a>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <User className="w-3 h-3 text-slate-400" />
+                          {file.lastModifyingUser?.displayName || 'System'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {formatDate(file.modifiedTime)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs text-slate-400 font-mono">{formatSize(file.size)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <a 
+                            href={file.webViewLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
       </div>
+
+      {/* Naming Convention Modal */}
+      <AnimatePresence>
+        {showNamingModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-xl font-bold text-slate-900">Zarya Naming Convention</h3>
+                <p className="text-xs text-slate-500 mt-1">Ensure the file follows the project's strict naming standards.</p>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</label>
+                    <select 
+                      value={namingParams.category}
+                      onChange={(e) => setNamingParams(prev => ({ ...prev, category: e.target.value as any }))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    >
+                      <option value="management">General & Management</option>
+                      <option value="technical">Contracts & Drawings</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</label>
+                    <input 
+                      type="text"
+                      value={namingParams.type}
+                      onChange={(e) => setNamingParams(prev => ({ ...prev, type: e.target.value.toUpperCase() }))}
+                      placeholder="e.g. SD, Cont, REP"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {namingParams.category === 'technical' ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Division (MasterFormat)</label>
+                      <input 
+                        type="text"
+                        value={namingParams.division}
+                        onChange={(e) => setNamingParams(prev => ({ ...prev, division: e.target.value }))}
+                        placeholder="e.g. Div 03"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ref No</label>
+                      <input 
+                        type="text"
+                        value={namingParams.refNo}
+                        onChange={(e) => setNamingParams(prev => ({ ...prev, refNo: e.target.value }))}
+                        placeholder="e.g. 001"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Department</label>
+                    <input 
+                      type="text"
+                      value={namingParams.dept}
+                      onChange={(e) => setNamingParams(prev => ({ ...prev, dept: e.target.value.toUpperCase() }))}
+                      placeholder="e.g. MGT, PROC, TECH"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</label>
+                  <input 
+                    type="text"
+                    value={namingParams.description}
+                    onChange={(e) => setNamingParams(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Short description"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Version</label>
+                  <input 
+                    type="text"
+                    value={namingParams.version}
+                    onChange={(e) => setNamingParams(prev => ({ ...prev, version: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. V01"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Preview Name:</p>
+                  <p className="text-xs font-mono text-blue-700 break-all">
+                    {project && generateZaryaFileName({ projectCode: project.code, ...namingParams })}
+                    .{pendingFile?.name.split('.').pop()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowNamingModal(false)}
+                  className="px-6 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleFileUpload}
+                  disabled={uploading || !namingParams.description}
+                  className="px-8 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
+                  Confirm & Upload
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

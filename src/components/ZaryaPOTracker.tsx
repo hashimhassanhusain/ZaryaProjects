@@ -1,30 +1,96 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Page, PurchaseOrder, POItem } from '../types';
-import { purchaseOrders } from '../data';
+import { useLocation } from 'react-router-dom';
+import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc } from 'firebase/firestore';
-import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock } from 'lucide-react';
-import { motion } from 'motion/react';
+import { collection, onSnapshot, setDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useProject } from '../context/ProjectContext';
 
 interface ZaryaPOTrackerProps {
   page: Page;
 }
 
 export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
+  const { selectedProject } = useProject();
+  const location = useLocation();
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editingPOId, setEditingPOId] = useState<string | null>(null);
+
+  // New PO State
+  const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
+    id: '',
+    date: new Date().toISOString().split('T')[0],
+    supplier: '',
+    wbsId: '',
+    masterFormat: '',
+    activityId: '',
+    actualStartDate: '',
+    actualFinishDate: '',
+    lineItems: []
+  });
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'purchaseOrders'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
-      setPos(data);
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'purchaseOrders');
-    });
-    return () => unsubscribe();
-  }, []);
+    if (!selectedProject) return;
+
+    const posUnsubscribe = onSnapshot(
+      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)), 
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
+        setPos(data);
+        setLoading(false);
+      }, (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'purchaseOrders');
+      }
+    );
+
+    const vendorsUnsubscribe = onSnapshot(
+      query(collection(db, 'vendors'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vendor)));
+      }
+    );
+
+    const activitiesUnsubscribe = onSnapshot(
+      query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity)));
+      }
+    );
+
+    const wbsUnsubscribe = onSnapshot(
+      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setWbsLevels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
+      }
+    );
+
+    return () => {
+      posUnsubscribe();
+      vendorsUnsubscribe();
+      activitiesUnsubscribe();
+      wbsUnsubscribe();
+    };
+  }, [selectedProject]);
+
+  // Handle incoming state to edit a specific PO
+  useEffect(() => {
+    const state = location.state as { editPOId?: string };
+    if (state?.editPOId && pos.length > 0) {
+      const poToEdit = pos.find(p => p.id === state.editPOId);
+      if (poToEdit) {
+        handleEditPO(poToEdit);
+        // Clear state to prevent re-opening on every render
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, pos]);
 
   // Flatten POs into items for tracking
   const items = useMemo(() => {
@@ -47,9 +113,11 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   }, [pos]);
 
   const seedData = async () => {
+    if (!selectedProject) return;
     const samplePOs: PurchaseOrder[] = [
       {
         id: 'COS001649',
+        projectId: selectedProject.id,
         supplier: 'Fuad Hama Saed',
         date: '2023-05-11',
         status: 'Approved',
@@ -70,73 +138,6 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           { id: 'li1', description: 'Wooden Formwork Panels', quantity: 100, unit: 'pcs', rate: 50000, amount: 5000000, status: 'Received' },
           { id: 'li2', description: 'Nails and Accessories', quantity: 50, unit: 'kg', rate: 65000, amount: 3250000, status: 'Received' },
         ]
-      },
-      {
-        id: 'COS001650',
-        supplier: 'Fuad Hama Saed',
-        date: '2023-05-11',
-        status: 'Approved',
-        amount: 2560000,
-        workPackageId: '6.1.3.1',
-        company: '511',
-        buyFromPartner: 'SUP000140',
-        purchaseOffice: 'P16314',
-        projectName: 'Villa 2',
-        buyer: 'BAWAN',
-        buyerName: 'Bawan Jamal',
-        currency: 'IQD',
-        workflowStatus: 'Approved',
-        divisions: 'Div. 03 - Concrete',
-        completion: 100,
-        location: 'Villa 2',
-        lineItems: [
-          { id: 'li3', description: 'Formwork Labor', quantity: 1, unit: 'job', rate: 2560000, amount: 2560000, status: 'Completed' },
-        ]
-      },
-      {
-        id: 'COS001701',
-        supplier: 'Fuad Hama Saed',
-        date: '2023-05-24',
-        status: 'Approved',
-        amount: 5500000,
-        workPackageId: '6.1.3.2',
-        company: '511',
-        buyFromPartner: 'SUP000140',
-        purchaseOffice: 'P16314',
-        projectName: 'Villa 2',
-        buyer: 'BAWAN',
-        buyerName: 'Bawan Jamal',
-        currency: 'IQD',
-        workflowStatus: 'Approved',
-        divisions: 'Div. 03 - Concrete',
-        completion: 85,
-        location: 'Villa 2',
-        lineItems: [
-          { id: 'li4', description: 'Reinforcement Steel 12mm', quantity: 5, unit: 'ton', rate: 800000, amount: 4000000, status: 'Received' },
-          { id: 'li5', description: 'Binding Wire', quantity: 10, unit: 'roll', rate: 150000, amount: 1500000, status: 'Received' },
-        ]
-      },
-      {
-        id: 'COS001822',
-        supplier: 'Wasta Noory Restaurant',
-        date: '2023-06-15',
-        status: 'Approved',
-        amount: 1250000,
-        workPackageId: '6.5.1',
-        company: '511',
-        buyFromPartner: 'SUP000210',
-        purchaseOffice: 'P16314',
-        projectName: 'Villa 2',
-        buyer: 'BAWAN',
-        buyerName: 'Bawan Jamal',
-        currency: 'IQD',
-        workflowStatus: 'Approved',
-        divisions: 'Div. 01 - General',
-        completion: 100,
-        location: 'Site Office',
-        lineItems: [
-          { id: 'li6', description: 'Staff Meals - June', quantity: 1, unit: 'month', rate: 1250000, amount: 1250000, status: 'Received' },
-        ]
       }
     ];
 
@@ -149,6 +150,347 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       handleFirestoreError(error, OperationType.WRITE, 'purchaseOrders');
     }
   };
+
+  const handleSavePO = async () => {
+    if (!selectedProject || !newPO.id || !newPO.supplier) return;
+
+    try {
+      const totalAmount = (newPO.lineItems || []).reduce((acc, item) => acc + item.amount, 0);
+      
+      // Calculate total PO completion based on line items weighted by amount
+      const totalWeightedCompletion = (newPO.lineItems || []).reduce((acc, item) => {
+        return acc + ((item.completion || 0) * item.amount);
+      }, 0);
+      const poCompletion = totalAmount > 0 ? Math.round(totalWeightedCompletion / totalAmount) : 0;
+
+      const poData: PurchaseOrder = {
+        ...newPO as PurchaseOrder,
+        projectId: selectedProject.id,
+        amount: totalAmount,
+        status: 'Approved',
+        workflowStatus: 'Approved',
+        completion: poCompletion,
+        projectName: selectedProject.name,
+        purchaseOffice: selectedProject.code
+      };
+
+      await setDoc(doc(db, 'purchaseOrders', poData.id), poData);
+
+      // Sync with Activity
+      if (poData.activityId) {
+        const activityRef = doc(db, 'activities', poData.activityId);
+        await updateDoc(activityRef, {
+          percentComplete: poCompletion,
+          status: poCompletion === 100 ? 'Completed' : 'In Progress',
+          poId: poData.id,
+          actualStartDate: poData.actualStartDate || null,
+          actualFinishDate: poData.actualFinishDate || null
+        });
+      }
+
+      setView('list');
+      setEditingPOId(null);
+      setNewPO({
+        id: '',
+        date: new Date().toISOString().split('T')[0],
+        supplier: '',
+        wbsId: '',
+        masterFormat: '',
+        activityId: '',
+        lineItems: []
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'purchaseOrders');
+    }
+  };
+
+  const handleEditPO = (po: PurchaseOrder) => {
+    setNewPO(po);
+    setEditingPOId(po.id);
+    setView('form');
+  };
+
+  const addLineItem = () => {
+    const newItem: POLineItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      description: '',
+      quantity: 0,
+      unit: '',
+      rate: 0,
+      amount: 0,
+      status: 'Pending',
+      completion: 0
+    };
+    setNewPO(prev => ({
+      ...prev,
+      lineItems: [...(prev.lineItems || []), newItem]
+    }));
+  };
+
+  const updateLineItem = (id: string, field: keyof POLineItem, value: any) => {
+    setNewPO(prev => ({
+      ...prev,
+      lineItems: (prev.lineItems || []).map(item => {
+        if (item.id === id) {
+          const updated = { ...item, [field]: value };
+          if (field === 'quantity' || field === 'rate') {
+            updated.amount = updated.quantity * updated.rate;
+          }
+          return updated;
+        }
+        return item;
+      })
+    }));
+  };
+
+  const removeLineItem = (id: string) => {
+    setNewPO(prev => ({
+      ...prev,
+      lineItems: (prev.lineItems || []).filter(item => item.id !== id)
+    }));
+  };
+
+  // Filter options for the modal
+  const availableWBS = useMemo(() => wbsLevels.filter(w => w.level <= 2), [wbsLevels]);
+  const availableMasterFormat = useMemo(() => {
+    if (!newPO.wbsId) return [];
+    const filteredActivities = activities.filter(a => a.wbsId === newPO.wbsId);
+    return Array.from(new Set(filteredActivities.map(a => a.division).filter(Boolean)));
+  }, [activities, newPO.wbsId]);
+
+  const availableActivities = useMemo(() => {
+    if (!newPO.wbsId || !newPO.masterFormat) return [];
+    return activities.filter(a => a.wbsId === newPO.wbsId && a.division === newPO.masterFormat);
+  }, [activities, newPO.wbsId, newPO.masterFormat]);
+
+  const renderPOForm = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="bg-white w-full overflow-hidden flex flex-col shadow-sm rounded-3xl border border-slate-200"
+    >
+      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 className="text-xl font-bold text-slate-900">{editingPOId ? 'Edit Purchase Order' : 'Create New Purchase Order'}</h3>
+          <p className="text-xs text-slate-500 mt-1">Project: {selectedProject?.name}</p>
+        </div>
+        <button onClick={() => setView('list')} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+          <X className="w-5 h-5 text-slate-500" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        {/* Step 1: Hierarchy Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">1. WBS (Zone/Building)</label>
+            <select
+              value={newPO.wbsId}
+              onChange={(e) => setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            >
+              <option value="">Select WBS...</option>
+              {availableWBS.map(w => (
+                <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">2. MasterFormat</label>
+            <select
+              value={newPO.masterFormat}
+              disabled={!newPO.wbsId}
+              onChange={(e) => setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
+            >
+              <option value="">Select Division...</option>
+              {availableMasterFormat.map(mf => (
+                <option key={mf} value={mf}>Div. {mf}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">3. Activity / Work Package</label>
+            <select
+              value={newPO.activityId}
+              disabled={!newPO.masterFormat}
+              onChange={(e) => {
+                const act = activities.find(a => a.id === e.target.value);
+                setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: act?.workPackage || '' }));
+              }}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
+            >
+              <option value="">Select Activity...</option>
+              {availableActivities.map(a => (
+                <option key={a.id} value={a.id}>{a.description}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Step 2: PO Details */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PO Code</label>
+            <input
+              type="text"
+              value={newPO.id}
+              disabled={!!editingPOId}
+              onChange={(e) => setNewPO(prev => ({ ...prev, id: e.target.value }))}
+              placeholder="e.g. PO-2024-001"
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl disabled:opacity-50"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Date</label>
+            <input
+              type="date"
+              value={newPO.date}
+              onChange={(e) => setNewPO(prev => ({ ...prev, date: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual Start</label>
+            <input
+              type="date"
+              value={newPO.actualStartDate || ''}
+              onChange={(e) => setNewPO(prev => ({ ...prev, actualStartDate: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual Finish</label>
+            <input
+              type="date"
+              value={newPO.actualFinishDate || ''}
+              onChange={(e) => setNewPO(prev => ({ ...prev, actualFinishDate: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vendor / Supplier</label>
+            <select
+              value={newPO.supplier}
+              onChange={(e) => setNewPO(prev => ({ ...prev, supplier: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            >
+              <option value="">Select Vendor...</option>
+              {vendors.map(v => (
+                <option key={v.id} value={v.name}>{v.vendorCode} - {v.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Step 3: Line Items */}
+        <div className="space-y-4 pt-6 border-t border-slate-100">
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Line Items (BOQ Breakdown)</label>
+            <button
+              onClick={addLineItem}
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Add Item
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {newPO.lineItems?.map((item) => (
+              <div key={item.id} className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 border border-slate-200 rounded-2xl">
+                <div className="col-span-3 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Description</label>
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                    className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
+                  />
+                </div>
+                <div className="col-span-1 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Qty</label>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(item.id, 'quantity', parseFloat(e.target.value))}
+                    className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
+                  />
+                </div>
+                <div className="col-span-1 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Unit</label>
+                  <input
+                    type="text"
+                    value={item.unit}
+                    onChange={(e) => updateLineItem(item.id, 'unit', e.target.value)}
+                    className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Rate</label>
+                  <input
+                    type="number"
+                    value={item.rate}
+                    onChange={(e) => updateLineItem(item.id, 'rate', parseFloat(e.target.value))}
+                    className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Amount</label>
+                  <div className="w-full bg-slate-100 p-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg">
+                    {item.amount.toLocaleString()}
+                  </div>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">% Completion</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={item.completion || 0}
+                      onChange={(e) => updateLineItem(item.id, 'completion', parseInt(e.target.value))}
+                      className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500">%</span>
+                  </div>
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  <button
+                    onClick={() => removeLineItem(item.id)}
+                    className="p-2 text-rose-500 hover:bg-rose-50 rounded transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {(!newPO.lineItems || newPO.lineItems.length === 0) && (
+              <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-xs">
+                No line items added. Click "Add Item" to begin.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+        <button
+          onClick={() => setView('list')}
+          className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors rounded-xl"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSavePO}
+          disabled={!newPO.id || !newPO.supplier || !newPO.activityId}
+          className="px-8 py-2 bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+        >
+          {editingPOId ? 'Update Purchase Order' : 'Save Purchase Order'}
+        </button>
+      </div>
+    </motion.div>
+  );
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' IQD';
@@ -400,83 +742,96 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
           <h3 className="text-lg font-bold text-slate-900">PO Log - Detailed Tracking</h3>
           <div className="flex gap-2">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full uppercase tracking-widest">Master Record</span>
+            <button
+              onClick={() => {
+                setNewPO({
+                  id: '',
+                  date: new Date().toISOString().split('T')[0],
+                  supplier: '',
+                  wbsId: '',
+                  masterFormat: '',
+                  activityId: '',
+                  lineItems: []
+                });
+                setEditingPOId(null);
+                setView('form');
+              }}
+              className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-3 h-3" /> Add Purchase Order
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[10px] border-collapse">
             <thead className="bg-slate-100 text-slate-500 font-bold uppercase tracking-wider">
               <tr className="divide-x divide-slate-200">
-                <th className="px-3 py-3 whitespace-nowrap">Company</th>
+                <th className="px-3 py-3 whitespace-nowrap">WBS</th>
+                <th className="px-3 py-3 whitespace-nowrap">MasterFormat</th>
+                <th className="px-3 py-3 whitespace-nowrap">Activity</th>
                 <th className="px-3 py-3 whitespace-nowrap">Order</th>
                 <th className="px-3 py-3 whitespace-nowrap">Order Date</th>
-                <th className="px-3 py-3 whitespace-nowrap">Buy-from BP</th>
                 <th className="px-3 py-3 whitespace-nowrap">Suppliers</th>
-                <th className="px-3 py-3 whitespace-nowrap">Purchase Office</th>
-                <th className="px-3 py-3 whitespace-nowrap">Project Name</th>
-                <th className="px-3 py-3 whitespace-nowrap">Buyer</th>
-                <th className="px-3 py-3 whitespace-nowrap">Buyer Name</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right">Ser Amount (IQD)</th>
-                <th className="px-3 py-3 whitespace-nowrap">Currency</th>
-                <th className="px-3 py-3 whitespace-nowrap">For Commingling</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right">Amount (IQD)</th>
                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
-                <th className="px-3 py-3 whitespace-nowrap">Workflow Status</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right">Order Amount (IQD)</th>
-                <th className="px-3 py-3 whitespace-nowrap">WorkPackage</th>
-                <th className="px-3 py-3 whitespace-nowrap">Divisions</th>
                 <th className="px-3 py-3 whitespace-nowrap text-center">% Completion</th>
-                <th className="px-3 py-3 whitespace-nowrap">Location</th>
+                <th className="px-3 py-3 whitespace-nowrap">Actual Start</th>
+                <th className="px-3 py-3 whitespace-nowrap">Actual Finish</th>
+                <th className="px-3 py-3 whitespace-nowrap text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {pos.map((po, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 transition-colors divide-x divide-slate-100">
-                  <td className="px-3 py-3 font-medium text-slate-600">{po.company || '511'}</td>
-                  <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
-                  <td className="px-3 py-3 text-slate-500">{po.date}</td>
-                  <td className="px-3 py-3 text-slate-600">{po.buyFromPartner || 'SUP000140'}</td>
-                  <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
-                  <td className="px-3 py-3 text-slate-500">{po.purchaseOffice || 'P16314'}</td>
-                  <td className="px-3 py-3 text-slate-600">{po.projectName || 'Villa 2'}</td>
-                  <td className="px-3 py-3 text-slate-500">{po.buyer || 'BAWAN'}</td>
-                  <td className="px-3 py-3 text-slate-500">{po.buyerName || 'Bawan Jamal'}</td>
-                  <td className="px-3 py-3 text-right font-mono">{po.amount.toLocaleString()}</td>
-                  <td className="px-3 py-3 text-center text-slate-400">{po.currency || 'IQD'}</td>
-                  <td className="px-3 py-3 text-center text-slate-400">{po.forCommingling || 'No'}</td>
-                  <td className="px-3 py-3">
-                    <span className={cn(
-                      "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
-                      po.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                    )}>
-                      {po.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-slate-500">{po.workflowStatus || 'Approved'}</td>
-                  <td className="px-3 py-3 text-right font-bold text-slate-900 font-mono">{po.amount.toLocaleString()}</td>
-                  <td className="px-3 py-3 text-slate-500 truncate max-w-[100px]">{po.workPackageId}</td>
-                  <td className="px-3 py-3">
-                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-medium whitespace-nowrap">
-                      {po.divisions || 'Div. 01 - General'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden min-w-[40px]">
-                        <div 
-                          className="h-full bg-emerald-500 transition-all"
-                          style={{ width: `${po.completion || 100}%` }}
-                        />
+              {pos.map((po, idx) => {
+                const wbs = wbsLevels.find(w => w.id === po.wbsId);
+                const activity = activities.find(a => a.id === po.activityId);
+                return (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors divide-x divide-slate-100">
+                    <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
+                    <td className="px-3 py-3 text-slate-500">Div. {po.masterFormat || 'N/A'}</td>
+                    <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>
+                    <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
+                    <td className="px-3 py-3 text-slate-500">{po.date}</td>
+                    <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
+                    <td className="px-3 py-3 text-right font-bold text-slate-900 font-mono">{po.amount.toLocaleString()}</td>
+                    <td className="px-3 py-3">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
+                        po.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                      )}>
+                        {po.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden min-w-[40px]">
+                          <div 
+                            className="h-full bg-emerald-500 transition-all"
+                            style={{ width: `${po.completion || 0}%` }}
+                          />
+                        </div>
+                        <span className="font-bold text-slate-700">{po.completion || 0}%</span>
                       </div>
-                      <span className="font-bold text-slate-700">{(po.completion || 100)}%</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-bold uppercase">
-                      {po.location || 'Villa'}
-                    </span>
+                    </td>
+                    <td className="px-3 py-3 text-slate-500">{po.actualStartDate || '-'}</td>
+                    <td className="px-3 py-3 text-slate-500">{po.actualFinishDate || '-'}</td>
+                    <td className="px-3 py-3 text-center">
+                      <button 
+                        onClick={() => handleEditPO(po)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {pos.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-3 py-12 text-center text-slate-400">
+                    No purchase orders found for this project.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -509,7 +864,9 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       {page.id === '4.2.3' && renderPaymentCertificate()}
       {page.id === '4.2.4' && renderCumulativeTracking()}
       {page.id === '4.2.5' && renderDashboard()}
-      {page.id === '4.2.6' && renderPOLog()}
+      {page.id === '4.2.6' && (
+        view === 'list' ? renderPOLog() : renderPOForm()
+      )}
 
       <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-blue-500 mt-0.5" />

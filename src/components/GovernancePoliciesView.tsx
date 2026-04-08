@@ -64,7 +64,7 @@ const DEFAULT_CONTENT = {
       },
       {
         subtitle: '4.2 Folder Structure',
-        content: '• 00-Transmittals: Incoming/Outgoing, RFIs.\n• 01-Management: Contracts, HSE, Risk, Meetings.\n• 02-Planning_Controls: Cost, Quality (IRs), Testing, Reports.\n• 03-Technical: MasterFormat 95 system (Div 01, 03, 09, 15, 16).'
+        content: '• 00-Transmittals: Incoming/Outgoing, RFIs.\n• 01-Management: Contracts, HSE, Risk, Meetings.\n• 02-Planning_Controls: Cost, Quality (IRs), Testing, Reports.\n• 03-Technical: MasterFormat 16 Divisions system (Div 01-16).'
       }
     ]
   },
