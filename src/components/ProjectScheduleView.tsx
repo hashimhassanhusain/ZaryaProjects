@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getParent, masterFormatDivisions } from '../data';
 import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder, Vendor } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, where, setDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, setDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { ActivityListView } from './ActivityListView';
 import { MilestoneListView } from './MilestoneListView';
@@ -341,9 +341,6 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
         viewLevel={viewLevel}
       />
     ));
-  };
-
-    return null;
   };
 
   const renderGanttContent = () => {
@@ -1484,23 +1481,6 @@ const WbsRow: React.FC<WbsRowProps> = ({
       !wbsActivities.some(a => a.description.toLowerCase().includes(searchQuery.toLowerCase()))) {
     return null;
   }
-
-  const getDateColor = (actual: string | undefined, planned: string | undefined) => {
-    if (!actual || !planned || actual === '-' || planned === 'TBD') return 'text-slate-500';
-    const aDate = new Date(actual);
-    const pDate = new Date(planned);
-    return aDate <= pDate ? 'text-emerald-600' : 'text-orange-500';
-  };
-
-  const getDurationColor = (actual: number | undefined, planned: number | undefined) => {
-    if (actual === undefined || planned === undefined) return 'text-slate-500';
-    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
-  };
-
-  const getCostColor = (actual: number | undefined, planned: number | undefined) => {
-    if (actual === undefined || planned === undefined) return 'text-slate-900';
-    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
-  };
 
   const wbsProgress = wbs.progress ?? calculateWbsProgress(wbs.id);
   const wbsPlannedCost = wbs.plannedCost ?? (wbsActivities.reduce((sum, a) => sum + a.amount, 0) + children.reduce((sum, c) => sum + activities.filter(a => a.wbsId === c.id).reduce((s, a) => s + a.amount, 0), 0));
