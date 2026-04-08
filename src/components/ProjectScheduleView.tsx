@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getParent, masterFormatDivisions } from '../data';
 import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder, Vendor } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, where, setDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, setDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { ActivityListView } from './ActivityListView';
 import { MilestoneListView } from './MilestoneListView';
@@ -339,11 +339,11 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
         activityColWidth={activityColWidth}
         columnWidths={columnWidths}
         viewLevel={viewLevel}
+        getDateColor={getDateColor}
+        getDurationColor={getDurationColor}
+        getCostColor={getCostColor}
       />
     ));
-  };
-
-    return null;
   };
 
   const renderGanttContent = () => {
@@ -1485,23 +1485,6 @@ const WbsRow: React.FC<WbsRowProps> = ({
     return null;
   }
 
-  const getDateColor = (actual: string | undefined, planned: string | undefined) => {
-    if (!actual || !planned || actual === '-' || planned === 'TBD') return 'text-slate-500';
-    const aDate = new Date(actual);
-    const pDate = new Date(planned);
-    return aDate <= pDate ? 'text-emerald-600' : 'text-orange-500';
-  };
-
-  const getDurationColor = (actual: number | undefined, planned: number | undefined) => {
-    if (actual === undefined || planned === undefined) return 'text-slate-500';
-    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
-  };
-
-  const getCostColor = (actual: number | undefined, planned: number | undefined) => {
-    if (actual === undefined || planned === undefined) return 'text-slate-900';
-    return actual <= planned ? 'text-emerald-600' : 'text-red-500';
-  };
-
   const wbsProgress = wbs.progress ?? calculateWbsProgress(wbs.id);
   const wbsPlannedCost = wbs.plannedCost ?? (wbsActivities.reduce((sum, a) => sum + a.amount, 0) + children.reduce((sum, c) => sum + activities.filter(a => a.wbsId === c.id).reduce((s, a) => s + a.amount, 0), 0));
   const wbsActualCost = wbs.actualCost ?? wbsActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0);
@@ -1529,12 +1512,12 @@ const WbsRow: React.FC<WbsRowProps> = ({
             <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
             <span className="text-xs font-bold text-slate-700 truncate">{wbs.title}</span>
           </div>
-          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbs.plannedStart || '-'}</div>}
-          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbs.actualStart || '-'}</div>}
-          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbs.plannedDuration ? `${wbs.plannedDuration}d` : '-'}</div>}
-          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbs.actualDuration ? `${wbs.actualDuration}d` : '-'}</div>}
-          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbs.plannedFinish || '-'}</div>}
-          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbs.actualFinish || '-'}</div>}
+          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsPlannedStart || '-'}</div>}
+          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsActualStart || '-'}</div>}
+          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbsPlannedDuration ? `${wbsPlannedDuration}d` : '-'}</div>}
+          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbsActualDuration ? `${wbsActualDuration}d` : '-'}</div>}
+          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsPlannedFinish || '-'}</div>}
+          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsActualFinish || '-'}</div>}
           {visibleColumns.progress && (
             <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
               <span className="text-[10px] font-bold text-blue-600 mb-0.5">{wbsProgress}%</span>
@@ -1577,6 +1560,9 @@ const WbsRow: React.FC<WbsRowProps> = ({
               activityColWidth={activityColWidth}
               columnWidths={columnWidths}
               viewLevel={viewLevel}
+              getDateColor={getDateColor}
+              getDurationColor={getDurationColor}
+              getCostColor={getCostColor}
             />
           ))}
           {!hasDivisionNodes && activeDivisions.map(divId => {

@@ -67,6 +67,7 @@ export interface PurchaseOrder {
   date: string;
   status: string;
   amount: number;
+  actualCost?: number;
   workPackageId: string;
   lineItems: POLineItem[];
   // Extra fields for PO Log
