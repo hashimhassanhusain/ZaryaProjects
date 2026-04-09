@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { Page, Project, PageVersion } from '../types';
 import { getParent, pages, getFocusArea } from '../data';
 import { 
@@ -207,38 +208,81 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       } else {
-        // CONTENT SECTION — pure jsPDF data rendering (no DOM capture)
-        // CLAUDE.md rule: NEVER use html2canvas — Tailwind v4 uses oklch() colors which break it
-        const fields = (page.formFields || []).filter(f => f.toLowerCase() !== 'approvals');
-        const fieldData = fields.map(f => [
-          f,
-          formData[f] || selectedProject.charterData?.[f] || '—'
-        ]);
-
-        if (fieldData.length > 0) {
-          (doc as any).autoTable({
-            startY: currentY,
-            head: [['Field', 'Value']],
-            body: fieldData,
-            theme: 'grid',
-            headStyles: { fillColor: [0, 82, 136], fontSize: 9, fontStyle: 'bold' },
-            bodyStyles: { fontSize: 9, textColor: [0, 0, 0], minCellHeight: 10 },
-            columnStyles: {
-              0: { fontStyle: 'bold', cellWidth: contentWidth * 0.35, textColor: [0, 82, 136] },
-              1: { cellWidth: contentWidth * 0.65 }
-            },
-            alternateRowStyles: { fillColor: [240, 245, 250] },
-            margin: { left: margin, right: margin }
+        // CONTENT SECTION USING HTML2CANVAS FOR ARABIC SUPPORT & WRAPPING
+        const element = document.getElementById('pdf-content');
+        if (element) {
+          // Temporarily show hidden elements for capture
+          const hiddenElements = element.querySelectorAll('.hidden');
+          hiddenElements.forEach(el => (el as HTMLElement).style.display = 'block');
+          
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
           });
-          currentY = (doc as any).lastAutoTable.finalY + 15;
-        } else if (page.content) {
-          // Pages with no formFields — render page.content as a paragraph
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(60, 60, 60);
-          const splitContent = doc.splitTextToSize(page.content, contentWidth);
-          doc.text(splitContent, margin, currentY);
-          currentY += splitContent.length * 6 + 15;
+          
+          // Restore hidden elements
+          hiddenElements.forEach(el => (el as HTMLElement).style.display = '');
+          
+          const imgData = canvas.toDataURL('image/png');
+          const imgProps = (doc as any).getImageProperties(imgData);
+          const pdfWidth = pageWidth - (margin * 2);
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          
+          // Handle multi-page if content is too long
+          let heightLeft = pdfHeight;
+          let position = currentY;
+          let pageHeightLimit = pageHeight - 40;
+          
+          // If it fits on the first page
+          if (heightLeft < (pageHeightLimit - currentY)) {
+            doc.addImage(imgData, 'PNG', margin, position, pdfWidth, pdfHeight);
+            currentY += pdfHeight + 10;
+          } else {
+            // Slice the image for multiple pages
+            const sliceHeight = (pageHeightLimit - currentY) * (imgProps.height / pdfHeight);
+            doc.addImage(imgData, 'PNG', margin, position, pdfWidth, (sliceHeight * pdfWidth) / imgProps.width, undefined, 'FAST');
+            
+            heightLeft -= (pageHeightLimit - currentY);
+            position = 25;
+            
+            while (heightLeft > 0) {
+              doc.addPage();
+              const currentSliceHeight = Math.min(heightLeft * (imgProps.height / pdfHeight), (pageHeight - 50) * (imgProps.height / pdfHeight));
+              doc.addImage(imgData, 'PNG', margin, position, pdfWidth, (currentSliceHeight * pdfWidth) / imgProps.width, undefined, 'FAST');
+              heightLeft -= (pageHeight - 50);
+              if (heightLeft <= 0) {
+                currentY = position + ((currentSliceHeight * pdfWidth) / imgProps.width) + 10;
+              }
+            }
+          }
+        } else {
+          // Fallback to manual drawing if element not found
+          doc.setFillColor(0, 82, 136); // Zarya Blue
+          doc.rect(margin, currentY, contentWidth, 10, 'F');
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(255, 255, 255);
+          doc.text('FIELD DESCRIPTION', margin + 5, currentY + 6.5);
+          doc.text('VALUE / DETAILS', margin + (contentWidth / 2) + 5, currentY + 6.5);
+          
+          currentY += 15;
+          const fields = page.formFields || [];
+          
+          for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (field.toLowerCase() === 'approvals') continue;
+
+            const val = formData[field] || selectedProject.charterData?.[field] || 'N/A';
+            
+            if (currentY > pageHeight - 40) {
+              doc.addPage();
+              currentY = 25;
+            }
+
+            currentY += drawField(field, val, margin, currentY, contentWidth);
+          }
         }
       }
 
@@ -572,7 +616,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       }
 
       // Generate and save PDF to Drive
-      let driveUploadError: string | null = null;
       try {
         const pdfMetadata = await generatePDF(true);
         if (pdfMetadata) {
@@ -581,18 +624,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           const newDoc = { ...pdfMetadata, version: nextDocVersion };
           updates.savedDocuments = [...savedDocs, newDoc];
         }
-      } catch (pdfErr: any) {
-        console.error('Drive upload failed:', pdfErr);
-        driveUploadError = pdfErr?.message || 'Unknown error';
+      } catch (pdfErr) {
+        console.error('Auto-PDF generation failed:', pdfErr);
       }
 
       await updateDoc(projectRef, updates);
 
-      if (driveUploadError) {
-        alert(`Document data saved to Firestore.\n\nDrive upload failed: ${driveUploadError}\n\nCheck that your Google Drive credentials are configured and the project workspace has been initialized.`);
-      } else {
-        alert(asNewVersion ? 'New version saved and uploaded to Drive successfully!' : 'Document updated and uploaded to Drive successfully!');
-      }
+      alert(asNewVersion ? 'New version saved and uploaded to Drive successfully!' : 'Document updated and uploaded to Drive successfully!');
       setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving document:', error);
@@ -989,10 +1027,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               >
                 <Printer className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => generatePDF(true).catch((err: any) => {
-                  alert(`Export failed: ${err?.message || 'Unknown error'}\n\nIf Drive is not configured, the PDF was saved locally.`);
-                })}
+              <button 
+                onClick={() => generatePDF(true)}
                 disabled={isExporting}
                 className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
               >
