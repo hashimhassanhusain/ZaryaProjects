@@ -1,0 +1,13 @@
+#!/bin/sh
+# Zarya pre-commit hook: reject any commit that deletes CLAUDE.md.
+# CLAUDE.md contains critical architecture instructions for Claude Code
+# and must never be removed from the repository.
+
+if git diff --cached --name-only --diff-filter=D | grep -qE "^CLAUDE\.md$"; then
+  echo ""
+  echo "  COMMIT REJECTED: CLAUDE.md cannot be deleted."
+  echo "  This file contains critical project instructions for Claude Code."
+  echo "  Edit it to update — do not delete it."
+  echo ""
+  exit 1
+fi
