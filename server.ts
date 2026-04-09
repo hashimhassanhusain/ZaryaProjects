@@ -314,7 +314,7 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
 });
 
 app.post('/api/projects/init-drive', async (req: any, res: any) => {
-  const { projectName, projectCode, charterData } = req.body;
+  const { projectName, projectCode, charterData, userEmail } = req.body;
   const { drive, error } = getDriveClient();
   if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
 
@@ -322,9 +322,28 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
     console.log('Using parent folder ID:', parentFolderId || 'ROOT');
     const rootFolderName = `[${projectCode}]_${projectName}_Project`;
-    
+
     // Create the project root folder inside the parent folder if provided
     const rootFolderId = await createFolder(drive, rootFolderName, parentFolderId);
+
+    // Share the root folder with the user so they can see files in their Google Drive
+    if (userEmail) {
+      try {
+        await drive.permissions.create({
+          fileId: rootFolderId,
+          requestBody: {
+            role: 'writer',
+            type: 'user',
+            emailAddress: userEmail,
+          },
+          supportsAllDrives: true,
+        });
+        console.log(`Shared root folder with ${userEmail}`);
+      } catch (permErr: any) {
+        // Non-fatal: log but continue — the service account can still upload files
+        console.warn(`Could not share folder with ${userEmail}:`, permErr.message);
+      }
+    }
 
     const folderTree = {
       "ADMIN_AND_CORRESPONDENCE_00": [
