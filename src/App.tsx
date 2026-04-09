@@ -18,10 +18,8 @@ import { TasksView } from './components/TasksView';
 import { MeetingsView } from './components/MeetingsView';
 import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
-import { ActivityListView } from './components/ActivityListView';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
-import { MilestoneListView } from './components/MilestoneListView';
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { VendorMasterRegister } from './components/VendorMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
@@ -109,10 +107,8 @@ const PageRenderer = () => {
   const isWBSPage = page.id === '2.2.9';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
-  const isActivityListPage = page.id === '2.3.3';
-  const isSchedulePage = page.id === '2.3.7';
+  const isSchedulePage = ['2.3', '2.3.7', '2.3.3', '2.3.5'].includes(page.id);
   const isAssumptionLogPage = page.id === '2.2.1';
-  const isMilestoneListPage = page.id === '2.3.5';
   const isPoliciesPage = page.id === '1.1.2';
   const isVendorRegisterPage = page.id === '3.3.4';
   const isPMPPage = page.id === '2.0.1';
@@ -145,14 +141,10 @@ const PageRenderer = () => {
           <EVMReportView page={page} />
         ) : isProgressReportPage ? (
           <ProgressReportView page={page} />
-        ) : isActivityListPage ? (
-          <ActivityListView page={page} />
         ) : isSchedulePage ? (
           <ProjectScheduleView page={page} />
         ) : isAssumptionLogPage ? (
           <AssumptionConstraintView page={page} />
-        ) : isMilestoneListPage ? (
-          <MilestoneListView page={page} />
         ) : isPoliciesPage ? (
           <GovernancePoliciesView page={page} />
         ) : isVendorRegisterPage ? (
