@@ -312,6 +312,34 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
     );
   };
 
+  const renderSummaryBar = (startDate: string | null, finishDate: string | null, progress: number = 0) => {
+    if (!startDate || !finishDate) return null;
+
+    const startOffset = getDayOffset(startDate);
+    const finishOffset = getDayOffset(finishDate);
+    const width = (finishOffset - startOffset + 1) * dayWidth;
+    const left = startOffset * dayWidth;
+
+    return (
+      <div className="relative h-10 flex items-center group/summary">
+        <div 
+          className="absolute h-2 bg-slate-800 z-10"
+          style={{ left: `${left}px`, width: `${width}px` }}
+        >
+          {/* Pointed ends */}
+          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-slate-800 -translate-x-full [clip-path:polygon(100%_0,0_50%,100%_100%)]" />
+          <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-slate-800 translate-x-full [clip-path:polygon(0_0,100%_50%,0_100%)]" />
+          
+          {/* Progress Overlay */}
+          <div 
+            className="h-full bg-slate-400/50"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
   const renderScheduleContent = () => {
     // Always start from top-level WBS nodes to maintain hierarchy
     return wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
@@ -357,10 +385,12 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
         expanded={expandedWbs}
         expandedActivities={expandedActivities}
         renderBar={renderBar}
+        renderSummaryBar={renderSummaryBar}
         rowRefs={rowRefs}
         purchaseOrders={purchaseOrders}
         visibleColumns={visibleColumns}
         viewLevel={viewLevel}
+        calculateWbsProgress={calculateWbsProgress}
       />
     ));
   };
@@ -834,9 +864,6 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
     <div className="space-y-6 pb-20">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <div className="text-sm font-medium text-blue-600 mb-1 uppercase tracking-wider">
-            {getParent(page.id)?.title || 'Schedule Domain'}
-          </div>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             {getParent(page.id) && (
               <>
@@ -1649,19 +1676,25 @@ interface GanttRowProps {
   expanded: Record<string, boolean>;
   expandedActivities: Record<string, boolean>;
   renderBar: (activity: Activity) => React.ReactNode;
+  renderSummaryBar: (startDate: string | null, finishDate: string | null, progress?: number) => React.ReactNode;
   rowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
   purchaseOrders: PurchaseOrder[];
   visibleColumns: Record<string, boolean>;
   viewLevel: ViewLevel;
+  calculateWbsProgress: (id: string) => number;
 }
 
 const GanttRow: React.FC<GanttRowProps> = ({ 
-  wbs, allWbs, activities, expanded, expandedActivities, renderBar, 
-  rowRefs, purchaseOrders, visibleColumns, viewLevel 
+  wbs, allWbs, activities, expanded, expandedActivities, renderBar, renderSummaryBar,
+  rowRefs, purchaseOrders, visibleColumns, viewLevel, calculateWbsProgress
 }) => {
   const children = allWbs.filter(w => w.parentId === wbs.id);
   const wbsActivities = activities.filter(a => a.wbsId === wbs.id);
   const isExpanded = expanded[wbs.id];
+
+  const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');
+  const wbsPlannedFinish = wbs.plannedFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '');
+  const wbsProgress = wbs.progress ?? calculateWbsProgress(wbs.id);
 
   const activitiesByDivision = useMemo(() => {
     const groups: Record<string, Activity[]> = {};
@@ -1677,7 +1710,9 @@ const GanttRow: React.FC<GanttRowProps> = ({
 
   return (
     <>
-      <div className={cn("h-10 border-b border-slate-100", wbs.level === 1 ? "bg-slate-50/50" : "")} />
+      <div className={cn("h-10 border-b border-slate-100", wbs.level === 1 ? "bg-slate-50/50" : "")}>
+        {renderSummaryBar(wbsPlannedStart, wbsPlannedFinish, wbsProgress)}
+      </div>
       {isExpanded && (
         <>
           {children.map(child => (
@@ -1689,10 +1724,12 @@ const GanttRow: React.FC<GanttRowProps> = ({
               expanded={expanded} 
               expandedActivities={expandedActivities}
               renderBar={renderBar} 
+              renderSummaryBar={renderSummaryBar}
               rowRefs={rowRefs} 
               purchaseOrders={purchaseOrders}
               visibleColumns={visibleColumns}
               viewLevel={viewLevel}
+              calculateWbsProgress={calculateWbsProgress}
             />
           ))}
           {activeDivisions.map(divId => {
@@ -1700,10 +1737,16 @@ const GanttRow: React.FC<GanttRowProps> = ({
             const divKey = `${wbs.id}-${divId}`;
             const isDivExpanded = expanded[divKey] ?? true;
 
+            const divPlannedStart = divActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '');
+            const divPlannedFinish = divActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '');
+            const divProgress = divActivities.length > 0 ? divActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / divActivities.length : 0;
+
             return (
               <React.Fragment key={divKey}>
                 {/* Division Header Row in Gantt */}
-                <div className="h-10 border-b border-slate-100 bg-slate-50/10" />
+                <div className="h-10 border-b border-slate-100 bg-slate-50/10">
+                  {renderSummaryBar(divPlannedStart, divPlannedFinish, divProgress)}
+                </div>
                 
                 {isDivExpanded && divActivities.map(act => {
                   const isActExpanded = expandedActivities[act.id];
