@@ -92,8 +92,7 @@ export const AdminProjectsView: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectName: 'Zarya Oil Field Dev',
-          projectCode: 'ZRY-001',
-          userEmail: auth.currentUser?.email ?? undefined
+          projectCode: 'ZRY-001'
         })
       });
 
@@ -133,8 +132,7 @@ export const AdminProjectsView: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectName: newProject.name,
-          projectCode: newProject.code,
-          userEmail: auth.currentUser?.email ?? undefined
+          projectCode: newProject.code
         })
       });
 
