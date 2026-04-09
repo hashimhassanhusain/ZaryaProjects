@@ -88,23 +88,7 @@ export const MilestoneListView: React.FC<MilestoneListViewProps> = ({ page }) =>
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="space-y-8">
-      <header className="flex justify-between items-end">
-        <div>
-          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">Schedule Domain</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{page.title}</h2>
-          <p className="text-slate-500">Significant points or events in the project timeline.</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-            <Printer className="w-5 h-5" />
-          </button>
-          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-            <Download className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
+    <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">

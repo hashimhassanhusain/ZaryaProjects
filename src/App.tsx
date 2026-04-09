@@ -58,6 +58,24 @@ const PageRenderer = () => {
     ];
     const domain = CANONICAL_DOMAINS.find(d => d.id === id);
     if (domain) {
+      // Special case for Schedule Domain to show Gantt directly as requested
+      if (domain.id === 'dom_sched') {
+        const schedulePage = pages.find(p => p.id === '2.3');
+        if (schedulePage) {
+          return (
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+              className="mx-auto"
+            >
+              <ProjectScheduleView page={schedulePage} />
+            </motion.div>
+          );
+        }
+      }
+
       // Find all pages that belong to this domain to list them below the dashboard
       const domainHubs = pages.filter(p => 
         p.type === 'hub' && 
@@ -107,7 +125,7 @@ const PageRenderer = () => {
   const isWBSPage = page.id === '2.2.9';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
-  const isSchedulePage = ['2.3', '2.3.7', '2.3.3', '2.3.5'].includes(page.id);
+  const isSchedulePage = page.id === '2.3';
   const isAssumptionLogPage = page.id === '2.2.1';
   const isPoliciesPage = page.id === '1.1.2';
   const isVendorRegisterPage = page.id === '3.3.4';

@@ -168,29 +168,17 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   }, {} as Record<string, Activity[]>);
 
   return (
-    <div className="space-y-8">
-      <header className="flex justify-between items-end">
-        <div>
-          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">{getParent(page.id)?.title || 'Schedule Domain'}</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-            {getParent(page.id) && (
-              <span className="text-slate-400 font-normal">{getParent(page.id)?.title} &gt; </span>
-            )}
-            {page.title}
-          </h2>
-          <p className="text-slate-500">Activities derived from BOQ and linked to Purchase Orders.</p>
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={generateFromBOQ}
-            disabled={isGenerating || boqItems.length === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Generate from BOQ
-          </button>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button 
+          onClick={generateFromBOQ}
+          disabled={isGenerating || boqItems.length === 0}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+        >
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Generate from BOQ
+        </button>
+      </div>
 
       <div className="space-y-6">
         {Object.keys(groupedActivities).length === 0 ? (
