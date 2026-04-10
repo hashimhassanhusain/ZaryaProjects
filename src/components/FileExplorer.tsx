@@ -72,8 +72,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         body: JSON.stringify({
           projectName: project.name,
           projectCode: project.code,
-          charterData: project.charterData,
-          userEmail: (await import('../firebase')).auth.currentUser?.email ?? undefined
+          charterData: project.charterData
         })
       });
 

@@ -11,6 +11,18 @@ import { WBSView } from './components/WBSView';
 import { EVMReportView } from './components/EVMReportView';
 import { ProgressReportView } from './components/ProgressReportView';
 import { UserFormView } from './components/UserFormView';
+import { QualityMetricsRegisterView } from './components/QualityMetricsRegisterView';
+import { ChangeLogView } from './components/ChangeLogView';
+import { ChangeManagementHubView } from './components/ChangeManagementHubView';
+import { ChangeRequestHubView } from './components/ChangeRequestHubView';
+import { DecisionLogView } from './components/DecisionLogView';
+import { RiskRegisterView } from './components/RiskRegisterView';
+import { IssueLogView } from './components/IssueLogView';
+import { StakeholderRegisterView } from './components/StakeholderRegisterView';
+import { LessonsLearnedView } from './components/LessonsLearnedView';
+import { ChangeRequestView } from './components/ChangeRequestView';
+import { ProjectCharterView } from './components/ProjectCharterView';
+import { GovernanceHubView } from './components/GovernanceHubView';
 import { AdminUsersView } from './components/AdminUsersView';
 import { AdminProjectsView } from './components/AdminProjectsView';
 import { ProjectFormView } from './components/ProjectFormView';
@@ -18,8 +30,10 @@ import { TasksView } from './components/TasksView';
 import { MeetingsView } from './components/MeetingsView';
 import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
+import { ActivityListView } from './components/ActivityListView';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
+import { MilestoneListView } from './components/MilestoneListView';
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { VendorMasterRegister } from './components/VendorMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
@@ -128,11 +142,24 @@ const PageRenderer = () => {
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isSchedulePage = page.id === '2.3';
-  const isAssumptionLogPage = page.id === '2.2.1';
-  const isPoliciesPage = page.id === '1.1.2';
+  const isAssumptionLogPage = ['2.1.5', '2.2.1'].includes(page.id);
   const isVendorRegisterPage = page.id === '3.3.4';
-  const isPMPPage = page.id === '2.0.1';
-  const isLogManagementPage = ['1.2.1', '2.7.5', '3.1.1', '3.2.1', '4.1.1', '4.2.6'].includes(page.id);
+  const isQualityMetricsPage = page.id === '2.1.4';
+  const isChangeLogPage = page.id === '4.1.1';
+  const isRiskRegisterPage = page.id === '2.7.5';
+  const isIssueLogPage = page.id === '3.2.1';
+  const isStakeholderRegisterPage = page.id === '1.2.1';
+  const isLessonsLearnedPage = page.id === '5.1.1';
+  const isGovernanceHubPage = [
+    '1.1.1', '1.1.2', // Charter, Policies
+    '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
+    '1.2.1', '2.1.5', '3.1.1', '3.2.1', '3.4.1', '5.1.1' // Logs
+  ].includes(page.id);
+  const isChangeRequestPage = page.id === '3.1.1';
+  const isChangeRequestHubPage = page.id === '3.4.1';
+  const isDecisionLogPage = page.id === '3.1.3';
+  const isChangeManagementHubPage = page.id === '3.4';
+  const isLogManagementPage = ['1.2.1', '2.7.5', '3.1.1', '3.2.1', '4.1.1', '5.1.1'].includes(page.id);
 
   return (
     <AnimatePresence mode="wait">
@@ -165,12 +192,30 @@ const PageRenderer = () => {
           <ProjectScheduleView page={page} />
         ) : isAssumptionLogPage ? (
           <AssumptionConstraintView page={page} />
-        ) : isPoliciesPage ? (
-          <GovernancePoliciesView page={page} />
+        ) : isQualityMetricsPage ? (
+          <QualityMetricsRegisterView page={page} />
+        ) : isChangeLogPage ? (
+          <ChangeLogView page={page} />
+        ) : isRiskRegisterPage ? (
+          <RiskRegisterView page={page} />
+        ) : isIssueLogPage ? (
+          <IssueLogView page={page} />
+        ) : isStakeholderRegisterPage ? (
+          <StakeholderRegisterView page={page} />
+        ) : isLessonsLearnedPage ? (
+          <LessonsLearnedView page={page} />
+        ) : isGovernanceHubPage ? (
+          <GovernanceHubView page={page} />
+        ) : isChangeRequestHubPage ? (
+          <ChangeRequestHubView page={page} />
+        ) : isDecisionLogPage ? (
+          <DecisionLogView page={page} />
+        ) : isChangeManagementHubPage ? (
+          <ChangeManagementHubView page={page} />
+        ) : isChangeRequestPage ? (
+          <ChangeRequestView page={page} />
         ) : isVendorRegisterPage ? (
           <VendorMasterRegister page={page} />
-        ) : isPMPPage ? (
-          <ProjectManagementPlanView page={page} />
         ) : isLogManagementPage ? (
           <LogManagementView page={page} />
         ) : page.type === 'hub' ? (

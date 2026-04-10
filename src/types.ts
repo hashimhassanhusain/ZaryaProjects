@@ -151,6 +151,35 @@ export interface SiteIssue {
   assignedToId: string;
   severity: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'Open' | 'Resolved';
+  isUrgent?: boolean;
+  stakeholderId?: string;
+}
+
+export interface CommunicationPlanEntry {
+  id: string;
+  projectId: string;
+  stakeholderId: string;
+  stakeholderName: string;
+  information: string;
+  method: string;
+  frequency: string;
+  sender: string;
+  status: 'Active' | 'Inactive';
+}
+
+export interface ProjectIssue {
+  id: string;
+  projectId: string;
+  category: string;
+  issue: string;
+  impact: string;
+  urgency: 'Low' | 'Medium' | 'High' | 'Urgent';
+  responsibleParty: string;
+  actions: string;
+  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+  dueDate: string;
+  comments: string;
+  stakeholderId?: string;
 }
 
 export interface DailyReport {
@@ -296,11 +325,109 @@ export interface Project {
   location?: string;
   description?: string;
   driveFolderId?: string;
+  adminPin?: string;
   charterData?: Record<string, string>;
   charterHistory?: PageVersion[];
+  policyData?: Record<string, any>;
+  policyHistory?: PageVersion[];
+  pmpData?: Record<string, any>;
+  pmpHistory?: PageVersion[];
+  cmpData?: Record<string, any>;
+  cmpHistory?: PageVersion[];
+  qmpData?: Record<string, any>;
+  qmpHistory?: PageVersion[];
+  commPlanData?: Record<string, any>;
+  commPlanHistory?: PageVersion[];
+  smpData?: Record<string, any>;
+  smpHistory?: PageVersion[];
+  rmpData?: Record<string, any>;
+  rmpHistory?: PageVersion[];
+  scopePlanData?: Record<string, any>;
+  scopePlanHistory?: PageVersion[];
+  hrmpData?: Record<string, any>;
+  hrmpHistory?: PageVersion[];
+  schedulePlanData?: Record<string, any>;
+  schedulePlanHistory?: PageVersion[];
+  costPlanData?: Record<string, any>;
+  costPlanHistory?: PageVersion[];
+  procurementPlanData?: Record<string, any>;
+  procurementPlanHistory?: PageVersion[];
+  riskPlanData?: Record<string, any>;
+  riskPlanHistory?: PageVersion[];
+  qualityMetricsData?: Record<string, any>;
+  qualityMetricsHistory?: PageVersion[];
+  qualityMetricEntriesData?: Record<string, any>;
+  qualityMetricEntriesHistory?: PageVersion[];
+  decisionLogData?: Record<string, any>;
+  decisionLogHistory?: PageVersion[];
+  changeRequestData?: Record<string, any>;
+  changeRequestHistory?: PageVersion[];
+  changeLogData?: Record<string, any>;
+  changeLogHistory?: PageVersion[];
   pageData?: Record<string, Record<string, string>>;
   pageHistory?: Record<string, PageVersion[]>;
   savedDocuments?: SavedDocument[];
+}
+
+export interface QualityMetricEntry {
+  id: string;
+  projectId: string;
+  metricId: string; // e.g. ZRY-QUA-001
+  item: string;
+  masterFormatCode?: string;
+  wbsId?: string;
+  metric: string;
+  measurementMethod: string;
+  acceptanceCriteria: string;
+  targetValue?: number;
+  minValue?: number;
+  maxValue?: number;
+  unit?: string;
+  status: 'Active' | 'Inactive';
+  complianceStatus?: 'Compliant' | 'Non-Compliant' | 'Pending';
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface QualityMetricVersion {
+  id: string;
+  metricEntryId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<QualityMetricEntry>;
+  changeSummary: string;
+}
+
+export interface DecisionLogEntry {
+  id: string;
+  projectId: string;
+  decisionId: string; // e.g. ZRY-DEC-001
+  category: 'Schedule' | 'Cost/Price' | 'Quantity' | 'Quality' | 'Scope';
+  decision: string;
+  responsibleParty: string;
+  date: string;
+  comments: string;
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface DecisionLogVersion {
+  id: string;
+  decisionId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<DecisionLogEntry>;
+  changeSummary: string;
 }
 
 export interface BreadcrumbItem {
@@ -321,4 +448,181 @@ export interface Vendor {
   discipline: string; // MasterFormat Division
   status: 'Active' | 'Contract Ended' | 'Suspended';
   contractUrl?: string;
+}
+
+export interface Stakeholder {
+  id: string;
+  projectId: string;
+  name: string;
+  position: string;
+  role: string;
+  contactInfo: string;
+  classification: 'Internal' | 'External';
+  influence: 'Low' | 'Medium' | 'High';
+  interest: 'Low' | 'Medium' | 'High';
+  expectations: string;
+  requirements: string;
+  priorityScore: number;
+  influenceScore: number;
+  criticalityIndex: number;
+  communicationFrequency: string;
+  engagementLevel: 'Green' | 'Amber' | 'Red';
+  category?: string;
+  version?: number;
+  isSystemUser?: boolean;
+  systemAccessLevel?: string;
+  loginCredentials?: string;
+}
+
+export interface StakeholderAnalysis {
+  id: string;
+  projectId: string;
+  stakeholderId: string;
+  stakeholderName: string;
+  power: number; // 1-10
+  interest: number; // 1-10
+  strategy: 'Manage Closely' | 'Keep Satisfied' | 'Keep Informed' | 'Monitor';
+  version: number;
+  lastUpdated: string;
+  updatedBy: string;
+}
+
+export interface StakeholderAnalysisVersion {
+  id: string;
+  analysisId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  actionType: 'Create' | 'Edit' | 'Delete';
+  data: Partial<StakeholderAnalysis>;
+  changeSummary: string;
+}
+
+export interface SystemAuditLog {
+  id: string;
+  projectId: string;
+  module: string;
+  versionNumber: string;
+  editorName: string;
+  timestamp: string;
+  actionType: string;
+  changeSummary: string;
+  data?: any;
+}
+
+export interface StakeholderVersion {
+  id: string;
+  stakeholderId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  actionType: 'Create' | 'Edit' | 'Delete';
+  data: Partial<Stakeholder>;
+}
+
+export interface ProjectPhase {
+  id: string;
+  name: string;
+  deliverables: string[];
+}
+
+export interface TailoringDecision {
+  id: string;
+  knowledgeArea: string;
+  isTailoredOut: boolean;
+  justification: string;
+}
+
+export interface ProjectBaselines {
+  scope: string;
+  schedule: string;
+  cost: number;
+}
+
+export interface ProjectManagementPlan {
+  id: string;
+  projectId: string;
+  phases: ProjectPhase[];
+  tailoringDecisions: TailoringDecision[];
+  baselines: ProjectBaselines;
+  version: number;
+  lastUpdated: string;
+  updatedBy: string;
+}
+
+export interface ProjectManagementVersion {
+  id: string;
+  planId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<ProjectManagementPlan>;
+  changeSummary: string;
+}
+
+export interface CCBMember {
+  id: string;
+  name: string;
+  role: string;
+  responsibility: string;
+  authority: 'High' | 'Medium' | 'Low';
+}
+
+export interface ChangeManagementPlan {
+  id: string;
+  projectId: string;
+  approach: string;
+  definitions: string;
+  budgetThreshold: number;
+  scheduleThreshold: number;
+  ccbMembers: CCBMember[];
+  version: number;
+  lastUpdated: string;
+  updatedBy: string;
+}
+
+export interface ChangeManagementVersion {
+  id: string;
+  planId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<ChangeManagementPlan>;
+  changeSummary: string;
+}
+
+export interface QualityRole {
+  id: string;
+  userId: string;
+  userName: string;
+  roleTitle: string;
+  responsibilities: string;
+  hasTechnicalApproverAuthority: boolean;
+}
+
+export interface QualityManagementPlan {
+  id: string;
+  projectId: string;
+  planningApproach: string;
+  assuranceApproach: string;
+  controlApproach: string;
+  improvementApproach: string;
+  acceptanceCriteriaLogic: string;
+  roles: QualityRole[];
+  version: number;
+  lastUpdated: string;
+  updatedBy: string;
+}
+
+export interface QualityManagementVersion {
+  id: string;
+  planId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<QualityManagementPlan>;
+  changeSummary: string;
 }

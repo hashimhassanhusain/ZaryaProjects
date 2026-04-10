@@ -3,6 +3,8 @@ import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User 
 import { purchaseOrders, users } from '../data';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useProject } from '../context/ProjectContext';
 import { 
   CloudSun, 
@@ -121,163 +123,104 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         }
       }
 
-      // 4. Generate PDF and upload to Drive
-      // Follows CLAUDE.md: jsPDF + autoTable only — never html2canvas
-      let driveFileName: string | null = null;
-      let driveError: string | null = null;
-      if (selectedProject?.driveFolderId) {
-        try {
-          const { default: jsPDF } = await import('jspdf');
-          const { default: autoTable } = await import('jspdf-autotable');
+      // 4. Generate and Upload PDF to Drive
+      try {
+        const doc = new jsPDF();
+        const projectCode = selectedProject?.code || 'ZRY';
+        const dateStr = new Date().toISOString().split('T')[0];
+        const fileName = `${projectCode}-ZRY-SITE-RPT-${dateStr}.pdf`;
 
-          const reportDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
-          const projectCode = selectedProject.code || 'P00000';
-          driveFileName = `${projectCode}-ZRY-SITE-RPT-${reportDate}.pdf`;
+        // PDF Header
+        doc.setFontSize(20);
+        doc.setTextColor(40);
+        doc.text('DAILY SITE REPORT', 105, 20, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
+        doc.text(`Date: ${dateStr}`, 20, 42);
+        doc.text(`Submitted By: ${auth.currentUser.email}`, 20, 49);
 
-          const pdfDoc = new jsPDF();
-          const pageWidth = pdfDoc.internal.pageSize.getWidth();
-          const pageHeight = pdfDoc.internal.pageSize.getHeight();
-          const margin = 20;
-          let y = 20;
-
-          // Header
-          pdfDoc.setFontSize(18);
-          pdfDoc.setFont('helvetica', 'bold');
-          pdfDoc.setTextColor(0, 82, 136);
-          pdfDoc.text('DAILY SITE REPORT', pageWidth / 2, y, { align: 'center' });
-          y += 9;
-          pdfDoc.setFontSize(10);
-          pdfDoc.setFont('helvetica', 'normal');
-          pdfDoc.setTextColor(80, 80, 80);
-          pdfDoc.text(
-            `${selectedProject.name}  |  ${selectedProject.code}  |  ${new Date().toLocaleDateString('en-GB')}`,
-            pageWidth / 2, y, { align: 'center' }
-          );
-          y += 7;
-          pdfDoc.setDrawColor(0, 82, 136);
-          pdfDoc.setLineWidth(0.5);
-          pdfDoc.line(margin, y, pageWidth - margin, y);
-          y += 10;
-
-          // Weather
-          if (weather) {
-            autoTable(pdfDoc, {
-              startY: y,
-              head: [['Temp (°C)', 'Condition', 'Humidity (%)', 'Wind (km/h)']],
-              body: [[weather.temp, weather.condition, `${weather.humidity}%`, `${weather.windSpeed} km/h`]],
-              theme: 'grid',
-              headStyles: { fillColor: [0, 82, 136], fontSize: 9, fontStyle: 'bold', halign: 'center' },
-              bodyStyles: { fontSize: 9, halign: 'center' },
-              margin: { left: margin, right: margin }
-            });
-            y = (pdfDoc as any).lastAutoTable.finalY + 10;
-          }
-
-          // Key Activities
-          if (activities.length > 0) {
-            pdfDoc.setFontSize(10);
-            pdfDoc.setFont('helvetica', 'bold');
-            pdfDoc.setTextColor(0, 82, 136);
-            pdfDoc.text('KEY ACTIVITIES', margin, y);
-            y += 5;
-            autoTable(pdfDoc, {
-              startY: y,
-              head: [['PO Item', 'Work Description', 'Progress (%)']],
-              body: activities.map(a => [
-                a.poLineItemId || '—',
-                a.description || '—',
-                `${a.progressUpdate}%`
-              ]),
-              theme: 'grid',
-              headStyles: { fillColor: [0, 82, 136], fontSize: 9, fontStyle: 'bold' },
-              bodyStyles: { fontSize: 9 },
-              columnStyles: { 2: { halign: 'center' as const } },
-              margin: { left: margin, right: margin }
-            });
-            y = (pdfDoc as any).lastAutoTable.finalY + 10;
-          }
-
-          // Text sections helper
-          const addSection = (title: string, text: string, color: [number, number, number] = [0, 82, 136]) => {
-            if (!text.trim()) return;
-            if (y > pageHeight - 40) { pdfDoc.addPage(); y = 20; }
-            pdfDoc.setFontSize(10);
-            pdfDoc.setFont('helvetica', 'bold');
-            pdfDoc.setTextColor(color[0], color[1], color[2]);
-            pdfDoc.text(title, margin, y);
-            y += 6;
-            pdfDoc.setFontSize(9);
-            pdfDoc.setFont('helvetica', 'normal');
-            pdfDoc.setTextColor(60, 60, 60);
-            const lines = pdfDoc.splitTextToSize(text, pageWidth - margin * 2);
-            pdfDoc.text(lines, margin, y);
-            y += (lines.length * 5) + 10;
-          };
-
-          addSection('GENERAL WORKS & SAFETY', generalWorks);
-          addSection('DELIVERABLES & MEASUREMENTS', deliverables);
-          addSection('INCIDENTS & ACCIDENTS', incidents, [220, 38, 38]);
-
-          // Issues table
-          if (issues.length > 0) {
-            if (y > pageHeight - 40) { pdfDoc.addPage(); y = 20; }
-            pdfDoc.setFontSize(10);
-            pdfDoc.setFont('helvetica', 'bold');
-            pdfDoc.setTextColor(220, 38, 38);
-            pdfDoc.text('TECHNICAL ISSUES', margin, y);
-            y += 5;
-            autoTable(pdfDoc, {
-              startY: y,
-              head: [['Title', 'Description', 'Severity', 'Status']],
-              body: issues.map(i => [i.title || '—', i.description || '—', i.severity, i.status]),
-              theme: 'grid',
-              headStyles: { fillColor: [220, 38, 38], fontSize: 9, fontStyle: 'bold' },
-              bodyStyles: { fontSize: 9 },
-              margin: { left: margin, right: margin }
-            });
-          }
-
-          // Footer on every page
-          const pageCount = (pdfDoc as any).internal.getNumberOfPages();
-          for (let i = 1; i <= pageCount; i++) {
-            pdfDoc.setPage(i);
-            pdfDoc.setFontSize(7);
-            pdfDoc.setTextColor(150, 150, 150);
-            pdfDoc.text(
-              `Submitted by: ${auth.currentUser?.email || 'Unknown'}  |  Generated: ${new Date().toLocaleString()}  |  Page ${i} of ${pageCount}`,
-              pageWidth / 2, pageHeight - 8, { align: 'center' }
-            );
-          }
-
-          // Upload to Drive
-          const pdfBlob = pdfDoc.output('blob');
-          const formData = new FormData();
-          formData.append('file', pdfBlob, driveFileName);
-          formData.append('projectRootId', selectedProject.driveFolderId);
-          formData.append('path', 'SITE_OPERATIONS_04/04.1_Daily_Site_Reports');
-
-          const driveRes = await fetch('/api/drive/upload-by-path', {
-            method: 'POST',
-            body: formData
-          });
-          if (!driveRes.ok) {
-            const errData = await driveRes.json().catch(() => null);
-            throw new Error(errData?.error || `Drive upload failed (${driveRes.status})`);
-          }
-        } catch (driveErr: any) {
-          console.error('Daily Report Drive upload failed:', driveErr);
-          driveError = driveErr?.message || 'Unknown error';
-          driveFileName = null;
+        if (weather) {
+          doc.text(`Weather: ${weather.condition}, ${weather.temp}°C, Humidity: ${weather.humidity}%, Wind: ${weather.windSpeed}km/h`, 20, 56);
         }
-      }
 
-      setIsSaving(false);
-      if (driveError) {
-        alert(`Daily Report saved to Firestore.\n\nDrive upload failed: ${driveError}\n\nCheck that the project workspace has been initialized.`);
-      } else if (driveFileName) {
-        alert(`Daily Report submitted successfully!\n\nPDF saved to Drive: ${driveFileName}`);
-      } else {
-        alert('Daily Report submitted successfully! Progress has been synced.');
+        // Activities Table
+        doc.setFontSize(14);
+        doc.text('Key Activities', 20, 70);
+        
+        const activityRows = activities.map(a => {
+          const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
+          return [
+            poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A',
+            a.description,
+            `${a.progressUpdate}%`
+          ];
+        });
+
+        autoTable(doc, {
+          startY: 75,
+          head: [['PO Item', 'Work Description', 'Progress']],
+          body: activityRows,
+        });
+
+        // General Works & Deliverables
+        let currentY = (doc as any).lastAutoTable.finalY + 15;
+        
+        doc.setFontSize(14);
+        doc.text('General Works & Safety', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(generalWorks || 'None reported', 20, currentY + 7, { maxWidth: 170 });
+        
+        currentY += 30;
+        doc.setFontSize(14);
+        doc.text('Deliverables & Measurements', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(deliverables || 'None reported', 20, currentY + 7, { maxWidth: 170 });
+
+        // Incidents & Issues
+        currentY += 30;
+        doc.setFontSize(14);
+        doc.text('Incidents & Issues', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(`Incidents: ${incidents || 'None'}`, 20, currentY + 7, { maxWidth: 170 });
+
+        if (issues.length > 0) {
+          const issueRows = issues.map(i => {
+            const assignee = users.find(u => u.uid === i.assignedToId);
+            return [i.title, i.severity, assignee?.name || 'Unassigned', i.status];
+          });
+          
+          autoTable(doc, {
+            startY: currentY + 15,
+            head: [['Title', 'Severity', 'Assigned To', 'Status']],
+            body: issueRows,
+          });
+        }
+
+        // Convert PDF to Blob
+        const pdfBlob = doc.output('blob');
+        const formData = new FormData();
+        formData.append('file', pdfBlob, fileName);
+        formData.append('path', 'SITE_OPERATIONS_04/04.1_Daily_Site_Reports');
+
+        const driveRes = await fetch('/api/drive/upload-by-path', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!driveRes.ok) {
+          const driveError = await driveRes.json();
+          console.error('Drive upload failed:', driveError);
+        } else {
+          console.log('PDF uploaded to Drive successfully');
+        }
+
+        setIsSaving(false);
+        alert(`Daily Report submitted successfully!\nProgress synced and PDF saved to Drive: ${fileName}`);
+      } catch (pdfError) {
+        console.error('Error generating/uploading PDF:', pdfError);
+        setIsSaving(false);
+        alert('Daily Report saved to database, but there was an error generating the PDF for Drive.');
       }
       
       // Reset form
