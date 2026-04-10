@@ -24,6 +24,8 @@ export interface BOQItem {
   wbsId?: string; // Reference to terminal WBS level
   poNumber?: string;
   completion: number; // 0-100
+  currency?: 'USD' | 'IQD';
+  exchangeRate?: number;
 }
 
 export interface WBSLevel {
@@ -55,6 +57,8 @@ export interface POLineItem {
   amount: number;
   status: string;
   completion?: number; // 0-100
+  currency?: 'USD' | 'IQD';
+  exchangeRate?: number;
 }
 
 export interface PurchaseOrder {
@@ -78,7 +82,8 @@ export interface PurchaseOrder {
   buyer?: string;
   buyerName?: string;
   serAmount?: number;
-  currency?: string;
+  currency?: 'USD' | 'IQD';
+  exchangeRate?: number;
   forCommingling?: string;
   workflowStatus?: string;
   divisions?: string;
@@ -128,6 +133,8 @@ export interface Activity {
   predecessors?: ActivityDependency[];
   predecessorId?: string; // Legacy field for simple FS
   successorId?: string; // Legacy field
+  currency?: 'USD' | 'IQD';
+  exchangeRate?: number;
 }
 
 export interface WeatherData {

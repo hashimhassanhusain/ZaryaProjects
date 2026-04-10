@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { motion } from 'motion/react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
@@ -24,8 +25,9 @@ import {
   Building,
   MapPin
 } from 'lucide-react';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { AIAssistant } from './AIAssistant';
+import { BOQItem } from '../types';
 
 const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color }: any) => (
   <motion.div 
@@ -59,6 +61,7 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
 
 export const ProjectDashboard: React.FC = () => {
   const { selectedProject, setSelectedProject, projects, loading } = useProject();
+  const { formatAmount, convertToIQD } = useCurrency();
   const { projectId } = useParams();
   const [boqTotal, setBoqTotal] = useState(0);
 
@@ -76,12 +79,18 @@ export const ProjectDashboard: React.FC = () => {
 
     const q = query(collection(db, 'boq'), where('projectId', '==', selectedProject.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const total = snapshot.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+      const items = snapshot.docs.map(doc => doc.data() as BOQItem);
+      const total = items.reduce((sum, item) => {
+        const amount = item.amount || 0;
+        const itemCurrency = item.currency || 'IQD';
+        // Convert everything to IQD for the total
+        return sum + (itemCurrency === 'USD' ? convertToIQD(amount, 'USD') : amount);
+      }, 0);
       setBoqTotal(total);
     });
 
     return () => unsubscribe();
-  }, [selectedProject]);
+  }, [selectedProject, convertToIQD]);
 
   if (loading) {
     return (
@@ -107,7 +116,7 @@ export const ProjectDashboard: React.FC = () => {
         { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
         { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
         { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
-        { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
+        { title: 'Finance', value: formatAmount(boqTotal, 'IQD'), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
       ],
       alerts: []
     };

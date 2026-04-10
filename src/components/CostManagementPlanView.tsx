@@ -49,6 +49,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -76,6 +77,7 @@ interface CostPlanData {
 
 export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { formatAmount } = useCurrency();
   const [costPlan, setCostPlan] = useState<CostPlanData>({
     projectTitle: '',
     datePrepared: new Date().toISOString().split('T')[0],
@@ -117,10 +119,11 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
   }, [selectedProject?.id]);
 
   const calculateThresholdValue = () => {
-    if (!selectedProject?.charterData?.budget) return null;
-    const budget = parseFloat(selectedProject.charterData.budget.replace(/[^0-9.]/g, ''));
+    if (!selectedProject?.charterData?.estimatedBudget) return null;
+    const budget = Number(selectedProject.charterData.estimatedBudget);
     if (isNaN(budget)) return null;
-    return (budget * (costPlan.thresholdPercentage / 100)).toLocaleString();
+    const currency = (selectedProject.charterData.currency as 'USD' | 'IQD') || 'USD';
+    return formatAmount(budget * (costPlan.thresholdPercentage / 100), currency);
   };
 
   const handleSave = async (isNewVersion: boolean = false) => {
@@ -372,7 +375,7 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
               {thresholdValue && (
                 <div className="flex-1 border-l border-slate-200 pl-3">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Calculated Value</label>
-                  <div className="text-xs font-bold text-blue-600">≈ {thresholdValue} IQD</div>
+                  <div className="text-xs font-bold text-blue-600">≈ {thresholdValue}</div>
                 </div>
               )}
             </div>

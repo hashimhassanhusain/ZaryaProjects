@@ -52,6 +52,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { ProjectProvider, useProject } from './context/ProjectContext';
 import { UIProvider, useUI } from './context/UIContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 
 const PageRenderer = () => {
@@ -334,9 +335,11 @@ export default function App() {
     <ErrorBoundary>
       <ProjectProvider>
         <UIProvider>
-          <Router>
-            <AppLayout />
-          </Router>
+          <CurrencyProvider>
+            <Router>
+              <AppLayout />
+            </Router>
+          </CurrencyProvider>
         </UIProvider>
       </ProjectProvider>
     </ErrorBoundary>

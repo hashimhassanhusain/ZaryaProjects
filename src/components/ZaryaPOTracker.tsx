@@ -7,7 +7,9 @@ import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, Che
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
+import { DollarSign, Coins, RefreshCw } from 'lucide-react';
 
 interface ZaryaPOTrackerProps {
   page: Page;
@@ -15,6 +17,7 @@ interface ZaryaPOTrackerProps {
 
 export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { formatAmount, exchangeRate, currency: displayCurrency, convertToUSD, convertToIQD } = useCurrency();
   const location = useLocation();
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -35,6 +38,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     activityId: '',
     actualStartDate: '',
     actualFinishDate: '',
+    currency: 'IQD',
+    exchangeRate: exchangeRate,
     lineItems: []
   });
 
@@ -186,6 +191,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         ...newPO as PurchaseOrder,
         projectId: selectedProject.id,
         amount: totalAmount,
+        currency: newPO.currency || 'IQD',
+        exchangeRate: newPO.exchangeRate || exchangeRate,
         status: 'Approved',
         workflowStatus: 'Approved',
         completion: poCompletion,
@@ -243,7 +250,9 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       rate: 0,
       amount: 0,
       status: 'Pending',
-      completion: 0
+      completion: 0,
+      currency: newPO.currency as 'USD' | 'IQD' || 'IQD',
+      exchangeRate: newPO.exchangeRate || exchangeRate
     };
     setNewPO(prev => ({
       ...prev,
@@ -354,7 +363,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         </div>
 
         {/* Step 2: PO Details */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-6 pt-6 border-t border-slate-100">
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PO Code</label>
             <input
@@ -372,6 +381,26 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               type="date"
               value={newPO.date}
               onChange={(e) => setNewPO(prev => ({ ...prev, date: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Currency</label>
+            <select
+              value={newPO.currency}
+              onChange={(e) => setNewPO(prev => ({ ...prev, currency: e.target.value as 'USD' | 'IQD' }))}
+              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="IQD">IQD (د.ع)</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exchange Rate</label>
+            <input
+              type="number"
+              value={newPO.exchangeRate}
+              onChange={(e) => setNewPO(prev => ({ ...prev, exchangeRate: parseFloat(e.target.value) }))}
               className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
           </div>
@@ -462,7 +491,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 <div className="col-span-2 space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Amount</label>
                   <div className="w-full bg-slate-100 p-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg">
-                    {item.amount.toLocaleString()}
+                    {formatAmount(item.amount, newPO.currency || 'IQD')}
                   </div>
                 </div>
                 <div className="col-span-2 space-y-1">
@@ -516,8 +545,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     </motion.div>
   );
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' IQD';
+  const formatCurrency = (val: number, curr: string = 'IQD') => {
+    return formatAmount(val, curr as 'USD' | 'IQD');
   };
 
   const calculateRemaining = (item: POItem) => {
@@ -583,9 +612,9 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                       className="w-20 text-right border-b border-slate-200 focus:border-blue-500 focus:outline-none"
                     />
                   </td>
-                  <td className="px-4 py-4 text-right">{item.price.toLocaleString()}</td>
+                  <td className="px-4 py-4 text-right">{formatAmount(item.price, 'IQD')}</td>
                   <td className="px-4 py-4">{item.uom}</td>
-                  <td className="px-4 py-4 text-right font-semibold">{(item.currentQty * item.price).toLocaleString()}</td>
+                  <td className="px-4 py-4 text-right font-semibold">{formatAmount(item.currentQty * item.price, 'IQD')}</td>
                 </tr>
               ))}
             </tbody>
@@ -593,7 +622,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               <tr>
                 <td colSpan={5} className="px-4 py-4 text-right text-blue-900">Total Current Payment:</td>
                 <td className="px-4 py-4 text-right text-blue-900">
-                  {items.reduce((acc, item) => acc + (item.currentQty * item.price), 0).toLocaleString()} IQD
+                  {formatAmount(items.reduce((acc, item) => acc + (item.currentQty * item.price), 0), 'IQD')}
                 </td>
               </tr>
             </tfoot>
@@ -649,11 +678,11 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <tr key={idx} className={cn("hover:bg-slate-50 transition-colors", isLow && "bg-rose-50/30")}>
                     <td className="px-4 py-4 font-mono">{item.code}</td>
                     <td className="px-4 py-4">{item.description}</td>
-                    <td className="px-4 py-4 text-right font-semibold">{(item.totalQty * item.price).toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right font-semibold">{formatAmount(item.totalQty * item.price, 'IQD')}</td>
                     <td className="px-4 py-4 text-right">{totalReceived}</td>
-                    <td className="px-4 py-4 text-right font-medium">{(totalReceived * item.price).toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right font-medium">{formatAmount(totalReceived * item.price, 'IQD')}</td>
                     <td className="px-4 py-4 text-right font-bold text-blue-600">{remainingQty}</td>
-                    <td className="px-4 py-4 text-right font-bold text-emerald-600">{remainingAmount.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right font-bold text-emerald-600">{formatAmount(remainingAmount, 'IQD')}</td>
                     <td className="px-4 py-4">
                       <span className={cn(
                         "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
@@ -716,7 +745,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <div className="text-right">
             <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Committed</h4>
             <div className="text-2xl font-black tracking-tight text-emerald-400">
-              ${totalCommitted.toLocaleString()}
+              {formatAmount(totalCommitted, 'USD')}
             </div>
           </div>
         </div>
@@ -786,20 +815,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               <div>
                 <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Committed (POs)</div>
                 <div className="text-2xl font-bold text-blue-400">
-                  {totalCommitted.toLocaleString()} <span className="text-sm">USD</span>
+                  {formatAmount(totalCommitted, 'USD')}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                 <div>
                   <div className="text-[10px] text-slate-400 mb-1">Total Paid</div>
                   <div className="text-sm font-bold">
-                    {items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0).toLocaleString()}
+                    {formatAmount(items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0), 'IQD')}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400 mb-1">Total Remaining</div>
                   <div className="text-sm font-bold text-emerald-400">
-                    {items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0).toLocaleString()}
+                    {formatAmount(items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0), 'IQD')}
                   </div>
                 </div>
               </div>

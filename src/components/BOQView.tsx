@@ -10,13 +10,16 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
-import { cn, formatCurrency } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
+import { cn } from '../lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GoogleGenAI, Type } from "@google/genai";
+import { DollarSign, Coins } from 'lucide-react';
 
 export const BOQView: React.FC = () => {
   const { selectedProject } = useProject();
+  const { formatAmount, exchangeRate, currency: displayCurrency, convertToUSD, convertToIQD } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +36,9 @@ export const BOQView: React.FC = () => {
     quantity: 0,
     rate: 0,
     division: '01',
-    workPackage: ''
+    workPackage: '',
+    currency: 'IQD',
+    exchangeRate: exchangeRate
   });
 
   useEffect(() => {
@@ -72,13 +77,15 @@ export const BOQView: React.FC = () => {
         projectId: selectedProject.id,
         wbsId: selectedWbsId,
         amount: (itemToSave.quantity || 0) * (itemToSave.rate || 0),
+        currency: itemToSave.currency || 'IQD',
+        exchangeRate: itemToSave.exchangeRate || exchangeRate,
         completion: 0,
         location: wbsLevels.find(l => l.id === selectedWbsId)?.title || ''
       };
       await setDoc(doc(db, 'boq', item.id), item);
       if (!customItem) {
         setShowAddItem(false);
-        setNewItem({ description: '', unit: 'm3', quantity: 0, rate: 0, division: '01', workPackage: '' });
+        setNewItem({ description: '', unit: 'm3', quantity: 0, rate: 0, division: '01', workPackage: '', currency: 'IQD', exchangeRate: exchangeRate });
       }
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'boq');
@@ -91,6 +98,9 @@ export const BOQView: React.FC = () => {
       if (!item) return;
       const updatedItem = { ...item, ...updates };
       updatedItem.amount = (updatedItem.quantity || 0) * (updatedItem.rate || 0);
+      if (updates.currency) {
+        updatedItem.exchangeRate = exchangeRate;
+      }
       await setDoc(doc(db, 'boq', id), updatedItem);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'boq');
@@ -136,8 +146,10 @@ export const BOQView: React.FC = () => {
       - Detailed Description of the item
       - Quantity (number)
       - Unit (e.g., 'm3', 'ton', 'm2', 'LS')
-      - Unit Rate (number, in IQD)
+      - Unit Rate (number)
+      - Currency (either 'USD' or 'IQD')
       
+      If the document uses a specific exchange rate, please note it.
       If Quantity, Unit, or Rate are not explicitly listed but a Total Amount is provided, set Quantity to 1, Unit to 'LS', and Rate to the Total Amount.
       If a row represents a sub-item or a detail, include it as a separate item.
       Return the result as a JSON array of objects.
@@ -170,9 +182,10 @@ export const BOQView: React.FC = () => {
                 description: { type: Type.STRING, description: "Detailed description of the item" },
                 quantity: { type: Type.NUMBER, description: "Quantity of the item" },
                 unit: { type: Type.STRING, description: "Unit of measurement" },
-                rate: { type: Type.NUMBER, description: "Unit rate in IQD" }
+                rate: { type: Type.NUMBER, description: "Unit rate" },
+                currency: { type: Type.STRING, description: "Currency (USD or IQD)" }
               },
-              required: ["division", "workPackage", "description", "quantity", "unit", "rate"]
+              required: ["division", "workPackage", "description", "quantity", "unit", "rate", "currency"]
             }
           }
         }
@@ -194,6 +207,8 @@ export const BOQView: React.FC = () => {
           projectId: selectedProject.id,
           wbsId: selectedWbsId || '',
           amount: (item.quantity || 0) * (item.rate || 0),
+          currency: item.currency || 'IQD',
+          exchangeRate: exchangeRate,
           completion: 0,
           location: selectedWbsId ? wbsLevels.find(l => l.id === selectedWbsId)?.title || 'General' : 'General'
         };
@@ -233,16 +248,16 @@ export const BOQView: React.FC = () => {
 
     const summaryData = masterFormatDivisions.map(div => {
       const divItems = currentItems.filter(item => item.division === div.id);
-      const total = divItems.reduce((sum, item) => sum + item.amount, 0);
-      return [div.id, div.title, formatCurrency(total)];
-    }).filter(row => row[2] !== '0 IQD');
+      const total = divItems.reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
+      return [div.id, div.title, formatAmount(total, 'IQD')];
+    }).filter(row => row[2] !== formatAmount(0, 'IQD'));
 
-    const grandTotal = currentItems.reduce((sum, item) => sum + item.amount, 0);
+    const grandTotal = currentItems.reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
 
     autoTable(doc, {
       startY: 60,
       head: [['Div', 'Description', 'Total']],
-      body: [...summaryData, ['', 'GRAND TOTAL', formatCurrency(grandTotal)]],
+      body: [...summaryData, ['', 'GRAND TOTAL', formatAmount(grandTotal, 'IQD')]],
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: { 
@@ -279,8 +294,8 @@ export const BOQView: React.FC = () => {
         item.description,
         item.quantity.toLocaleString(),
         item.unit,
-        formatCurrency(item.rate),
-        formatCurrency(item.amount)
+        formatAmount(item.rate, item.currency || 'IQD'),
+        formatAmount(item.amount, item.currency || 'IQD')
       ]);
 
       autoTable(doc, {
@@ -490,7 +505,9 @@ export const BOQView: React.FC = () => {
                             </div>
                             <div className="text-right">
                               <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Value</div>
-                              <div className="text-sm font-bold text-slate-900 font-mono">{formatCurrency(total)}</div>
+                              <div className="text-sm font-bold text-slate-900 font-mono">
+                                {formatAmount(items.reduce((sum, i) => sum + (i.currency === 'USD' ? convertToIQD(i.amount, 'USD') : i.amount), 0), 'IQD')}
+                              </div>
                             </div>
                           </div>
 
@@ -603,7 +620,7 @@ export const BOQView: React.FC = () => {
                                         — {masterFormatDivisions.find(d => d.id === divId)?.title || 'Other'}
                                       </span>
                                       <div className="ml-auto text-[10px] font-bold text-slate-500">
-                                        {items.length} Items | Total: {formatCurrency(items.reduce((sum, i) => sum + i.amount, 0))}
+                                        {items.length} Items | Total: {formatAmount(items.reduce((sum, i) => sum + (i.currency === 'USD' ? convertToIQD(i.amount, 'USD') : i.amount), 0), 'IQD')}
                                       </div>
                                     </div>
                                   </td>
@@ -640,15 +657,25 @@ export const BOQView: React.FC = () => {
                                         className="w-16 bg-transparent border-none focus:ring-0 text-sm text-slate-600 p-0"
                                       />
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                      <input 
-                                        type="number"
-                                        value={item.rate}
-                                        onChange={(e) => handleUpdateItem(item.id, { rate: parseFloat(e.target.value) || 0 })}
-                                        className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
-                                      />
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center gap-2">
+                                        <input 
+                                          type="number"
+                                          value={item.rate}
+                                          onChange={(e) => handleUpdateItem(item.id, { rate: parseFloat(e.target.value) || 0 })}
+                                          className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
+                                        />
+                                        <button 
+                                          onClick={() => handleUpdateItem(item.id, { currency: item.currency === 'USD' ? 'IQD' : 'USD' })}
+                                          className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-1 rounded"
+                                        >
+                                          {item.currency || 'IQD'}
+                                        </button>
+                                      </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right font-mono">{formatCurrency(item.amount)}</td>
+                                    <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right font-mono">
+                                      {formatAmount(item.amount, item.currency || 'IQD')}
+                                    </td>
                                     <td className="px-6 py-4">
                                       <div className="flex justify-center">
                                         <button 
@@ -811,20 +838,42 @@ export const BOQView: React.FC = () => {
                     placeholder="m3, ton, m2, etc."
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Currency</label>
+                    <select 
+                      value={newItem.currency}
+                      onChange={e => setNewItem({...newItem, currency: e.target.value as 'USD' | 'IQD'})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="IQD">IQD (د.ع)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate</label>
+                    <input 
+                      type="number" 
+                      value={newItem.rate}
+                      onChange={e => setNewItem({...newItem, rate: parseFloat(e.target.value)})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate (IQD)</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 USD = X IQD)</label>
                   <input 
                     type="number" 
-                    value={newItem.rate}
-                    onChange={e => setNewItem({...newItem, rate: parseFloat(e.target.value)})}
+                    value={newItem.exchangeRate}
+                    onChange={e => setNewItem({...newItem, exchangeRate: parseFloat(e.target.value)})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end col-span-2">
                   <div className="w-full p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Amount</div>
                     <div className="text-lg font-bold text-slate-900">
-                      {formatCurrency((newItem.quantity || 0) * (newItem.rate || 0))}
+                      {formatAmount((newItem.quantity || 0) * (newItem.rate || 0), newItem.currency || 'IQD')}
                     </div>
                   </div>
                 </div>

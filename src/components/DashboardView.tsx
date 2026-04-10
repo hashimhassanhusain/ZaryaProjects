@@ -23,9 +23,10 @@ import { getChildren, getParent, getFocusArea } from '../data';
 import { motion } from 'motion/react';
 import { DomainDashboard } from './DomainDashboard';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn } from '../lib/utils';
 
 interface DashboardViewProps {
   page: Page;
@@ -58,6 +59,7 @@ const getDomainIcon = (domain?: string, title?: string) => {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChildren }) => {
   const { selectedProject } = useProject();
+  const { formatAmount, convertToIQD } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -101,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
     .map(level => {
       const total = boqItems
         .filter(item => item.wbsId === level.id)
-        .reduce((sum, item) => sum + item.amount, 0);
+        .reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
       return { ...level, total };
     })
     .filter(l => l.total > 0)
@@ -172,7 +174,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   </div>
                 </div>
                 <div className="text-xl font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
-                <div className="text-sm font-bold text-emerald-600 font-mono">{formatCurrency(loc.total)}</div>
+                <div className="text-sm font-bold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
               </motion.div>
             ))}
           </div>

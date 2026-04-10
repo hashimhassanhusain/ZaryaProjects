@@ -42,6 +42,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -85,7 +86,9 @@ interface CharterData {
   milestones: Milestone[];
   
   // Section 3
-  estimatedBudget: string;
+  estimatedBudget: number;
+  currency: 'USD' | 'IQD';
+  exchangeRate: number;
   stakeholders: CharterStakeholder[];
   pmAuthority: string;
   staffingDecisions: string;
@@ -106,6 +109,7 @@ interface CharterData {
 
 export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { exchangeRate: currentExchangeRate, formatAmount } = useCurrency();
   const [charter, setCharter] = useState<CharterData>({
     projectTitle: '',
     projectSponsor: '',
@@ -123,7 +127,9 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       other: { objective: '', successCriteria: '', approver: '' },
     },
     milestones: [{ id: '1', description: '', dueDate: '' }],
-    estimatedBudget: '',
+    estimatedBudget: 0,
+    currency: 'USD',
+    exchangeRate: currentExchangeRate,
     stakeholders: [{ id: '1', name: '', role: '' }],
     pmAuthority: '',
     staffingDecisions: '',
@@ -794,15 +800,55 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
             {activeSection === 3 && (
               <div className="space-y-10">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estimated Budget</label>
-                  <input 
-                    type="text"
-                    value={charter.estimatedBudget}
-                    onChange={(e) => setCharter({ ...charter, estimatedBudget: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-lg font-black text-blue-400 outline-none"
-                    placeholder="$ 0.00"
-                  />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estimated Budget</label>
+                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                      {(['USD', 'IQD'] as const).map((curr) => (
+                        <button
+                          key={curr}
+                          onClick={() => setCharter({ ...charter, currency: curr })}
+                          className={cn(
+                            "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
+                            charter.currency === curr ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                          )}
+                        >
+                          {curr}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        value={charter.estimatedBudget}
+                        onChange={(e) => setCharter({ ...charter, estimatedBudget: Number(e.target.value) })}
+                        className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-lg font-black text-blue-400 outline-none"
+                        placeholder="0.00"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">
+                        {charter.currency}
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        value={charter.exchangeRate}
+                        onChange={(e) => setCharter({ ...charter, exchangeRate: Number(e.target.value) })}
+                        className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-lg font-black text-emerald-400 outline-none"
+                        placeholder="Exchange Rate"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">
+                        Rate
+                      </div>
+                    </div>
+                  </div>
+                  {charter.estimatedBudget > 0 && (
+                    <div className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold text-slate-600">
+                      Formatted: {formatAmount(charter.estimatedBudget, charter.currency)}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-6">
