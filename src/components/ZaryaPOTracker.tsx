@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem } from '../types';
+import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem, ProjectManagementPlan } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -21,6 +21,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPOId, setEditingPOId] = useState<string | null>(null);
 
@@ -71,6 +72,23 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         setWbsLevels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
       }
     );
+
+    const fetchPmPlan = async () => {
+      try {
+        const q = query(
+          collection(db, 'projectManagementPlans'),
+          where('projectId', '==', selectedProject.id),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setPmPlan(snap.docs[0].data() as ProjectManagementPlan);
+        }
+      } catch (err) {
+        console.error("Failed to fetch PM Plan in PO Tracker:", err);
+      }
+    };
+    fetchPmPlan();
 
     return () => {
       posUnsubscribe();
@@ -654,93 +672,143 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     </div>
   );
 
-  const renderDashboard = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <TrendingDown className="w-5 h-5 text-blue-600" />
-          </div>
-          <h3 className="font-bold text-slate-800">Budget Utilization</h3>
-        </div>
-        <div className="space-y-4">
-          {items.map((item, idx) => {
-            const { totalReceived } = calculateRemaining(item);
-            const percent = (totalReceived / item.totalQty) * 100;
-            return (
-              <div key={idx}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-500 truncate w-32">{item.description}</span>
-                  <span className="font-bold">{percent.toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div 
-                    className={cn("h-full transition-all duration-1000", percent > 80 ? "bg-rose-500" : "bg-blue-500")}
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+  const renderDashboard = () => {
+    const totalCommitted = pos.reduce((acc, po) => acc + po.amount, 0);
+    const globalLimit = pmPlan?.baselines.cost || 0;
+    const utilizationPercent = globalLimit > 0 ? (totalCommitted / globalLimit) * 100 : 0;
 
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-rose-50 rounded-lg">
-            <AlertTriangle className="w-5 h-5 text-rose-600" />
+    return (
+      <div className="space-y-6">
+        {/* Global Limit Banner */}
+        <div className="bg-slate-900 rounded-3xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-white/10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
+              <ShieldCheck className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest">Global Project Limit</h4>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight">${globalLimit.toLocaleString()}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">USD (Synced from PMP)</span>
+              </div>
+            </div>
           </div>
-          <h3 className="font-bold text-slate-800">Critical Alerts</h3>
+          
+          <div className="flex-1 max-w-md w-full">
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+              <span className="text-slate-400">Budget Utilization</span>
+              <span className={cn(utilizationPercent > 90 ? "text-rose-400" : "text-blue-400")}>
+                {utilizationPercent.toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-3 bg-white/10 rounded-full overflow-hidden border border-white/5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(utilizationPercent, 100)}%` }}
+                className={cn(
+                  "h-full transition-all duration-1000",
+                  utilizationPercent > 90 ? "bg-rose-500" : "bg-blue-500"
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="text-right">
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Committed</h4>
+            <div className="text-2xl font-black tracking-tight text-emerald-400">
+              ${totalCommitted.toLocaleString()}
+            </div>
+          </div>
         </div>
-        <div className="space-y-3">
-          {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty > 0.8).map((item, idx) => (
-            <div key={idx} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <TrendingDown className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="font-bold text-slate-800">Package Utilization</h3>
+            </div>
+            <div className="space-y-4">
+              {items.map((item, idx) => {
+                const { totalReceived } = calculateRemaining(item);
+                const percent = (totalReceived / item.totalQty) * 100;
+                return (
+                  <div key={idx}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-500 truncate w-32">{item.description}</span>
+                      <span className="font-bold">{percent.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full transition-all duration-1000", percent > 80 ? "bg-rose-500" : "bg-blue-500")}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-rose-50 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <h3 className="font-bold text-slate-800">Critical Alerts</h3>
+            </div>
+            <div className="space-y-3">
+              {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty > 0.8).map((item, idx) => (
+                <div key={idx} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+                  <div>
+                    <div className="text-xs font-bold text-rose-900">{item.code} - Low Balance</div>
+                    <div className="text-[10px] text-rose-700">Less than 20% remaining on this PO line. Action required.</div>
+                  </div>
+                </div>
+              ))}
+              {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty <= 0.8).length === items.length && (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400">All PO balances are healthy.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
+            <h3 className="font-bold mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-blue-400" />
+              Financial Summary
+            </h3>
+            <div className="space-y-6">
               <div>
-                <div className="text-xs font-bold text-rose-900">{item.code} - Low Balance</div>
-                <div className="text-[10px] text-rose-700">Less than 20% remaining on this PO line. Action required.</div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Committed (POs)</div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {totalCommitted.toLocaleString()} <span className="text-sm">USD</span>
+                </div>
               </div>
-            </div>
-          ))}
-          {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty <= 0.8).length === items.length && (
-            <div className="text-center py-6">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-              <p className="text-xs text-slate-400">All PO balances are healthy.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
-        <h3 className="font-bold mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-400" />
-          Financial Summary
-        </h3>
-        <div className="space-y-6">
-          <div>
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Contract Value</div>
-            <div className="text-2xl font-bold text-blue-400">
-              {items.reduce((acc, i) => acc + (i.totalQty * i.price), 0).toLocaleString()} <span className="text-sm">IQD</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
-            <div>
-              <div className="text-[10px] text-slate-400 mb-1">Total Paid</div>
-              <div className="text-sm font-bold">
-                {items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0).toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 mb-1">Total Remaining</div>
-              <div className="text-sm font-bold text-emerald-400">
-                {items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0).toLocaleString()}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                <div>
+                  <div className="text-[10px] text-slate-400 mb-1">Total Paid</div>
+                  <div className="text-sm font-bold">
+                    {items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 mb-1">Total Remaining</div>
+                  <div className="text-sm font-bold text-emerald-400">
+                    {items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0).toLocaleString()}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPOLog = () => {
     return (

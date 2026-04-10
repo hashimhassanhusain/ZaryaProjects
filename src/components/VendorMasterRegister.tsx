@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Vendor, PurchaseOrder, Page } from '../types';
+import { Vendor, PurchaseOrder, Page, Stakeholder } from '../types';
 import { useProject } from '../context/ProjectContext';
 import { 
   Search, Filter, Plus, MoreHorizontal, Phone, Mail, MapPin, 
@@ -90,6 +90,36 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
 
       await setDoc(doc(db, 'vendors', vendorId), newVendor);
       
+      // --- VENDOR-STAKEHOLDER SYNC ---
+      try {
+        const stakeholderId = `vendor_${vendorId}`;
+        const stakeholderRef = doc(db, 'stakeholders', stakeholderId);
+        
+        const newStakeholder: Stakeholder = {
+          id: stakeholderId,
+          projectId: selectedProject.id,
+          name: newVendor.name,
+          position: 'External Vendor',
+          role: 'Supplier/Contractor',
+          contactInfo: newVendor.contactDetails.email || newVendor.contactDetails.phone || '',
+          classification: 'External',
+          influence: 'Medium',
+          interest: 'High',
+          expectations: `Timely payment and clear technical requirements for ${newVendor.discipline}`,
+          requirements: 'Payment, Invoice, Contract Compliance',
+          priorityScore: 7,
+          influenceScore: 2,
+          criticalityIndex: 7,
+          communicationFrequency: 'Monthly',
+          engagementLevel: 'Amber',
+          category: 'External Vendor'
+        };
+
+        await setDoc(stakeholderRef, newStakeholder);
+      } catch (e) {
+        console.error('Error syncing vendor to stakeholder register:', e);
+      }
+
       // Mirror to Google Drive if configured
       if (selectedProject.driveFolderId) {
         const vendorJson = JSON.stringify(newVendor, null, 2);

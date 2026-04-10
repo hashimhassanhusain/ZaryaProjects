@@ -1,29 +1,97 @@
-import React, { useState, useMemo } from 'react';
-import { Page } from '../types';
-import { boqData, purchaseOrders, getParent } from '../data';
-import { BarChart3, Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle2, AlertCircle, ShieldCheck, FileText, Printer, Download, Share2, UserCheck, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Page, BOQItem, PurchaseOrder, ProjectManagementPlan } from '../types';
+import { getParent } from '../data';
+import { BarChart3, Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle2, AlertCircle, ShieldCheck, FileText, Printer, Download, Share2, UserCheck, Calendar, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
 
 interface EVMReportViewProps {
   page: Page;
 }
 
 export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
+  const { selectedProject } = useProject();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
+  const [pos, setPos] = useState<PurchaseOrder[]>([]);
+  const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
+  
   const parent = getParent(page.id);
 
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const boqUnsubscribe = onSnapshot(
+      query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setBoqItems(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BOQItem)));
+      }
+    );
+
+    const posUnsubscribe = onSnapshot(
+      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setPos(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
+      }
+    );
+
+    const fetchPmPlan = async () => {
+      try {
+        const q = query(
+          collection(db, 'projectManagementPlans'),
+          where('projectId', '==', selectedProject.id),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setPmPlan(snap.docs[0].data() as ProjectManagementPlan);
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch PM Plan in EVM:", err);
+        setLoading(false);
+      }
+    };
+    fetchPmPlan();
+
+    return () => {
+      boqUnsubscribe();
+      posUnsubscribe();
+    };
+  }, [selectedProject]);
+
   const evmMetrics = useMemo(() => {
-    const bac = boqData.reduce((sum, item) => sum + item.amount, 0);
-    const ev = boqData.reduce((sum, item) => sum + (item.amount * (item.completion / 100)), 0);
-    const ac = purchaseOrders.reduce((sum, po) => sum + po.amount, 0);
+    const bac = boqItems.reduce((sum, item) => sum + item.amount, 0);
+    const ev = boqItems.reduce((sum, item) => sum + (item.amount * (item.completion / 100)), 0);
+    const ac = pos.reduce((sum, po) => sum + po.amount, 0);
     
-    // For PV, let's assume we are 70% through the planned schedule for this demo
-    const pv = bac * 0.7;
+    // Calculate PV based on time elapsed if start/end dates exist
+    let pv = 0;
+    let percentPlanned = 0;
+    if (selectedProject?.startDate && selectedProject?.endDate) {
+      const start = new Date(selectedProject.startDate).getTime();
+      const end = new Date(selectedProject.endDate).getTime();
+      const now = new Date().getTime();
+      
+      if (now > start) {
+        const totalDuration = end - start;
+        const elapsed = now - start;
+        percentPlanned = Math.min(100, (elapsed / totalDuration) * 100);
+        pv = bac * (percentPlanned / 100);
+      }
+    } else {
+      // Fallback to 70% for demo if no dates
+      percentPlanned = 70;
+      pv = bac * 0.7;
+    }
 
     const sv = ev - pv;
     const cv = ev - ac;
-    const spi = ev / pv;
-    const cpi = ev / ac;
+    const spi = pv > 0 ? ev / pv : 1;
+    const cpi = ac > 0 ? ev / ac : 1;
 
     return {
       bac,
@@ -34,11 +102,11 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
       cv,
       spi,
       cpi,
-      percentPlanned: 70,
-      percentEarned: (ev / bac) * 100,
-      percentSpent: (ac / bac) * 100
+      percentPlanned,
+      percentEarned: bac > 0 ? (ev / bac) * 100 : 0,
+      percentSpent: bac > 0 ? (ac / bac) * 100 : 0
     };
-  }, [isSyncing]);
+  }, [boqItems, pos, selectedProject, isSyncing]);
 
   const handleSync = () => {
     setIsSyncing(true);
@@ -47,6 +115,8 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
 
   const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   const formatIndex = (val: number) => val.toFixed(2);
+
+  if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
     <div className="space-y-8">

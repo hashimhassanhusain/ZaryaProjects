@@ -103,7 +103,7 @@ export const pages: Page[] = [
       { type: 'info', msg: 'Project Charter version 1.0 has been formally approved.' }
     ]
   },
-  { id: '2.0.1', title: 'Project Management Plan', parentId: '1.1', type: 'terminal', content: 'Comprehensive document that defines how the project is executed, monitored, controlled, and closed.' },
+  { id: '1.1.1', title: 'Project Charter', parentId: '1.1', type: 'terminal', content: 'Formal authorization of the project, defining high-level objectives and constraints.', details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } },
   
   { 
     id: '1.2', 
@@ -117,7 +117,8 @@ export const pages: Page[] = [
       { label: 'Engagement Level', value: 'High', status: 'success', icon: 'TrendingUp' }
     ]
   },
-  { id: '1.2.1', title: 'Stakeholder Management', parentId: '1.2', type: 'terminal', content: 'List of all parties interested in or affected by the project with assessment of influence and interest.', formFields: ['Name', 'Position', 'Role', 'Contact Information', 'Requirements', 'Expectations', 'Influence', 'Classification', 'Interest', 'Power'], details: { variance: 'N/A', performance: 'Active', documentation: 'Stakeholder List' } },
+  { id: '1.2.1', title: 'Stakeholder Register', parentId: '1.2', type: 'terminal', content: 'Identification, assessment, and classification of project stakeholders.', formFields: ['Name', 'Position', 'Role', 'Classification', 'Influence', 'Interest', 'Engagement Level'], details: { variance: 'N/A', performance: 'Active', documentation: 'Register v2' } },
+  { id: '1.2.2', title: 'Stakeholder Analysis Matrix', parentId: '1.2', type: 'terminal', content: 'Evaluating stakeholders based on their power and interest to determine engagement strategies.', formFields: ['Stakeholder', 'Power', 'Interest', 'Strategy'], details: { variance: 'N/A', performance: 'Active', documentation: 'Analysis Matrix' } },
   
   // --- PLANNING FOCUS AREA ---
   { id: '2.0', title: 'Planning Focus Area', type: 'hub', summary: 'Establishing the total scope of the effort and defining the course of action.' },
@@ -137,7 +138,19 @@ export const pages: Page[] = [
       { type: 'warning', msg: 'Integration of Resource Management Plan is pending final review.' }
     ]
   },
+  { id: '2.1.1', title: 'Change Management Plan', parentId: '2.1', type: 'terminal', content: 'Process for managing changes to project baselines.', details: { variance: 'Low', performance: 'Stable', documentation: 'CMP v2' } },
+  { id: '2.1.2', title: 'Project Management Plan', parentId: '2.1', type: 'terminal', content: 'Comprehensive document that defines how the project is executed, monitored, controlled, and closed.', details: { variance: 'None', performance: 'Stable', documentation: 'PMP v1' } },
+  { id: '2.1.3', title: 'Quality Management Plan', parentId: '2.1', type: 'terminal', content: 'Standards and quality control measures.', details: { variance: 'None', performance: 'High', documentation: 'QMP v1' } },
+  { id: '2.1.6', title: 'Communications Management Plan', parentId: '2.1', type: 'terminal', content: 'Strategy for project information distribution.', details: { variance: 'None', performance: 'Stable', documentation: 'Comm Plan v1' } },
+  { id: '2.1.7', title: 'Stakeholder Management Plan', parentId: '2.1', type: 'terminal', content: 'Engagement strategy and relationship management.', details: { variance: 'None', performance: 'Stable', documentation: 'SMP v1' } },
+  { id: '2.1.8', title: 'Requirements Management Plan', parentId: '2.1', type: 'terminal', content: 'Planning and controlling project requirements.', details: { variance: 'None', performance: 'Stable', documentation: 'RMP v1' } },
+  { id: '2.1.9', title: 'Scope Management Plan', parentId: '2.1', type: 'terminal', content: 'Defining, maintaining, and controlling project scope.', details: { variance: 'None', performance: 'Stable', documentation: 'Scope Plan v1' } },
+  { id: '2.1.10', title: 'Human Resource Management Plan', parentId: '2.1', type: 'terminal', content: 'Managing project roles, responsibilities, and staffing.', details: { variance: 'None', performance: 'Stable', documentation: 'HRMP v1' } },
+  { id: '2.1.11', title: 'Schedule Management Plan', parentId: '2.1', type: 'terminal', content: 'Governance and rules for project timeline management.', details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan v1' } },
+  { id: '2.1.12', title: 'Cost Management Plan', parentId: '2.1', type: 'terminal', content: 'Financial governance and rules for project spending.', details: { variance: 'None', performance: 'Stable', documentation: 'Cost Plan v1' } },
+  { id: '2.1.13', title: 'Procurement Management Plan', parentId: '2.1', type: 'terminal', content: 'Governance and rules for project procurement activities.', details: { variance: 'None', performance: 'Stable', documentation: 'Procurement Plan v1' } },
   { id: '2.1.4', title: 'Quality Metrics', parentId: '2.1', type: 'terminal', content: 'Specific attributes to be measured and how.', formFields: ['ID', 'Item', 'Metric', 'Measurement Method'], details: { variance: 'N/A', performance: 'Defined', documentation: 'Metrics Log' } },
+  { id: '2.1.5', title: 'Assumption and Constraint Log', parentId: '2.1', type: 'terminal', content: 'Tracking all assumptions and constraints throughout the project.', formFields: ['ID', 'Category', 'Assumption/Constraint', 'Responsible Party', 'Due Date', 'Actions', 'Status', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Log v3' } },
 
   { 
     id: '2.2', 
@@ -151,7 +164,7 @@ export const pages: Page[] = [
       { label: 'Requirements Verified', value: '75%', status: 'info', icon: 'CheckCircle2' }
     ]
   },
-  { id: '2.2.1', title: 'Assumption and Constraint Log', parentId: '2.2', type: 'terminal', content: 'Tracking all assumptions and constraints throughout the project.', formFields: ['ID', 'Category', 'Assumption/Constraint', 'Responsible Party', 'Due Date', 'Actions', 'Status', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Log v3' } },
+  { id: '2.2.1', title: 'Requirements Traceability Matrix (Initial)', parentId: '2.2', type: 'terminal', content: 'Initial tracking of requirements.', formFields: ['ID', 'Requirement', 'Source'], details: { variance: 'N/A', performance: 'Active', documentation: 'Initial RTM' } },
   { id: '2.2.2', title: 'Inter Requirements Traceability Matrix', parentId: '2.2', type: 'terminal', content: 'Linking product requirements from their origin to the deliverables.', formFields: ['ID', 'Business Requirement', 'Priority', 'Source', 'Technical Requirement'], details: { variance: '0%', performance: 'Complete', documentation: 'RTM v1' } },
   { id: '2.2.3', title: 'Project Scope Statement', parentId: '2.2', type: 'terminal', content: 'Detailed description of the project scope and major deliverables.', formFields: ['Product Scope Description', 'Project Deliverables', 'Project Acceptance Criteria', 'Project Exclusions', 'Project Constraints', 'Project Assumptions'], details: { variance: 'None', performance: 'Approved', documentation: 'Scope Doc' } },
   { id: '2.2.4', title: 'Requirements Documentation', parentId: '2.2', type: 'terminal', content: 'Collection of all project requirements.', formFields: ['ID', 'Requirement', 'Stakeholder', 'Category', 'Priority', 'Acceptance Criteria', 'Validation Method'], details: { variance: 'N/A', performance: 'Stable', documentation: 'Req Doc' } },
@@ -233,15 +246,48 @@ export const pages: Page[] = [
       { label: 'Risk Plan', value: 'Approved', status: 'success', icon: 'CheckCircle2' }
     ]
   },
-  { id: '2.7.5', title: 'Risk Management', parentId: '2.7', type: 'terminal', content: 'Repository for all identified risks with detailed assessment and response plans.', formFields: ['Risk ID', 'Risk Statement', 'Risk Description', 'Status', 'Risk Cause', 'Probability', 'Impact', 'Score', 'Response', 'Revised Probability', 'Revised Impact', 'Revised Score', 'Responsible Party', 'Actions', 'Secondary Risks', 'Residual Risk', 'Contingency Plan', 'Contingency Funds', 'Contingency Time', 'Fallback Plans', 'Comments'], details: { variance: 'Low', performance: 'Active', documentation: 'Risk Log' } },
+  { id: '2.7.5', title: 'Risk Register', parentId: '2.7', type: 'terminal', content: 'Repository for all identified risks with detailed assessment and response plans.', formFields: ['ID', 'Risk Description', 'Category', 'Probability', 'Impact', 'Risk Score', 'Response Strategy', 'Owner', 'Status'], details: { variance: 'Low', performance: 'Active', documentation: 'Risk Log v2' } },
   { id: '2.7.1', title: 'Probability and Impact Assessment', parentId: '2.7', type: 'terminal', content: 'Evaluating the likelihood and impact of risks.', formFields: ['Scope Impact', 'Quality Impact', 'Schedule Impact', 'Cost Impact', 'Probability', 'Risk Rating', 'Very High', 'High', 'Medium', 'Low', 'Very Low'], details: { variance: 'Low', performance: 'Active', documentation: 'Assessment' } },
   { id: '2.7.2', title: 'Probability and Impact Matrix', parentId: '2.7', type: 'terminal', content: 'Mapping risks based on probability and impact.', formFields: ['Probability', 'Impact', 'Very High', 'High', 'Medium', 'Low', 'Very Low'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Matrix' } },
 
   // Hidden terminal pages (used by ProjectManagementPlanView)
-  { id: '1.1.1', title: 'Project Charter', type: 'terminal', content: 'Official document that authorizes the existence of the project.', formFields: ['Project Title', 'Project Code', 'Project Sponsor', 'Date Prepared', 'Project Manager', 'Project Customer', 'Project Purpose or Justification', 'Project Description', 'High-Level Requirements', 'High-Level Risks', 'Project Objectives', 'Success Criteria', 'Person Approving', 'Scope', 'Time', 'Cost', 'Other', 'Summary Milestones', 'Due Date', 'Estimated Budget', 'Stakeholder(s)', 'Role', 'Project Manager Authority Level', 'Staffing Decisions', 'Budget Management and Variance', 'Technical Decisions', 'Conflict Resolution', 'Approvals'], details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } },
-  { id: '1.1.2', title: 'Policies & Procedures', type: 'terminal', content: 'Project Management Policies and Procedures Manual.', domain: 'governance', details: { variance: 'None', performance: 'Active', documentation: 'Manual v1.0' } },
-  { id: '2.1.1', title: 'Change Management Plan', type: 'terminal', content: 'Process for managing changes to project baselines.', formFields: ['Change Management Approach', 'Definitions of Change', 'Schedule change', 'Budget change', 'Scope change', 'Project document changes', 'Change Control Board', 'Name', 'Role', 'Responsibility', 'Authority', 'Change Control Process', 'Change request submittal', 'Change request tracking', 'Change request review', 'Change request disposition'], details: { variance: 'Low', performance: 'Stable', documentation: 'CMP v2' } },
-  { id: '2.1.3', title: 'Quality Management Plan', type: 'terminal', content: 'Standards and quality control measures.', formFields: ['Quality Roles and Responsibilities', 'Role', 'Responsibilities', 'Quality Planning Approach', 'Quality Assurance Approach', 'Quality Control Approach', 'Quality Improvement Approach'], details: { variance: 'None', performance: 'High', documentation: 'QMP v1' } },
+  { 
+    id: '1.1.1', 
+    title: 'Project Charter', 
+    type: 'terminal', 
+    content: 'Official document that authorizes the existence of the project.', 
+    formFields: [
+      'Project Title', 
+      'Project Sponsor', 
+      'Date Prepared', 
+      'Project Manager', 
+      'Project Customer', 
+      'Project Purpose or Justification', 
+      'Project Description', 
+      'High-Level Requirements', 
+      'High-Level Risks', 
+      'Scope Objective',
+      'Scope Success Criteria',
+      'Scope Person Approving',
+      'Time Objective',
+      'Time Success Criteria',
+      'Time Person Approving',
+      'Cost Objective',
+      'Cost Success Criteria',
+      'Cost Person Approving',
+      'Other Objective',
+      'Other Success Criteria',
+      'Other Person Approving',
+      'Estimated Budget', 
+      'Project Manager Authority Level', 
+      'Staffing Decisions', 
+      'Budget Management and Variance', 
+      'Technical Decisions', 
+      'Conflict Resolution'
+    ], 
+    details: { variance: 'None', performance: 'Approved', documentation: 'Charter v1.0' } 
+  },
+  { id: '1.1.2', title: 'Project Policies & Procedures', parentId: '1.1', type: 'terminal', content: 'The project constitution defining governance, roles, communication, and standards.', domain: 'governance', details: { variance: 'None', performance: 'Active', documentation: 'Manual v1.0' } },
   { id: '2.2.5', title: 'Requirements Management Plan', type: 'terminal', content: 'How requirements will be analyzed, documented, and managed.', formFields: ['Collection', 'Analysis', 'Categories', 'Documentation', 'Prioritization', 'Metrics', 'Traceability Structure', 'Tracking', 'Reporting', 'Validation', 'Configuration Management'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Req Plan' } },
   { id: '2.2.7', title: 'Scope Management Plan', type: 'terminal', content: 'How scope will be defined, developed, monitored, and controlled.', formFields: ['Scope Statement Development', 'WBS Structure', 'WBS Dictionary', 'Scope Baseline Maintenance', 'Scope Change', 'Deliverable Acceptance', 'Scope and Requirements Integration'], details: { variance: 'None', performance: 'Stable', documentation: 'Scope Plan' } },
   { id: '2.3.8', title: 'Schedule Management Plan', type: 'terminal', content: 'How the project schedule will be planned, developed, and controlled.', formFields: ['Schedule Methodology', 'Schedule Tools', 'Level of Accuracy', 'Units of Measure', 'Variance Thresholds', 'Schedule Reporting and Format', 'Process Management', 'Activity identification', 'Activity sequencing', 'Estimating resources', 'Estimating effort and duration', 'Updating, monitoring, and controlling'], details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan' } },
@@ -271,7 +317,7 @@ export const pages: Page[] = [
       { type: 'warning', msg: 'One Quality Audit is overdue for the Civil Works package.' }
     ]
   },
-  { id: '3.1.1', title: 'Change Management', parentId: '3.1', type: 'terminal', content: 'Tracking all change requests and their status with formal proposal forms.', formFields: ['Change ID', 'Category', 'Description of Change', 'Submitted by', 'Submission Date', 'Status', 'Disposition', 'Project Title', 'Date Prepared', 'Person Requesting Change', 'Change Number', 'Category of Change', 'Detailed Description of Proposed Change', 'Justification for Proposed Change', 'Impacts of Change', 'Scope', 'Grade', 'Requirements', 'Cost', 'Schedule', 'Stakeholder Impact', 'Project Documents', 'Comments', 'Disposition', 'Justification', 'Change Control Board Signatures', 'Name', 'Role', 'Signature', 'Date'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Log Q2' } },
+  { id: '3.1.1', title: 'Change Request Form', parentId: '3.1', type: 'terminal', content: 'Official form for requesting project changes with impact assessment.', formFields: ['Request ID', 'Date', 'Preparer', 'Contractor', 'Status', 'Project Name', 'PO Number', 'Contract Number', 'Categories', 'Description', 'Justification', 'Financial Summary', 'Impact Assessment'], details: { variance: 'Active', performance: 'Controlled', documentation: 'CR Form v2' } },
   { id: '3.1.3', title: 'Decision Log', parentId: '3.1', type: 'terminal', content: 'Tracking all project decisions.', formFields: ['ID', 'Category', 'Decision', 'Responsible Party', 'Date', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Decision Log' } },
   { id: '3.1.4', title: 'Quality Audit', parentId: '3.1', type: 'terminal', content: 'Structured review of quality management activities.', formFields: ['Area Audited', 'Project', 'Product', 'Process', 'Good Practices to Share', 'Areas for Improvement', 'Deficiencies or Defects', 'ID', 'Defect', 'Action', 'Responsible Party', 'Due Date', 'Comments'], details: { variance: 'None', performance: 'Verified', documentation: 'Audit' } },
 
@@ -287,7 +333,7 @@ export const pages: Page[] = [
       { label: 'Engagement Score', value: '8.5', status: 'success', icon: 'TrendingUp' }
     ]
   },
-  { id: '3.2.1', title: 'Issue Management', parentId: '3.2', type: 'terminal', content: 'Tracking all project issues and their resolution.', formFields: ['Issue ID', 'Category', 'Issue', 'Impact on Objectives', 'Urgency', 'Responsible Party', 'Actions', 'Status', 'Due Date', 'Comments'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Issue Log' } },
+  { id: '3.2.1', title: 'Issue Log', parentId: '3.2', type: 'terminal', content: 'Tracking all project issues and their resolution.', formFields: ['ID', 'Issue Description', 'Category', 'Priority', 'Owner', 'Date Identified', 'Status', 'Resolution'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Issue Log v2' } },
 
   { 
     id: '3.3', 
@@ -324,7 +370,8 @@ export const pages: Page[] = [
       { label: 'Validation Rate', value: '75%', status: 'info', icon: 'Target' }
     ]
   },
-  { id: '4.1.1', title: 'Deliverable Acceptance', parentId: '4.1', type: 'terminal', content: 'Official sign-off for project deliverables tracking.', formFields: ['ID', 'Requirement', 'Acceptance Criteria', 'Validation Method', 'Status', 'Comments', 'Signoff'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Acceptance' } },
+  { id: '4.1.1', title: 'Change Log', parentId: '4.1', type: 'terminal', content: 'Comprehensive log of all project changes, their status, and impact.', formFields: ['Change ID', 'Category', 'Description', 'Submitted by', 'Date', 'Status', 'Disposition'], details: { variance: 'Active', performance: 'Controlled', documentation: 'Change Log' } },
+  { id: '4.1.2', title: 'Deliverable Acceptance', parentId: '4.1', type: 'terminal', content: 'Official sign-off for project deliverables tracking.', formFields: ['ID', 'Requirement', 'Acceptance Criteria', 'Validation Method', 'Status', 'Comments', 'Signoff'], details: { variance: 'N/A', performance: 'Complete', documentation: 'Acceptance' } },
 
   { 
     id: '4.2', 
@@ -393,7 +440,7 @@ export const pages: Page[] = [
       { label: 'Lessons Learned', value: 'Captured', status: 'success', icon: 'CheckCircle2' }
     ]
   },
-  { id: '5.1.1', title: 'Lessons Learned', parentId: '5.1', type: 'terminal', content: 'Knowledge gained during the project.', formFields: ['Project Performance Analysis', 'What Worked Well', 'What Can Be Improved', 'Risks and Issues', 'Quality Defects', 'Vendor Management', 'Areas of Exceptional Performance', 'Areas for Improvement'], details: { variance: 'N/A', performance: 'High Value', documentation: 'Lessons Log' } },
+  { id: '5.1.1', title: 'Lessons Learned Register', parentId: '5.1', type: 'terminal', content: 'Repository of project lessons learned for future reference.', formFields: ['ID', 'Category', 'Description', 'Recommendation', 'Impact', 'Owner', 'Status'], details: { variance: 'N/A', performance: 'Active', documentation: 'Register v2' } },
   { id: '5.1.2', title: 'Project Close Out', parentId: '5.1', type: 'terminal', content: 'Finalizing all project activities.', formFields: ['Project Title', 'Date Prepared', 'Project Manager', 'Project Description', 'Scope - Project Objectives', 'Scope - Completion Criteria', 'Scope - How Met', 'Quality - Project Objectives', 'Quality - Completion Criteria', 'Quality - How Met', 'Time - Project Objectives', 'Time - Completion Criteria', 'Time - How Met', 'Cost - Project Objectives', 'Cost - Completion Criteria', 'How Met'], details: { variance: 'Final', performance: 'Complete', documentation: 'Closure Doc' } },
 
   { 

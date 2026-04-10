@@ -3,6 +3,9 @@ import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User 
 import { purchaseOrders, users } from '../data';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useProject } from '../context/ProjectContext';
 import { 
   CloudSun, 
   Thermometer, 
@@ -31,6 +34,7 @@ interface ProgressReportViewProps {
 }
 
 export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) => {
+  const { selectedProject } = useProject();
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [activities, setActivities] = useState<DailyReportActivity[]>([]);
@@ -119,8 +123,105 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         }
       }
 
-      setIsSaving(false);
-      alert('Daily Report submitted successfully! Progress has been synced.');
+      // 4. Generate and Upload PDF to Drive
+      try {
+        const doc = new jsPDF();
+        const projectCode = selectedProject?.code || 'ZRY';
+        const dateStr = new Date().toISOString().split('T')[0];
+        const fileName = `${projectCode}-ZRY-SITE-RPT-${dateStr}.pdf`;
+
+        // PDF Header
+        doc.setFontSize(20);
+        doc.setTextColor(40);
+        doc.text('DAILY SITE REPORT', 105, 20, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
+        doc.text(`Date: ${dateStr}`, 20, 42);
+        doc.text(`Submitted By: ${auth.currentUser.email}`, 20, 49);
+
+        if (weather) {
+          doc.text(`Weather: ${weather.condition}, ${weather.temp}°C, Humidity: ${weather.humidity}%, Wind: ${weather.windSpeed}km/h`, 20, 56);
+        }
+
+        // Activities Table
+        doc.setFontSize(14);
+        doc.text('Key Activities', 20, 70);
+        
+        const activityRows = activities.map(a => {
+          const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
+          return [
+            poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A',
+            a.description,
+            `${a.progressUpdate}%`
+          ];
+        });
+
+        autoTable(doc, {
+          startY: 75,
+          head: [['PO Item', 'Work Description', 'Progress']],
+          body: activityRows,
+        });
+
+        // General Works & Deliverables
+        let currentY = (doc as any).lastAutoTable.finalY + 15;
+        
+        doc.setFontSize(14);
+        doc.text('General Works & Safety', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(generalWorks || 'None reported', 20, currentY + 7, { maxWidth: 170 });
+        
+        currentY += 30;
+        doc.setFontSize(14);
+        doc.text('Deliverables & Measurements', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(deliverables || 'None reported', 20, currentY + 7, { maxWidth: 170 });
+
+        // Incidents & Issues
+        currentY += 30;
+        doc.setFontSize(14);
+        doc.text('Incidents & Issues', 20, currentY);
+        doc.setFontSize(10);
+        doc.text(`Incidents: ${incidents || 'None'}`, 20, currentY + 7, { maxWidth: 170 });
+
+        if (issues.length > 0) {
+          const issueRows = issues.map(i => {
+            const assignee = users.find(u => u.uid === i.assignedToId);
+            return [i.title, i.severity, assignee?.name || 'Unassigned', i.status];
+          });
+          
+          autoTable(doc, {
+            startY: currentY + 15,
+            head: [['Title', 'Severity', 'Assigned To', 'Status']],
+            body: issueRows,
+          });
+        }
+
+        // Convert PDF to Blob
+        const pdfBlob = doc.output('blob');
+        const formData = new FormData();
+        formData.append('file', pdfBlob, fileName);
+        formData.append('path', 'SITE_OPERATIONS_04/04.1_Daily_Site_Reports');
+
+        const driveRes = await fetch('/api/drive/upload-by-path', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!driveRes.ok) {
+          const driveError = await driveRes.json();
+          console.error('Drive upload failed:', driveError);
+        } else {
+          console.log('PDF uploaded to Drive successfully');
+        }
+
+        setIsSaving(false);
+        alert(`Daily Report submitted successfully!\nProgress synced and PDF saved to Drive: ${fileName}`);
+      } catch (pdfError) {
+        console.error('Error generating/uploading PDF:', pdfError);
+        setIsSaving(false);
+        alert('Daily Report saved to database, but there was an error generating the PDF for Drive.');
+      }
       
       // Reset form
       setActivities([]);

@@ -22,11 +22,13 @@ import {
 import { pages, getChildren, getBreadcrumbs, getFocusArea } from '../data';
 import { Project } from '../types';
 import { cn, sortDomainPages } from '../lib/utils';
-import { auth, db } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { signOut, User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
+import { ProjectManagementPlan } from '../types';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 interface SidebarProps {
   onToggleRtl?: () => void;
@@ -60,6 +62,32 @@ export const Sidebar: React.FC = () => {
   const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('focus');
   const { sidebarWidth, setSidebarWidth } = useUI();
   const [isResizing, setIsResizing] = useState(false);
+  const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
+
+  useEffect(() => {
+    const fetchPmPlan = async () => {
+      if (!selectedProject) {
+        setPmPlan(null);
+        return;
+      }
+      try {
+        const q = query(
+          collection(db, 'projectManagementPlans'),
+          where('projectId', '==', selectedProject.id),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setPmPlan(snap.docs[0].data() as ProjectManagementPlan);
+        } else {
+          setPmPlan(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch PM Plan in Sidebar:", err);
+      }
+    };
+    fetchPmPlan();
+  }, [selectedProject]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -286,6 +314,24 @@ export const Sidebar: React.FC = () => {
       } else {
         items = []; // In a real app, we'd fetch subfolders here
       }
+    }
+
+    // Apply Tailoring Logic
+    if (pmPlan && pmPlan.tailoringDecisions) {
+      const tailoredOutAreas = pmPlan.tailoringDecisions
+        .filter(d => d.isTailoredOut)
+        .map(d => d.knowledgeArea.toLowerCase());
+
+      items = items.filter(item => {
+        // Check if the item's domain is tailored out
+        const itemDomain = item.domain?.toLowerCase() || '';
+        const isTailoredOut = tailoredOutAreas.some(area => itemDomain.includes(area));
+        
+        // Special case for Folder 2.7 (Risk)
+        if (item.id === '2.7' && tailoredOutAreas.includes('risk')) return false;
+        
+        return !isTailoredOut;
+      });
     }
     
     const filteredItems = items.filter(item => {

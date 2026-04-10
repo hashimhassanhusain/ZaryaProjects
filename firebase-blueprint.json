@@ -133,6 +133,72 @@
         "minutes": { "type": "array", "items": { "type": "object" } }
       },
       "required": ["topic", "date"]
+    },
+    "ChangeManagementPlan": {
+      "title": "Change Management Plan",
+      "description": "Project change management plan and CCB members.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "approach": { "type": "string" },
+        "definitions": { "type": "string" },
+        "budgetThreshold": { "type": "number" },
+        "scheduleThreshold": { "type": "number" },
+        "ccbMembers": { "type": "array", "items": { "type": "object" } },
+        "version": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["projectId", "approach", "definitions", "budgetThreshold", "scheduleThreshold", "version"]
+    },
+    "ChangeManagementVersion": {
+      "title": "Change Management Version",
+      "description": "Historical versions of the Change Management Plan.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "planId": { "type": "string" },
+        "version": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "data": { "type": "object" },
+        "changeSummary": { "type": "string" }
+      },
+      "required": ["planId", "version", "timestamp", "userId", "data"]
+    },
+    "ProjectManagementPlan": {
+      "title": "Project Management Plan",
+      "description": "Master project management plan including life cycle, tailoring, and baselines.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "phases": { "type": "array", "items": { "type": "object" } },
+        "tailoringDecisions": { "type": "array", "items": { "type": "object" } },
+        "baselines": { "type": "object" },
+        "version": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["projectId", "phases", "tailoringDecisions", "baselines", "version"]
+    },
+    "ProjectManagementVersion": {
+      "title": "Project Management Version",
+      "description": "Historical versions of the Project Management Plan.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "planId": { "type": "string" },
+        "version": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "data": { "type": "object" },
+        "changeSummary": { "type": "string" }
+      },
+      "required": ["planId", "version", "timestamp", "userId", "data"]
     }
   },
   "firestore": {
@@ -171,6 +237,22 @@
     "/meetings/{meetingId}": {
       "schema": "Meeting",
       "description": "Meeting records and minutes."
+    },
+    "/changeManagementPlans/{planId}": {
+      "schema": "ChangeManagementPlan",
+      "description": "Change management plans."
+    },
+    "/changeManagementVersions/{versionId}": {
+      "schema": "ChangeManagementVersion",
+      "description": "Change management plan versions."
+    },
+    "/projectManagementPlans/{planId}": {
+      "schema": "ProjectManagementPlan",
+      "description": "Master project management plans."
+    },
+    "/projectManagementVersions/{versionId}": {
+      "schema": "ProjectManagementVersion",
+      "description": "Project management plan versions."
     }
   }
 }

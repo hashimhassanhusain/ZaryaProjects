@@ -1,212 +1,584 @@
-import React, { useState } from 'react';
-import { Page } from '../types';
-import { pages } from '../data';
-import { DetailView } from './DetailView';
-import { GovernancePoliciesView } from './GovernancePoliciesView';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import React, { useState, useEffect } from 'react';
 import { 
-  FileText, 
-  Shield, 
-  ClipboardList, 
-  Target, 
-  DraftingCompass, 
-  Calendar, 
-  Banknote, 
-  Users, 
-  Package, 
-  AlertTriangle,
-  Settings,
-  CheckCircle2
+  Save, 
+  Download, 
+  History, 
+  Plus, 
+  Trash2, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  FileText,
+  Printer,
+  Loader2,
+  X,
+  ArrowLeft,
+  ChevronRight,
+  User,
+  Calendar,
+  Target,
+  ShieldAlert,
+  Users,
+  Briefcase,
+  Award,
+  Gavel,
+  Layers,
+  Wrench,
+  BarChart3,
+  Search
 } from 'lucide-react';
+import { Page, Project, PageVersion } from '../types';
+import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  where,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+  orderBy,
+  getDoc
+} from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
+import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ProjectManagementPlanViewProps {
   page: Page;
 }
 
+interface LifeCyclePhase {
+  id: string;
+  phase: string;
+  deliverables: string;
+}
+
+interface TailoringDecision {
+  knowledgeArea: string;
+  processes: string;
+  decisions: string;
+}
+
+interface ToolTechnique {
+  knowledgeArea: string;
+  tools: string;
+}
+
+interface PMPData {
+  projectTitle: string;
+  datePrepared: string;
+  lifeCycle: LifeCyclePhase[];
+  tailoring: TailoringDecision[];
+  tools: ToolTechnique[];
+  baselines: {
+    scopeVariance: string;
+    scopeManagement: string;
+    scheduleVariance: string;
+    scheduleManagement: string;
+    costVariance: string;
+    costManagement: string;
+  };
+  projectReviews: string;
+}
+
+const KNOWLEDGE_AREAS = [
+  'Integration', 'Scope', 'Time', 'Cost', 'Quality', 
+  'Human Resources', 'Communication', 'Risk', 'Procurement', 'Stakeholders'
+];
+
 export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps> = ({ page }) => {
-  const [activeTab, setActiveTab] = useState<'charter' | 'policies' | 'plans' | 'baselines'>('charter');
-  const [activePlanId, setActivePlanId] = useState<string | null>(null);
-  const [activeBaselineId, setActiveBaselineId] = useState<string | null>(null);
+  const { selectedProject } = useProject();
+  const [pmp, setPmp] = useState<PMPData>({
+    projectTitle: '',
+    datePrepared: new Date().toISOString().split('T')[0],
+    lifeCycle: [{ id: '1', phase: '', deliverables: '' }],
+    tailoring: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, processes: '', decisions: '' })),
+    tools: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, tools: '' })),
+    baselines: {
+      scopeVariance: '',
+      scopeManagement: '',
+      scheduleVariance: '',
+      scheduleManagement: '',
+      costVariance: '',
+      costManagement: '',
+    },
+    projectReviews: ''
+  });
 
-  // Fetch relevant pages
-  const charterPage = pages.find(p => p.id === '1.1.1');
-  const policiesPage = pages.find(p => p.id === '1.1.2');
-  
-  const managementPlans = pages.filter(p => 
-    p.title.toLowerCase().includes('management plan') && 
-    p.id !== '2.0.1' // avoid self reference if we use this ID
-  );
+  const [versions, setVersions] = useState<PageVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
+  const [activeSection, setActiveSection] = useState(1);
 
-  const baselines = [
-    { id: 'scope_baseline', title: 'Scope Baseline', icon: DraftingCompass, content: 'The approved version of a scope statement, work breakdown structure (WBS), and its associated WBS dictionary.' },
-    { id: 'schedule_baseline', title: 'Schedule Baseline', icon: Calendar, content: 'The approved version of a schedule model that can be changed only through formal change control procedures.' },
-    { id: 'cost_baseline', title: 'Cost Baseline', icon: Banknote, content: 'The approved version of the time-phased project budget, excluding any management reserves.' },
-  ];
+  useEffect(() => {
+    if (!selectedProject) return;
 
-  const tabs = [
-    { id: 'charter', title: 'Project Charter', icon: FileText },
-    { id: 'policies', title: 'Policies & Procedures', icon: Shield },
-    { id: 'plans', title: 'Management Plans', icon: ClipboardList },
-    { id: 'baselines', title: 'Baselines', icon: Target },
-  ];
+    const unsub = onSnapshot(doc(db, 'projects', selectedProject.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as Project;
+        if (data.pmpData) {
+          setPmp(data.pmpData as unknown as PMPData);
+        }
+        if (data.pmpHistory) {
+          setVersions(data.pmpHistory);
+        }
+      }
+      setLoading(false);
+    });
 
-  const renderCharter = () => {
-    if (!charterPage) return <div>Charter data not found.</div>;
-    return <DetailView page={charterPage} />;
+    return () => unsub();
+  }, [selectedProject?.id]);
+
+  const handleSave = async (isNewVersion: boolean = false) => {
+    if (!selectedProject) return;
+    setIsSaving(true);
+
+    try {
+      const timestamp = new Date().toISOString();
+      const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
+      
+      const updateData: any = {
+        pmpData: pmp,
+        updatedAt: timestamp,
+        updatedBy: user
+      };
+
+      if (isNewVersion) {
+        const nextVersion = (versions[0]?.version || 0) + 1;
+        const newVersion: PageVersion = {
+          version: nextVersion,
+          date: timestamp,
+          author: user,
+          data: pmp as any
+        };
+        updateData.pmpHistory = [newVersion, ...versions];
+      }
+
+      await updateDoc(doc(db, 'projects', selectedProject.id), updateData);
+
+      // Restriction Policy Prompt
+      const affected = ['Schedule', 'PO', 'Reports'];
+      setShowPrompt({
+        type: affected.join(' & '),
+        message: `This update impacts the ${affected.join(', ')}. Do you want to initiate a link?`,
+        onConfirm: () => {
+          console.log('PMP linking initiated for:', affected);
+          setShowPrompt(null);
+        }
+      });
+
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'projects');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const renderPolicies = () => {
-    if (!policiesPage) return <div>Policies data not found.</div>;
-    return <GovernancePoliciesView page={policiesPage} />;
-  };
+  const generatePDF = () => {
+    if (!selectedProject) return;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.width;
 
-  const renderPlans = () => {
-    const selectedPlan = managementPlans.find(p => p.id === activePlanId) || managementPlans[0];
+    const renderHeader = (pageNum: number) => {
+      doc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PROJECT MANAGEMENT PLAN', pageWidth / 2, 35, { align: 'center' });
+      doc.setFontSize(8);
+      doc.text(`Page ${pageNum} of 2`, pageWidth - margin, 10, { align: 'right' });
+    };
+
+    // Page 1
+    renderHeader(1);
+    doc.setFontSize(10);
+    doc.text(`Project Title: ${pmp.projectTitle}`, margin, 45);
+    doc.text(`Date Prepared: ${pmp.datePrepared}`, pageWidth - margin - 50, 45);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['Phase', 'Key Deliverables']],
+      body: pmp.lifeCycle.map(l => [l.phase, l.deliverables]),
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [48, 48, 48] }
+    });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Project Management Processes and Tailoring Decisions', margin, (doc as any).lastAutoTable.finalY + 10);
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 15,
+      head: [['Knowledge Area', 'Processes', 'Tailoring Decisions']],
+      body: pmp.tailoring.map(t => [t.knowledgeArea, t.processes, t.decisions]),
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [48, 48, 48] }
+    });
+
+    // Page 2
+    doc.addPage();
+    renderHeader(2);
     
-    return (
-      <div className="flex flex-col md:flex-row gap-6 h-full">
-        <div className="w-full md:w-64 shrink-0 space-y-1">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Management Plans</h3>
-          {managementPlans.map(plan => (
-            <button
-              key={plan.id}
-              onClick={() => setActivePlanId(plan.id)}
-              className={cn(
-                "w-full text-left px-3 py-2 text-sm font-medium transition-all border-l-2",
-                activePlanId === plan.id || (!activePlanId && plan.id === managementPlans[0].id)
-                  ? "bg-blue-50 border-blue-600 text-blue-700"
-                  : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              )}
-            >
-              {plan.title}
-            </button>
-          ))}
-        </div>
-        <div className="flex-1 bg-white border border-slate-200 p-6 min-h-[400px]">
-          {selectedPlan ? (
-            <DetailView page={selectedPlan} />
-          ) : (
-            <div className="flex items-center justify-center h-full text-slate-400 italic">
-              Select a management plan to view details.
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Process Tools and Techniques', margin, 45);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['Knowledge Area', 'Tools and Techniques']],
+      body: pmp.tools.map(t => [t.knowledgeArea, t.tools]),
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [48, 48, 48] }
+    });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Variances and Baseline Management', margin, (doc as any).lastAutoTable.finalY + 10);
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 15,
+      body: [
+        ['Scope Variance', pmp.baselines.scopeVariance, 'Scope Baseline Management', pmp.baselines.scopeManagement],
+        ['Schedule Variance', pmp.baselines.scheduleVariance, 'Schedule Baseline Management', pmp.baselines.scheduleManagement],
+        ['Cost Variance', pmp.baselines.costVariance, 'Cost Baseline Management', pmp.baselines.costManagement]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } }
+    });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Project Reviews', margin, (doc as any).lastAutoTable.finalY + 10);
+    
+    const reviewLines = doc.splitTextToSize(pmp.projectReviews || '', pageWidth - 2 * margin);
+    doc.rect(margin, (doc as any).lastAutoTable.finalY + 15, pageWidth - 2 * margin, Math.max(30, reviewLines.length * 5 + 5));
+    doc.setFont('helvetica', 'normal');
+    doc.text(reviewLines, margin + 2, (doc as any).lastAutoTable.finalY + 20);
+
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const vStr = (versions[0]?.version || 1.0).toFixed(1);
+    doc.save(`${selectedProject.code}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`);
   };
 
-  const renderBaselines = () => {
-    const selectedBaseline = baselines.find(b => b.id === activeBaselineId) || baselines[0];
+  const addPhase = () => {
+    setPmp({
+      ...pmp,
+      lifeCycle: [...pmp.lifeCycle, { id: Date.now().toString(), phase: '', deliverables: '' }]
+    });
+  };
 
-    return (
-      <div className="flex flex-col md:flex-row gap-6 h-full">
-        <div className="w-full md:w-64 shrink-0 space-y-1">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Project Baselines</h3>
-          {baselines.map(baseline => {
-            const Icon = baseline.icon;
-            return (
-              <button
-                key={baseline.id}
-                onClick={() => setActiveBaselineId(baseline.id)}
-                className={cn(
-                  "w-full text-left px-3 py-2 text-sm font-medium transition-all border-l-2 flex items-center gap-2",
-                  activeBaselineId === baseline.id || (!activeBaselineId && baseline.id === baselines[0].id)
-                    ? "bg-blue-50 border-blue-600 text-blue-700"
-                    : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {baseline.title}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex-1 bg-white border border-slate-200 p-8 min-h-[400px]">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-blue-100 text-blue-600">
-                {React.createElement(selectedBaseline.icon, { className: "w-6 h-6" })}
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900">{selectedBaseline.title}</h2>
-            </div>
-            <p className="text-slate-600 leading-relaxed mb-8">
-              {selectedBaseline.content}
-            </p>
-            
-            <div className="space-y-6">
-              <div className="p-4 bg-slate-50 border border-slate-200">
-                <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  Approval Status
-                </h4>
-                <p className="text-sm text-slate-600">Approved by Project Sponsor on 2026-03-15</p>
-              </div>
-              
-              <div className="p-4 bg-slate-50 border border-slate-200">
-                <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-blue-600" />
-                  Control Process
-                </h4>
-                <p className="text-sm text-slate-600">Changes to this baseline require a formal Change Request (CR) and approval from the Change Control Board (CCB).</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  const removePhase = (id: string) => {
+    setPmp({
+      ...pmp,
+      lifeCycle: pmp.lifeCycle.filter(l => l.id !== id)
+    });
   };
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Project Management Plan</h1>
-          <p className="text-slate-500 max-w-2xl">
-            The comprehensive document that defines how the project is executed, monitored, controlled, and closed.
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+            <Layers className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Project Management Plan</h2>
+            <p className="text-xs text-slate-500 font-medium">Core integration and baseline management</p>
+          </div>
         </div>
-      </header>
-
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 overflow-x-auto no-scrollbar">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={cn(
-                "flex items-center gap-2 px-6 py-4 text-sm font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap",
-                activeTab === tab.id
-                  ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.title}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Content */}
-      <div className="mt-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={generatePDF}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
-            {activeTab === 'charter' && renderCharter()}
-            {activeTab === 'policies' && renderPolicies()}
-            {activeTab === 'plans' && renderPlans()}
-            {activeTab === 'baselines' && renderBaselines()}
-          </motion.div>
-        </AnimatePresence>
+            <Download className="w-3 h-3" />
+            Download PDF
+          </button>
+          <button 
+            onClick={() => handleSave(true)}
+            disabled={isSaving}
+            className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-lg hover:bg-slate-800 transition-all"
+          >
+            Save New Version
+          </button>
+          <button 
+            onClick={() => handleSave(false)}
+            disabled={isSaving}
+            className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
+          >
+            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+            Overwrite
+          </button>
+        </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-2">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <input 
+            type="text"
+            value={pmp.projectTitle}
+            onChange={(e) => setPmp({ ...pmp, projectTitle: e.target.value })}
+            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            placeholder="Example: P16314 - Villa 2"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <input 
+            type="date"
+            value={pmp.datePrepared}
+            onChange={(e) => setPmp({ ...pmp, datePrepared: e.target.value })}
+            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Project Life Cycle */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Project Life Cycle</h3>
+          <button onClick={addPhase} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          {pmp.lifeCycle.map((l, idx) => (
+            <div key={l.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl group relative">
+              <button 
+                onClick={() => removePhase(l.id)}
+                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 rounded-full text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phase</label>
+                <input 
+                  type="text" 
+                  placeholder="Example: Phase: Execution"
+                  value={l.phase}
+                  onChange={(e) => {
+                    const newLife = [...pmp.lifeCycle];
+                    newLife[idx].phase = e.target.value;
+                    setPmp({ ...pmp, lifeCycle: newLife });
+                  }}
+                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Deliverables</label>
+                <input 
+                  type="text" 
+                  placeholder="Example: Deliverables: Structural Completion"
+                  value={l.deliverables}
+                  onChange={(e) => {
+                    const newLife = [...pmp.lifeCycle];
+                    newLife[idx].deliverables = e.target.value;
+                    setPmp({ ...pmp, lifeCycle: newLife });
+                  }}
+                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Tailoring Decisions */}
+      <section className="space-y-6">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Processes and Tailoring Decisions</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">Knowledge Area</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processes</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tailoring Decisions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {pmp.tailoring.map((t, idx) => (
+                <tr key={t.knowledgeArea}>
+                  <td className="px-6 py-4 font-bold text-slate-900 text-sm">{t.knowledgeArea}</td>
+                  <td className="px-6 py-4">
+                    <input 
+                      type="text"
+                      value={t.processes}
+                      onChange={(e) => {
+                        const newTailoring = [...pmp.tailoring];
+                        newTailoring[idx].processes = e.target.value;
+                        setPmp({ ...pmp, tailoring: newTailoring });
+                      }}
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <input 
+                      type="text"
+                      placeholder={t.knowledgeArea === 'Risk' ? "Example: Full Risk Register used for this project" : ""}
+                      value={t.decisions}
+                      onChange={(e) => {
+                        const newTailoring = [...pmp.tailoring];
+                        newTailoring[idx].decisions = e.target.value;
+                        setPmp({ ...pmp, tailoring: newTailoring });
+                      }}
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Tools and Techniques */}
+      <section className="space-y-6">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Process Tools and Techniques</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pmp.tools.map((t, idx) => (
+            <div key={t.knowledgeArea} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+              <div className="w-32 font-bold text-slate-900 text-xs">{t.knowledgeArea}</div>
+              <input 
+                type="text"
+                value={t.tools}
+                onChange={(e) => {
+                  const newTools = [...pmp.tools];
+                  newTools[idx].tools = e.target.value;
+                  setPmp({ ...pmp, tools: newTools });
+                }}
+                className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm outline-none"
+                placeholder="Tools & Techniques..."
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Baselines */}
+      <section className="space-y-6">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Variances and Baseline Management</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Variance</label>
+              <textarea 
+                value={pmp.baselines.scopeVariance}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeVariance: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Variance</label>
+              <textarea 
+                value={pmp.baselines.scheduleVariance}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleVariance: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Variance</label>
+              <textarea 
+                value={pmp.baselines.costVariance}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costVariance: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+                placeholder="Instruction: Define the percentage of cost overrun allowed before a Change Request is mandatory (e.g., 5%)"
+              />
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Management</label>
+              <textarea 
+                value={pmp.baselines.scopeManagement}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeManagement: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline Management</label>
+              <textarea 
+                value={pmp.baselines.scheduleManagement}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleManagement: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Baseline Management</label>
+              <textarea 
+                value={pmp.baselines.costManagement}
+                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costManagement: e.target.value } })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                rows={2}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Project Reviews */}
+      <section className="space-y-6">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Project Reviews</h3>
+        <textarea 
+          value={pmp.projectReviews}
+          onChange={(e) => setPmp({ ...pmp, projectReviews: e.target.value })}
+          rows={6}
+          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm font-medium outline-none resize-none leading-relaxed"
+        />
+      </section>
+
+      {/* Restricted Data Linking Prompt */}
+      <AnimatePresence>
+        {showPrompt && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100"
+            >
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
+                <AlertTriangle className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Restricted Data Link</h3>
+              <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                {showPrompt.message}
+              </p>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowPrompt(null)}
+                  className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                >
+                  No
+                </button>
+                <button 
+                  onClick={showPrompt.onConfirm}
+                  className="flex-1 px-6 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                >
+                  Yes
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

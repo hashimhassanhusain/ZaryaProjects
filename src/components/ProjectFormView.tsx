@@ -24,6 +24,7 @@ export const ProjectFormView: React.FC = () => {
     endDate: '',
     location: '',
     description: '',
+    adminPin: '1234',
   });
 
   const isNew = !id || id === 'new';
@@ -254,6 +255,20 @@ export const ProjectFormView: React.FC = () => {
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. Basra, Iraq"
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Shield className="w-3 h-3" /> Admin PIN
+                </label>
+                <input 
+                  type="text" 
+                  maxLength={4}
+                  value={formData.adminPin}
+                  onChange={(e) => setFormData({...formData, adminPin: e.target.value})}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                  placeholder="e.g. 1234"
+                />
+                <p className="text-[10px] text-slate-400 italic">Used for authorizing critical plan overwrites.</p>
               </div>
             </div>
           </section>
