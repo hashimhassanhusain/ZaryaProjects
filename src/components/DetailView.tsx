@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import html2canvas from 'html2canvas';
 import { Page, Project, PageVersion } from '../types';
 import { getParent, pages, getFocusArea, users } from '../data';
 import { 
