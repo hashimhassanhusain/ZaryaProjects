@@ -149,6 +149,7 @@ export const pages: Page[] = [
   { id: '2.1.11', title: 'Schedule Management Plan', parentId: '2.1', type: 'terminal', content: 'Governance and rules for project timeline management.', details: { variance: 'None', performance: 'Stable', documentation: 'Schedule Plan v1' } },
   { id: '2.1.12', title: 'Cost Management Plan', parentId: '2.1', type: 'terminal', content: 'Financial governance and rules for project spending.', details: { variance: 'None', performance: 'Stable', documentation: 'Cost Plan v1' } },
   { id: '2.1.13', title: 'Procurement Management Plan', parentId: '2.1', type: 'terminal', content: 'Governance and rules for project procurement activities.', details: { variance: 'None', performance: 'Stable', documentation: 'Procurement Plan v1' } },
+  { id: '2.1.14', title: 'Risk Management Plan', parentId: '2.1', type: 'terminal', content: 'Governance and protocols for project risk management.', details: { variance: 'None', performance: 'Stable', documentation: 'Risk Plan v1' } },
   { id: '2.1.4', title: 'Quality Metrics', parentId: '2.1', type: 'terminal', content: 'Specific attributes to be measured and how.', formFields: ['ID', 'Item', 'Metric', 'Measurement Method'], details: { variance: 'N/A', performance: 'Defined', documentation: 'Metrics Log' } },
   { id: '2.1.5', title: 'Assumption and Constraint Log', parentId: '2.1', type: 'terminal', content: 'Tracking all assumptions and constraints throughout the project.', formFields: ['ID', 'Category', 'Assumption/Constraint', 'Responsible Party', 'Due Date', 'Actions', 'Status', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Log v3' } },
 
@@ -317,7 +318,7 @@ export const pages: Page[] = [
       { type: 'warning', msg: 'One Quality Audit is overdue for the Civil Works package.' }
     ]
   },
-  { id: '3.1.1', title: 'Change Request Form', parentId: '3.1', type: 'terminal', content: 'Official form for requesting project changes with impact assessment.', formFields: ['Request ID', 'Date', 'Preparer', 'Contractor', 'Status', 'Project Name', 'PO Number', 'Contract Number', 'Categories', 'Description', 'Justification', 'Financial Summary', 'Impact Assessment'], details: { variance: 'Active', performance: 'Controlled', documentation: 'CR Form v2' } },
+  { id: '3.1.1', title: 'Change Log', parentId: '3.1', type: 'terminal', content: 'Official form for requesting project changes with impact assessment.', formFields: ['Request ID', 'Date', 'Preparer', 'Contractor', 'Status', 'Project Name', 'PO Number', 'Contract Number', 'Categories', 'Description', 'Justification', 'Financial Summary', 'Impact Assessment'], details: { variance: 'Active', performance: 'Controlled', documentation: 'CR Form v2' } },
   { id: '3.1.3', title: 'Decision Log', parentId: '3.1', type: 'terminal', content: 'Tracking all project decisions.', formFields: ['ID', 'Category', 'Decision', 'Responsible Party', 'Date', 'Comments'], details: { variance: 'N/A', performance: 'Active', documentation: 'Decision Log' } },
   { id: '3.1.4', title: 'Quality Audit', parentId: '3.1', type: 'terminal', content: 'Structured review of quality management activities.', formFields: ['Area Audited', 'Project', 'Product', 'Process', 'Good Practices to Share', 'Areas for Improvement', 'Deficiencies or Defects', 'ID', 'Defect', 'Action', 'Responsible Party', 'Due Date', 'Comments'], details: { variance: 'None', performance: 'Verified', documentation: 'Audit' } },
 
@@ -347,6 +348,19 @@ export const pages: Page[] = [
       { label: 'Performance Reviews', value: '90%', status: 'success', icon: 'CheckCircle2' }
     ]
   },
+  { 
+    id: '3.4', 
+    title: 'Change Management Hub', 
+    parentId: '3.0', 
+    type: 'hub', 
+    domain: 'governance',
+    summary: 'Managing project changes, variations, and impact assessments.',
+    kpis: [
+      { label: 'Open CRs', value: '3', status: 'warning', icon: 'Clock' },
+      { label: 'Total Variation', value: '22.1M IQD', status: 'danger', icon: 'TrendingUp' }
+    ]
+  },
+  { id: '3.4.1', title: 'Change Request Register', parentId: '3.4', type: 'terminal', content: 'Official register for tracking all change requests and their status.', formFields: ['Request ID', 'Type', 'Total Impact', 'Status'], details: { variance: 'Active', performance: 'Controlled', documentation: 'CR Register' } },
   { id: '3.3.1', title: 'Team Directory', parentId: '3.3', type: 'terminal', content: 'Contact information for all team members.', formFields: ['Name', 'Role', 'Department', 'E-mail', 'Phone Numbers', 'Location', 'Work Hours'], details: { variance: 'N/A', performance: 'Updated', documentation: 'Directory' } },
   { id: '3.3.5', title: 'Team Operating Agreement', parentId: '3.3', type: 'terminal', content: 'Guidelines for team interaction.', formFields: ['Team Values and Principles', 'Meeting Guidelines', 'Communication Guidelines', 'Decision-Making Process', 'Conflict Management Approach', 'Other Agreements', 'Signature', 'Date'], details: { variance: 'None', performance: 'Stable', documentation: 'Agreement' } },
   { id: '3.3.2', title: 'Team Member Performance Assessment', parentId: '3.3', type: 'terminal', content: 'Evaluation of individual team member effectiveness.', formFields: ['Technical Performance', 'Interpersonal Competency', 'Leadership', 'Strengths', 'Weaknesses', 'Areas for Development', 'Additional Comments'], details: { variance: 'Positive', performance: 'High', documentation: 'Assessment' } },

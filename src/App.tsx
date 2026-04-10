@@ -11,8 +11,11 @@ import { WBSView } from './components/WBSView';
 import { EVMReportView } from './components/EVMReportView';
 import { ProgressReportView } from './components/ProgressReportView';
 import { UserFormView } from './components/UserFormView';
-import { QualityMetricsView } from './components/QualityMetricsView';
+import { QualityMetricsRegisterView } from './components/QualityMetricsRegisterView';
 import { ChangeLogView } from './components/ChangeLogView';
+import { ChangeManagementHubView } from './components/ChangeManagementHubView';
+import { ChangeRequestHubView } from './components/ChangeRequestHubView';
+import { DecisionLogView } from './components/DecisionLogView';
 import { RiskRegisterView } from './components/RiskRegisterView';
 import { IssueLogView } from './components/IssueLogView';
 import { StakeholderRegisterView } from './components/StakeholderRegisterView';
@@ -145,8 +148,15 @@ const PageRenderer = () => {
   const isIssueLogPage = page.id === '3.2.1';
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
-  const isGovernanceHubPage = ['1.1.1', '1.1.2', '2.1.1', '2.1.2', '2.1.3', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13'].includes(page.id);
+  const isGovernanceHubPage = [
+    '1.1.1', '1.1.2', // Charter, Policies
+    '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
+    '1.2.1', '2.1.5', '3.1.1', '3.2.1', '3.4.1', '5.1.1' // Logs
+  ].includes(page.id);
   const isChangeRequestPage = page.id === '3.1.1';
+  const isChangeRequestHubPage = page.id === '3.4.1';
+  const isDecisionLogPage = page.id === '3.1.3';
+  const isChangeManagementHubPage = page.id === '3.4';
   const isLogManagementPage = ['1.2.1', '2.7.5', '3.1.1', '3.2.1', '4.1.1', '5.1.1'].includes(page.id);
 
   return (
@@ -181,7 +191,7 @@ const PageRenderer = () => {
         ) : isAssumptionLogPage ? (
           <AssumptionConstraintView page={page} />
         ) : isQualityMetricsPage ? (
-          <QualityMetricsView page={page} />
+          <QualityMetricsRegisterView page={page} />
         ) : isChangeLogPage ? (
           <ChangeLogView page={page} />
         ) : isRiskRegisterPage ? (
@@ -194,6 +204,12 @@ const PageRenderer = () => {
           <LessonsLearnedView page={page} />
         ) : isGovernanceHubPage ? (
           <GovernanceHubView page={page} />
+        ) : isChangeRequestHubPage ? (
+          <ChangeRequestHubView page={page} />
+        ) : isDecisionLogPage ? (
+          <DecisionLogView page={page} />
+        ) : isChangeManagementHubPage ? (
+          <ChangeManagementHubView page={page} />
         ) : isChangeRequestPage ? (
           <ChangeRequestView page={page} />
         ) : isVendorRegisterPage ? (

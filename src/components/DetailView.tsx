@@ -2937,6 +2937,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 assuranceApproach: '',
                 controlApproach: '',
                 improvementApproach: '',
+                acceptanceCriteriaLogic: '',
                 roles: [],
                 version: 1.0,
                 lastUpdated: new Date().toISOString(),

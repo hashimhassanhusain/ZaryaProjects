@@ -352,9 +352,82 @@ export interface Project {
   costPlanHistory?: PageVersion[];
   procurementPlanData?: Record<string, any>;
   procurementPlanHistory?: PageVersion[];
+  riskPlanData?: Record<string, any>;
+  riskPlanHistory?: PageVersion[];
+  qualityMetricsData?: Record<string, any>;
+  qualityMetricsHistory?: PageVersion[];
+  qualityMetricEntriesData?: Record<string, any>;
+  qualityMetricEntriesHistory?: PageVersion[];
+  decisionLogData?: Record<string, any>;
+  decisionLogHistory?: PageVersion[];
+  changeRequestData?: Record<string, any>;
+  changeRequestHistory?: PageVersion[];
+  changeLogData?: Record<string, any>;
+  changeLogHistory?: PageVersion[];
   pageData?: Record<string, Record<string, string>>;
   pageHistory?: Record<string, PageVersion[]>;
   savedDocuments?: SavedDocument[];
+}
+
+export interface QualityMetricEntry {
+  id: string;
+  projectId: string;
+  metricId: string; // e.g. ZRY-QUA-001
+  item: string;
+  masterFormatCode?: string;
+  wbsId?: string;
+  metric: string;
+  measurementMethod: string;
+  acceptanceCriteria: string;
+  targetValue?: number;
+  minValue?: number;
+  maxValue?: number;
+  unit?: string;
+  status: 'Active' | 'Inactive';
+  complianceStatus?: 'Compliant' | 'Non-Compliant' | 'Pending';
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface QualityMetricVersion {
+  id: string;
+  metricEntryId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<QualityMetricEntry>;
+  changeSummary: string;
+}
+
+export interface DecisionLogEntry {
+  id: string;
+  projectId: string;
+  decisionId: string; // e.g. ZRY-DEC-001
+  category: 'Schedule' | 'Cost/Price' | 'Quantity' | 'Quality' | 'Scope';
+  decision: string;
+  responsibleParty: string;
+  date: string;
+  comments: string;
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface DecisionLogVersion {
+  id: string;
+  decisionId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<DecisionLogEntry>;
+  changeSummary: string;
 }
 
 export interface BreadcrumbItem {
@@ -536,6 +609,7 @@ export interface QualityManagementPlan {
   assuranceApproach: string;
   controlApproach: string;
   improvementApproach: string;
+  acceptanceCriteriaLogic: string;
   roles: QualityRole[];
   version: number;
   lastUpdated: string;

@@ -32,6 +32,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { QualityMetricsRegisterView } from './QualityMetricsRegisterView';
+
 interface QualityManagementPlanViewProps {
   page: Page;
 }
@@ -50,6 +52,7 @@ interface QMPData {
   assuranceApproach: string;
   controlApproach: string;
   improvementApproach: string;
+  acceptanceCriteriaLogic: string;
 }
 
 export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps> = ({ page }) => {
@@ -66,7 +69,8 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
     planningApproach: '',
     assuranceApproach: '',
     controlApproach: '',
-    improvementApproach: ''
+    improvementApproach: '',
+    acceptanceCriteriaLogic: ''
   });
 
   const [versions, setVersions] = useState<PageVersion[]>([]);
@@ -314,7 +318,8 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
           { key: 'planningApproach', title: 'Quality Planning Approach' },
           { key: 'assuranceApproach', title: 'Quality Assurance Approach' },
           { key: 'controlApproach', title: 'Quality Control Approach' },
-          { key: 'improvementApproach', title: 'Quality Improvement Approach' }
+          { key: 'improvementApproach', title: 'Quality Improvement Approach' },
+          { key: 'acceptanceCriteriaLogic', title: 'Acceptance Criteria Logic' }
         ].map((section) => (
           <section key={section.key} className="space-y-4">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
@@ -328,6 +333,9 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
           </section>
         ))}
       </div>
+
+      {/* Operational Quality Metrics Register Integration */}
+      <QualityMetricsRegisterView page={page} embedded={true} />
 
       {/* Revision History Table */}
       <section className="space-y-6">
