@@ -201,6 +201,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         const pdfBlob = doc.output('blob');
         const formData = new FormData();
         formData.append('file', pdfBlob, fileName);
+        formData.append('projectRootId', selectedProject?.driveFolderId || '');
         formData.append('path', 'SITE_OPERATIONS_04/04.1_Daily_Site_Reports');
 
         const driveRes = await fetch('/api/drive/upload-by-path', {

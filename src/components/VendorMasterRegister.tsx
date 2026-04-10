@@ -132,16 +132,17 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
         formData.append('path', 'PROCUREMENT_AND_SUBCONTRACTORS_03/03.1_Vendors_and_Suppliers_Database');
 
         try {
-          const driveRes = await fetch('/api/drive/upload-by-path', {
+          const res = await fetch('/api/drive/upload-by-path', {
             method: 'POST',
             body: formData
           });
-          if (!driveRes.ok) {
-            const errData = await driveRes.json().catch(() => ({ error: 'Drive upload failed' }));
-            alert(`⚠️ Vendor saved to database, but Drive backup failed:\n${errData.error || 'Unknown error'}`);
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Drive upload failed');
           }
-        } catch (driveErr: any) {
-          alert(`⚠️ Vendor saved to database, but Drive backup failed:\n${driveErr.message}`);
+        } catch (err: any) {
+          console.error('Failed to mirror to Drive:', err);
+          alert(`Vendor saved to database, but Google Drive backup failed: ${err.message}. Please check your Drive connection.`);
         }
       }
 

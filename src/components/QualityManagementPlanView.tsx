@@ -17,7 +17,9 @@ import {
   Info,
   Search,
   UserPlus,
-  ClipboardCheck
+  ClipboardCheck,
+  Activity,
+  FileSignature
 } from 'lucide-react';
 import { Page, Project, PageVersion } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
@@ -33,6 +35,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { QualityMetricsRegisterView } from './QualityMetricsRegisterView';
+import { FormalAcceptanceView } from './FormalAcceptanceView';
 
 interface QualityManagementPlanViewProps {
   page: Page;
@@ -77,6 +80,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'plan' | 'metrics' | 'acceptance'>('plan');
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -220,11 +224,11 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-            <ClipboardCheck className="w-6 h-6 text-white" />
+            <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Quality Management Plan</h2>
-            <p className="text-xs text-slate-500 font-medium">Standards and quality control measures</p>
+            <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Governance Hub • Project P16314</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -252,121 +256,153 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
           </button>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={qmp.projectTitle}
-            onChange={(e) => setQmp({ ...qmp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={qmp.datePrepared}
-            onChange={(e) => setQmp({ ...qmp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
-        </div>
-      </div>
-
-      {/* Roles and Responsibilities */}
-      <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Quality Roles and Responsibilities</h3>
-        <div className="grid grid-cols-1 gap-4">
-          {qmp.roles.map((role, idx) => (
-            <div key={role.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
-                <input 
-                  type="text"
-                  value={role.role}
-                  onChange={(e) => {
-                    const newRoles = [...qmp.roles];
-                    newRoles[idx].role = e.target.value;
-                    setQmp({ ...qmp, roles: newRoles });
-                  }}
-                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
-                <input 
-                  type="text"
-                  value={role.responsibilities}
-                  onChange={(e) => {
-                    const newRoles = [...qmp.roles];
-                    newRoles[idx].responsibilities = e.target.value;
-                    setQmp({ ...qmp, roles: newRoles });
-                  }}
-                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Approaches */}
-      <div className="grid grid-cols-1 gap-8">
+      
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200 shadow-inner">
         {[
-          { key: 'planningApproach', title: 'Quality Planning Approach' },
-          { key: 'assuranceApproach', title: 'Quality Assurance Approach' },
-          { key: 'controlApproach', title: 'Quality Control Approach' },
-          { key: 'improvementApproach', title: 'Quality Improvement Approach' },
-          { key: 'acceptanceCriteriaLogic', title: 'Acceptance Criteria Logic' }
-        ].map((section) => (
-          <section key={section.key} className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
-            <textarea 
-              value={(qmp as any)[section.key]}
-              onChange={(e) => setQmp({ ...qmp, [section.key]: e.target.value })}
-              rows={4}
-              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-              placeholder={`Define the ${section.title.toLowerCase()}...`}
-            />
-          </section>
+          { id: 'plan', title: '3.3 Management Plan', icon: ClipboardCheck },
+          { id: 'metrics', title: '3.3.1 Metrics Register', icon: Activity },
+          { id: 'acceptance', title: '3.3.2 Formal Acceptance', icon: FileSignature }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id as any)}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+              activeSubTab === tab.id 
+                ? "bg-white text-blue-600 shadow-md" 
+                : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <tab.icon className="w-3.5 h-3.5" />
+            {tab.title}
+          </button>
         ))}
       </div>
 
-      {/* Operational Quality Metrics Register Integration */}
-      <QualityMetricsRegisterView page={page} embedded={true} />
+      {activeSubTab === 'plan' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+              <input 
+                type="text"
+                value={qmp.projectTitle}
+                onChange={(e) => setQmp({ ...qmp, projectTitle: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                placeholder="Enter Project Title..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+              <input 
+                type="date"
+                value={qmp.datePrepared}
+                onChange={(e) => setQmp({ ...qmp, datePrepared: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              />
+            </div>
+          </div>
 
-      {/* Revision History Table */}
-      <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
-        <div className="overflow-hidden rounded-2xl border border-slate-100">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {versions.length > 0 ? versions.map((v) => (
-                <tr key={v.version}>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900">V{v.version.toFixed(1)}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{new Date(v.date).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{v.author}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">Quality Management Plan Update</td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-sm text-slate-400 italic">No revision history found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          {/* Roles and Responsibilities */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Quality Roles and Responsibilities</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {qmp.roles.map((role, idx) => (
+                <div key={role.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
+                    <input 
+                      type="text"
+                      value={role.role}
+                      onChange={(e) => {
+                        const newRoles = [...qmp.roles];
+                        newRoles[idx].role = e.target.value;
+                        setQmp({ ...qmp, roles: newRoles });
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
+                    <input 
+                      type="text"
+                      value={role.responsibilities}
+                      onChange={(e) => {
+                        const newRoles = [...qmp.roles];
+                        newRoles[idx].responsibilities = e.target.value;
+                        setQmp({ ...qmp, roles: newRoles });
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Approaches */}
+          <div className="grid grid-cols-1 gap-8">
+            {[
+              { key: 'planningApproach', title: 'Quality Planning Approach' },
+              { key: 'assuranceApproach', title: 'Quality Assurance Approach' },
+              { key: 'controlApproach', title: 'Quality Control Approach' },
+              { key: 'improvementApproach', title: 'Quality Improvement Approach' },
+              { key: 'acceptanceCriteriaLogic', title: 'Acceptance Criteria Logic' }
+            ].map((section) => (
+              <section key={section.key} className="space-y-4">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
+                <textarea 
+                  value={(qmp as any)[section.key]}
+                  onChange={(e) => setQmp({ ...qmp, [section.key]: e.target.value })}
+                  rows={4}
+                  className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+                  placeholder={`Define the ${section.title.toLowerCase()}...`}
+                />
+              </section>
+            ))}
+          </div>
+
+          {/* Revision History Table */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+            <div className="overflow-hidden rounded-2xl border border-slate-100">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50">
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {versions.length > 0 ? versions.map((v) => (
+                    <tr key={v.version}>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">V{v.version.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{new Date(v.date).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{v.author}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">Quality Management Plan Update</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-slate-400 italic">No revision history found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+
+      {activeSubTab === 'metrics' && (
+        <QualityMetricsRegisterView page={page} embedded={true} />
+      )}
+
+      {activeSubTab === 'acceptance' && (
+        <FormalAcceptanceView page={page} embedded={true} />
+      )}
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

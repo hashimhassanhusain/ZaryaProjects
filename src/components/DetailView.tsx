@@ -3103,6 +3103,21 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </div>
               )}
             </div>
+            <div className="space-y-3 md:col-span-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria Logic</label>
+              {isEditing ? (
+                <textarea 
+                  value={qualityPlan.acceptanceCriteriaLogic}
+                  onChange={e => setQualityPlan({...qualityPlan, acceptanceCriteriaLogic: e.target.value})}
+                  className="w-full h-40 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                  placeholder="Define the logic for acceptance criteria (e.g., must meet all technical specs and pass inspection)..."
+                />
+              ) : (
+                <div className="p-6 bg-slate-50 rounded-2xl text-sm text-slate-600 leading-relaxed italic border border-slate-100 min-h-[10rem]">
+                  {qualityPlan.acceptanceCriteriaLogic || 'No logic defined yet.'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

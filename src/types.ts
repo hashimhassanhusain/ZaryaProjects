@@ -358,6 +358,8 @@ export interface Project {
   qualityMetricsHistory?: PageVersion[];
   qualityMetricEntriesData?: Record<string, any>;
   qualityMetricEntriesHistory?: PageVersion[];
+  formalAcceptanceData?: Record<string, any>;
+  formalAcceptanceHistory?: PageVersion[];
   decisionLogData?: Record<string, any>;
   decisionLogHistory?: PageVersion[];
   changeRequestData?: Record<string, any>;
@@ -427,6 +429,35 @@ export interface DecisionLogVersion {
   userId: string;
   userName: string;
   data: Partial<DecisionLogEntry>;
+  changeSummary: string;
+}
+
+export interface FormalAcceptanceEntry {
+  id: string;
+  projectId: string;
+  acceptanceId: string; // e.g. ZRY-ACC-001
+  requirement: string;
+  acceptanceCriteria: string;
+  validationMethod: string;
+  status: 'Accepted' | 'Rejected' | 'Pending' | 'In Progress';
+  comments: string;
+  signoffBy: string; // User ID or Name
+  signoffDate?: string;
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface FormalAcceptanceVersion {
+  id: string;
+  acceptanceEntryId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<FormalAcceptanceEntry>;
   changeSummary: string;
 }
 

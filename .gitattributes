@@ -1,3 +1,2 @@
-# CLAUDE.md: always keep our version in any merge conflict.
-# The "ours" driver exits 0 without touching the file, so HEAD wins.
-CLAUDE.md merge=ours
+CLAUDE.md merge=keep
+.gitattributes merge=keep

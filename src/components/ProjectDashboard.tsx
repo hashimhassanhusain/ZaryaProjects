@@ -100,15 +100,20 @@ export const ProjectDashboard: React.FC = () => {
     );
   }
 
-  const data = {
-    kpis: [
-      { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
-      { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
-      { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
-      { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
-    ],
-    alerts: [] as { type: string; msg: string }[]
+  // Dynamic data based on project
+  const getProjectData = (id: string) => {
+    return {
+      kpis: [
+        { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
+        { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
+        { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
+        { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
+      ],
+      alerts: []
+    };
   };
+
+  const data = getProjectData(selectedProject.id);
 
   return (
     <div className="space-y-10">

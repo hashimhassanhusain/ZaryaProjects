@@ -322,26 +322,22 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
     console.log('Using parent folder ID:', parentFolderId || 'ROOT');
     const rootFolderName = `[${projectCode}]_${projectName}_Project`;
-
+    
     // Create the project root folder inside the parent folder if provided
     const rootFolderId = await createFolder(drive, rootFolderName, parentFolderId);
 
-    // Share the root folder with the user so they can see files in their Google Drive
+    // Share root folder with user if userEmail is provided
     if (userEmail) {
       try {
         await drive.permissions.create({
           fileId: rootFolderId,
-          requestBody: {
-            role: 'writer',
-            type: 'user',
-            emailAddress: userEmail,
-          },
+          requestBody: { role: 'writer', type: 'user', emailAddress: userEmail },
           supportsAllDrives: true,
         });
         console.log(`Shared root folder with ${userEmail}`);
       } catch (permErr: any) {
-        // Non-fatal: log but continue — the service account can still upload files
         console.warn(`Could not share folder with ${userEmail}:`, permErr.message);
+        // Do not stop the process - error is non-fatal
       }
     }
 

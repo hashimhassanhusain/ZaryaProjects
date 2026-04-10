@@ -198,7 +198,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
         userId: auth.currentUser?.uid || 'system',
         userName: user,
         data: metricData,
-        changeSummary: isNewVersion ? 'Created new version' : (editingMetric.id ? 'Updated existing record' : 'Initial entry')
+        changeSummary: isNewVersion ? `Created new version ${metricData.version.toFixed(1)}` : (editingMetric.id ? 'Updated existing record' : 'Initial entry')
       });
 
       setIsFormOpen(false);
@@ -266,7 +266,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
     });
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const fileName = `${selectedProject.code}-QUA-METRIC-LOG-${dateStr}.pdf`;
+    const fileName = `[${selectedProject.code}]-QUA-MET-${dateStr}.pdf`;
     pdfDoc.save(fileName);
   };
 

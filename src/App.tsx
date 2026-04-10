@@ -50,9 +50,8 @@ import { DriveFolderView } from './components/DriveFolderView';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-import { ProjectProvider } from './context/ProjectContext';
+import { ProjectProvider, useProject } from './context/ProjectContext';
 import { UIProvider, useUI } from './context/UIContext';
-import { useProject } from './context/ProjectContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 
 const PageRenderer = () => {
@@ -175,7 +174,7 @@ const PageRenderer = () => {
         ) : isMeetingsPage ? (
           <MeetingsView />
         ) : isFilesPage ? (
-          <FileExplorer projectId={selectedProject?.id ?? ''} />
+          <FileExplorer projectId={selectedProject?.id || ''} />
         ) : isZaryaPage ? (
           <ZaryaPOTracker page={page} />
         ) : isBOQPage ? (
