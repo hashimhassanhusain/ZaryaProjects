@@ -97,13 +97,11 @@ export const AdminProjectsView: React.FC = () => {
         })
       });
 
-      let rootFolderId = 'demo-folder-id';
-      if (driveRes.ok) {
-        const driveData = await driveRes.json();
-        rootFolderId = driveData.rootFolderId;
-      } else {
-        console.warn('Drive initialization failed for demo project, using placeholder ID');
+      if (!driveRes.ok) {
+        const errData = await driveRes.json().catch(() => ({ error: 'Drive initialization failed' }));
+        throw new Error(errData.error || 'Drive initialization failed');
       }
+      const { rootFolderId } = await driveRes.json();
 
       const demoProject = {
         name: 'Zarya Oil Field Dev',

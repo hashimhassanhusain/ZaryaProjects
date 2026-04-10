@@ -40,10 +40,12 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { ProjectProvider } from './context/ProjectContext';
 import { UIProvider, useUI } from './context/UIContext';
+import { useProject } from './context/ProjectContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 
 const PageRenderer = () => {
   const { id } = useParams<{ id: string }>();
+  const { selectedProject } = useProject();
   
   // Handle virtual domain IDs
   if (id?.startsWith('dom_')) {
@@ -148,7 +150,7 @@ const PageRenderer = () => {
         ) : isMeetingsPage ? (
           <MeetingsView />
         ) : isFilesPage ? (
-          <FileExplorer projectId="p1" />
+          <FileExplorer projectId={selectedProject?.id ?? ''} />
         ) : isZaryaPage ? (
           <ZaryaPOTracker page={page} />
         ) : isBOQPage ? (

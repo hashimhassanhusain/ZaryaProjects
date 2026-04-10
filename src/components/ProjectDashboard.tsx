@@ -100,36 +100,15 @@ export const ProjectDashboard: React.FC = () => {
     );
   }
 
-  // Mock dynamic data based on project
-  const getProjectData = (id: string) => {
-    // For now, return some default data if not p1 or p2
-    if (id === 'p1') {
-      return {
-        kpis: [
-          { title: 'Governance Status', value: '98.4%', subValue: 'Compliance', trend: 'up', trendValue: '1.2%', icon: Shield, color: 'bg-blue-600' },
-          { title: 'Scope Health', value: '100%', subValue: 'Matched', trend: 'up', trendValue: '0%', icon: DraftingCompass, color: 'bg-emerald-500' },
-          { title: 'Schedule Status', value: '94%', subValue: 'Completion', trend: 'up', trendValue: '2%', icon: Calendar, color: 'bg-orange-500' },
-          { title: 'Finance Status', value: '$2.4M', subValue: 'Spent', trend: 'down', trendValue: '3%', icon: Banknote, color: 'bg-purple-500' },
-        ],
-        alerts: [
-          { type: 'warning', msg: 'Concrete delivery delayed for Block A foundations.' },
-          { type: 'info', msg: 'Weekly safety audit completed with zero non-conformances.' }
-        ]
-      };
-    }
-    
-    return {
-      kpis: [
-        { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
-        { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
-        { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
-        { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
-      ],
-      alerts: []
-    };
+  const data = {
+    kpis: [
+      { title: 'Governance', value: '0%', subValue: 'N/A', icon: Shield, color: 'bg-slate-400' },
+      { title: 'Scope', value: '0%', subValue: 'N/A', icon: DraftingCompass, color: 'bg-slate-400' },
+      { title: 'Schedule', value: '0%', subValue: 'N/A', icon: Calendar, color: 'bg-slate-400' },
+      { title: 'Finance', value: formatCurrency(boqTotal), subValue: 'BOQ Total', icon: Banknote, color: 'bg-blue-600' },
+    ],
+    alerts: [] as { type: string; msg: string }[]
   };
-
-  const data = getProjectData(selectedProject.id);
 
   return (
     <div className="space-y-10">
