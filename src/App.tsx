@@ -167,12 +167,12 @@ const PageRenderer = () => {
   const isLessonsLearnedPage = page.id === '5.1.1';
   const isResourceOptimizationPage = [
     '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
-    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.4', '3.3.5', '3.3.6', '2.4.7'
+    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6', '2.4.7'
   ].includes(page.id);
   const isGovernanceHubPage = [
     '1.1.1', '1.1.2', // Charter, Policies
     '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
-    '1.2.1', '2.1.5', '5.1.1' // Logs
+    '2.1.5' // Logs
   ].includes(page.id);
   const isChangeRequestPage = page.id === '3.1.1';
   const isDecisionLogPage = page.id === '3.1.3';

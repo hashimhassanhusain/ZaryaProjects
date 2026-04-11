@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useProject } from '../context/ProjectContext';
 import { 
   Users, 
   Shield, 
@@ -40,6 +41,8 @@ type TabType =
   | 'optimization';
 
 export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = ({ page }) => {
+  const { selectedProject } = useProject();
+  const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<TabType>('resource-plan');
 
   const tabs = [
@@ -50,8 +53,6 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
     { id: 'vendor-evaluation', label: 'Vendor Evaluation', icon: Target, color: 'emerald' },
     { id: 'optimization', label: 'Optimization', icon: Zap, color: 'rose' },
   ];
-
-  const projectId = page.id.split('-')[0] || 'P16314';
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-10">
