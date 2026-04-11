@@ -262,7 +262,8 @@ export const Sidebar: React.FC = () => {
         title: 'CORE DATA',
         items: [
           { id: '2.1.2', title: 'Project management Plan', icon: DraftingCompass },
-          { id: '2.3', title: 'Schedule', icon: Calendar, hasDot: true },
+          { id: '2.6', title: 'Resources & Optimization', icon: Package },
+          { id: 'logs', title: 'Project Logs', icon: FileText },
         ]
       },
       {
@@ -340,7 +341,7 @@ export const Sidebar: React.FC = () => {
                       isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
                     )} />
                     <span className="text-xs font-semibold truncate">{item.title}</span>
-                    {item.hasDot && (
+                    {(item as any).hasDot && (
                       <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                     )}
                   </Link>

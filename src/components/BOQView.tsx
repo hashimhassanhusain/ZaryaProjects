@@ -7,7 +7,7 @@ import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } 
 import { 
   Table, Filter, LayoutGrid, List, Upload, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Database, Plus, Trash2, ChevronRight, ChevronDown,
-  FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft
+  FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
@@ -31,6 +31,7 @@ export const BOQView: React.FC = () => {
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [isAddingWorkPackage, setIsAddingWorkPackage] = useState(false);
   const [newWorkPackage, setNewWorkPackage] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Form states
   const [showAddItem, setShowAddItem] = useState(false);
@@ -44,9 +45,6 @@ export const BOQView: React.FC = () => {
     inputCurrency: 'IQD',
     exchangeRateUsed: 1500
   });
-
-  const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   // Sync newItem exchange rate when global rate changes or project changes
   useEffect(() => {

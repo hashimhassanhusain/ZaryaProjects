@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User } from '../types';
 import { purchaseOrders, users } from '../data';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, onSnapshot, query, where, orderBy, deleteDoc, getDocs, Timestamp } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useProject } from '../context/ProjectContext';
@@ -25,7 +25,10 @@ import {
   LayoutGrid,
   List,
   Save,
-  RefreshCw
+  RefreshCw,
+  Edit2,
+  ChevronRight,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -33,9 +36,29 @@ interface ProgressReportViewProps {
   page: Page;
 }
 
+interface ProgressReport {
+  id: string;
+  type: 'daily' | 'weekly' | 'monthly';
+  date: string;
+  weather?: WeatherData;
+  activities: DailyReportActivity[];
+  generalWorks: string;
+  deliverables: string;
+  incidents: string;
+  issues: SiteIssue[];
+  submittedBy: string;
+  createdAt: any;
+  periodStart?: string;
+  periodEnd?: string;
+  projectId: string;
+}
+
 export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [reports, setReports] = useState<ProgressReport[]>([]);
+  const [editingReport, setEditingReport] = useState<ProgressReport | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [activities, setActivities] = useState<DailyReportActivity[]>([]);
   const [issues, setIssues] = useState<SiteIssue[]>([]);
@@ -43,6 +66,171 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
   const [deliverables, setDeliverables] = useState('');
   const [incidents, setIncidents] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch reports
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const q = query(
+      collection(db, 'progressReports'),
+      where('projectId', '==', selectedProject.id),
+      orderBy('date', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reportsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ProgressReport[];
+      setReports(reportsData);
+      setIsLoading(false);
+      
+      // Check for automated reports after fetching
+      checkAndGenerateAutomatedReports(reportsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'progressReports');
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject]);
+
+  const checkAndGenerateAutomatedReports = async (existingReports: ProgressReport[]) => {
+    if (!selectedProject) return;
+
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 4 = Thursday
+    const isThursday = dayOfWeek === 4;
+    const isFirstOfMonth = today.getDate() === 1;
+
+    // Check Weekly (Thursday)
+    if (isThursday) {
+      const todayStr = today.toISOString().split('T')[0];
+      const hasWeeklyToday = existingReports.some(r => r.type === 'weekly' && r.date === todayStr);
+      
+      if (!hasWeeklyToday) {
+        await generateWeeklyReport(today, existingReports);
+      }
+    }
+
+    // Check Monthly (1st)
+    if (isFirstOfMonth) {
+      const todayStr = today.toISOString().split('T')[0];
+      const hasMonthlyToday = existingReports.some(r => r.type === 'monthly' && r.date === todayStr);
+      
+      if (!hasMonthlyToday) {
+        await generateMonthlyReport(today, existingReports);
+      }
+    }
+  };
+
+  const generateWeeklyReport = async (date: Date, existingReports: ProgressReport[]) => {
+    const end = new Date(date);
+    const start = new Date(date);
+    start.setDate(start.getDate() - 6); // Last 7 days
+
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
+    const dailyReports = existingReports.filter(r => 
+      r.type === 'daily' && r.date >= startStr && r.date <= endStr
+    );
+
+    if (dailyReports.length === 0) return;
+
+    // Summarize
+    const summary = summarizeReports(dailyReports, 'weekly', startStr, endStr);
+    
+    try {
+      await addDoc(collection(db, 'progressReports'), {
+        ...summary,
+        projectId: selectedProject?.id,
+        submittedBy: 'System',
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error generating weekly report:', error);
+    }
+  };
+
+  const generateMonthlyReport = async (date: Date, existingReports: ProgressReport[]) => {
+    const lastMonth = new Date(date);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    const start = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+    const end = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
+
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
+    const dailyReports = existingReports.filter(r => 
+      r.type === 'daily' && r.date >= startStr && r.date <= endStr
+    );
+
+    if (dailyReports.length === 0) return;
+
+    // Summarize
+    const summary = summarizeReports(dailyReports, 'monthly', startStr, endStr);
+    
+    try {
+      await addDoc(collection(db, 'progressReports'), {
+        ...summary,
+        projectId: selectedProject?.id,
+        submittedBy: 'System',
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error generating monthly report:', error);
+    }
+  };
+
+  const summarizeReports = (reports: ProgressReport[], type: 'weekly' | 'monthly', start: string, end: string) => {
+    const allActivities: DailyReportActivity[] = [];
+    const allIssues: SiteIssue[] = [];
+    let combinedGeneral = '';
+    let combinedDeliverables = '';
+    let combinedIncidents = '';
+
+    reports.forEach(r => {
+      allActivities.push(...r.activities);
+      allIssues.push(...r.issues);
+      if (r.generalWorks) combinedGeneral += `\n[${r.date}]: ${r.generalWorks}`;
+      if (r.deliverables) combinedDeliverables += `\n[${r.date}]: ${r.deliverables}`;
+      if (r.incidents) combinedIncidents += `\n[${r.date}]: ${r.incidents}`;
+    });
+
+    // Group activities by PO Line Item and average progress
+    const groupedActivities = allActivities.reduce((acc, curr) => {
+      if (!acc[curr.poLineItemId]) {
+        acc[curr.poLineItemId] = { ...curr, count: 1 };
+      } else {
+        acc[curr.poLineItemId].progressUpdate += curr.progressUpdate;
+        acc[curr.poLineItemId].count += 1;
+        if (!acc[curr.poLineItemId].description.includes(curr.description)) {
+          acc[curr.poLineItemId].description += `; ${curr.description}`;
+        }
+      }
+      return acc;
+    }, {} as Record<string, DailyReportActivity & { count: number }>);
+
+    const finalActivities = Object.values(groupedActivities).map(({ count, ...rest }) => ({
+      ...rest,
+      progressUpdate: Math.round(rest.progressUpdate / count)
+    }));
+
+    return {
+      type,
+      date: new Date().toISOString().split('T')[0],
+      periodStart: start,
+      periodEnd: end,
+      activities: finalActivities,
+      issues: allIssues,
+      generalWorks: combinedGeneral.trim(),
+      deliverables: combinedDeliverables.trim(),
+      incidents: combinedIncidents.trim()
+    };
+  };
 
   // Mock weather fetch
   useEffect(() => {
@@ -84,161 +272,140 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
     setIssues([...issues, newIssue]);
   };
 
+  const handleNewReport = () => {
+    setEditingReport(null);
+    setActivities([]);
+    setIssues([]);
+    setGeneralWorks('');
+    setDeliverables('');
+    setIncidents('');
+    setView('form');
+  };
+
+  const handleEditReport = (report: ProgressReport) => {
+    setEditingReport(report);
+    setActivities(report.activities);
+    setIssues(report.issues);
+    setGeneralWorks(report.generalWorks);
+    setDeliverables(report.deliverables);
+    setIncidents(report.incidents);
+    setView('form');
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+      await deleteDoc(doc(db, 'progressReports', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'progressReports');
+    }
+  };
+
   const handleSave = async () => {
-    if (!auth.currentUser) {
+    if (!auth.currentUser || !selectedProject) {
       alert('You must be signed in to submit a report.');
       return;
     }
 
     setIsSaving(true);
     try {
-      // 1. Save the Daily Report
-      const reportRef = await addDoc(collection(db, 'dailyReports'), {
-        date: new Date().toISOString().split('T')[0],
-        weather,
+      const reportData = {
+        type: activeTab,
+        date: editingReport?.date || new Date().toISOString().split('T')[0],
+        weather: activeTab === 'daily' ? weather : null,
         activities,
         generalWorks,
         deliverables,
         incidents,
+        issues,
         submittedBy: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-      });
+        projectId: selectedProject.id,
+        updatedAt: serverTimestamp()
+      };
 
-      // 2. Save Site Issues
-      for (const issue of issues) {
-        await addDoc(collection(db, 'siteIssues'), {
-          ...issue,
-          reportId: reportRef.id,
+      if (editingReport) {
+        await updateDoc(doc(db, 'progressReports', editingReport.id), reportData);
+      } else {
+        await addDoc(collection(db, 'progressReports'), {
+          ...reportData,
           createdAt: serverTimestamp()
         });
       }
 
-      // 3. Update BOQ Progress (Simulated link)
-      // In a real app, you'd map poLineItemId to BOQ items and update them
-      for (const activity of activities) {
-        if (activity.poLineItemId && activity.progressUpdate > 0) {
-          // Find the BOQ item associated with this PO line item (mock logic)
-          // For now, we'll just log it
-          console.log(`Updating progress for activity ${activity.id} to ${activity.progressUpdate}%`);
-        }
-      }
+      // Generate PDF logic remains similar but uses reportData
+      await generateAndUploadPDF(reportData);
 
-      // 4. Generate and Upload PDF to Drive
-      try {
-        const doc = new jsPDF();
-        const projectCode = selectedProject?.code || 'ZRY';
-        const dateStr = new Date().toISOString().split('T')[0];
-        const fileName = `${projectCode}-ZRY-SITE-RPT-${dateStr}.pdf`;
-
-        // PDF Header
-        doc.setFontSize(20);
-        doc.setTextColor(40);
-        doc.text('DAILY SITE REPORT', 105, 20, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
-        doc.text(`Date: ${dateStr}`, 20, 42);
-        doc.text(`Submitted By: ${auth.currentUser.email}`, 20, 49);
-
-        if (weather) {
-          doc.text(`Weather: ${weather.condition}, ${weather.temp}°C, Humidity: ${weather.humidity}%, Wind: ${weather.windSpeed}km/h`, 20, 56);
-        }
-
-        // Activities Table
-        doc.setFontSize(14);
-        doc.text('Key Activities', 20, 70);
-        
-        const activityRows = activities.map(a => {
-          const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
-          return [
-            poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A',
-            a.description,
-            `${a.progressUpdate}%`
-          ];
-        });
-
-        autoTable(doc, {
-          startY: 75,
-          head: [['PO Item', 'Work Description', 'Progress']],
-          body: activityRows,
-        });
-
-        // General Works & Deliverables
-        let currentY = (doc as any).lastAutoTable.finalY + 15;
-        
-        doc.setFontSize(14);
-        doc.text('General Works & Safety', 20, currentY);
-        doc.setFontSize(10);
-        doc.text(generalWorks || 'None reported', 20, currentY + 7, { maxWidth: 170 });
-        
-        currentY += 30;
-        doc.setFontSize(14);
-        doc.text('Deliverables & Measurements', 20, currentY);
-        doc.setFontSize(10);
-        doc.text(deliverables || 'None reported', 20, currentY + 7, { maxWidth: 170 });
-
-        // Incidents & Issues
-        currentY += 30;
-        doc.setFontSize(14);
-        doc.text('Incidents & Issues', 20, currentY);
-        doc.setFontSize(10);
-        doc.text(`Incidents: ${incidents || 'None'}`, 20, currentY + 7, { maxWidth: 170 });
-
-        if (issues.length > 0) {
-          const issueRows = issues.map(i => {
-            const assignee = users.find(u => u.uid === i.assignedToId);
-            return [i.title, i.severity, assignee?.name || 'Unassigned', i.status];
-          });
-          
-          autoTable(doc, {
-            startY: currentY + 15,
-            head: [['Title', 'Severity', 'Assigned To', 'Status']],
-            body: issueRows,
-          });
-        }
-
-        // Convert PDF to Blob
-        const pdfBlob = doc.output('blob');
-        const formData = new FormData();
-        formData.append('file', pdfBlob, fileName);
-        formData.append('projectRootId', selectedProject?.driveFolderId || '');
-        formData.append('path', 'SITE_OPERATIONS_04/04.1_Daily_Site_Reports');
-
-        const driveRes = await fetch('/api/drive/upload-by-path', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!driveRes.ok) {
-          const driveError = await driveRes.json();
-          console.error('Drive upload failed:', driveError);
-        } else {
-          console.log('PDF uploaded to Drive successfully');
-        }
-
-        setIsSaving(false);
-        alert(`Daily Report submitted successfully!\nProgress synced and PDF saved to Drive: ${fileName}`);
-      } catch (pdfError) {
-        console.error('Error generating/uploading PDF:', pdfError);
-        setIsSaving(false);
-        alert('Daily Report saved to database, but there was an error generating the PDF for Drive.');
-      }
-      
-      // Reset form
-      setActivities([]);
-      setIssues([]);
-      setGeneralWorks('');
-      setDeliverables('');
-      setIncidents('');
+      setIsSaving(false);
+      setView('list');
+      setEditingReport(null);
     } catch (error) {
       setIsSaving(false);
-      handleFirestoreError(error, OperationType.CREATE, 'dailyReports');
+      handleFirestoreError(error, editingReport ? OperationType.UPDATE : OperationType.CREATE, 'progressReports');
+    }
+  };
+
+  const generateAndUploadPDF = async (reportData: any) => {
+    try {
+      const doc = new jsPDF();
+      const projectCode = selectedProject?.code || 'ZRY';
+      const dateStr = reportData.date;
+      const typeLabel = reportData.type.toUpperCase();
+      const fileName = `${projectCode}-ZRY-SITE-${typeLabel}-${dateStr}.pdf`;
+
+      // PDF Header
+      doc.setFontSize(20);
+      doc.setTextColor(40);
+      doc.text(`${typeLabel} SITE REPORT`, 105, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
+      doc.text(`Date: ${dateStr}`, 20, 42);
+      doc.text(`Submitted By: ${auth.currentUser?.email}`, 20, 49);
+
+      if (reportData.weather) {
+        doc.text(`Weather: ${reportData.weather.condition}, ${reportData.weather.temp}°C`, 20, 56);
+      }
+
+      // Activities Table
+      doc.setFontSize(14);
+      doc.text('Key Activities', 20, 70);
+      
+      const activityRows = reportData.activities.map((a: any) => {
+        const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
+        return [
+          poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A',
+          a.description,
+          `${a.progressUpdate}%`
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 75,
+        head: [['PO Item', 'Work Description', 'Progress']],
+        body: activityRows,
+      });
+
+      // Convert PDF to Blob and upload
+      const pdfBlob = doc.output('blob');
+      const formData = new FormData();
+      formData.append('file', pdfBlob, fileName);
+      formData.append('projectRootId', selectedProject?.driveFolderId || '');
+      formData.append('path', `SITE_OPERATIONS_04/04.${reportData.type === 'daily' ? '1' : reportData.type === 'weekly' ? '2' : '3'}_Reports`);
+
+      await fetch('/api/drive/upload-by-path', {
+        method: 'POST',
+        body: formData
+      });
+    } catch (pdfError) {
+      console.error('Error generating/uploading PDF:', pdfError);
     }
   };
 
   const allPOLineItems = purchaseOrders.flatMap(po => 
     po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
   );
+
+  const filteredReports = reports.filter(r => r.type === activeTab);
 
   return (
     <div className="space-y-6 pb-20">
@@ -247,64 +414,184 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Progress Reporting</h2>
           <p className="text-slate-500">Site activity logging and performance tracking.</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl">
-          {(['daily', 'weekly', 'monthly'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
-                activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
+        <div className="flex items-center gap-4">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            {(['daily', 'weekly', 'monthly'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setView('list');
+                }}
+                className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
+                  activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          {view === 'list' && activeTab === 'daily' && (
+            <button 
+              onClick={handleNewReport}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
             >
-              {tab}
+              <Plus className="w-4 h-4" /> New Report
             </button>
-          ))}
+          )}
+          {view === 'form' && (
+            <button 
+              onClick={() => setView('list')}
+              className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+            >
+              Back to List
+            </button>
+          )}
         </div>
       </header>
 
       <AnimatePresence mode="wait">
-        {activeTab === 'daily' ? (
+        {view === 'list' ? (
           <motion.div
-            key="daily"
+            key="list"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
+          >
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+                <p className="text-slate-500 font-medium">Loading reports...</p>
+              </div>
+            ) : filteredReports.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredReports.map((report) => (
+                  <div 
+                    key={report.id}
+                    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all group"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${
+                          report.type === 'daily' ? 'bg-blue-50 text-blue-600' :
+                          report.type === 'weekly' ? 'bg-amber-50 text-amber-600' :
+                          'bg-purple-50 text-purple-600'
+                        }`}>
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-slate-900">
+                            {report.type.charAt(0).toUpperCase() + report.type.slice(1)} Report - {report.date}
+                          </h4>
+                          <div className="flex items-center gap-4 mt-1">
+                            <span className="text-sm text-slate-500 flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" /> {report.date}
+                            </span>
+                            <span className="text-sm text-slate-500 flex items-center gap-1">
+                              <LayoutGrid className="w-3.5 h-3.5" /> {report.activities.length} Activities
+                            </span>
+                            {report.periodStart && (
+                              <span className="text-sm text-slate-500 flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5" /> {report.periodStart} to {report.periodEnd}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button 
+                          onClick={() => handleEditReport(report)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit Report"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteReport(report.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Delete Report"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <ChevronRight className="w-5 h-5 text-slate-300 ml-2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">No {activeTab} reports found</h3>
+                <p className="text-slate-500 mt-1 max-w-xs mx-auto">
+                  {activeTab === 'daily' 
+                    ? 'Start by creating your first daily site report using the button above.' 
+                    : `Automated ${activeTab} reports will appear here once generated.`}
+                </p>
+                {activeTab === 'daily' && (
+                  <button 
+                    onClick={handleNewReport}
+                    className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all"
+                  >
+                    Create New Report
+                  </button>
+                )}
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
             className="space-y-8"
           >
-            {/* Weather Section */}
-            <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="p-4 bg-amber-50 rounded-2xl">
-                  <CloudSun className="w-8 h-8 text-amber-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Site Weather</h3>
-                  <p className="text-sm text-slate-500">Automatically recorded for {new Date().toLocaleDateString()}</p>
-                </div>
-              </div>
-              {weather && (
-                <div className="flex gap-8">
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
-                      <Thermometer className="w-3 h-3" /> Temp
-                    </div>
-                    <div className="text-xl font-bold text-slate-900">{weather.temp}°C</div>
+            {/* Weather Section (Daily Only) */}
+            {activeTab === 'daily' && (
+              <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="p-4 bg-amber-50 rounded-2xl">
+                    <CloudSun className="w-8 h-8 text-amber-500" />
                   </div>
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
-                      <Droplets className="w-3 h-3" /> Humidity
-                    </div>
-                    <div className="text-xl font-bold text-slate-900">{weather.humidity}%</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
-                      <Wind className="w-3 h-3" /> Wind
-                    </div>
-                    <div className="text-xl font-bold text-slate-900">{weather.windSpeed} km/h</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Site Weather</h3>
+                    <p className="text-sm text-slate-500">Automatically recorded for {editingReport?.date || new Date().toLocaleDateString()}</p>
                   </div>
                 </div>
-              )}
-            </section>
+                {weather && (
+                  <div className="flex gap-8">
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                        <Thermometer className="w-3 h-3" /> Temp
+                      </div>
+                      <div className="text-xl font-bold text-slate-900">{weather.temp}°C</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                        <Droplets className="w-3 h-3" /> Humidity
+                      </div>
+                      <div className="text-xl font-bold text-slate-900">{weather.humidity}%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                        <Wind className="w-3 h-3" /> Wind
+                      </div>
+                      <div className="text-xl font-bold text-slate-900">{weather.windSpeed} km/h</div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Key Activities Section */}
             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -515,32 +802,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSaving ? 'Saving Report...' : 'Submit Daily Report'}
+                {isSaving ? 'Saving Report...' : editingReport ? 'Update Report' : 'Submit Daily Report'}
               </button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-12 text-center bg-white rounded-3xl border border-slate-200 border-dashed"
-          >
-            <div className="max-w-md mx-auto space-y-4">
-              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8 text-blue-500" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 capitalize">{activeTab} Report Automation</h3>
-              <p className="text-slate-500 leading-relaxed">
-                {activeTab === 'weekly' 
-                  ? 'Weekly reports are automatically generated every Thursday at 2:00 PM based on the last 7 daily reports.' 
-                  : 'Monthly reports are automatically generated on the 1st of every month at 8:00 AM.'}
-              </p>
-              <div className="pt-6">
-                <button className="px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all">
-                  View Last {activeTab === 'weekly' ? 'Weekly' : 'Monthly'} Report
-                </button>
-              </div>
             </div>
           </motion.div>
         )}

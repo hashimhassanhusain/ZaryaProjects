@@ -76,6 +76,8 @@ export interface PurchaseOrder {
   actualCost?: number;
   workPackageId: string;
   lineItems: POLineItem[];
+  inputCurrency?: 'USD' | 'IQD';
+  exchangeRateUsed?: number;
   // Extra fields for PO Log
   company?: string;
   buyFromPartner?: string;

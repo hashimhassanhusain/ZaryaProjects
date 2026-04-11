@@ -145,7 +145,7 @@ const PageRenderer = () => {
     }
   }
 
-  const page = pages.find(p => p.id === id);
+  const page = id === 'logs' ? { id: 'logs', title: 'Project Logs', type: 'hub' as const } : pages.find(p => p.id === id);
 
   if (!page) return <Navigate to="/page/planning" />;
 
@@ -177,7 +177,7 @@ const PageRenderer = () => {
   const isChangeRequestPage = page.id === '3.1.1';
   const isDecisionLogPage = page.id === '3.1.3';
   const isChangeManagementHubPage = page.id === '3.4';
-  const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1'].includes(page.id);
+  const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
 
   return (

@@ -265,6 +265,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       description: '',
       quantity: 0,
       unit: '',
+      rate: 0,
       inputRate: 0,
       amount: 0,
       status: 'Pending',

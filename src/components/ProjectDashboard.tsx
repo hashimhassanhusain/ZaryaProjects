@@ -82,7 +82,7 @@ export const ProjectDashboard: React.FC = () => {
       const items = snapshot.docs.map(doc => doc.data() as BOQItem);
       const total = items.reduce((sum, item) => {
         const amount = item.amount || 0;
-        const itemCurrency = item.currency || 'IQD';
+        const itemCurrency = item.inputCurrency || 'IQD';
         // Convert everything to IQD for the total
         return sum + (itemCurrency === 'USD' ? convertToIQD(amount, 'USD') : amount);
       }, 0);
