@@ -174,19 +174,76 @@ export interface CommunicationPlanEntry {
   status: 'Active' | 'Inactive';
 }
 
+export interface RiskEntry {
+  id: string;
+  riskId: string;
+  description: string;
+  category: 'Technical' | 'Management' | 'Commercial' | 'External' | 'Other';
+  probability: number; // 1-5
+  impact: number; // 1-5
+  score: number;
+  strategy: 'Avoid' | 'Mitigate' | 'Transfer' | 'Accept' | 'Escalate';
+  ownerId: string;
+  status: 'Draft' | 'Active' | 'Closed' | 'Occurred';
+  projectId: string;
+  version: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  sourceId?: string;
+  // Detailed Assessment Fields
+  impacts?: {
+    scope: number;
+    quality: number;
+    schedule: number;
+    cost: number;
+  };
+  responses?: string;
+  revisedProbability?: number;
+  revisedImpact?: number;
+  revisedScore?: number;
+  residualRisk?: string;
+  secondaryRisks?: string;
+  contingencyPlan?: string;
+  contingencyFunds?: number;
+  contingencyTime?: number;
+  fallbackPlans?: string;
+  comments?: string;
+}
+
+export interface RiskAuditEntry {
+  id: string;
+  projectId: string;
+  type: 'Event' | 'Response' | 'Process';
+  event?: string;
+  cause?: string;
+  response?: string;
+  successful?: boolean;
+  actionsToImprove?: string;
+  process?: string;
+  followed?: boolean;
+  toolsUsed?: string;
+  comment?: string;
+  date: string;
+  auditor: string;
+}
+
 export interface ProjectIssue {
   id: string;
   projectId: string;
   category: string;
   issue: string;
   impact: string;
-  urgency: 'Low' | 'Medium' | 'High' | 'Urgent';
+  urgency: 'Low' | 'Medium' | 'High' | 'Urgent' | 'Critical';
   responsibleParty: string;
   actions: string;
   status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
   dueDate: string;
   comments: string;
   stakeholderId?: string;
+  finalLessonLearned?: string;
+  closedDate?: string;
 }
 
 export interface DailyReport {
@@ -199,6 +256,19 @@ export interface DailyReport {
   incidents: string;
   issues: SiteIssue[];
   photos: string[];
+}
+
+export interface ProjectFinance {
+  id: string;
+  projectId: string;
+  totalBudget: number;
+  contingency: number;
+  managementReserve: number;
+  actualCost: number;
+  plannedValue: number;
+  earnedValue: number;
+  updatedAt: string;
+  updatedBy: string;
 }
 
 export interface Page {

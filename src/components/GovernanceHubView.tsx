@@ -39,6 +39,7 @@ import { ScheduleManagementPlanView } from './ScheduleManagementPlanView';
 import { CostManagementPlanView } from './CostManagementPlanView';
 import { ProcurementManagementPlanView } from './ProcurementManagementPlanView';
 import { RiskManagementPlanView } from './RiskManagementPlanView';
+import { RiskOpportunityHub } from './RiskOpportunityHub';
 import { QualityMetricsRegisterView } from './QualityMetricsRegisterView';
 import { ChangeLogRegisterView } from './ChangeLogRegisterView';
 import { DecisionLogView } from './DecisionLogView';
@@ -50,7 +51,7 @@ interface GovernanceHubViewProps {
   page: Page;
 }
 
-type MainTab = 'charter' | 'policies' | 'plans' | 'logs';
+type MainTab = 'charter' | 'policies' | 'plans' | 'logs' | 'risk-hub';
 type PlanSubTab = 'pmp' | 'cmp' | 'qmp' | 'comm' | 'smp' | 'rmp' | 'scope' | 'hrmp' | 'schedule' | 'cost' | 'procurement' | 'risk' | 'quality';
 type LogSubTab = 'stakeholders' | 'assumptions' | 'changes' | 'decisions' | 'issues' | 'lessons';
 
@@ -94,7 +95,8 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     { id: 'charter', title: 'Project Charter', icon: Award, pageId: '1.1.1' },
     { id: 'policies', title: 'Policies & Procedures', icon: Gavel, pageId: '1.1.2' },
     { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' },
-    { id: 'logs', title: 'Project Logs', icon: FileText, pageId: '1.2.1' }
+    { id: 'logs', title: 'Project Logs', icon: FileText, pageId: '1.2.1' },
+    { id: 'risk-hub', title: 'Risk & Opportunity Hub', icon: ShieldAlert, pageId: '2.7' }
   ];
 
   const managementPlans = [
@@ -216,6 +218,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
             >
               {activeTab === 'charter' && <ProjectCharterView page={page} />}
               {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
+              {activeTab === 'risk-hub' && <RiskOpportunityHub page={{ ...page, id: '2.7', title: 'Risk & Opportunity Hub' }} />}
               {activeTab === 'logs' && (
                 <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                   <div className="p-10">
