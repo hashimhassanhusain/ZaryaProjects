@@ -5,7 +5,9 @@ import { db } from '../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart } from 'lucide-react';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
+import { useProject } from '../context/ProjectContext';
 
 interface ActivityAttributesModalProps {
   activity: Activity;
@@ -24,11 +26,28 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
   onClose, 
   onSave 
 }) => {
+  const { selectedProject } = useProject();
+  const { formatAmount, convertToBase, currency: baseCurrency, exchangeRate: marketRate } = useCurrency();
   const [formData, setFormData] = useState<Activity>({ 
     ...activity,
-    predecessors: activity.predecessors || []
+    predecessors: activity.predecessors || [],
+    inputCurrency: activity.inputCurrency || (selectedProject?.baseCurrency as 'USD' | 'IQD') || 'IQD',
+    inputRate: activity.inputRate || marketRate
   });
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [displayAmount, setDisplayAmount] = useState<number>(activity.amount || 0);
+  const [displayActualAmount, setDisplayActualAmount] = useState<number>(activity.actualAmount || 0);
+
+  // If inputCurrency is different from base, we might want to show the input value
+  useEffect(() => {
+    if (formData.inputCurrency !== baseCurrency && formData.exchangeRateUsed) {
+      setDisplayAmount((activity.amount || 0) / formData.exchangeRateUsed);
+      setDisplayActualAmount((activity.actualAmount || 0) / formData.exchangeRateUsed);
+    } else {
+      setDisplayAmount(activity.amount || 0);
+      setDisplayActualAmount(activity.actualAmount || 0);
+    }
+  }, []);
 
   useEffect(() => {
     if (!activity.projectId) return;
@@ -101,6 +120,44 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     }
 
     setFormData(updatedData);
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'amount' | 'actualAmount') => {
+    const val = parseFloat(e.target.value) || 0;
+    if (field === 'amount') setDisplayAmount(val);
+    else setDisplayActualAmount(val);
+
+    const rate = formData.inputRate || marketRate;
+    const baseVal = convertToBase(val, formData.inputCurrency || 'IQD', rate);
+    
+    setFormData(prev => ({
+      ...prev,
+      [field]: baseVal,
+      exchangeRateUsed: rate
+    }));
+  };
+
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = e.target.value as 'USD' | 'IQD';
+    setFormData(prev => ({
+      ...prev,
+      inputCurrency: newCurrency,
+      // When currency changes, we update the base values using current display values
+      amount: convertToBase(displayAmount, newCurrency, prev.inputRate || marketRate),
+      actualAmount: convertToBase(displayActualAmount, newCurrency, prev.inputRate || marketRate),
+      exchangeRateUsed: prev.inputRate || marketRate
+    }));
+  };
+
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newRate = parseFloat(e.target.value) || marketRate;
+    setFormData(prev => ({
+      ...prev,
+      inputRate: newRate,
+      exchangeRateUsed: newRate,
+      amount: convertToBase(displayAmount, prev.inputCurrency || 'IQD', newRate),
+      actualAmount: convertToBase(displayActualAmount, prev.inputCurrency || 'IQD', newRate)
+    }));
   };
 
   const addPredecessor = () => {
@@ -407,9 +464,73 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           {/* Actual Data */}
           <section className="space-y-4">
             <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-              <CheckCircle2 className="w-3 h-3" /> Actual Progress & Costs
+              <CheckCircle2 className="w-3 h-3" /> Financial Information & Progress
             </h4>
             <div className="grid grid-cols-3 gap-6 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100">
+              <div>
+                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Planned Cost</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <input 
+                      type="number"
+                      name="amount"
+                      value={displayAmount || ''}
+                      onChange={(e) => handleAmountChange(e, 'amount')}
+                      placeholder="0.00"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                  <select
+                    value={formData.inputCurrency || 'IQD'}
+                    onChange={handleCurrencyChange}
+                    className="w-24 px-2 py-3 bg-white border border-emerald-100 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                  >
+                    <option value="IQD">IQD</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+                {formData.inputCurrency !== baseCurrency && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase">Rate:</label>
+                    <input 
+                      type="number"
+                      value={formData.inputRate || marketRate}
+                      onChange={handleRateChange}
+                      className="w-20 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-mono"
+                    />
+                    <span className="text-[9px] text-slate-400 italic">
+                      ≈ {formatAmount(formData.amount || 0, baseCurrency)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Cost</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <input 
+                      type="number"
+                      name="actualAmount"
+                      value={displayActualAmount || ''}
+                      onChange={(e) => handleAmountChange(e, 'actualAmount')}
+                      placeholder="0.00"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                  {/* Currency select is shared, so we only need it once or keep it for both if we want different currencies (but user said one currency per item) */}
+                </div>
+                {formData.inputCurrency !== baseCurrency && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[9px] text-slate-400 italic">
+                      ≈ {formatAmount(formData.actualAmount || 0, baseCurrency)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Start</label>
                 <input 
@@ -420,6 +541,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   className="w-full px-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Finish</label>
                 <input 
@@ -430,21 +552,8 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   className="w-full px-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Cost (IQD)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                  <input 
-                    type="number"
-                    name="actualAmount"
-                    value={formData.actualAmount || ''}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              <div className="col-span-3">
+
+              <div className="col-span-2">
                 <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Manual Progress Update (%)</label>
                 <div className="flex items-center gap-4">
                   <input 

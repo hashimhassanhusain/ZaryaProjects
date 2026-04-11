@@ -3,6 +3,8 @@ import {
   Award, 
   Gavel, 
   Layers, 
+  DraftingCompass,
+  Calendar,
   ChevronRight, 
   LayoutDashboard,
   FileText,
@@ -28,6 +30,7 @@ import { Page } from '../types';
 import { ProjectCharterView } from './ProjectCharterView';
 import { GovernancePoliciesView } from './GovernancePoliciesView';
 import { ProjectManagementPlanView } from './ProjectManagementPlanView';
+import { ProjectScheduleView } from './ProjectScheduleView';
 import { ChangeManagementPlanView } from './ChangeManagementPlanView';
 import { QualityManagementPlanView } from './QualityManagementPlanView';
 import { CommunicationsManagementPlanView } from './CommunicationsManagementPlanView';
@@ -41,9 +44,10 @@ import { ProcurementManagementPlanView } from './ProcurementManagementPlanView';
 import { RiskManagementPlanView } from './RiskManagementPlanView';
 import { RiskOpportunityHub } from './RiskOpportunityHub';
 import { QualityMetricsRegisterView } from './QualityMetricsRegisterView';
-import { ChangeLogRegisterView } from './ChangeLogRegisterView';
 import { DecisionLogView } from './DecisionLogView';
-import { ProjectLogsView } from './ProjectLogsView';
+import { StakeholderRegisterView } from './StakeholderRegisterView';
+import { AssumptionConstraintView } from './AssumptionConstraintView';
+import { LessonsLearnedView } from './LessonsLearnedView';
 import { ResourceOptimizationHub } from './ResourceOptimizationHub';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -52,9 +56,9 @@ interface GovernanceHubViewProps {
   page: Page;
 }
 
-type MainTab = 'charter' | 'policies' | 'plans' | 'logs' | 'risk-hub' | 'resource-hub';
+type MainTab = 'charter' | 'policies' | 'plans' | 'schedule' | 'logs' | 'resource-hub';
 type PlanSubTab = 'pmp' | 'cmp' | 'qmp' | 'comm' | 'smp' | 'rmp' | 'scope' | 'hrmp' | 'schedule' | 'cost' | 'procurement' | 'risk' | 'quality';
-type LogSubTab = 'stakeholders' | 'assumptions' | 'changes' | 'decisions' | 'issues' | 'lessons';
+type LogSubTab = 'stakeholders' | 'assumptions' | 'decisions' | 'lessons';
 
 export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) => {
   const [activeTab, setActiveTab] = useState<MainTab>('charter');
@@ -65,13 +69,12 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   useEffect(() => {
     if (page.id === '1.1.1') setActiveTab('charter');
     if (page.id === '1.1.2') setActiveTab('policies');
-    if (['1.2.1', '2.1.5', '3.1.1', '3.1.3', '3.2.1', '5.1.1'].includes(page.id)) {
+    if (page.id === '2.3') setActiveTab('schedule');
+    if (['1.2.1', '2.1.5', '3.1.3', '5.1.1'].includes(page.id)) {
       setActiveTab('logs');
       if (page.id === '1.2.1') setActiveLog('stakeholders');
       if (page.id === '2.1.5') setActiveLog('assumptions');
-      if (page.id === '3.1.1') setActiveLog('changes');
       if (page.id === '3.1.3') setActiveLog('decisions');
-      if (page.id === '3.2.1') setActiveLog('issues');
       if (page.id === '5.1.1') setActiveLog('lessons');
     }
     if (page.id.startsWith('2.1') && page.id !== '2.1.5') {
@@ -96,34 +99,32 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     { id: 'charter', title: 'Project Charter', icon: Award, pageId: '1.1.1' },
     { id: 'policies', title: 'Policies & Procedures', icon: Gavel, pageId: '1.1.2' },
     { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' },
+    { id: 'schedule', title: 'Schedule', icon: Calendar, pageId: '2.3' },
     { id: 'logs', title: 'Project Logs', icon: FileText, pageId: '1.2.1' },
-    { id: 'risk-hub', title: 'Risk & Opportunity Hub', icon: ShieldAlert, pageId: '2.7' },
     { id: 'resource-hub', title: 'Resources & Optimization', icon: Users, pageId: '2.6' }
   ];
 
   const managementPlans = [
-    { id: 'pmp', title: '3.1 Project Management Plan', icon: FileText, pageId: '2.1.2' },
-    { id: 'cmp', title: '3.2 Change Management Plan', icon: Zap, pageId: '2.1.1' },
-    { id: 'qmp', title: '3.3 Quality Management Plan', icon: ShieldCheck, pageId: '2.1.3' },
-    { id: 'comm', title: '3.4 Communications Plan', icon: MessageSquare, pageId: '2.1.6' },
-    { id: 'smp', title: '3.5 Stakeholder Plan', icon: Users, pageId: '2.1.7' },
-    { id: 'rmp', title: '3.6 Requirements Plan', icon: ClipboardList, pageId: '2.1.8' },
-    { id: 'scope', title: '3.7 Scope Plan', icon: Box, pageId: '2.1.9' },
-    { id: 'hrmp', title: '3.8 HR Management Plan', icon: Briefcase, pageId: '2.1.10' },
-    { id: 'schedule', title: '3.9 Schedule Plan', icon: Activity, pageId: '2.1.11' },
-    { id: 'cost', title: '3.10 Cost Plan', icon: DollarSign, pageId: '2.1.12' },
-    { id: 'procurement', title: '3.11 Procurement Plan', icon: ShoppingCart, pageId: '2.1.13' },
-    { id: 'risk', title: '3.12 Risk Plan', icon: ShieldAlert, pageId: '2.1.14' },
-    { id: 'quality', title: '3.13 Quality Metrics', icon: ClipboardCheck, pageId: '2.1.4' }
+    { id: 'pmp', title: 'Project Management Plan', icon: FileText, pageId: '2.1.2' },
+    { id: 'cmp', title: 'Change Management Plan', icon: Zap, pageId: '2.1.1' },
+    { id: 'qmp', title: 'Quality Management Plan', icon: ShieldCheck, pageId: '2.1.3' },
+    { id: 'comm', title: 'Communications Plan', icon: MessageSquare, pageId: '2.1.6' },
+    { id: 'smp', title: 'Stakeholder Plan', icon: Users, pageId: '2.1.7' },
+    { id: 'rmp', title: 'Requirements Plan', icon: ClipboardList, pageId: '2.1.8' },
+    { id: 'scope', title: 'Scope Plan', icon: Box, pageId: '2.1.9' },
+    { id: 'hrmp', title: 'HR Management Plan', icon: Briefcase, pageId: '2.1.10' },
+    { id: 'schedule', title: 'Schedule Plan', icon: Activity, pageId: '2.1.11' },
+    { id: 'cost', title: 'Cost Plan', icon: DollarSign, pageId: '2.1.12' },
+    { id: 'procurement', title: 'Procurement Plan', icon: ShoppingCart, pageId: '2.1.13' },
+    { id: 'risk', title: 'Risk Plan', icon: ShieldAlert, pageId: '2.1.14' },
+    { id: 'quality', title: 'Quality Metrics', icon: ClipboardCheck, pageId: '2.1.4' }
   ];
 
   const logTabs = [
-    { id: 'stakeholders', title: '4.1 Stakeholder Register', icon: Users, pageId: '1.2.1' },
-    { id: 'assumptions', title: '4.2 Assumptions Log', icon: ClipboardList, pageId: '2.1.5' },
-    { id: 'changes', title: '4.3 Change Log', icon: GitBranch, pageId: '3.1.1' },
-    { id: 'decisions', title: '4.4 Decision Log', icon: Gavel, pageId: '3.1.3' },
-    { id: 'issues', title: '4.5 Issue Log', icon: AlertTriangle, pageId: '3.2.1' },
-    { id: 'lessons', title: '4.6 Lessons Learned', icon: Award, pageId: '5.1.1' }
+    { id: 'stakeholders', title: 'Stakeholder Register', icon: Users, pageId: '1.2.1' },
+    { id: 'assumptions', title: 'Assumptions Log', icon: ClipboardList, pageId: '2.1.5' },
+    { id: 'decisions', title: 'Decision Log', icon: Gavel, pageId: '3.1.3' },
+    { id: 'lessons', title: 'Lessons Learned', icon: Award, pageId: '5.1.1' }
   ];
 
   return (
@@ -220,17 +221,15 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
             >
               {activeTab === 'charter' && <ProjectCharterView page={page} />}
               {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
-              {activeTab === 'risk-hub' && <RiskOpportunityHub page={{ ...page, id: '2.7', title: 'Risk & Opportunity Hub' }} />}
+              {activeTab === 'schedule' && <ProjectScheduleView page={{ ...page, id: '2.3', title: 'Project Schedule' }} />}
               {activeTab === 'resource-hub' && <ResourceOptimizationHub page={{ ...page, id: '2.6', title: 'Resources & Optimization' }} />}
               {activeTab === 'logs' && (
                 <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                   <div className="p-10">
-                    {activeLog === 'stakeholders' && <ProjectLogsView page={{ ...page, id: '1.2.1' }} />}
-                    {activeLog === 'assumptions' && <ProjectLogsView page={{ ...page, id: '2.1.5' }} />}
-                    {activeLog === 'changes' && <ChangeLogRegisterView page={page} />}
+                    {activeLog === 'stakeholders' && <StakeholderRegisterView page={{ ...page, id: '1.2.1' }} />}
+                    {activeLog === 'assumptions' && <AssumptionConstraintView page={{ ...page, id: '2.1.5' }} />}
                     {activeLog === 'decisions' && <DecisionLogView page={{ ...page, id: '3.1.3' }} />}
-                    {activeLog === 'issues' && <ProjectLogsView page={{ ...page, id: '3.2.1' }} />}
-                    {activeLog === 'lessons' && <ProjectLogsView page={{ ...page, id: '5.1.1' }} />}
+                    {activeLog === 'lessons' && <LessonsLearnedView page={{ ...page, id: '5.1.1' }} />}
                   </div>
                 </div>
               )}

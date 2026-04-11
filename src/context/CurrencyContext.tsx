@@ -1,15 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useProject } from './ProjectContext';
 
 interface CurrencyContextType {
-  exchangeRate: number; // 1 USD = X IQD
+  exchangeRate: number; // Global default market rate: 1 USD = X IQD
   setExchangeRate: (rate: number) => Promise<void>;
-  currency: 'USD' | 'IQD';
-  setCurrency: (currency: 'USD' | 'IQD') => void;
-  formatAmount: (amount: number, fromCurrency?: 'USD' | 'IQD') => string;
-  convertToUSD: (amount: number, fromCurrency: 'USD' | 'IQD') => number;
-  convertToIQD: (amount: number, fromCurrency: 'USD' | 'IQD') => number;
+  currency: 'USD' | 'IQD'; // This is the Project's Base Currency
+  formatAmount: (amount: number, fromCurrency?: 'USD' | 'IQD', itemRate?: number) => string;
+  convertToBase: (amount: number, fromCurrency: 'USD' | 'IQD', itemRate?: number) => number;
   loading: boolean;
   refreshExchangeRate: () => Promise<void>;
 }
@@ -17,18 +16,18 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { selectedProject } = useProject();
   const [exchangeRate, setExchangeRateState] = useState<number>(1500);
-  const [currency, setCurrencyState] = useState<'USD' | 'IQD'>(() => {
-    return (localStorage.getItem('preferredCurrency') as 'USD' | 'IQD') || 'USD';
-  });
   const [loading, setLoading] = useState(true);
+
+  // The project's base currency is the source of truth
+  const currency = selectedProject?.baseCurrency || 'IQD';
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'settings', 'currency'), (snapshot) => {
       if (snapshot.exists()) {
         setExchangeRateState(snapshot.data().exchangeRate || 1500);
       } else {
-        // Initialize if not exists
         setDoc(doc(db, 'settings', 'currency'), { exchangeRate: 1500 });
       }
       setLoading(false);
@@ -51,50 +50,44 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setCurrency = (curr: 'USD' | 'IQD') => {
-    setCurrencyState(curr);
-    localStorage.setItem('preferredCurrency', curr);
-  };
+  const convertToBase = (amount: number, fromCurrency: 'USD' | 'IQD', itemRate?: number) => {
+    const rate = itemRate || exchangeRate;
+    
+    // If input is same as base, return amount
+    if (fromCurrency === currency) return amount;
 
-  const convertToUSD = (amount: number, fromCurrency: 'USD' | 'IQD') => {
-    if (fromCurrency === 'USD') return amount;
-    return amount / exchangeRate;
-  };
-
-  const convertToIQD = (amount: number, fromCurrency: 'USD' | 'IQD') => {
-    if (fromCurrency === 'IQD') return amount;
-    return amount * exchangeRate;
-  };
-
-  const formatAmount = (amount: number, fromCurrency: 'USD' | 'IQD' = 'USD') => {
-    if (currency === 'USD') {
-      const usdAmount = convertToUSD(amount, fromCurrency);
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdAmount);
+    // Conversion logic
+    if (currency === 'IQD') {
+      // Base is IQD, Input is USD
+      return amount * rate;
     } else {
-      const iqdAmount = convertToIQD(amount, fromCurrency);
+      // Base is USD, Input is IQD
+      return amount / rate;
+    }
+  };
+
+  const formatAmount = (amount: number, fromCurrency: 'USD' | 'IQD' = 'USD', itemRate?: number) => {
+    const baseAmount = convertToBase(amount, fromCurrency, itemRate);
+    
+    if (currency === 'USD') {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(baseAmount);
+    } else {
       return new Intl.NumberFormat('ar-IQ', { 
         style: 'currency', 
         currency: 'IQD',
         maximumFractionDigits: 0 
-      }).format(iqdAmount);
+      }).format(baseAmount);
     }
   };
 
   const refreshExchangeRate = async () => {
     try {
-      // Try to fetch from a public API
-      // Note: Most free APIs return official rates. 
-      // For market rates in Iraq, we might need a specific source.
-      // For now, we'll use a fallback or a known market rate API if available.
       const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
       const data = await response.json();
       let rate = data.rates.IQD;
       
-      // If the rate is the official one (~1300-1320), we might want to adjust it to market rate (~1500)
-      // as requested by the user.
       if (rate < 1400) {
-        console.log("Official rate detected, defaulting to market estimate (1500)");
-        rate = 1500;
+        rate = 1500; // Default to market rate if official rate is returned
       }
       
       await setExchangeRate(rate);
@@ -108,10 +101,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       exchangeRate, 
       setExchangeRate, 
       currency, 
-      setCurrency, 
       formatAmount,
-      convertToUSD,
-      convertToIQD,
+      convertToBase,
       loading,
       refreshExchangeRate
     }}>

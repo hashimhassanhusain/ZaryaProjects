@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BOQItem, WBSLevel } from '../types';
 import { masterFormatDivisions } from '../data';
+import { masterFormatSections } from '../constants/masterFormat';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
 import { 
@@ -19,7 +20,7 @@ import { DollarSign, Coins } from 'lucide-react';
 
 export const BOQView: React.FC = () => {
   const { selectedProject } = useProject();
-  const { formatAmount, exchangeRate, currency: displayCurrency, convertToUSD, convertToIQD } = useCurrency();
+  const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,9 @@ export const BOQView: React.FC = () => {
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
+  const [isAddingWorkPackage, setIsAddingWorkPackage] = useState(false);
+  const [newWorkPackage, setNewWorkPackage] = useState('');
 
   // Form states
   const [showAddItem, setShowAddItem] = useState(false);
@@ -34,12 +38,24 @@ export const BOQView: React.FC = () => {
     description: '',
     unit: 'm3',
     quantity: 0,
-    rate: 0,
+    inputRate: 0,
     division: '01',
     workPackage: '',
-    currency: 'IQD',
-    exchangeRate: exchangeRate
+    inputCurrency: 'IQD',
+    exchangeRateUsed: 1500
   });
+
+  const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Sync newItem exchange rate when global rate changes or project changes
+  useEffect(() => {
+    setNewItem(prev => ({
+      ...prev,
+      inputCurrency: baseCurrency,
+      exchangeRateUsed: globalExchangeRate
+    }));
+  }, [baseCurrency, globalExchangeRate]);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -66,26 +82,53 @@ export const BOQView: React.FC = () => {
   }, [selectedProject]);
 
   const handleAddBoqItem = async (customItem?: Partial<BOQItem>) => {
-    if (!selectedProject || !selectedWbsId) return;
+    if (!selectedProject || !selectedWbsId) {
+      console.error("Missing project or WBS ID", { selectedProject, selectedWbsId });
+      return;
+    }
     const itemToSave = customItem || newItem;
-    if (!itemToSave.description) return;
+    if (!itemToSave.description) {
+      alert("Please provide a description");
+      return;
+    }
 
     try {
-      const item: any = {
+      const id = crypto.randomUUID();
+      const inputCurrency = itemToSave.inputCurrency || baseCurrency;
+      const exchangeRateUsed = itemToSave.exchangeRateUsed || globalExchangeRate;
+      const inputRate = itemToSave.inputRate || 0;
+      const quantity = itemToSave.quantity || 0;
+
+      // Calculate amount in base currency
+      const baseRate = convertToBase(inputRate, inputCurrency, exchangeRateUsed);
+      const amount = quantity * baseRate;
+
+      const fullItem: BOQItem = {
         ...itemToSave,
-        id: crypto.randomUUID(),
+        id,
         projectId: selectedProject.id,
         wbsId: selectedWbsId,
-        amount: (itemToSave.quantity || 0) * (itemToSave.rate || 0),
-        currency: itemToSave.currency || 'IQD',
-        exchangeRate: itemToSave.exchangeRate || exchangeRate,
+        amount,
+        inputCurrency,
+        exchangeRateUsed,
+        inputRate,
         completion: 0,
         location: wbsLevels.find(l => l.id === selectedWbsId)?.title || ''
-      };
-      await setDoc(doc(db, 'boq', item.id), item);
+      } as BOQItem;
+      await setDoc(doc(db, 'boq', id), fullItem);
+      
       if (!customItem) {
         setShowAddItem(false);
-        setNewItem({ description: '', unit: 'm3', quantity: 0, rate: 0, division: '01', workPackage: '', currency: 'IQD', exchangeRate: exchangeRate });
+        setNewItem({ 
+          description: '', 
+          unit: 'm3', 
+          quantity: 0, 
+          inputRate: 0, 
+          division: '01', 
+          workPackage: '', 
+          inputCurrency: baseCurrency, 
+          exchangeRateUsed: globalExchangeRate 
+        });
       }
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'boq');
@@ -97,10 +140,16 @@ export const BOQView: React.FC = () => {
       const item = boqItems.find(i => i.id === id);
       if (!item) return;
       const updatedItem = { ...item, ...updates };
-      updatedItem.amount = (updatedItem.quantity || 0) * (updatedItem.rate || 0);
-      if (updates.currency) {
-        updatedItem.exchangeRate = exchangeRate;
-      }
+      
+      const inputCurrency = updatedItem.inputCurrency || baseCurrency;
+      const exchangeRateUsed = updatedItem.exchangeRateUsed || globalExchangeRate;
+      const inputRate = updatedItem.inputRate || 0;
+      const quantity = updatedItem.quantity || 0;
+
+      // Recalculate amount in base currency
+      const baseRate = convertToBase(inputRate, inputCurrency, exchangeRateUsed);
+      updatedItem.amount = quantity * baseRate;
+
       await setDoc(doc(db, 'boq', id), updatedItem);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'boq');
@@ -201,14 +250,21 @@ export const BOQView: React.FC = () => {
 
       // Save extracted items to Firestore
       for (const item of extractedItems) {
+        const inputCurrency = item.currency || baseCurrency;
+        const exchangeRateUsed = globalExchangeRate;
+        const inputRate = item.rate || 0;
+        const quantity = item.quantity || 0;
+        const baseRate = convertToBase(inputRate, inputCurrency, exchangeRateUsed);
+
         const fullItem: BOQItem = {
           ...item,
           id: crypto.randomUUID(),
           projectId: selectedProject.id,
           wbsId: selectedWbsId || '',
-          amount: (item.quantity || 0) * (item.rate || 0),
-          currency: item.currency || 'IQD',
-          exchangeRate: exchangeRate,
+          amount: quantity * baseRate,
+          inputCurrency,
+          exchangeRateUsed,
+          inputRate,
           completion: 0,
           location: selectedWbsId ? wbsLevels.find(l => l.id === selectedWbsId)?.title || 'General' : 'General'
         };
@@ -248,16 +304,16 @@ export const BOQView: React.FC = () => {
 
     const summaryData = masterFormatDivisions.map(div => {
       const divItems = currentItems.filter(item => item.division === div.id);
-      const total = divItems.reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
-      return [div.id, div.title, formatAmount(total, 'IQD')];
-    }).filter(row => row[2] !== formatAmount(0, 'IQD'));
+      const total = divItems.reduce((sum, item) => sum + item.amount, 0);
+      return [div.id, div.title, formatAmount(total, baseCurrency)];
+    }).filter(row => row[2] !== formatAmount(0, baseCurrency));
 
-    const grandTotal = currentItems.reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
+    const grandTotal = currentItems.reduce((sum, item) => sum + item.amount, 0);
 
     autoTable(doc, {
       startY: 60,
       head: [['Div', 'Description', 'Total']],
-      body: [...summaryData, ['', 'GRAND TOTAL', formatAmount(grandTotal, 'IQD')]],
+      body: [...summaryData, ['', 'GRAND TOTAL', formatAmount(grandTotal, baseCurrency)]],
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: { 
@@ -294,8 +350,8 @@ export const BOQView: React.FC = () => {
         item.description,
         item.quantity.toLocaleString(),
         item.unit,
-        formatAmount(item.rate, item.currency || 'IQD'),
-        formatAmount(item.amount, item.currency || 'IQD')
+        formatAmount(item.inputRate || 0, item.inputCurrency || baseCurrency, item.exchangeRateUsed),
+        formatAmount(item.amount, baseCurrency)
       ]);
 
       autoTable(doc, {
@@ -506,7 +562,7 @@ export const BOQView: React.FC = () => {
                             <div className="text-right">
                               <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Value</div>
                               <div className="text-sm font-bold text-slate-900 font-mono">
-                                {formatAmount(items.reduce((sum, i) => sum + (i.currency === 'USD' ? convertToIQD(i.amount, 'USD') : i.amount), 0), 'IQD')}
+                                {formatAmount(items.reduce((sum, i) => sum + i.amount, 0), baseCurrency)}
                               </div>
                             </div>
                           </div>
@@ -620,7 +676,7 @@ export const BOQView: React.FC = () => {
                                         — {masterFormatDivisions.find(d => d.id === divId)?.title || 'Other'}
                                       </span>
                                       <div className="ml-auto text-[10px] font-bold text-slate-500">
-                                        {items.length} Items | Total: {formatAmount(items.reduce((sum, i) => sum + (i.currency === 'USD' ? convertToIQD(i.amount, 'USD') : i.amount), 0), 'IQD')}
+                                        {items.length} Items | Total: {formatAmount(items.reduce((sum, i) => sum + i.amount, 0), baseCurrency)}
                                       </div>
                                     </div>
                                   </td>
@@ -633,13 +689,16 @@ export const BOQView: React.FC = () => {
                                       </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <input 
-                                        type="text"
-                                        value={item.description}
-                                        onChange={(e) => handleUpdateItem(item.id, { description: e.target.value })}
-                                        className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-900 p-0"
-                                      />
-                                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">{item.workPackage}</div>
+                                      <div 
+                                        onClick={() => {
+                                          setEditingItem(item);
+                                          setShowEditModal(true);
+                                        }}
+                                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                                      >
+                                        <div className="text-sm font-bold text-slate-900">{item.description}</div>
+                                        <div className="text-[10px] text-slate-400 uppercase tracking-wider">{item.workPackage}</div>
+                                      </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                       <input 
@@ -658,23 +717,36 @@ export const BOQView: React.FC = () => {
                                       />
                                     </td>
                                     <td className="px-6 py-4">
-                                      <div className="flex items-center gap-2">
-                                        <input 
-                                          type="number"
-                                          value={item.rate}
-                                          onChange={(e) => handleUpdateItem(item.id, { rate: parseFloat(e.target.value) || 0 })}
-                                          className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
-                                        />
-                                        <button 
-                                          onClick={() => handleUpdateItem(item.id, { currency: item.currency === 'USD' ? 'IQD' : 'USD' })}
-                                          className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-1 rounded"
-                                        >
-                                          {item.currency || 'IQD'}
-                                        </button>
+                                      <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-2">
+                                          <input 
+                                            type="number"
+                                            value={item.inputRate}
+                                            onChange={(e) => handleUpdateItem(item.id, { inputRate: parseFloat(e.target.value) || 0 })}
+                                            className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
+                                          />
+                                          <button 
+                                            onClick={() => handleUpdateItem(item.id, { inputCurrency: item.inputCurrency === 'USD' ? 'IQD' : 'USD' })}
+                                            className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-1 rounded"
+                                          >
+                                            {item.inputCurrency || baseCurrency}
+                                          </button>
+                                        </div>
+                                        {item.inputCurrency !== baseCurrency && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-[8px] text-slate-400">Rate:</span>
+                                            <input 
+                                              type="number"
+                                              value={item.exchangeRateUsed}
+                                              onChange={(e) => handleUpdateItem(item.id, { exchangeRateUsed: parseFloat(e.target.value) || 0 })}
+                                              className="w-12 bg-transparent border-none focus:ring-0 text-[10px] text-slate-400 text-right font-mono p-0"
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right font-mono">
-                                      {formatAmount(item.amount, item.currency || 'IQD')}
+                                      {formatAmount(item.amount, baseCurrency)}
                                     </td>
                                     <td className="px-6 py-4">
                                       <div className="flex justify-center">
@@ -784,7 +856,7 @@ export const BOQView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl"
+              className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]"
             >
               <h3 className="text-2xl font-bold text-slate-900 mb-6">Add BOQ Item</h3>
               <div className="grid grid-cols-2 gap-6">
@@ -810,21 +882,67 @@ export const BOQView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package Name</label>
-                  <input 
-                    type="text" 
-                    value={newItem.workPackage}
-                    onChange={e => setNewItem({...newItem, workPackage: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="e.g. Foundation Concrete"
-                  />
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
+                  <div className="flex gap-2">
+                    {isAddingWorkPackage ? (
+                      <div className="flex-1 flex gap-2">
+                        <input 
+                          type="text"
+                          value={newWorkPackage}
+                          onChange={e => setNewWorkPackage(e.target.value)}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="New work package..."
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => {
+                            if (newWorkPackage.trim()) {
+                              setNewItem({...newItem, workPackage: newWorkPackage.trim()});
+                              setIsAddingWorkPackage(false);
+                              setNewWorkPackage('');
+                            }
+                          }}
+                          className="px-4 bg-blue-600 text-white rounded-xl font-bold"
+                        >
+                          OK
+                        </button>
+                        <button 
+                          onClick={() => setIsAddingWorkPackage(false)}
+                          className="px-4 bg-slate-200 text-slate-600 rounded-xl font-bold"
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <select 
+                        value={newItem.workPackage}
+                        onChange={e => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setIsAddingWorkPackage(true);
+                          } else {
+                            setNewItem({...newItem, workPackage: e.target.value});
+                          }
+                        }}
+                        className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="">Select Work Package</option>
+                        {masterFormatSections
+                          .filter(s => s.divisionId === newItem.division)
+                          .map(section => (
+                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                          ))
+                        }
+                        <option value="ADD_NEW" className="text-blue-600 font-bold">+ Add New...</option>
+                      </select>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
                   <input 
                     type="number" 
                     value={newItem.quantity}
-                    onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value)})}
+                    onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
@@ -842,8 +960,8 @@ export const BOQView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Currency</label>
                     <select 
-                      value={newItem.currency}
-                      onChange={e => setNewItem({...newItem, currency: e.target.value as 'USD' | 'IQD'})}
+                      value={newItem.inputCurrency}
+                      onChange={e => setNewItem({...newItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="USD">USD ($)</option>
@@ -854,8 +972,8 @@ export const BOQView: React.FC = () => {
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate</label>
                     <input 
                       type="number" 
-                      value={newItem.rate}
-                      onChange={e => setNewItem({...newItem, rate: parseFloat(e.target.value)})}
+                      value={newItem.inputRate}
+                      onChange={e => setNewItem({...newItem, inputRate: parseFloat(e.target.value) || 0})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
@@ -864,33 +982,213 @@ export const BOQView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 USD = X IQD)</label>
                   <input 
                     type="number" 
-                    value={newItem.exchangeRate}
-                    onChange={e => setNewItem({...newItem, exchangeRate: parseFloat(e.target.value)})}
+                    value={newItem.exchangeRateUsed}
+                    onChange={e => setNewItem({...newItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    disabled={newItem.inputCurrency === baseCurrency}
                   />
                 </div>
                 <div className="flex items-end col-span-2">
                   <div className="w-full p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Amount</div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {formatAmount((newItem.quantity || 0) * (newItem.rate || 0), newItem.currency || 'IQD')}
+                    <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Amount ({baseCurrency})</div>
+                    <div className="text-2xl font-black text-slate-900 font-mono">
+                      {formatAmount((newItem.quantity || 0) * (newItem.inputRate || 0), newItem.inputCurrency as any, newItem.exchangeRateUsed)}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-8">
                 <button 
-                  onClick={() => setShowAddItem(false)}
+                  onClick={() => { setShowAddItem(false); setIsAddingWorkPackage(false); }}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
                 <button 
-                  onClick={handleAddBoqItem}
+                  onClick={() => handleAddBoqItem()}
                   className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                 >
                   Add to BOQ
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingItem && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-slate-900">Edit BOQ Item</h3>
+                <button onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                  <textarea 
+                    value={editingItem.description}
+                    onChange={e => setEditingItem({...editingItem, description: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division</label>
+                  <select 
+                    value={editingItem.division}
+                    onChange={e => setEditingItem({...editingItem, division: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    {masterFormatDivisions.map(div => (
+                      <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
+                  <div className="flex gap-2">
+                    {isAddingWorkPackage ? (
+                      <div className="flex-1 flex gap-2">
+                        <input 
+                          type="text"
+                          value={newWorkPackage}
+                          onChange={e => setNewWorkPackage(e.target.value)}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="New work package..."
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => {
+                            if (newWorkPackage.trim()) {
+                              setEditingItem({...editingItem, workPackage: newWorkPackage.trim()});
+                              setIsAddingWorkPackage(false);
+                              setNewWorkPackage('');
+                            }
+                          }}
+                          className="px-4 bg-blue-600 text-white rounded-xl font-bold"
+                        >
+                          OK
+                        </button>
+                        <button 
+                          onClick={() => setIsAddingWorkPackage(false)}
+                          className="px-4 bg-slate-200 text-slate-600 rounded-xl font-bold"
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <select 
+                        value={editingItem.workPackage}
+                        onChange={e => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setIsAddingWorkPackage(true);
+                          } else {
+                            setEditingItem({...editingItem, workPackage: e.target.value});
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="">Select Work Package</option>
+                        {masterFormatSections
+                          .filter(s => s.divisionId === editingItem.division)
+                          .map(section => (
+                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                          ))
+                        }
+                        <option value="ADD_NEW" className="text-blue-600 font-bold">+ Add New...</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
+                  <input 
+                    type="number"
+                    value={editingItem.quantity}
+                    onChange={e => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit</label>
+                  <input 
+                    type="text"
+                    value={editingItem.unit}
+                    onChange={e => setEditingItem({...editingItem, unit: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="number"
+                      value={editingItem.inputRate}
+                      onChange={e => setEditingItem({...editingItem, inputRate: parseFloat(e.target.value) || 0})}
+                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                    />
+                    <select 
+                      value={editingItem.inputCurrency}
+                      onChange={e => setEditingItem({...editingItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
+                      className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                    >
+                      <option value="IQD">IQD</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 USD = X IQD)</label>
+                  <input 
+                    type="number" 
+                    value={editingItem.exchangeRateUsed}
+                    onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    disabled={editingItem.inputCurrency === baseCurrency}
+                  />
+                </div>
+
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 col-span-2">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount ({baseCurrency})</div>
+                  <div className="text-2xl font-black text-slate-900 font-mono">
+                    {formatAmount((editingItem.quantity || 0) * (editingItem.inputRate || 0), editingItem.inputCurrency as any, editingItem.exchangeRateUsed)}
+                  </div>
+                </div>
+
+                <div className="col-span-2 flex gap-4 mt-4">
+                  <button 
+                    onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }}
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      if (editingItem) {
+                        await handleUpdateItem(editingItem.id, editingItem);
+                        setEditingItem(null);
+                      }
+                    }}
+                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

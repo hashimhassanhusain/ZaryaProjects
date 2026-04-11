@@ -260,9 +260,9 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
       {/* Sub-tabs */}
       <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200 shadow-inner">
         {[
-          { id: 'plan', title: '3.3 Management Plan', icon: ClipboardCheck },
-          { id: 'metrics', title: '3.3.1 Metrics Register', icon: Activity },
-          { id: 'acceptance', title: '3.3.2 Formal Acceptance', icon: FileSignature }
+          { id: 'plan', title: 'Management Plan', icon: ClipboardCheck },
+          { id: 'metrics', title: 'Metrics Register', icon: Activity },
+          { id: 'acceptance', title: 'Formal Acceptance', icon: FileSignature }
         ].map((tab) => (
           <button
             key={tab.id}

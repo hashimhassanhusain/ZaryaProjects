@@ -1377,6 +1377,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         updates.customer = formData['Project Customer'] || selectedProject.customer;
         updates.startDate = formData['Date Prepared'] || selectedProject.startDate;
         updates.description = formData['Project Description'] || selectedProject.description;
+        updates.baseCurrency = formData['Base Currency'] || selectedProject.baseCurrency || 'IQD';
 
         // Sync Milestones to Activities
         const activitiesRef = collection(db, 'activities');

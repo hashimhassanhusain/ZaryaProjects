@@ -1,23 +1,70 @@
-import React, { useState } from 'react';
-import { currentUser } from '../data';
-import { User, Mail, Shield, Camera, Save, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Shield, Camera, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { auth, db, OperationType, handleFirestoreError } from '../firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export const UserProfileView: React.FC = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: currentUser.name,
-    email: currentUser.email,
-    photoURL: currentUser.photoURL,
-    role: currentUser.role,
+    name: '',
+    email: '',
+    photoURL: '',
+    role: '',
   });
 
-  const handleSave = () => {
-    // Mock save logic
-    alert('Profile updated successfully!');
-    navigate(-1);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!auth.currentUser) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setFormData({
+            name: data.name || '',
+            email: data.email || '',
+            photoURL: data.photoURL || '',
+            role: data.role || 'engineer',
+          });
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `users/${auth.currentUser.uid}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    if (!auth.currentUser) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        name: formData.name,
+        photoURL: formData.photoURL,
+        updatedAt: new Date().toISOString()
+      });
+      alert('Profile updated successfully!');
+      navigate(-1);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-6">
@@ -42,7 +89,7 @@ export const UserProfileView: React.FC = () => {
             <div className="relative mt-8">
               <div className="relative inline-block">
                 <img 
-                  src={formData.photoUrl} 
+                  src={formData.photoURL || 'https://via.placeholder.com/150'} 
                   alt={formData.name} 
                   className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover mx-auto"
                   referrerPolicy="no-referrer"
@@ -67,7 +114,7 @@ export const UserProfileView: React.FC = () => {
               Your account is managed by the Zarya Admin. Email changes require administrative approval.
             </p>
             <div className="text-xs font-mono text-slate-500 bg-slate-800 p-4 rounded-xl border border-slate-700">
-              UID: {currentUser.uid.toUpperCase()}
+              UID: {auth.currentUser?.uid.toUpperCase()}
             </div>
           </div>
         </div>
@@ -123,9 +170,11 @@ export const UserProfileView: React.FC = () => {
               </button>
               <button 
                 onClick={handleSave}
-                className="px-10 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
+                disabled={isSaving}
+                className="px-10 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4" /> Save Changes
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Changes
               </button>
             </div>
           </section>

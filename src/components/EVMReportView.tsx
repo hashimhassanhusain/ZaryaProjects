@@ -14,7 +14,7 @@ interface EVMReportViewProps {
 
 export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
-  const { formatAmount, convertToIQD, convertToUSD, currency: displayCurrency } = useCurrency();
+  const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const [isSyncing, setIsSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -66,24 +66,18 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
   }, [selectedProject]);
 
   const evmMetrics = useMemo(() => {
-    // Convert everything to IQD for consistent EVM calculation
+    // Convert everything to base currency for consistent EVM calculation
     const bac = boqItems.reduce((sum, item) => {
-      const amount = item.amount || 0;
-      const curr = item.currency || 'IQD';
-      return sum + (curr === 'USD' ? convertToIQD(amount, 'USD') : amount);
+      return sum + (item.amount || 0);
     }, 0);
 
     const ev = boqItems.reduce((sum, item) => {
       const amount = item.amount || 0;
-      const curr = item.currency || 'IQD';
-      const iqdAmount = curr === 'USD' ? convertToIQD(amount, 'USD') : amount;
-      return sum + (iqdAmount * (item.completion / 100));
+      return sum + (amount * ((item.completion || 0) / 100));
     }, 0);
 
     const ac = pos.reduce((sum, po) => {
-      const amount = po.amount || 0;
-      const curr = po.currency || 'IQD';
-      return sum + (curr === 'USD' ? convertToIQD(amount, 'USD') : amount);
+      return sum + (po.amount || 0);
     }, 0);
     
     // Calculate PV based on time elapsed if start/end dates exist
@@ -111,30 +105,27 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
     const spi = pv > 0 ? ev / pv : 1;
     const cpi = ac > 0 ? ev / ac : 1;
 
-    // Convert back to display currency for reporting
-    const convertBack = (val: number) => displayCurrency === 'USD' ? convertToUSD(val, 'IQD') : val;
-
     return {
-      bac: convertBack(bac),
-      pv: convertBack(pv),
-      ev: convertBack(ev),
-      ac: convertBack(ac),
-      sv: convertBack(sv),
-      cv: convertBack(cv),
+      bac,
+      pv,
+      ev,
+      ac,
+      sv,
+      cv,
       spi,
       cpi,
       percentPlanned,
       percentEarned: bac > 0 ? (ev / bac) * 100 : 0,
       percentSpent: bac > 0 ? (ac / bac) * 100 : 0
     };
-  }, [boqItems, pos, selectedProject, isSyncing, convertToIQD, convertToUSD, displayCurrency]);
+  }, [boqItems, pos, selectedProject, isSyncing, baseCurrency]);
 
   const handleSync = () => {
     setIsSyncing(true);
     setTimeout(() => setIsSyncing(false), 1000);
   };
 
-  const formatCurrency = (val: number) => formatAmount(val, displayCurrency);
+  const formatCurrency = (val: number) => formatAmount(val, baseCurrency);
   const formatIndex = (val: number) => val.toFixed(2);
 
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;

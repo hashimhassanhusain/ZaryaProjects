@@ -85,6 +85,23 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {renderField('Project Title', 'Project Title', 'text', true)}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Project Base Currency</label>
+            {isEditing ? (
+              <select
+                value={formData['Base Currency'] || 'IQD'}
+                onChange={(e) => updateField('Base Currency', e.target.value)}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="IQD">IQD (Iraqi Dinar)</option>
+                <option value="USD">USD (US Dollar)</option>
+              </select>
+            ) : (
+              <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-bold">
+                {formData['Base Currency'] || 'IQD'}
+              </div>
+            )}
+          </div>
           {renderField('Project Sponsor', 'Project Sponsor')}
           {renderField('Date Prepared', 'Date Prepared', 'date')}
           {renderField('Project Manager', 'Project Manager')}
@@ -179,7 +196,32 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            {renderField('Estimated Budget', 'Estimated Budget', 'text', true)}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estimated Budget</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData['Estimated Budget'] || ''}
+                  onChange={(e) => updateField('Estimated Budget', e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter estimated budget..."
+                />
+              ) : (
+                <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-bold">
+                  {formData['Estimated Budget'] ? (
+                    isNaN(Number(formData['Estimated Budget'])) ? 
+                      formData['Estimated Budget'] : 
+                      new Intl.NumberFormat(formData['Base Currency'] === 'IQD' ? 'ar-IQ' : 'en-US', {
+                        style: 'currency',
+                        currency: formData['Base Currency'] || 'IQD',
+                        maximumFractionDigits: 0
+                      }).format(Number(formData['Estimated Budget']))
+                  ) : (
+                    <span className="text-slate-300 italic">Not specified</span>
+                  )}
+                </div>
+              )}
+            </div>
             {renderField('Project Manager Authority Level', 'Project Manager Authority Level', 'textarea', true)}
             {renderField('Staffing Decisions', 'Staffing Decisions', 'textarea', true)}
             {renderField('Budget Management and Variance', 'Budget Management and Variance', 'textarea', true)}

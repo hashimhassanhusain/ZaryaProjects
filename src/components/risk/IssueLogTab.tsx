@@ -163,10 +163,12 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
     doc.save(`${projectId}-ISSUE-LOG-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  const filteredIssues = issues.filter(i => 
-    i.issue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    i.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIssues = issues.filter(i => {
+    const issueText = (i.issue || (i as any).description || '').toLowerCase();
+    const categoryText = (i.category || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return issueText.includes(query) || categoryText.includes(query);
+  });
 
   if (view === 'form') {
     return (
@@ -380,22 +382,22 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-slate-900 font-bold line-clamp-1">{issue.issue}</p>
+                      <p className="text-sm text-slate-900 font-bold line-clamp-1">{issue.issue || (issue as any).description}</p>
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{issue.category}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        issue.urgency === 'Critical' || issue.urgency === 'Urgent' ? "bg-red-100 text-red-700" :
-                        issue.urgency === 'High' ? "bg-orange-100 text-orange-700" :
-                        issue.urgency === 'Medium' ? "bg-amber-100 text-amber-700" :
+                        (issue.urgency === 'Critical' || issue.urgency === 'Urgent' || (issue as any).priority === 'Critical') ? "bg-red-100 text-red-700" :
+                        (issue.urgency === 'High' || (issue as any).priority === 'High') ? "bg-orange-100 text-orange-700" :
+                        (issue.urgency === 'Medium' || (issue as any).priority === 'Medium') ? "bg-amber-100 text-amber-700" :
                         "bg-blue-100 text-blue-700"
                       )}>
-                        {issue.urgency}
+                        {issue.urgency || (issue as any).priority}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-slate-600">{issue.responsibleParty}</span>
+                      <span className="text-sm font-medium text-slate-600">{issue.responsibleParty || (issue as any).ownerId}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
@@ -409,7 +411,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-slate-600">{issue.dueDate || 'N/A'}</span>
+                      <span className="text-sm font-medium text-slate-600">{issue.dueDate || (issue as any).dateIdentified || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

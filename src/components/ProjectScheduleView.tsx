@@ -6,30 +6,32 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, setDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { ActivityListView } from './ActivityListView';
-import { MilestoneListView } from './MilestoneListView';
 import { 
   Calendar, Clock, Database, ChevronRight, ChevronDown,
   Loader2, Edit2, Search, Filter, Download, Printer,
   BarChart3, DollarSign, CheckCircle2, AlertCircle,
   ArrowRight, Link2, Plus, MoreHorizontal, Maximize2,
-  ZoomIn, ZoomOut, ShoppingCart, TrendingUp
+  ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { cn, formatCurrency } from '../lib/utils';
 import { rollupToParent } from '../services/rollupService';
 
 interface ProjectScheduleViewProps {
   page: Page;
+  initialTab?: ScheduleTab;
 }
 
 type ZoomLevel = 'day' | 'week' | 'month' | 'quarter';
 type ScheduleTab = 'gantt' | 'activities' | 'milestones';
 type ViewLevel = 'wbs' | 'masterformat' | 'workpackage' | 'po' | 'poitem';
 
-export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }) => {
+export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, initialTab }) => {
   const { selectedProject } = useProject();
   const navigate = useNavigate();
+  const { formatAmount, currency: baseCurrency } = useCurrency();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -37,7 +39,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedWbs, setExpandedWbs] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<ScheduleTab>('gantt');
+  const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab || 'gantt');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('month');
   const [viewLevel, setViewLevel] = useState<ViewLevel>('masterformat');
@@ -432,8 +434,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
 
       const kpis = [
         { label: 'Overall Progress', value: `${avgProgress}%`, color: [59, 130, 246], icon: '%' },
-        { label: 'Planned Cost', value: formatCurrency(totalPlanned), color: [30, 64, 175], icon: '$' },
-        { label: 'Actual Cost', value: formatCurrency(totalActual), color: [16, 185, 129], icon: 'A' },
+        { label: 'Planned Cost', value: formatAmount(totalPlanned, baseCurrency), color: [30, 64, 175], icon: '$' },
+        { label: 'Actual Cost', value: formatAmount(totalActual, baseCurrency), color: [16, 185, 129], icon: 'A' },
         { label: 'Activities', value: `${activities.length}`, color: [100, 116, 139], icon: '#' }
       ];
 
@@ -485,8 +487,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
           act.finishDate || 'TBD',
           act.actualFinishDate || '-',
           `${progress}%`,
-          formatCurrency(act.amount),
-          formatCurrency(actualCost),
+          formatAmount(act.amount, baseCurrency),
+          formatAmount(actualCost, baseCurrency),
           '' // Empty column for Gantt Chart
         ];
       });
@@ -1247,7 +1249,83 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page }
       )}
 
       {activeTab === 'milestones' && (
-        <MilestoneListView page={page} />
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+          <div className="p-10">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                  <Target className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Project Milestones</h3>
+                  <p className="text-sm text-slate-500">Key project events and deadlines tracked across the timeline.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Milestones:</span>
+                <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+                  {activities.filter(a => a.duration === 0).length}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activities.filter(a => a.duration === 0).length === 0 ? (
+                <div className="col-span-full p-12 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                  <Target className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                  <p className="text-slate-400 italic">No milestones defined in the schedule yet.</p>
+                </div>
+              ) : (
+                activities.filter(a => a.duration === 0).map((m) => (
+                  <motion.div 
+                    key={m.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-6 bg-white border border-slate-100 rounded-[2rem] flex items-center justify-between hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
+                        m.percentComplete === 100 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                      )}>
+                        <Target className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-base font-bold text-slate-900">{m.description}</p>
+                        <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                            <Calendar className="w-3.5 h-3.5" />
+                            PLN: <span className="text-slate-600">{m.startDate || m.finishDate || 'TBD'}</span>
+                          </div>
+                          {m.actualFinishDate && (
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              ACT: {m.actualFinishDate}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className={cn(
+                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        m.percentComplete === 100 ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+                      )}>
+                        {m.percentComplete === 100 ? 'Completed' : 'Planned'}
+                      </div>
+                      <button 
+                        onClick={() => setEditingActivity(m)}
+                        className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       <AnimatePresence>
@@ -1320,6 +1398,7 @@ const ActivityRow: React.FC<{
   activityColWidth, getProgress, getDateColor, getDurationColor, getCostColor,
   viewLevel
 }) => {
+  const { formatAmount, currency: baseCurrency } = useCurrency();
   const linkedPO = purchaseOrders.find(po => po.id === act.poId);
   const progress = getProgress(act);
   const poCost = linkedPO ? linkedPO.amount : 0;
@@ -1400,9 +1479,9 @@ const ActivityRow: React.FC<{
               {vendors.find(v => v.id === act.supplierId)?.name || linkedPO?.supplier || '-'}
             </div>
           )}
-          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatCurrency(act.amount)}</div>}
-          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatCurrency(poCost)}</div>}
-          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className={cn("h-full flex items-center justify-end px-2 text-[10px] font-bold font-mono", getCostColor(actualCost, poCost))}>{formatCurrency(actualCost)}</div>}
+          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatAmount(act.amount, baseCurrency)}</div>}
+          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatAmount(poCost, baseCurrency)}</div>}
+          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className={cn("h-full flex items-center justify-end px-2 text-[10px] font-bold font-mono", getCostColor(actualCost, poCost))}>{formatAmount(actualCost, baseCurrency)}</div>}
         </div>
       </div>
 
@@ -1432,8 +1511,8 @@ const ActivityRow: React.FC<{
                 )}
                 {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full flex items-center px-2 text-[9px] text-slate-500 truncate">{linkedPO.supplier}</div>}
                 {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full" />}
-                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatCurrency(linkedPO.amount)}</div>}
-                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatCurrency((linkedPO.completion || 0) / 100 * linkedPO.amount)}</div>}
+                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatAmount(linkedPO.amount, baseCurrency)}</div>}
+                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatAmount((linkedPO.completion || 0) / 100 * linkedPO.amount, baseCurrency)}</div>}
               </div>
             </div>
           )}
@@ -1467,8 +1546,8 @@ const ActivityRow: React.FC<{
                 )}
                 {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
                 {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full" />}
-                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 font-mono">{formatCurrency(li.amount)}</div>}
-                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 font-mono text-emerald-600">{formatCurrency((li.completion || 0) / 100 * li.amount)}</div>}
+                {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 font-mono">{formatAmount(li.amount, baseCurrency)}</div>}
+                {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 font-mono text-emerald-600">{formatAmount((li.completion || 0) / 100 * li.amount, baseCurrency)}</div>}
               </div>
             </div>
           ))}
@@ -1484,6 +1563,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
   rowRefs, visibleColumns, activityColWidth, columnWidths, viewLevel,
   getDateColor, getDurationColor, getCostColor
 }) => {
+  const { formatAmount, currency: baseCurrency } = useCurrency();
   const children = allWbs.filter(w => w.parentId === wbs.id);
   const hasDivisionNodes = children.some(c => c.type === 'Division');
 
@@ -1554,9 +1634,9 @@ const WbsRow: React.FC<WbsRowProps> = ({
             </div>
           )}
           {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
-          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatCurrency(wbsPlannedCost)}</div>}
+          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatAmount(wbsPlannedCost, baseCurrency)}</div>}
           {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
-          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatCurrency(wbsActualCost)}</div>}
+          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatAmount(wbsActualCost, baseCurrency)}</div>}
         </div>
       </div>
       
@@ -1629,11 +1709,11 @@ const WbsRow: React.FC<WbsRowProps> = ({
                     )}
                     {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
                     {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-400 font-mono">
-                      {formatCurrency(divActivities.reduce((sum, a) => sum + a.amount, 0))}
+                      {formatAmount(divActivities.reduce((sum, a) => sum + a.amount, 0), baseCurrency)}
                     </div>}
                     {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
                     {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-400 font-mono">
-                      {formatCurrency(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0))}
+                      {formatAmount(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0), baseCurrency)}
                     </div>}
                   </div>
                 </div>

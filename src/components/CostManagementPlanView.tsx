@@ -82,7 +82,7 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
     projectTitle: '',
     datePrepared: new Date().toISOString().split('T')[0],
     accuracy: '+/- 5%',
-    units: 'Iraqi Dinar (IQD) / Man-Hours',
+    units: `${selectedProject?.baseCurrency || 'IQD'} / Man-Hours`,
     controlThresholds: 'Example: 5% Variance (Yellow Alert), 10% Variance (Red Alert - Mandatory CCB Review)',
     thresholdPercentage: 10,
     performanceRules: 'Earned Value Management (EVM) using Zarya Cost Domain',

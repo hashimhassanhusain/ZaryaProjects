@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
-import { cn, formatCurrency } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
+import { cn } from '../lib/utils';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 
 interface ActivityListViewProps {
@@ -20,6 +21,7 @@ interface ActivityListViewProps {
 
 export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { formatAmount, currency: baseCurrency } = useCurrency();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
@@ -248,10 +250,10 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-bold text-slate-900 font-mono">
-                        {formatCurrency(act.amount)}
+                        {formatAmount(act.amount, baseCurrency)}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 font-mono">
-                        {formatCurrency(act.actualAmount || 0)}
+                        {formatAmount(act.actualAmount || 0, baseCurrency)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn(
