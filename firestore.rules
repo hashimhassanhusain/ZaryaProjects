@@ -1,8 +1,79 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "hashim.h.husain@gmail.com");
+    }
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+    }
+
+    match /team_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /team_governance/{agreementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /performance_assessments/{assessmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /team_status_reports/{reportId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /resource_requirements/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /rbs/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /roles_responsibilities/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /selection_criteria/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /vendor_evaluations/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /process_improvements/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /ram_raci/{projectId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }

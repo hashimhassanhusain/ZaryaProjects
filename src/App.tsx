@@ -42,6 +42,7 @@ import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
+import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { Loader2 } from 'lucide-react';
 import { cn, sortDomainPages } from './lib/utils';
 
@@ -85,6 +86,24 @@ const PageRenderer = () => {
               className="mx-auto"
             >
               <ProjectScheduleView page={schedulePage} />
+            </motion.div>
+          );
+        }
+      }
+
+      // Special case for Resources Domain to show Hub directly
+      if (domain.id === 'dom_res') {
+        const resPage = pages.find(p => p.id === '2.6');
+        if (resPage) {
+          return (
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+              className="mx-auto max-w-none"
+            >
+              <ResourceOptimizationHub page={resPage} />
             </motion.div>
           );
         }
@@ -148,6 +167,10 @@ const PageRenderer = () => {
   const isIssueLogPage = page.id === '3.2.1';
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
+  const isResourceOptimizationPage = [
+    '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
+    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.4', '3.3.5', '3.3.6', '2.4.7'
+  ].includes(page.id);
   const isGovernanceHubPage = [
     '1.1.1', '1.1.2', // Charter, Policies
     '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
@@ -202,6 +225,8 @@ const PageRenderer = () => {
           <StakeholderRegisterView page={page} />
         ) : isLessonsLearnedPage ? (
           <LessonsLearnedView page={page} />
+        ) : isResourceOptimizationPage ? (
+          <ResourceOptimizationHub page={page} />
         ) : isGovernanceHubPage ? (
           <GovernanceHubView page={page} />
         ) : isChangeRequestHubPage ? (

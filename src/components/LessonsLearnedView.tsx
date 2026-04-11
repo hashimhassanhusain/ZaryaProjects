@@ -25,7 +25,7 @@ import {
   Award,
   BookOpen
 } from 'lucide-react';
-import { Page, Stakeholder } from '../types';
+import { Page, Stakeholder, LessonEntry } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -49,23 +49,6 @@ import autoTable from 'jspdf-autotable';
 
 interface LessonsLearnedViewProps {
   page: Page;
-}
-
-interface LessonEntry {
-  id: string;
-  lessonId: string;
-  category: 'Technical' | 'Management' | 'Process' | 'Quality' | 'Safety' | 'Other';
-  description: string;
-  recommendation: string;
-  impact: 'Positive' | 'Negative';
-  ownerId: string;
-  status: 'Draft' | 'Published' | 'Archived';
-  projectId: string;
-  version: number;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
 }
 
 interface LessonVersion {

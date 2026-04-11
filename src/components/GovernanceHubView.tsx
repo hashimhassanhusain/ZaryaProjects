@@ -44,6 +44,7 @@ import { QualityMetricsRegisterView } from './QualityMetricsRegisterView';
 import { ChangeLogRegisterView } from './ChangeLogRegisterView';
 import { DecisionLogView } from './DecisionLogView';
 import { ProjectLogsView } from './ProjectLogsView';
+import { ResourceOptimizationHub } from './ResourceOptimizationHub';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -51,7 +52,7 @@ interface GovernanceHubViewProps {
   page: Page;
 }
 
-type MainTab = 'charter' | 'policies' | 'plans' | 'logs' | 'risk-hub';
+type MainTab = 'charter' | 'policies' | 'plans' | 'logs' | 'risk-hub' | 'resource-hub';
 type PlanSubTab = 'pmp' | 'cmp' | 'qmp' | 'comm' | 'smp' | 'rmp' | 'scope' | 'hrmp' | 'schedule' | 'cost' | 'procurement' | 'risk' | 'quality';
 type LogSubTab = 'stakeholders' | 'assumptions' | 'changes' | 'decisions' | 'issues' | 'lessons';
 
@@ -96,7 +97,8 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     { id: 'policies', title: 'Policies & Procedures', icon: Gavel, pageId: '1.1.2' },
     { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' },
     { id: 'logs', title: 'Project Logs', icon: FileText, pageId: '1.2.1' },
-    { id: 'risk-hub', title: 'Risk & Opportunity Hub', icon: ShieldAlert, pageId: '2.7' }
+    { id: 'risk-hub', title: 'Risk & Opportunity Hub', icon: ShieldAlert, pageId: '2.7' },
+    { id: 'resource-hub', title: 'Resources & Optimization', icon: Users, pageId: '2.6' }
   ];
 
   const managementPlans = [
@@ -219,6 +221,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
               {activeTab === 'charter' && <ProjectCharterView page={page} />}
               {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
               {activeTab === 'risk-hub' && <RiskOpportunityHub page={{ ...page, id: '2.7', title: 'Risk & Opportunity Hub' }} />}
+              {activeTab === 'resource-hub' && <ResourceOptimizationHub page={{ ...page, id: '2.6', title: 'Resources & Optimization' }} />}
               {activeTab === 'logs' && (
                 <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                   <div className="p-10">

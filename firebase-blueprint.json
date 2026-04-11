@@ -199,12 +199,219 @@
         "changeSummary": { "type": "string" }
       },
       "required": ["planId", "version", "timestamp", "userId", "data"]
+    },
+    "TeamMember": {
+      "title": "Team Member",
+      "description": "Project personnel information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "department": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "workHours": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "On Leave", "Off-site"] }
+      },
+      "required": ["name", "role", "email"]
+    },
+    "TeamOperatingAgreement": {
+      "title": "Team Operating Agreement",
+      "description": "Guidelines for team interaction and governance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "values": { "type": "string" },
+        "meetingGuidelines": { "type": "string" },
+        "communicationGuidelines": { "type": "string" },
+        "decisionMaking": { "type": "string" },
+        "conflictManagement": { "type": "string" },
+        "raci": { "type": "object" }
+      },
+      "required": ["projectId"]
+    },
+    "PerformanceAssessment": {
+      "title": "Performance Assessment",
+      "description": "Individual team member performance evaluation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "memberId": { "type": "string" },
+        "memberName": { "type": "string" },
+        "memberRole": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "technicalRating": { "type": "string", "enum": ["Exceeds", "Meets", "Needs Improvement"] },
+        "interpersonalRating": { "type": "string", "enum": ["Exceeds", "Meets", "Needs Improvement"] },
+        "strengths": { "type": "string" },
+        "weaknesses": { "type": "string" },
+        "developmentAreas": { "type": "string" },
+        "moraleScore": { "type": "number" },
+        "overallRating": { "type": "string" }
+      },
+      "required": ["memberId", "date", "technicalRating", "interpersonalRating"]
+    },
+    "TeamStatusReport": {
+      "title": "Team Status Report",
+      "description": "Periodic team progress and financial report.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "plannedActivities": { "type": "array", "items": { "type": "string" } },
+        "accomplishedActivities": { "type": "array", "items": { "type": "string" } },
+        "variances": { "type": "string" },
+        "rootCause": { "type": "string" },
+        "correctiveActions": { "type": "string" },
+        "fundsPlanned": { "type": "number" },
+        "fundsSpent": { "type": "number" },
+        "variancePercent": { "type": "number" }
+      },
+      "required": ["projectId", "date"]
+    },
+    "ResourceRequirement": {
+      "title": "Resource Requirement",
+      "description": "Resource needs per activity.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "wbsId": { "type": "string" },
+        "activityId": { "type": "string" },
+        "resourceType": { "type": "string", "enum": ["Labor", "Material", "Equipment"] },
+        "resourceName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "rate": { "type": "number" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Draft", "Approved"] }
+      },
+      "required": ["projectId", "resourceName", "resourceType", "quantity", "rate"]
+    },
+    "RBSNode": {
+      "title": "RBS Node",
+      "description": "Hierarchical resource structure node.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "parentId": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["Category", "Resource"] },
+        "resourceType": { "type": "string", "enum": ["Labor", "Material", "Equipment"] },
+        "description": { "type": "string" }
+      },
+      "required": ["projectId", "title", "type"]
+    },
+    "RoleResponsibility": {
+      "title": "Role & Responsibility",
+      "description": "Position description and authority.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "position": { "type": "string" },
+        "authority": { "type": "string" },
+        "responsibility": { "type": "string" },
+        "qualifications": { "type": "string" }
+      },
+      "required": ["projectId", "position", "authority", "responsibility"]
+    },
+    "SelectionCriterion": {
+      "title": "Selection Criterion",
+      "description": "Weighted criterion for vendor evaluation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "criterion": { "type": "string" },
+        "weight": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["projectId", "criterion", "weight"]
+    },
+    "VendorEvaluation": {
+      "title": "Vendor Evaluation",
+      "description": "Scoring of a vendor against criteria.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "vendorName": { "type": "string" },
+        "criteriaScores": { "type": "array", "items": { "type": "object" } },
+        "totalScore": { "type": "number" },
+        "comments": { "type": "string" }
+      },
+      "required": ["projectId", "vendorId", "totalScore"]
+    },
+    "ProcessImprovement": {
+      "title": "Process Improvement",
+      "description": "Workflow optimization record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "workflowName": { "type": "string" },
+        "currentProcess": { "type": "string" },
+        "improvedProcess": { "type": "string" },
+        "justification": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Implemented"] }
+      },
+      "required": ["projectId", "workflowName", "currentProcess", "improvedProcess"]
     }
   },
   "firestore": {
+    "/resource_requirements/{id}": {
+      "schema": "ResourceRequirement",
+      "description": "Resource requirements per activity."
+    },
+    "/rbs/{id}": {
+      "schema": "RBSNode",
+      "description": "Resource Breakdown Structure."
+    },
+    "/roles_responsibilities/{id}": {
+      "schema": "RoleResponsibility",
+      "description": "Roles and responsibilities definitions."
+    },
+    "/selection_criteria/{id}": {
+      "schema": "SelectionCriterion",
+      "description": "Vendor selection criteria."
+    },
+    "/vendor_evaluations/{id}": {
+      "schema": "VendorEvaluation",
+      "description": "Vendor evaluation scores."
+    },
+    "/process_improvements/{id}": {
+      "schema": "ProcessImprovement",
+      "description": "Process improvement logs."
+    },
+    "/ram_raci/{projectId}": {
+      "schema": "object",
+      "description": "RAM / RACI Matrix data."
+    },
     "/users/{uid}": {
       "schema": "User",
       "description": "User profiles indexed by UID."
+    },
+    "/team_members/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Project team members."
+    },
+    "/team_governance/{agreementId}": {
+      "schema": "TeamOperatingAgreement",
+      "description": "Team operating agreements and RACI."
+    },
+    "/performance_assessments/{assessmentId}": {
+      "schema": "PerformanceAssessment",
+      "description": "Individual performance evaluations."
+    },
+    "/team_status_reports/{reportId}": {
+      "schema": "TeamStatusReport",
+      "description": "Team status and financial reports."
     },
     "/boq/{itemId}": {
       "schema": "BOQItem",

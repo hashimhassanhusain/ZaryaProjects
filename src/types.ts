@@ -271,6 +271,202 @@ export interface ProjectFinance {
   updatedBy: string;
 }
 
+export interface LessonEntry {
+  id: string;
+  lessonId: string;
+  category: 'Technical' | 'Management' | 'Process' | 'Quality' | 'Safety' | 'Other';
+  description: string;
+  recommendation: string;
+  impact: 'Positive' | 'Negative';
+  ownerId: string;
+  status: 'Draft' | 'Published' | 'Archived';
+  projectId: string;
+  version: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface TeamMember {
+  id: string;
+  projectId: string;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+  phone: string;
+  location: string;
+  workHours: string;
+  status: 'Active' | 'On Leave' | 'Offboarded';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamOperatingAgreement {
+  id: string;
+  projectId: string;
+  values: string[];
+  meetingGuidelines: string[];
+  communicationGuidelines: string[];
+  decisionMakingProcess: string;
+  conflictManagementApproach: string;
+  otherAgreements: string;
+  signatures: { name: string; date: string }[];
+  updatedAt: string;
+}
+
+export interface PerformanceAssessment {
+  id: string;
+  projectId: string;
+  memberId: string;
+  memberName: string;
+  memberRole: string;
+  date: string;
+  technicalPerformance: {
+    scope: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    quality: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    schedule: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    cost: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    comments: string;
+  };
+  interpersonalCompetency: {
+    communication: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    collaboration: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    conflictManagement: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    decisionMaking: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    leadership: 'Exceeds' | 'Meets' | 'Needs Improvement';
+    comments: string;
+  };
+  strengths: string;
+  weaknesses: string;
+  areasForDevelopment: { area: string; approach: string; actions: string }[];
+  additionalComments: string;
+  moraleScore: number; // 1-10
+  overallRating: 'Exceeds' | 'Meets' | 'Needs Improvement';
+  version: number;
+  updatedAt: string;
+}
+
+export interface TeamStatusReport {
+  id: string;
+  projectId: string;
+  memberId: string;
+  memberName: string;
+  role: string;
+  date: string;
+  activitiesPlanned: string[];
+  activitiesAccomplished: string[];
+  activitiesNotAccomplished: string[];
+  rootCauseOfVariances: string;
+  fundsSpent: number;
+  fundsPlanned: number;
+  qualityVariances: string;
+  plannedCorrectiveActions: string;
+  activitiesPlannedNext: string[];
+  costsPlannedNext: number;
+  newRisksIdentified: string;
+  issues: string;
+  comments: string;
+  updatedAt: string;
+}
+
+export interface ResourceRequirement {
+  id: string;
+  projectId: string;
+  wbsId: string; // Zone > Area > Building > Floor
+  activityId: string;
+  resourceType: 'Labor' | 'Material' | 'Equipment';
+  resourceName: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  amount: number;
+  status: 'Draft' | 'Approved';
+  // Beta Distribution Fields
+  optimisticDuration?: number;
+  mostLikelyDuration?: number;
+  pessimisticDuration?: number;
+  estimatedDuration?: number;
+  updatedAt: string;
+}
+
+export interface ResourceVersion {
+  id: string;
+  requirementId: string;
+  projectId: string;
+  data: any;
+  version: number;
+  userId: string;
+  userName: string;
+  timestamp: string;
+}
+
+export interface RBSNode {
+  id: string;
+  projectId: string;
+  parentId?: string;
+  title: string;
+  type: 'Category' | 'Resource';
+  resourceType?: 'Labor' | 'Material' | 'Equipment';
+  description: string;
+}
+
+export interface RoleResponsibility {
+  id: string;
+  projectId: string;
+  position: string;
+  authority: string;
+  responsibility: string;
+  qualifications: string;
+  updatedAt: string;
+}
+
+export interface RoleResponsibilityVersion {
+  id: string;
+  roleId: string;
+  projectId: string;
+  data: any;
+  version: number;
+  userId: string;
+  userName: string;
+  timestamp: string;
+}
+
+export interface SelectionCriterion {
+  id: string;
+  projectId: string;
+  criterion: string;
+  weight: number; // 0-100
+  description: string;
+}
+
+export interface VendorEvaluation {
+  id: string;
+  projectId: string;
+  vendorId: string;
+  vendorName: string;
+  criteriaScores: {
+    criterionId: string;
+    rating: number; // 1-5 or 1-10
+    score: number; // weight * rating
+  }[];
+  totalScore: number;
+  comments: string;
+  updatedAt: string;
+}
+
+export interface ProcessImprovement {
+  id: string;
+  projectId: string;
+  workflowName: string;
+  currentProcess: string;
+  improvedProcess: string;
+  justification: string;
+  status: 'Pending' | 'Approved' | 'Implemented';
+  updatedAt: string;
+}
+
 export interface Page {
   id: string;
   title: string;

@@ -201,6 +201,7 @@ export const pages: Page[] = [
     ]
   },
   { id: '2.4.0', title: 'BOQ', parentId: '2.4', type: 'terminal', content: 'Detailed Bill of Quantities and cost tracking based on MasterFormat 16 Divisions.' },
+  { id: '2.4.7', title: 'Resources & Optimization Hub', parentId: '2.4', type: 'terminal', content: 'Integrated resource management and process optimization hub.' },
   
   { 
     id: '2.5', 
