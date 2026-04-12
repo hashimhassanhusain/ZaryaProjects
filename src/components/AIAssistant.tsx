@@ -19,6 +19,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
   
   const ballControls = useAnimation();
   const handControls = useAnimation();
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   // Physics state
   const pos = useRef({ x: 0, y: 0 });
@@ -109,7 +115,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
         if (Math.abs(vel.current.vy) < 0.01) vel.current.vy = 0;
 
         // Update visual position
-        ballControls.set({ x: pos.current.x, y: pos.current.y, rotate: pos.current.x * 2 });
+        if (isMounted.current) {
+          ballControls.set({ x: pos.current.x, y: pos.current.y, rotate: pos.current.x * 2 });
+        }
         
         if (Math.abs(vel.current.vx) > 0.5 || Math.abs(vel.current.vy) > 0.5) {
           setIsFleeing(true);

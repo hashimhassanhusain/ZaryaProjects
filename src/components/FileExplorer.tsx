@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, File, Upload, ChevronRight, ChevronDown, Loader2, HardDrive, Search, Filter, MoreVertical, Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, Plus, Clock, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { storage, db } from '../firebase';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Project } from '../types';
 import { generateZaryaFileName, cn } from '../lib/utils';
 
@@ -165,34 +166,61 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   };
 
   const handleFileUpload = async () => {
-    if (!pendingFile || !currentFolderId || !project) return;
+    if (!pendingFile || !currentFolderId || !project || !selectedProjectId) return;
 
     setUploading(true);
-    const zaryaName = generateZaryaFileName({
-      projectCode: project.code,
-      ...namingParams
-    });
-    const extension = pendingFile.name.split('.').pop();
-    const finalName = `${zaryaName}.${extension}`;
-
-    const formData = new FormData();
-    formData.append('file', pendingFile, finalName);
-    formData.append('folderId', currentFolderId);
-
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+      const zaryaName = generateZaryaFileName({
+        projectCode: project.code,
+        ...namingParams
       });
+      const extension = pendingFile.name.split('.').pop();
+      const finalName = `${zaryaName}.${extension}`;
+      
+      // 1. Upload to Firebase Storage
+      const filePath = `projects/${selectedProjectId}/${finalName}`;
+      const storageRef = ref(storage, filePath);
+      
+      const snapshot = await uploadBytes(storageRef, pendingFile);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      // 2. Save reference in Firestore
+      const projectRef = doc(db, 'projects', selectedProjectId);
+      await updateDoc(projectRef, {
+        files: arrayUnion({
+          name: finalName,
+          url: downloadURL,
+          path: filePath,
+          folderId: currentFolderId,
+          uploadedAt: new Date().toISOString(),
+          size: pendingFile.size,
+          type: pendingFile.type
+        })
+      });
+
+      // 3. Create metadata in Google Drive (placeholder)
+      const res = await fetch('/api/drive/create-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: finalName,
+          parents: [currentFolderId],
+          description: `FIREBASE_URL:${downloadURL}`
+        })
+      });
+
       if (res.ok) {
-        alert(`File uploaded successfully as: ${finalName}`);
+        alert(`File uploaded successfully to Firebase Storage and linked to Drive!`);
         setShowNamingModal(false);
         setPendingFile(null);
         fetchFiles(currentFolderId);
+      } else {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create Drive metadata');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed:', error);
-      alert('Upload failed');
+      alert(`Upload failed: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -369,56 +397,75 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').map((file, idx) => (
-                    <tr key={file.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4 text-xs text-slate-400 font-mono">{idx + 1}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
-                            {file.iconLink ? <img src={file.iconLink} className="w-4 h-4" referrerPolicy="no-referrer" /> : <File className="w-4 h-4" />}
+                  {files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').map((file, idx) => {
+                    const firebaseURL = file.description?.startsWith('FIREBASE_URL:') 
+                      ? file.description.replace('FIREBASE_URL:', '') 
+                      : null;
+                    const fileLink = firebaseURL || file.webViewLink;
+
+                    return (
+                      <tr key={file.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4 text-xs text-slate-400 font-mono">{idx + 1}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                              firebaseURL ? "bg-amber-50 text-amber-500" : "bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500"
+                            )}>
+                              {file.iconLink ? <img src={file.iconLink} className="w-4 h-4" referrerPolicy="no-referrer" /> : <File className="w-4 h-4" />}
+                            </div>
+                            <div className="flex flex-col">
+                              <a 
+                                href={fileLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm font-bold text-slate-700 truncate max-w-[300px] hover:text-blue-600 transition-colors"
+                              >
+                                {file.name}
+                              </a>
+                              {firebaseURL && (
+                                <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Cloud Storage</span>
+                              )}
+                            </div>
                           </div>
-                          <a 
-                            href={file.webViewLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm font-bold text-slate-700 truncate max-w-[300px] hover:text-blue-600 transition-colors"
-                          >
-                            {file.name}
-                          </a>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <User className="w-3 h-3 text-slate-400" />
-                          {file.lastModifyingUser?.displayName || 'System'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          {formatDate(file.modifiedTime)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs text-slate-400 font-mono">{formatSize(file.size)}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          <a 
-                            href={file.webViewLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
-                            <Download className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <User className="w-3 h-3 text-slate-400" />
+                            {file.lastModifyingUser?.displayName || 'System'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {formatDate(file.modifiedTime)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-xs text-slate-400 font-mono">{formatSize(file.size)}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <a 
+                              href={fileLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                            <a 
+                              href={fileLink}
+                              download={file.name}
+                              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

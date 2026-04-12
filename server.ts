@@ -305,11 +305,42 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
   } catch (error: any) {
     console.error('Upload by path failed:', error);
     const errorMessage = error.response?.data?.error?.message || error.message || 'Upload failed';
+    
+    // Check for storage quota error specifically
+    if (errorMessage.includes('storage quota')) {
+      return res.status(403).json({ 
+        error: "System Storage Permission Error: Please ensure the Service Account is added to the Shared Drive as a Manager.",
+        details: error.response?.data?.error?.errors || null
+      });
+    }
+
     const errorDetails = error.response?.data?.error?.errors || null;
     res.status(500).json({ 
       error: errorMessage,
       details: errorDetails
     });
+  }
+});
+
+app.post('/api/drive/create-metadata', async (req: any, res: any) => {
+  const { name, parents, description } = req.body;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const resDrive = await drive.files.create({
+      requestBody: {
+        name,
+        parents,
+        description,
+        mimeType: 'application/octet-stream', // Generic binary for placeholder
+      },
+      supportsAllDrives: true,
+    });
+    res.json({ fileId: resDrive.data.id });
+  } catch (error: any) {
+    console.error('Create metadata failed:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -577,7 +608,7 @@ app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   try {
     const response = await drive.files.list({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, webViewLink, iconLink, modifiedTime, createdTime, version, lastModifyingUser(displayName, photoLink))',
+      fields: 'files(id, name, mimeType, size, webViewLink, iconLink, modifiedTime, createdTime, version, description, lastModifyingUser(displayName, photoLink))',
       orderBy: 'folder,name',
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
