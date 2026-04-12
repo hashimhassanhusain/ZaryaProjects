@@ -166,7 +166,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   };
 
   const handleFileUpload = async () => {
-    if (!pendingFile || !currentFolderId || !project || !selectedProjectId) return;
+    console.log('--- Starting File Upload ---');
+    if (!pendingFile) {
+      console.error('No file selected');
+      return;
+    }
+    if (!currentFolderId) {
+      console.error('No target folder selected (currentFolderId is null)');
+      alert('Error: No target folder selected. Please navigate to a folder first.');
+      return;
+    }
+    if (!project || !selectedProjectId) {
+      console.error('Project context missing');
+      return;
+    }
 
     setUploading(true);
     try {
@@ -177,14 +190,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const extension = pendingFile.name.split('.').pop();
       const finalName = `${zaryaName}.${extension}`;
       
+      console.log(`Uploading to Firebase: ${finalName}`);
+      
       // 1. Upload to Firebase Storage
       const filePath = `projects/${selectedProjectId}/${finalName}`;
       const storageRef = ref(storage, filePath);
       
+      console.log('Calling uploadBytes...');
       const snapshot = await uploadBytes(storageRef, pendingFile);
+      console.log('Upload successful, getting download URL...');
       const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('Download URL obtained:', downloadURL);
       
       // 2. Save reference in Firestore
+      console.log('Updating Firestore...');
       const projectRef = doc(db, 'projects', selectedProjectId);
       await updateDoc(projectRef, {
         files: arrayUnion({
@@ -197,8 +216,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
           type: pendingFile.type
         })
       });
+      console.log('Firestore updated.');
 
       // 3. Create metadata in Google Drive (placeholder)
+      console.log('Creating Google Drive metadata...');
       const res = await fetch('/api/drive/create-metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,17 +231,23 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       });
 
       if (res.ok) {
-        alert(`File uploaded successfully to Firebase Storage and linked to Drive!`);
+        console.log('Drive metadata created successfully.');
+        alert(`File uploaded successfully!\n\nLocation: ${finalName}\nStorage: Firebase Cloud Storage\nLinked: Google Drive Metadata`);
         setShowNamingModal(false);
         setPendingFile(null);
         fetchFiles(currentFolderId);
       } else {
         const err = await res.json();
-        throw new Error(err.error || 'Failed to create Drive metadata');
+        console.error('Drive metadata creation failed:', err);
+        // Even if Drive fails, the file is in Firebase, so we notify but don't treat as total failure
+        alert(`File saved to Cloud Storage, but Google Drive link failed: ${err.error}`);
+        setShowNamingModal(false);
+        setPendingFile(null);
+        fetchFiles(currentFolderId);
       }
     } catch (error: any) {
-      console.error('Upload failed:', error);
-      alert(`Upload failed: ${error.message}`);
+      console.error('CRITICAL UPLOAD ERROR:', error);
+      alert(`Upload failed: ${error.message}\n\nPlease check your internet connection and ensure Firebase Storage is enabled.`);
     } finally {
       setUploading(false);
     }

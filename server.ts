@@ -333,7 +333,11 @@ app.post('/api/drive/create-metadata', async (req: any, res: any) => {
         name,
         parents,
         description,
-        mimeType: 'application/octet-stream', // Generic binary for placeholder
+        mimeType: 'text/plain', 
+      },
+      media: {
+        mimeType: 'text/plain',
+        body: `ZARYA CLOUD STORAGE FILE\n\nThis file is stored in Firebase Cloud Storage for performance and reliability.\n\nDirect Download Link:\n${description.replace('FIREBASE_URL:', '')}\n\nUploaded at: ${new Date().toISOString()}`,
       },
       supportsAllDrives: true,
     });
@@ -351,9 +355,15 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
 
   try {
     const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
-    console.log('Using parent folder ID:', parentFolderId || 'ROOT');
     const rootFolderName = `[${projectCode}]_${projectName}_Project`;
     
+    console.log(`--- INITIALIZING DRIVE FOR PROJECT: ${projectName} ---`);
+    console.log(`Target Parent ID: ${parentFolderId || 'ROOT (My Drive)'}`);
+    
+    if (parentFolderId === '1veRtpHqs_f8nCDtRMpMa9NqCy1oiBRE0') {
+      console.warn('⚠️ WARNING: You are using the My Drive ID. This will likely fail with a Storage Quota error.');
+    }
+
     // Create the project root folder inside the parent folder if provided
     const rootFolderId = await createFolder(drive, rootFolderName, parentFolderId);
 
