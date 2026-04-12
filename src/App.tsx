@@ -255,7 +255,7 @@ const AppLayout = () => {
   const { isSidebarOpen, closeSidebar, sidebarWidth } = useUI();
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative">
       {/* Mobile Sidebar Overlay - Only on mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -264,7 +264,7 @@ const AppLayout = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeSidebar}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 lg:hidden"
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -275,9 +275,9 @@ const AppLayout = () => {
         animate={{ 
           width: isSidebarOpen ? sidebarWidth : 0,
         }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] lg:relative lg:z-0 bg-slate-900 overflow-hidden transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-[60] lg:relative lg:z-0 bg-white border-r border-slate-200 overflow-hidden transition-transform duration-300 ease-in-out",
           isSidebarOpen ? "translate-x-0 opacity-100" : "-translate-x-full lg:translate-x-0 opacity-0 lg:opacity-0"
         )}
       >

@@ -60,32 +60,32 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 shadow-sm">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
       {/* Left: Hamburger (Mobile) & Project Selector */}
       <div className="flex-1 flex justify-start items-center gap-2">
         <button 
           onClick={toggleSidebar}
-          className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         </button>
 
         <div className="relative" ref={projectMenuRef}>
           <button 
             onClick={() => !projectsLoading && setIsProjectMenuOpen(!isProjectMenuOpen)}
             disabled={projectsLoading}
-            className="flex items-center gap-3 px-3 md:px-4 py-2 hover:bg-slate-50 rounded-xl transition-all group border border-slate-100 disabled:opacity-50"
+            className="flex items-center gap-3 px-3 md:px-4 py-1.5 hover:bg-slate-50 rounded-2xl transition-all group border border-slate-100 disabled:opacity-50"
           >
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-md shrink-0">
-              {projectsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedProject?.name.charAt(0) || '?')}
+            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-medium text-xs shadow-sm shrink-0">
+              {projectsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : (selectedProject?.name.charAt(0) || '?')}
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest leading-none mb-1">Current Project</div>
-              <div className="text-sm font-semibold text-slate-800 flex items-center gap-1">
+              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest leading-none mb-1">Project</div>
+              <div className="text-xs font-semibold text-slate-800 flex items-center gap-1">
                 <span className="truncate max-w-[100px] md:max-w-none">
-                  {projectsLoading ? 'Loading...' : (selectedProject?.name || 'No Project Selected')}
+                  {projectsLoading ? 'Loading...' : (selectedProject?.name || 'Select Project')}
                 </span>
-                {!projectsLoading && <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isProjectMenuOpen ? "rotate-180" : "")} />}
+                {!projectsLoading && <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isProjectMenuOpen ? "rotate-180" : "")} />}
               </div>
             </div>
           </button>
@@ -256,15 +256,15 @@ export const Header: React.FC = () => {
               <img 
                 src={user?.photoURL || `https://picsum.photos/seed/${user?.uid}/200`} 
                 alt="User" 
-                className="w-9 h-9 rounded-full border-2 border-white shadow-md object-cover"
+                className="w-8 h-8 rounded-full border border-white shadow-sm object-cover"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="hidden md:block text-left">
               <div className="text-xs font-semibold text-slate-800 leading-none">{user?.displayName || 'User'}</div>
-              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Project Manager</div>
+              <div className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter mt-1">Project Manager</div>
             </div>
-            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>

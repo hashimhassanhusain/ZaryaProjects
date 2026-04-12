@@ -7,7 +7,8 @@ import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } 
 import { 
   Table, Filter, LayoutGrid, List, Upload, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Database, Plus, Trash2, ChevronRight, ChevronDown,
-  FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft, X
+  FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft, X,
+  Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
@@ -419,34 +420,34 @@ export const BOQView: React.FC = () => {
   const renderWbsTree = (parentId?: string, depth = 0) => {
     const levels = wbsLevels.filter(l => l.parentId === parentId);
     return (
-      <div className={cn("space-y-2", depth > 0 && "ml-6 border-l border-slate-200 pl-4")}>
+      <div className={cn("space-y-2", depth > 0 && "ml-6 border-l border-slate-100 pl-4")}>
         {levels.map(level => (
           <div key={level.id} className="space-y-2">
             <div 
               onClick={() => setSelectedWbsId(level.id)}
               className={cn(
-                "flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all group",
-                selectedWbsId === level.id ? "bg-blue-50 border border-blue-200" : "hover:bg-slate-50 border border-transparent"
+                "flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all group",
+                selectedWbsId === level.id ? "bg-blue-600/5 border border-blue-600/20" : "hover:bg-slate-50 border border-transparent"
               )}
             >
               <div className="flex items-center gap-3">
                 <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold",
-                  level.type === 'Zone' ? "bg-purple-100 text-purple-600" :
-                  level.type === 'Area' ? "bg-blue-100 text-blue-600" :
-                  level.type === 'Building' ? "bg-emerald-100 text-emerald-600" :
-                  "bg-amber-100 text-amber-600"
+                  "w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-bold",
+                  level.type === 'Zone' ? "bg-purple-50 text-purple-600" :
+                  level.type === 'Area' ? "bg-blue-50 text-blue-600" :
+                  level.type === 'Building' ? "bg-emerald-50 text-emerald-600" :
+                  "bg-amber-50 text-amber-600"
                 )}>
                   {level.type[0]}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-900">{level.title}</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">{level.type}</div>
+                  <div className={cn("text-sm font-semibold transition-colors", selectedWbsId === level.id ? "text-blue-600" : "text-slate-900")}>{level.title}</div>
+                  <div className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">{level.type}</div>
                 </div>
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); deleteDoc(doc(db, 'wbs', level.id)); }}
-                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -503,36 +504,35 @@ export const BOQView: React.FC = () => {
   return (
     <div className="space-y-8">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <Table className="w-6 h-6" />
-            </div>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Bill of Quantities</h2>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-blue-600 font-medium text-[10px] uppercase tracking-widest">
+            <Banknote className="w-3.5 h-3.5" />
+            Project Financials
           </div>
-          <p className="text-slate-500">MasterFormat 16 Divisions structured cost planning linked to WBS levels.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Bill of Quantities</h1>
+          <p className="text-slate-500 text-sm font-medium">MasterFormat 16 Divisions structured cost planning linked to WBS levels.</p>
         </div>
         
         <div className="flex items-center gap-3 bg-slate-100 p-1 rounded-2xl">
           <button 
             onClick={() => setActiveTab('boq')}
             className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
-              activeTab === 'boq' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
+              activeTab === 'boq' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
             )}
           >
-            <List className="w-4 h-4" />
-            BOQ Hub
+            <LayoutGrid className="w-4 h-4" />
+            BOQ Manager
           </button>
           <button 
             onClick={() => setActiveTab('export')}
             className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
-              activeTab === 'export' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
+              activeTab === 'export' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
             )}
           >
-            <Printer className="w-4 h-4" />
-            Export
+            <Download className="w-4 h-4" />
+            Export & Reports
           </button>
         </div>
       </header>
@@ -547,7 +547,7 @@ export const BOQView: React.FC = () => {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <h3 className="text-2xl font-bold text-slate-900">Project BOQ Hub</h3>
-                      <p className="text-slate-500">Select a WBS level to manage its specific Bill of Quantities.</p>
+                      <p className="text-slate-500 text-sm font-medium">Select a WBS level to manage its specific Bill of Quantities.</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="relative">
@@ -555,12 +555,12 @@ export const BOQView: React.FC = () => {
                         <input 
                           type="text"
                           placeholder="Search WBS levels..."
-                          className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                          className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
                         />
                       </div>
                       <button 
                         onClick={() => setSelectedWbsId('master')}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all"
+                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all"
                       >
                         View Master BOQ
                       </button>
@@ -575,42 +575,42 @@ export const BOQView: React.FC = () => {
                         <motion.div 
                           key={level.id}
                           whileHover={{ y: -4 }}
-                          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer group"
+                          className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md hover:border-blue-600/20 transition-all cursor-pointer group"
                           onClick={() => setSelectedWbsId(level.id)}
                         >
                           <div className="flex items-start justify-between mb-6">
                             <div className={cn(
-                              "w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm",
-                              level.type === 'Zone' ? "bg-purple-100 text-purple-600" :
-                              level.type === 'Area' ? "bg-blue-100 text-blue-600" :
-                              level.type === 'Building' ? "bg-emerald-100 text-emerald-600" :
-                              "bg-amber-100 text-amber-600"
+                              "w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold",
+                              level.type === 'Zone' ? "bg-purple-50 text-purple-600" :
+                              level.type === 'Area' ? "bg-blue-50 text-blue-600" :
+                              level.type === 'Building' ? "bg-emerald-50 text-emerald-600" :
+                              "bg-amber-50 text-amber-600"
                             )}>
                               {level.type[0]}
                             </div>
                             <div className="text-right">
-                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{level.type}</div>
-                              <div className="text-xs font-bold text-blue-600">{level.code}</div>
+                              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{level.type}</div>
+                              <div className="text-xs font-semibold text-blue-600">{level.code}</div>
                             </div>
                           </div>
                           
                           <h4 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">{level.title}</h4>
-                          <p className="text-xs text-slate-500 mb-6 line-clamp-1">Location based BOQ for {level.title}</p>
+                          <p className="text-xs text-slate-500 mb-6 line-clamp-1 font-medium">Location based BOQ for {level.title}</p>
                           
                           <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50">
                             <div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Items</div>
+                              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1">Items</div>
                               <div className="text-sm font-bold text-slate-900">{items.length}</div>
                             </div>
                             <div className="text-right">
-                              <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Value</div>
+                              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1">Total Value</div>
                               <div className="text-sm font-bold text-slate-900 font-mono">
                                 {formatAmount(items.reduce((sum, i) => sum + i.amount, 0), baseCurrency)}
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-6 w-full py-2.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold text-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                          <div className="mt-6 w-full py-2.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold text-center group-hover:bg-blue-600 group-hover:text-white transition-all">
                             Manage BOQ
                           </div>
                         </motion.div>
@@ -634,21 +634,21 @@ export const BOQView: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-4">
                       <button 
                         onClick={() => setSelectedWbsId(null)}
-                        className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"
+                        className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all"
                       >
                         <ArrowLeft className="w-5 h-5" />
                       </button>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[10px] font-black uppercase tracking-widest">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-widest">
                             {selectedWbsId === 'master' ? 'Project' : wbsLevels.find(l => l.id === selectedWbsId)?.type}
                           </span>
                           {selectedWbsId !== 'master' && (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase tracking-widest">
+                            <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded text-[9px] font-bold uppercase tracking-widest">
                               {wbsLevels.find(l => l.id === selectedWbsId)?.code}
                             </span>
                           )}
@@ -656,12 +656,12 @@ export const BOQView: React.FC = () => {
                             {selectedWbsId === 'master' ? 'Master Bill of Quantities' : wbsLevels.find(l => l.id === selectedWbsId)?.title}
                           </h3>
                         </div>
-                        <p className="text-xs text-slate-500">Managing specific BOQ items for this project component.</p>
+                        <p className="text-xs text-slate-500 font-medium">Managing specific BOQ items for this project component.</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 px-5 py-3 bg-blue-50 text-blue-600 rounded-2xl font-bold text-sm hover:bg-blue-100 transition-all cursor-pointer border border-blue-100">
+                      <label className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100">
                         {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
                         <input type="file" className="hidden" onChange={handleFileUpload} disabled={isAnalyzing} />
@@ -669,7 +669,7 @@ export const BOQView: React.FC = () => {
                       
                       <button 
                         onClick={() => setShowAddItem(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
                       >
                         <Plus className="w-4 h-4" />
                         Add Item
@@ -677,17 +677,17 @@ export const BOQView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                  <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Division</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Qty</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unit</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Rate</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Total</th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Actions</th>
+                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Division</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Qty</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Rate</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Total</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -709,16 +709,17 @@ export const BOQView: React.FC = () => {
 
                             return (
                               <React.Fragment key={divId}>
-                                <tr className="bg-slate-50/80">
-                                  <td colSpan={7} className="px-6 py-2">
+                                <tr className="bg-slate-50/30">
+                                  <td colSpan={7} className="px-6 py-2.5">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                      <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">
                                         Division {divId}
                                       </span>
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                      <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
                                         — {masterFormatDivisions.find(d => d.id === divId)?.title || 'Other'}
                                       </span>
-                                      <div className="ml-auto text-[10px] font-bold text-slate-500">
+                                      <div className="ml-auto text-[10px] font-semibold text-slate-500 tracking-widest uppercase">
                                         {items.length} Items | Total: {formatAmount(items.reduce((sum, i) => sum + i.amount, 0), baseCurrency)}
                                       </div>
                                     </div>
@@ -727,8 +728,8 @@ export const BOQView: React.FC = () => {
                                 {items.map((item, idx) => (
                                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-6 py-4">
-                                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
-                                        Div {item.division} {(idx + 1).toString().padStart(2, '0')}
+                                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-widest">
+                                        {item.division}.{(idx + 1).toString().padStart(2, '0')}
                                       </span>
                                     </td>
                                     <td className="px-6 py-4">
@@ -737,10 +738,10 @@ export const BOQView: React.FC = () => {
                                           setEditingItem(item);
                                           setShowEditModal(true);
                                         }}
-                                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                                        className="cursor-pointer group/title"
                                       >
-                                        <div className="text-sm font-bold text-slate-900">{item.description}</div>
-                                        <div className="text-[10px] text-slate-400 uppercase tracking-wider">{item.workPackage}</div>
+                                        <div className="text-sm font-semibold text-slate-900 group-hover/title:text-blue-600 transition-colors">{item.description}</div>
+                                        <div className="text-[9px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{item.workPackage}</div>
                                       </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -748,7 +749,7 @@ export const BOQView: React.FC = () => {
                                         type="number"
                                         value={item.quantity}
                                         onChange={(e) => handleUpdateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
-                                        className="w-20 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
+                                        className="w-20 bg-transparent border-none focus:ring-0 text-sm text-slate-900 text-right font-semibold p-0"
                                       />
                                     </td>
                                     <td className="px-6 py-4">
@@ -756,7 +757,7 @@ export const BOQView: React.FC = () => {
                                         type="text"
                                         value={item.unit}
                                         onChange={(e) => handleUpdateItem(item.id, { unit: e.target.value })}
-                                        className="w-16 bg-transparent border-none focus:ring-0 text-sm text-slate-600 p-0"
+                                        className="w-16 bg-transparent border-none focus:ring-0 text-xs text-slate-500 font-medium p-0"
                                       />
                                     </td>
                                     <td className="px-6 py-4">
@@ -766,36 +767,45 @@ export const BOQView: React.FC = () => {
                                             type="number"
                                             value={item.inputRate}
                                             onChange={(e) => handleUpdateItem(item.id, { inputRate: parseFloat(e.target.value) || 0 })}
-                                            className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-600 text-right font-mono p-0"
+                                            className="w-24 bg-transparent border-none focus:ring-0 text-sm text-slate-900 text-right font-semibold p-0"
                                           />
                                           <button 
                                             onClick={() => handleUpdateItem(item.id, { inputCurrency: item.inputCurrency === 'USD' ? 'IQD' : 'USD' })}
-                                            className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-1 rounded"
+                                            className="text-[9px] font-bold text-blue-600 hover:bg-blue-50 px-1.5 py-0.5 rounded-md transition-colors"
                                           >
                                             {item.inputCurrency || baseCurrency}
                                           </button>
                                         </div>
                                         {item.inputCurrency !== baseCurrency && (
                                           <div className="flex items-center gap-1">
-                                            <span className="text-[8px] text-slate-400">Rate:</span>
+                                            <span className="text-[8px] text-slate-400 font-medium uppercase tracking-widest">Rate:</span>
                                             <input 
                                               type="number"
                                               value={item.exchangeRateUsed}
                                               onChange={(e) => handleUpdateItem(item.id, { exchangeRateUsed: parseFloat(e.target.value) || 0 })}
-                                              className="w-12 bg-transparent border-none focus:ring-0 text-[10px] text-slate-400 text-right font-mono p-0"
+                                              className="w-12 bg-transparent border-none focus:ring-0 text-[9px] text-slate-400 text-right font-medium p-0"
                                             />
                                           </div>
                                         )}
                                       </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right font-mono">
+                                    <td className="px-6 py-4 text-sm font-bold text-blue-600 text-right font-mono">
                                       {formatAmount(item.amount, baseCurrency)}
                                     </td>
                                     <td className="px-6 py-4">
-                                      <div className="flex justify-center">
+                                      <div className="flex justify-center gap-1">
+                                        <button 
+                                          onClick={() => {
+                                            setEditingItem(item);
+                                            setShowEditModal(true);
+                                          }}
+                                          className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                          <FileText className="w-4 h-4" />
+                                        </button>
                                         <button 
                                           onClick={() => handleDeleteItem(item.id)}
-                                          className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                         >
                                           <Trash2 className="w-4 h-4" />
                                         </button>
@@ -846,32 +856,32 @@ export const BOQView: React.FC = () => {
           )}
 
           {activeTab === 'export' && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-12 shadow-sm text-center">
+            <div className="bg-white border border-slate-100 rounded-3xl p-12 shadow-sm text-center">
               <div className="max-w-md mx-auto space-y-8">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto">
                   <Printer className="w-10 h-10" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Export?</h3>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 text-sm font-medium">
                     Generate a professional BOQ document organized by MasterFormat 16 Divisions.
                   </p>
                 </div>
                 
-                <div className="space-y-4 text-left bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                <div className="space-y-4 text-left bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                  <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     Summary Page with Division Totals
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     Detailed Pages for each Active Division
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     Professional Header & Branding
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     MasterFormat 16 Divisions Compliant
                   </div>
@@ -880,7 +890,7 @@ export const BOQView: React.FC = () => {
                 <button 
                   onClick={exportToPDF}
                   disabled={isExporting || boqItems.length === 0}
-                  className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
                 >
                   {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                   {isExporting ? 'Generating PDF...' : 'Download BOQ Report'}
@@ -894,27 +904,36 @@ export const BOQView: React.FC = () => {
       {/* Modals */}
       <AnimatePresence>
         {showAddItem && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh] border border-slate-100"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Add BOQ Item</h3>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900">Add BOQ Item</h3>
+                  <p className="text-slate-500 text-xs font-medium mt-1">Define a new item for the current WBS level.</p>
+                </div>
+                <button onClick={() => setShowAddItem(false)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
                   <select 
                     value={newItem.division}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        window.location.href = '/page/2.2.1'; // Governance Policies / MasterFormat
+                        window.location.href = '/page/2.2.1';
                         return;
                       }
                       setNewItem({...newItem, division: e.target.value})
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
@@ -922,7 +941,7 @@ export const BOQView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
                   <select 
                     value={newItem.workPackage}
                     onChange={e => {
@@ -933,7 +952,7 @@ export const BOQView: React.FC = () => {
                       }
                       setNewItem({...newItem, workPackage: e.target.value})
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   >
                     <option value="">Select Work Package</option>
                     {workPackages
@@ -942,7 +961,6 @@ export const BOQView: React.FC = () => {
                         <option key={wp.id} value={wp.title}>{wp.code} - {wp.title}</option>
                       ))
                     }
-                    {/* Fallback to masterFormatSections if no work packages defined for this division */}
                     {workPackages.filter(wp => wp.divisionId === newItem.division).length === 0 && 
                       masterFormatSections
                         .filter(s => s.divisionId === newItem.division)
@@ -954,83 +972,83 @@ export const BOQView: React.FC = () => {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
                   <textarea 
                     value={newItem.description}
                     onChange={e => setNewItem({...newItem, description: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20 text-sm resize-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none h-24 text-sm font-medium resize-none transition-all"
                     placeholder="Describe the item..."
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
                   <input 
                     type="number" 
                     value={newItem.quantity}
                     onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit</label>
                   <input 
                     type="text" 
                     value={newItem.unit}
                     onChange={e => setNewItem({...newItem, unit: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     placeholder="m3, ton, m2, etc."
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Currency</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Currency</label>
                     <select 
                       value={newItem.inputCurrency}
                       onChange={e => setNewItem({...newItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     >
                       <option value="USD">USD ($)</option>
                       <option value="IQD">IQD (د.ع)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
                     <input 
                       type="number" 
                       value={newItem.inputRate}
                       onChange={e => setNewItem({...newItem, inputRate: parseFloat(e.target.value) || 0})}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
                   <input 
                     type="number" 
                     value={newItem.exchangeRateUsed}
                     onChange={e => setNewItem({...newItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   />
                 </div>
                 <div className="flex items-end col-span-2">
-                  <div className="w-full p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Amount ({baseCurrency})</div>
-                    <div className="text-2xl font-black text-slate-900 font-mono">
+                  <div className="w-full p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <div className="text-[10px] text-blue-600 uppercase font-bold tracking-widest mb-1">Total Amount ({baseCurrency})</div>
+                    <div className="text-3xl font-bold text-slate-900 font-mono">
                       {formatAmount((newItem.quantity || 0) * (newItem.inputRate || 0), newItem.inputCurrency as any, newItem.exchangeRateUsed)}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3 pt-8">
+              <div className="flex gap-3 pt-10">
                 <button 
                   onClick={() => { setShowAddItem(false); setIsAddingWorkPackage(false); }}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleAddBoqItem()}
-                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
                 >
                   Add to BOQ
                 </button>
@@ -1042,32 +1060,35 @@ export const BOQView: React.FC = () => {
 
       <AnimatePresence>
         {editingItem && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh] border border-slate-100"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Edit BOQ Item</h3>
-                <button onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900">Edit BOQ Item</h3>
+                  <p className="text-slate-500 text-xs font-medium mt-1">Update the details for this Bill of Quantities entry.</p>
+                </div>
+                <button onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
                   <X className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
               
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
                   <textarea 
                     value={editingItem.description}
                     onChange={e => setEditingItem({...editingItem, description: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20 text-sm resize-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none h-24 text-sm font-medium resize-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
                   <select 
                     value={editingItem.division}
                     onChange={e => {
@@ -1077,7 +1098,7 @@ export const BOQView: React.FC = () => {
                       }
                       setEditingItem({...editingItem, division: e.target.value})
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
@@ -1086,7 +1107,7 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
                   <select 
                     value={editingItem.workPackage}
                     onChange={e => {
@@ -1097,7 +1118,7 @@ export const BOQView: React.FC = () => {
                       }
                       setEditingItem({...editingItem, workPackage: e.target.value})
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   >
                     <option value="">Select Work Package</option>
                     {workPackages
@@ -1106,7 +1127,6 @@ export const BOQView: React.FC = () => {
                         <option key={wp.id} value={wp.title}>{wp.code} - {wp.title}</option>
                       ))
                     }
-                    {/* Fallback to masterFormatSections if no work packages defined for this division */}
                     {workPackages.filter(wp => wp.divisionId === editingItem.division).length === 0 && 
                       masterFormatSections
                         .filter(s => s.divisionId === editingItem.division)
@@ -1119,38 +1139,38 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
                   <input 
                     type="number"
                     value={editingItem.quantity}
                     onChange={e => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit</label>
                   <input 
                     type="text"
                     value={editingItem.unit}
                     onChange={e => setEditingItem({...editingItem, unit: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
                   <div className="flex gap-2">
                     <input 
                       type="number"
                       value={editingItem.inputRate}
                       onChange={e => setEditingItem({...editingItem, inputRate: parseFloat(e.target.value) || 0})}
-                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
+                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     />
                     <select 
                       value={editingItem.inputCurrency}
                       onChange={e => setEditingItem({...editingItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
-                      className="w-24 px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                      className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-bold transition-all"
                     >
                       <option value="IQD">IQD</option>
                       <option value="USD">USD</option>
@@ -1159,23 +1179,23 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
                   <input 
                     type="number" 
                     value={editingItem.exchangeRateUsed}
                     onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                   />
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 col-span-2">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount ({baseCurrency})</div>
-                  <div className="text-2xl font-black text-slate-900 font-mono">
+                <div className="bg-blue-50/50 p-6 rounded-[24px] border border-blue-100 col-span-2">
+                  <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Total Amount ({baseCurrency})</div>
+                  <div className="text-3xl font-bold text-slate-900 font-mono">
                     {formatAmount((editingItem.quantity || 0) * (editingItem.inputRate || 0), editingItem.inputCurrency as any, editingItem.exchangeRateUsed)}
                   </div>
                 </div>
 
-                <div className="col-span-2 flex gap-4 mt-4">
+                <div className="col-span-2 flex gap-4 mt-6">
                   <button 
                     onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }}
                     className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
@@ -1189,7 +1209,7 @@ export const BOQView: React.FC = () => {
                         setEditingItem(null);
                       }
                     }}
-                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
                   >
                     Save Changes
                   </button>
@@ -1202,24 +1222,33 @@ export const BOQView: React.FC = () => {
 
       <AnimatePresence>
         {showAddPackageModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] p-8 w-full max-w-lg shadow-2xl border border-slate-100"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Add Work Package</h3>
-              <div className="space-y-4">
+              <div className="flex items-center justify-between mb-8">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                  <h3 className="text-2xl font-bold text-slate-900">Add Work Package</h3>
+                  <p className="text-slate-500 text-xs font-medium mt-1">Create a new work package for this division.</p>
+                </div>
+                <button onClick={() => setShowAddPackageModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Title</label>
                   <div className="relative">
                     <input 
                       type="text" 
                       list="boq-masterformat-sections"
                       value={newPackageData.title}
                       onChange={e => setNewPackageData({...newPackageData, title: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                       placeholder="e.g. Concrete Substructure"
                     />
                     <datalist id="boq-masterformat-sections">
@@ -1233,21 +1262,21 @@ export const BOQView: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
                   <textarea 
                     value={newPackageData.description}
                     onChange={e => setNewPackageData({...newPackageData, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
-                    placeholder="Describe the scope of this work package..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none h-24 text-sm font-medium resize-none transition-all"
+                    placeholder="Brief description of the work package..."
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Division</label>
                     <select 
                       value={newPackageData.divisionId}
                       onChange={e => setNewPackageData({...newPackageData, divisionId: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     >
                       {masterFormatDivisions.map(div => (
                         <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
@@ -1255,11 +1284,11 @@ export const BOQView: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">WBS Level</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">WBS Level</label>
                     <select 
                       value={newPackageData.wbsId}
                       onChange={e => setNewPackageData({...newPackageData, wbsId: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
                     >
                       <option value="">General / Project Wide</option>
                       {wbsLevels.map(l => (
@@ -1268,20 +1297,21 @@ export const BOQView: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    onClick={() => setShowAddPackageModal(false)}
-                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleAddWorkPackage}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                  >
-                    Create Package
-                  </button>
-                </div>
+              </div>
+
+              <div className="flex gap-3 pt-10">
+                <button 
+                  onClick={() => setShowAddPackageModal(false)}
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleAddWorkPackage}
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
+                >
+                  Create Package
+                </button>
               </div>
             </motion.div>
           </div>

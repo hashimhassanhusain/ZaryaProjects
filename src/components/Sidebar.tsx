@@ -314,20 +314,20 @@ export const Sidebar: React.FC = () => {
           className={cn(
             "flex items-center px-4 py-3 rounded-xl transition-all group",
             location.pathname === '/' 
-              ? "bg-blue-600/10 text-blue-400 border-l-4 border-blue-500" 
-              : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              ? "bg-blue-600/5 text-blue-600 border-l-4 border-blue-600" 
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
           )}
         >
           <LayoutDashboard className={cn(
             "w-5 h-5 mr-3 transition-colors",
-            location.pathname === '/' ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"
+            location.pathname === '/' ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
           )} />
           <span className="text-sm font-bold tracking-wide">Dashboard</span>
         </Link>
 
         {sections.map((section, idx) => (
           <div key={idx} className="space-y-3">
-            <h3 className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+            <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
               {section.title}
             </h3>
             <div className="space-y-1">
@@ -342,17 +342,17 @@ export const Sidebar: React.FC = () => {
                     className={cn(
                       "flex items-center px-4 py-2.5 rounded-xl transition-all group relative",
                       isActive 
-                        ? "bg-white/10 text-white border-l-4 border-blue-500" 
-                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                        ? "bg-blue-600/5 text-blue-600 border-l-4 border-blue-600" 
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
                     <item.icon className={cn(
                       "w-4 h-4 mr-3 transition-colors",
-                      isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                      isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
                     )} />
                     <span className="text-xs font-semibold truncate">{stripNumericPrefix(item.title)}</span>
                     {(item as any).hasDot && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                     )}
                   </Link>
                 );
@@ -480,7 +480,7 @@ export const Sidebar: React.FC = () => {
     if (filteredItems.length === 0 && searchQuery !== '') return null;
 
     return (
-      <div className={cn("space-y-1", depth > 0 && "ml-4 border-l border-white/5 pl-2")}>
+      <div className={cn("space-y-1", depth > 0 && "ml-4 border-l border-slate-200 pl-2")}>
         {filteredItems.map(page => {
           const isActive = currentPath === page.id;
           const hasChildren = page.isCanonical || getChildren(page.id).length > 0;
@@ -495,12 +495,12 @@ export const Sidebar: React.FC = () => {
                     onClick={() => toggleExpand(page.id, true)}
                     className={cn(
                       "sidebar-item flex-1 group text-left",
-                      isActive ? "sidebar-item-active" : "text-slate-400 hover:text-slate-200"
+                      isActive ? "sidebar-item-active" : "text-slate-500 hover:text-slate-900"
                     )}
                   >
                     {(() => {
                       const Icon = getDomainIcon(page.searchKey, page.title);
-                      return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />;
+                      return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />;
                     })()}
                     <span className="truncate font-semibold">{stripNumericPrefix(page.title)}</span>
                   </Link>
@@ -516,15 +516,15 @@ export const Sidebar: React.FC = () => {
                     {page.type === 'hub' ? (
                       (() => {
                         const Icon = getDomainIcon(page.domain, page.title);
-                        return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />;
+                        return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />;
                       })()
                     ) : (
-                      <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />
+                      <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
                     )}
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{stripNumericPrefix(page.title)}</span>
                       {viewMode === 'domain' && !page.isCanonical && (
-                        <span className="text-[9px] text-slate-500 font-medium truncate">
+                        <span className="text-[9px] text-slate-400 font-medium truncate">
                           {stripNumericPrefix(getFocusArea(page.id)?.title || '')}
                         </span>
                       )}
@@ -537,7 +537,7 @@ export const Sidebar: React.FC = () => {
                       e.preventDefault();
                       toggleExpand(page.id, true);
                     }}
-                    className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-white transition-colors"
+                    className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900 transition-colors"
                   >
                     {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   </button>
@@ -554,35 +554,35 @@ export const Sidebar: React.FC = () => {
   return (
     <aside 
       style={{ width: sidebarWidth }}
-      className="h-screen bg-slate-900 border-r border-white/10 p-4 flex flex-col relative group/sidebar shrink-0"
+      className="h-screen bg-white border-r border-slate-200 p-4 flex flex-col relative group/sidebar shrink-0"
     >
       {/* Resize Handle */}
       <div
         onMouseDown={() => setIsResizing(true)}
-        className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 transition-all z-50 group-hover/sidebar:bg-white/5"
+        className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-600/50 transition-all z-50 group-hover/sidebar:bg-slate-100"
       >
         <div className={cn(
           "absolute right-0 top-0 w-0.5 h-full transition-colors",
-          isResizing ? "bg-blue-500" : "group-hover:bg-blue-500/30"
+          isResizing ? "bg-blue-600" : "group-hover:bg-blue-600/30"
         )} />
       </div>
       <div className="relative mb-6 mt-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Search pages..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
         />
       </div>
 
-      <div className="flex bg-white/5 p-1 rounded-xl mb-6">
+      <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
         <button
           onClick={() => setViewMode('focus')}
           className={cn(
             "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'focus' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+            viewMode === 'focus' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
           )}
         >
           HIERARCHY
@@ -591,7 +591,7 @@ export const Sidebar: React.FC = () => {
           onClick={() => setViewMode('domain')}
           className={cn(
             "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'domain' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+            viewMode === 'domain' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
           )}
         >
           DOMAINS
@@ -600,7 +600,7 @@ export const Sidebar: React.FC = () => {
           onClick={() => setViewMode('files')}
           className={cn(
             "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'files' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+            viewMode === 'files' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
           )}
         >
           DRIVE
@@ -615,18 +615,18 @@ export const Sidebar: React.FC = () => {
         </div>
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
+      <div className="mt-auto pt-6 border-t border-slate-100 space-y-4">
         {isAdmin && (
           <div className="px-2">
             <button
               onClick={() => setIsAdminExpanded(!isAdminExpanded)}
               className={cn(
                 "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all group",
-                isAdminExpanded ? "bg-white/5 text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                isAdminExpanded ? "bg-slate-50 text-slate-900" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
               )}
             >
               <div className="flex items-center">
-                <Shield className={cn("w-4 h-4 mr-3 transition-colors", isAdminExpanded ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                <Shield className={cn("w-4 h-4 mr-3 transition-colors", isAdminExpanded ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
                 <span className="font-bold text-xs">Admin Settings</span>
               </div>
               <ChevronRight className={cn("w-4 h-4 transition-transform", isAdminExpanded ? "rotate-90" : "")} />
@@ -638,13 +638,13 @@ export const Sidebar: React.FC = () => {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden ml-4 border-l border-white/5 pl-2 mt-1 space-y-1"
+                  className="overflow-hidden ml-4 border-l border-slate-200 pl-2 mt-1 space-y-1"
                 >
                   <Link
                     to="/admin/users"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/users' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/users' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Users className="w-3.5 h-3.5 mr-3" />
@@ -654,7 +654,7 @@ export const Sidebar: React.FC = () => {
                     to="/admin/contacts"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/contacts' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/contacts' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Users className="w-3.5 h-3.5 mr-3" />
@@ -664,7 +664,7 @@ export const Sidebar: React.FC = () => {
                     to="/admin/companies"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/companies' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/companies' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Building2 className="w-3.5 h-3.5 mr-3" />
@@ -674,7 +674,7 @@ export const Sidebar: React.FC = () => {
                     to="/admin/resources"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/resources' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/resources' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Package className="w-3.5 h-3.5 mr-3" />
@@ -684,7 +684,7 @@ export const Sidebar: React.FC = () => {
                     to="/admin/work-packages"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/work-packages' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/work-packages' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Grid3X3 className="w-3.5 h-3.5 mr-3" />
@@ -694,7 +694,7 @@ export const Sidebar: React.FC = () => {
                     to="/admin/projects"
                     className={cn(
                       "flex items-center px-4 py-2 rounded-lg transition-all group",
-                      location.pathname === '/admin/projects' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                      location.pathname === '/admin/projects' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
                     <Layout className="w-3.5 h-3.5 mr-3" />

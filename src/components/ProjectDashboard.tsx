@@ -33,15 +33,15 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
+    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group"
   >
     <div className="flex justify-between items-start mb-4">
-      <div className={cn("p-3 rounded-xl", color)}>
-        <Icon className="w-6 h-6 text-white" />
+      <div className={cn("p-2.5 rounded-xl", color)}>
+        <Icon className="w-5 h-5 text-white" />
       </div>
       {trend && (
         <div className={cn(
-          "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full",
+          "flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full",
           trend === 'up' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
         )}>
           {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -50,10 +50,10 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
       )}
     </div>
     <div className="space-y-1">
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
+      <h3 className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-slate-900 tracking-tight">{value}</span>
-        {subValue && <span className="text-sm font-medium text-slate-400">{subValue}</span>}
+        <span className="text-2xl font-bold text-slate-900 tracking-tight">{value}</span>
+        {subValue && <span className="text-[11px] font-medium text-slate-400">{subValue}</span>}
       </div>
     </div>
   </motion.div>
@@ -129,35 +129,35 @@ export const ProjectDashboard: React.FC = () => {
       <header className="flex flex-col xl:flex-row xl:items-start justify-between gap-8">
         <div className="space-y-4 flex-1">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-blue-600 font-semibold text-xs uppercase tracking-widest">
-              <Target className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-blue-600 font-medium text-[10px] uppercase tracking-widest">
+              <Target className="w-3.5 h-3.5" />
               Project Executive Dashboard
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
               {stripNumericPrefix(selectedProject.name)}
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-slate-500 font-medium text-sm">
-              <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">{selectedProject.code}</span>
-              {selectedProject.customer && <span className="flex items-center gap-1.5"><Building className="w-4 h-4 text-slate-400" /> {selectedProject.customer}</span>}
-              {selectedProject.location && <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-400" /> {selectedProject.location}</span>}
+            <div className="flex flex-wrap items-center gap-4 text-slate-500 font-medium text-xs">
+              <span className="bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600 font-bold">{selectedProject.code}</span>
+              {selectedProject.customer && <span className="flex items-center gap-1.5"><Building className="w-3.5 h-3.5 text-slate-400" /> {selectedProject.customer}</span>}
+              {selectedProject.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {selectedProject.location}</span>}
             </div>
           </div>
-          <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+          <p className="text-slate-500 max-w-2xl font-medium leading-relaxed text-sm">
             {selectedProject.description || `Real-time performance metrics and strategic indicators for ${selectedProject.name}.`}
           </p>
           
           <div className="flex flex-wrap items-center gap-4 pt-2">
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
-              <Calendar className="w-4 h-4 text-blue-500" />
-              <div className="text-sm font-semibold text-slate-800">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+              <Calendar className="w-3.5 h-3.5 text-blue-500" />
+              <div className="text-xs font-semibold text-slate-800">
                 {selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString('en-GB') : 'N/A'} 
                 {selectedProject.endDate && ` - ${new Date(selectedProject.endDate).toLocaleDateString('en-GB')}`}
               </div>
             </div>
             {selectedProject.sponsor && (
-              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <div className="text-sm font-semibold text-slate-800">{selectedProject.sponsor}</div>
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <div className="text-xs font-semibold text-slate-800">{selectedProject.sponsor}</div>
               </div>
             )}
           </div>
@@ -177,23 +177,23 @@ export const ProjectDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
               Strategic Performance
             </h2>
-            <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">View Full Report</button>
+            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">View Full Report</button>
           </div>
           
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <div>
                 <div className="text-2xl font-bold text-slate-900">92.4%</div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Overall Completion</div>
+                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Overall Completion</div>
               </div>
               <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
               </div>
             </div>
             <div className="p-8 space-y-8">
@@ -204,11 +204,11 @@ export const ProjectDashboard: React.FC = () => {
                 { label: 'Main Construction', progress: 42, color: 'bg-orange-500' },
               ].map((item, idx) => (
                 <div key={idx} className="space-y-2">
-                  <div className="flex justify-between text-sm font-semibold">
-                    <span className="text-slate-700">{item.label}</span>
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-slate-600">{item.label}</span>
                     <span className="text-slate-900">{item.progress}%</span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${item.progress}%` }}
@@ -222,36 +222,36 @@ export const ProjectDashboard: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
+          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-500" />
             Critical Alerts
           </h2>
           <div className="space-y-4">
             {data.alerts.map((alert: any, idx: number) => (
               <div key={idx} className={cn(
-                "p-4 rounded-2xl border flex gap-4",
+                "p-4 rounded-3xl border flex gap-4",
                 alert.type === 'error' ? "bg-rose-50 border-rose-100" : "bg-orange-50 border-orange-100"
               )}>
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
                   alert.type === 'error' ? "bg-rose-500 text-white" : "bg-orange-500 text-white"
                 )}>
-                  <AlertTriangle className="w-5 h-5" />
+                  <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-slate-900 mb-1">
+                  <div className="text-xs font-semibold text-slate-900 mb-1">
                     {alert.type === 'error' ? 'Critical Action Required' : 'Project Warning'}
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
                     {alert.msg}
                   </p>
                 </div>
               </div>
             ))}
             {data.alerts.length === 0 && (
-              <div className="p-8 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-slate-500">All systems operational</p>
+              <div className="p-8 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
+                <p className="text-xs font-semibold text-slate-400">All systems operational</p>
               </div>
             )}
           </div>
