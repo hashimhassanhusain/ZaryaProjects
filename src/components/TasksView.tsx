@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, Filter, Loader2 } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2 } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -11,15 +11,20 @@ import { useProject } from '../context/ProjectContext';
 export const TasksView: React.FC = () => {
   const { selectedProject } = useProject();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [dbUsers, setDbUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(workspaces[0].id);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'assumption_constraint'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'assumption_constraint' | 'issue' | 'meeting'>('all');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isAddingStatus, setIsAddingStatus] = useState(false);
+  const [newStatusName, setNewStatusName] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [customStatuses, setCustomStatuses] = useState<string[]>(['TO DO', 'PLANNING', 'RFP', 'TENDERING', 'IN PROGRESS', 'AT RISK', 'UPDATE REQUIRED', 'COMPLETED']);
   const [newTask, setNewTask] = useState<Partial<Task>>({
-    status: 'Todo',
+    status: 'TO DO',
     priority: 'Medium',
     workspaceId: selectedWorkspaceId,
     assigneeId: currentUser.uid,
@@ -29,36 +34,97 @@ export const TasksView: React.FC = () => {
 
   useEffect(() => {
     if (!selectedProject) return;
+    if (selectedProject.taskStatuses && selectedProject.taskStatuses.length > 0) {
+      setCustomStatuses(selectedProject.taskStatuses);
+    }
+  }, [selectedProject?.taskStatuses]);
 
-    const q = query(
+  useEffect(() => {
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersList = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserType));
+      setDbUsers(usersList);
+    });
+
+    return () => unsubscribeUsers();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const tasksQuery = query(
       collection(db, 'tasks'),
       where('projectId', '==', selectedProject.id)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
+    const issuesQuery = query(
+      collection(db, 'issues'),
+      where('projectId', '==', selectedProject.id)
+    );
+
+    let tasksData: Task[] = [];
+    let issuesData: Task[] = [];
+
+    const updateUnifiedTasks = () => {
+      setTasks([...tasksData, ...issuesData]);
+      setIsLoading(false);
+    };
+
+    const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+      tasksData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Task[];
-      setTasks(data);
-      setIsLoading(false);
+      updateUnifiedTasks();
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'tasks');
     });
 
-    return () => unsubscribe();
+    const unsubscribeIssues = onSnapshot(issuesQuery, (snapshot) => {
+      issuesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Map ProjectIssue to Task structure
+        return {
+          id: doc.id,
+          title: data.issue || 'Unnamed Issue',
+          description: `${data.impact || ''}\n\nActions: ${data.actions || ''}`,
+          status: data.status === 'Open' ? 'TO DO' : 
+                  data.status === 'In Progress' ? 'IN PROGRESS' : 
+                  data.status === 'Resolved' ? 'COMPLETED' : 
+                  data.status === 'Closed' ? 'COMPLETED' : 'TO DO',
+          assigneeId: data.responsiblePartyId || data.responsibleParty || 'Unassigned',
+          workspaceId: workspaces[0].id,
+          startDate: data.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+          endDate: data.dueDate || '',
+          priority: data.urgency === 'Critical' || data.urgency === 'Urgent' ? 'High' :
+                    data.urgency === 'High' ? 'High' :
+                    data.urgency === 'Medium' ? 'Medium' : 'Low',
+          sourceType: 'issue',
+          sourceId: doc.id,
+          projectId: data.projectId,
+          history: []
+        } as Task;
+      });
+      updateUnifiedTasks();
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'issues');
+    });
+
+    return () => {
+      unsubscribeTasks();
+      unsubscribeIssues();
+    };
   }, [selectedProject?.id]);
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
 
   const filteredTasks = tasks.filter(t => 
     t.workspaceId === selectedWorkspaceId &&
-    (filterType === 'all' || t.sourceType === 'assumption_constraint') &&
+    (filterType === 'all' || t.sourceType === filterType) &&
     (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
      t.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const columns: TaskStatus[] = ['Todo', 'In Progress', 'Completed', 'Blocked'];
+  const columns: TaskStatus[] = ['TO DO', 'PLANNING', 'RFP', 'TENDERING', 'IN PROGRESS', 'AT RISK', 'UPDATE REQUIRED', 'COMPLETED'];
 
   const handleAddTask = async () => {
     if (!newTask.title || !selectedProject) return;
@@ -72,7 +138,7 @@ export const TasksView: React.FC = () => {
       await addDoc(collection(db, 'tasks'), taskData);
       setIsAddingTask(false);
       setNewTask({
-        status: 'Todo',
+        status: 'TO DO',
         priority: 'Medium',
         workspaceId: selectedWorkspaceId,
         assigneeId: currentUser.uid,
@@ -84,22 +150,99 @@ export const TasksView: React.FC = () => {
     }
   };
 
-  const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
-      const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString() };
-      await updateDoc(doc(db, 'tasks', taskId), {
-        status: newStatus,
-        history: [...(task.history || []), historyItem]
-      });
+      if (task.sourceType === 'issue') {
+        const issueUpdates: any = {};
+        if (updates.title) issueUpdates.issue = updates.title;
+        if (updates.endDate) issueUpdates.dueDate = updates.endDate;
+        if (updates.status) {
+          issueUpdates.status = updates.status === 'TO DO' ? 'Open' : 
+                                updates.status === 'IN PROGRESS' ? 'In Progress' : 
+                                updates.status === 'COMPLETED' ? 'Resolved' : 'Open';
+        }
+        
+        await updateDoc(doc(db, 'issues', taskId), {
+          ...issueUpdates,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System'
+        });
+      } else {
+        await updateDoc(doc(db, 'tasks', taskId), updates);
+      }
+    } catch (error) {
+      const task = tasks.find(t => t.id === taskId);
+      handleFirestoreError(error, OperationType.UPDATE, task?.sourceType === 'issue' ? 'issues' : 'tasks');
+    }
+  };
+
+  const handleAddNote = async (taskId: string) => {
+    if (!newNote.trim()) return;
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const note = {
+        id: 'n' + Date.now(),
+        userId: currentUser.uid,
+        text: newNote.trim(),
+        timestamp: new Date().toLocaleString()
+      };
+
+      if (task.sourceType === 'issue') {
+        // For issues, we might want to append to comments or history
+        await updateDoc(doc(db, 'issues', taskId), {
+          comments: (task as any).comments ? `${(task as any).comments}\n\n[${note.timestamp}] ${note.text}` : `[${note.timestamp}] ${note.text}`,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System'
+        });
+      } else {
+        await updateDoc(doc(db, 'tasks', taskId), {
+          notes: [...(task.notes || []), note]
+        });
+      }
+      setNewNote('');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'tasks');
     }
   };
 
-  const getAssignee = (uid: string) => users.find(u => u.uid === uid);
+  const handleAddStatus = async () => {
+    if (!newStatusName.trim() || customStatuses.includes(newStatusName.trim().toUpperCase()) || !selectedProject) return;
+    const updatedStatuses = [...customStatuses, newStatusName.trim().toUpperCase()];
+    setCustomStatuses(updatedStatuses);
+    try {
+      await updateDoc(doc(db, 'projects', selectedProject.id), {
+        taskStatuses: updatedStatuses
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'projects');
+    }
+    setNewStatusName('');
+    setIsAddingStatus(false);
+  };
+
+  const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
+    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString() };
+    await handleUpdateTask(taskId, { 
+      status: newStatus,
+      history: [...(tasks.find(t => t.id === taskId)?.history || []), historyItem]
+    });
+  };
+
+  const updateTaskAssignee = async (taskId: string, newAssigneeId: string) => {
+    const newAssignee = dbUsers.find(u => u.uid === newAssigneeId);
+    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Assigned task to ${newAssignee?.name || 'Unassigned'}`, timestamp: new Date().toLocaleString() };
+    await handleUpdateTask(taskId, { 
+      assigneeId: newAssigneeId,
+      history: [...(tasks.find(t => t.id === taskId)?.history || []), historyItem]
+    });
+  };
+
+  const getAssignee = (uid: string) => dbUsers.find(u => u.uid === uid) || users.find(u => u.uid === uid);
 
   if (isLoading) {
     return (
@@ -169,6 +312,8 @@ export const TasksView: React.FC = () => {
           >
             <option value="all">All Tasks</option>
             <option value="assumption_constraint">Assumption & Constraint</option>
+            <option value="issue">Issues</option>
+            <option value="meeting">Meeting Actions</option>
           </select>
         </div>
         <div className="h-6 w-[1px] bg-slate-200 hidden md:block"></div>
@@ -185,25 +330,29 @@ export const TasksView: React.FC = () => {
       </div>
 
       {viewMode === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto pb-4">
-          {columns.map(status => (
-            <div key={status} className="flex flex-col gap-4 min-w-[280px]">
+        <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px] items-start">
+          {customStatuses.map(status => (
+            <div key={status} className="flex flex-col gap-4 min-w-[300px] bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2">
                   <div className={cn(
                     "w-2 h-2 rounded-full",
-                    status === 'Todo' ? "bg-slate-400" :
-                    status === 'In Progress' ? "bg-blue-500" :
-                    status === 'Completed' ? "bg-green-500" : "bg-red-500"
+                    status === 'TO DO' ? "bg-slate-400" :
+                    status === 'PLANNING' ? "bg-purple-500" :
+                    status === 'RFP' ? "bg-orange-500" :
+                    status === 'TENDERING' ? "bg-pink-500" :
+                    status === 'IN PROGRESS' ? "bg-blue-500" :
+                    status === 'AT RISK' ? "bg-red-500" :
+                    status === 'UPDATE REQUIRED' ? "bg-amber-500" : "bg-green-500"
                   )}></div>
                   <h3 className="font-bold text-slate-700 text-sm">{status}</h3>
-                  <span className="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                  <span className="bg-white text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-slate-200">
                     {filteredTasks.filter(t => t.status === status).length}
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 min-h-[100px]">
                 {filteredTasks.filter(t => t.status === status).map(task => (
                   <motion.div 
                     layout
@@ -224,6 +373,18 @@ export const TasksView: React.FC = () => {
                           <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" />
                             A&C
+                          </span>
+                        )}
+                        {task.sourceType === 'issue' && (
+                          <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Issue
+                          </span>
+                        )}
+                        {task.sourceType === 'meeting' && (
+                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            Meeting
                           </span>
                         )}
                       </div>
@@ -253,6 +414,45 @@ export const TasksView: React.FC = () => {
               </div>
             </div>
           ))}
+
+          {/* Add Status Column */}
+          <div className="min-w-[300px] flex flex-col gap-4">
+            {isAddingStatus ? (
+              <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-lg shadow-blue-50">
+                <input 
+                  autoFocus
+                  type="text" 
+                  value={newStatusName}
+                  onChange={(e) => setNewStatusName(e.target.value)}
+                  placeholder="Status Name..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                />
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleAddStatus}
+                    className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                  >
+                    Add
+                  </button>
+                  <button 
+                    onClick={() => setIsAddingStatus(false)}
+                    className="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAddingStatus(true)}
+                className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Status
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -283,6 +483,18 @@ export const TasksView: React.FC = () => {
                             A&C
                           </span>
                         )}
+                        {task.sourceType === 'issue' && (
+                          <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Issue
+                          </span>
+                        )}
+                        {task.sourceType === 'meeting' && (
+                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            Meeting
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-400 truncate max-w-[200px]">{task.description}</div>
                     </div>
@@ -290,14 +502,22 @@ export const TasksView: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className={cn(
                       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      task.status === 'Todo' ? "bg-slate-100 text-slate-600" :
-                      task.status === 'In Progress' ? "bg-blue-100 text-blue-600" :
-                      task.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                      task.status === 'TO DO' ? "bg-slate-100 text-slate-600" :
+                      task.status === 'PLANNING' ? "bg-purple-100 text-purple-600" :
+                      task.status === 'RFP' ? "bg-orange-100 text-orange-600" :
+                      task.status === 'TENDERING' ? "bg-pink-100 text-pink-600" :
+                      task.status === 'IN PROGRESS' ? "bg-blue-100 text-blue-600" :
+                      task.status === 'AT RISK' ? "bg-red-100 text-red-600" :
+                      task.status === 'UPDATE REQUIRED' ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
                     )}>
-                      {task.status === 'Todo' && <Clock className="w-3 h-3" />}
-                      {task.status === 'In Progress' && <Clock className="w-3 h-3" />}
-                      {task.status === 'Completed' && <CheckCircle2 className="w-3 h-3" />}
-                      {task.status === 'Blocked' && <AlertCircle className="w-3 h-3" />}
+                      {task.status === 'TO DO' && <Clock className="w-3 h-3" />}
+                      {task.status === 'PLANNING' && <Calendar className="w-3 h-3" />}
+                      {task.status === 'RFP' && <AlertCircle className="w-3 h-3" />}
+                      {task.status === 'TENDERING' && <AlertCircle className="w-3 h-3" />}
+                      {task.status === 'IN PROGRESS' && <Clock className="w-3 h-3" />}
+                      {task.status === 'AT RISK' && <AlertTriangle className="w-3 h-3" />}
+                      {task.status === 'UPDATE REQUIRED' && <AlertCircle className="w-3 h-3" />}
+                      {task.status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3" />}
                       {task.status}
                     </div>
                   </td>
@@ -356,7 +576,12 @@ export const TasksView: React.FC = () => {
                     <span className="text-slate-300">•</span>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedTask.id}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800">{selectedTask.title}</h3>
+                  <input 
+                    type="text"
+                    value={selectedTask.title}
+                    onChange={(e) => handleUpdateTask(selectedTask.id, { title: e.target.value })}
+                    className="text-2xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-50 transition-all rounded-lg"
+                  />
                 </div>
                 <button 
                   onClick={() => setSelectedTaskId(null)}
@@ -371,7 +596,47 @@ export const TasksView: React.FC = () => {
                   <div className="lg:col-span-2 space-y-8">
                     <div>
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Description</h4>
-                      <p className="text-slate-600 leading-relaxed">{selectedTask.description}</p>
+                      <textarea 
+                        value={selectedTask.description}
+                        onChange={(e) => handleUpdateTask(selectedTask.id, { description: e.target.value })}
+                        className="w-full text-slate-600 leading-relaxed bg-transparent border-none focus:ring-0 p-0 hover:bg-slate-50 transition-all rounded-lg resize-none h-32"
+                      />
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Notes</h4>
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <input 
+                            type="text"
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            placeholder="Add a note..."
+                            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddNote(selectedTask.id)}
+                          />
+                          <button 
+                            onClick={() => handleAddNote(selectedTask.id)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all"
+                          >
+                            Post
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {selectedTask.notes?.slice().reverse().map(note => (
+                            <div key={note.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <img src={getAssignee(note.userId)?.photoURL} className="w-5 h-5 rounded-full" alt="" />
+                                  <span className="text-xs font-bold text-slate-700">{getAssignee(note.userId)?.name}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-400">{note.timestamp}</span>
+                              </div>
+                              <p className="text-xs text-slate-600 leading-relaxed">{note.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
                     <div>
@@ -405,35 +670,42 @@ export const TasksView: React.FC = () => {
                           onChange={(e) => updateTaskStatus(selectedTask.id, e.target.value as TaskStatus)}
                           className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
-                          {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                          {customStatuses.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
 
                       <div>
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee</label>
-                        <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                          <img src={getAssignee(selectedTask.assigneeId)?.photoURL} className="w-8 h-8 rounded-full" alt="" />
-                          <div>
-                            <div className="text-sm font-bold text-slate-800">{getAssignee(selectedTask.assigneeId)?.name}</div>
-                            <div className="text-[10px] text-slate-400 font-medium">{getAssignee(selectedTask.assigneeId)?.email}</div>
-                          </div>
-                        </div>
+                        <select 
+                          value={selectedTask.assigneeId}
+                          onChange={(e) => updateTaskAssignee(selectedTask.id, e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        >
+                          <option value="Unassigned">Unassigned</option>
+                          {dbUsers.map(u => (
+                            <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
-                          <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-slate-400" />
-                            {selectedTask.startDate}
-                          </div>
+                          <input 
+                            type="date"
+                            value={selectedTask.startDate}
+                            onChange={(e) => handleUpdateTask(selectedTask.id, { startDate: e.target.value })}
+                            className="w-full bg-white p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                          />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">End Date</label>
-                          <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-slate-400" />
-                            {selectedTask.endDate}
-                          </div>
+                          <input 
+                            type="date"
+                            value={selectedTask.endDate}
+                            onChange={(e) => handleUpdateTask(selectedTask.id, { endDate: e.target.value })}
+                            className="w-full bg-white p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                          />
                         </div>
                       </div>
                     </div>
@@ -492,8 +764,9 @@ export const TasksView: React.FC = () => {
                         onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
                       >
-                        {users.map(u => (
-                          <option key={u.uid} value={u.uid}>{u.name}</option>
+                        <option value="Unassigned">Unassigned</option>
+                        {dbUsers.map(u => (
+                          <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
                         ))}
                       </select>
                     </div>

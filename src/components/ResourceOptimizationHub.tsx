@@ -12,7 +12,8 @@ import {
   Grid3X3,
   Briefcase,
   Target,
-  Zap
+  Zap,
+  Package
 } from 'lucide-react';
 import { Page } from '../types';
 import { cn } from '../lib/utils';
@@ -27,6 +28,7 @@ import { RAMTab } from './resource/RAMTab';
 import { RolesResponsibilitiesTab } from './resource/RolesResponsibilitiesTab';
 import { SelectionCriteriaTab } from './resource/SelectionCriteriaTab';
 import { ProcessImprovementTab } from './resource/ProcessImprovementTab';
+import { ResourcesView } from './ResourcesView';
 
 interface ResourceOptimizationHubProps {
   page: Page;
@@ -38,6 +40,7 @@ type TabType =
   | 'responsibility-matrix' 
   | 'job-descriptions' 
   | 'vendor-evaluation' 
+  | 'inventory-3m'
   | 'optimization';
 
 export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = ({ page }) => {
@@ -51,6 +54,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
     { id: 'responsibility-matrix', label: 'Responsibility Matrix', icon: Grid3X3, color: 'amber' },
     { id: 'job-descriptions', label: 'Job Descriptions', icon: Briefcase, color: 'slate' },
     { id: 'vendor-evaluation', label: 'Vendor Evaluation', icon: Target, color: 'emerald' },
+    { id: 'inventory-3m', label: '3M Inventory', icon: Package, color: 'orange' },
     { id: 'optimization', label: 'Optimization', icon: Zap, color: 'rose' },
   ];
 
@@ -121,6 +125,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           {activeTab === 'responsibility-matrix' && <RAMTab projectId={projectId} />}
           {activeTab === 'job-descriptions' && <RolesResponsibilitiesTab projectId={projectId} />}
           {activeTab === 'vendor-evaluation' && <SelectionCriteriaTab projectId={projectId} />}
+          {activeTab === 'inventory-3m' && <ResourcesView />}
           {activeTab === 'optimization' && <ProcessImprovementTab projectId={projectId} />}
         </motion.div>
       </div>

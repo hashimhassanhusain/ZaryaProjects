@@ -140,6 +140,21 @@ export interface Activity {
   inputCurrency?: 'USD' | 'IQD';
   inputRate?: number;
   exchangeRateUsed?: number;
+  assigneeId?: string;
+  comments?: { id: string; userId: string; text: string; timestamp: string }[];
+  attachments?: { id: string; name: string; url: string; timestamp: string }[];
+}
+
+export interface WorkPackage {
+  id: string;
+  projectId: string;
+  wbsId: string;
+  divisionId: string;
+  code: string;
+  title: string;
+  description?: string;
+  status?: 'Active' | 'Inactive';
+  updatedAt?: string;
 }
 
 export interface WeatherData {
@@ -376,6 +391,22 @@ export interface TeamStatusReport {
   updatedAt: string;
 }
 
+export interface Resource3M {
+  id: string;
+  projectId: string;
+  type: 'Manpower' | 'Material' | 'Machine';
+  name: string;
+  unit: string;
+  quantity: number;
+  rate: number;
+  companyId: string;
+  companyName: string;
+  description?: string;
+  status: 'Available' | 'In Use' | 'Maintenance' | 'Out of Stock';
+  userId?: string; // Link to User if type is Manpower
+  createdAt?: string;
+}
+
 export interface ResourceRequirement {
   id: string;
   projectId: string;
@@ -492,18 +523,55 @@ export interface Page {
   };
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  type: 'Main' | 'Vendor' | 'Stakeholder' | 'Other';
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  status: 'Active' | 'Inactive';
+  createdAt?: string;
+}
+
+export interface Contact {
+  id: string;
+  projectId: string;
+  name: string;
+  email: string;
+  phone: string;
+  companyId: string;
+  companyName: string;
+  type: 'Employee' | 'Vendor' | 'Stakeholder' | 'Other';
+  role?: string;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface User {
   uid: string;
+  contactId?: string; // Link to Contact
   name: string;
   email: string;
   photoURL: string;
-  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office';
+  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office' | 'stakeholder';
+  companyId?: string;
+  companyName?: string;
   accessiblePages?: string[];
   accessibleProjects?: string[];
   assignedTasksCount?: number;
 }
 
-export type TaskStatus = 'Todo' | 'In Progress' | 'Completed' | 'Blocked';
+export type TaskStatus = string;
+
+export interface TaskNote {
+  id: string;
+  userId: string;
+  text: string;
+  timestamp: string;
+}
 
 export interface TaskActivity {
   id: string;
@@ -523,8 +591,10 @@ export interface Task {
   endDate: string;
   priority: 'Low' | 'Medium' | 'High';
   history?: TaskActivity[];
-  sourceType?: 'assumption_constraint' | 'meeting' | 'manual';
+  notes?: TaskNote[];
+  sourceType?: 'assumption_constraint' | 'meeting' | 'manual' | 'issue';
   sourceId?: string;
+  projectId?: string;
 }
 
 export interface AssumptionConstraintEntry {
@@ -648,6 +718,7 @@ export interface Project {
   pageData?: Record<string, Record<string, string>>;
   pageHistory?: Record<string, PageVersion[]>;
   savedDocuments?: SavedDocument[];
+  taskStatuses?: string[];
 }
 
 export interface QualityMetricEntry {

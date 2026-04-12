@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
-import { Calendar, Users, Plus, Search, FileText, UserPlus, CheckCircle2, Clock, ArrowRight, User, Trash2, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Users, Plus, Search, FileText, UserPlus, CheckCircle2, Clock, ArrowRight, User, Trash2, Save, Loader2 } from 'lucide-react';
 import { Meeting, MeetingMinute, User as UserType, Task } from '../types';
 import { initialMeetings, users, currentUser, workspaces } from '../data';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
 
 export const MeetingsView: React.FC = () => {
-  const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
+  const { selectedProject } = useProject();
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [dbUsers, setDbUsers] = useState<UserType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [isAddingMeeting, setIsAddingMeeting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newMeeting, setNewMeeting] = useState<Partial<Meeting>>({
     topic: '',
     date: new Date().toISOString().split('T')[0],
@@ -16,65 +23,147 @@ export const MeetingsView: React.FC = () => {
     minutes: [],
   });
 
+  useEffect(() => {
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersList = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserType));
+      setDbUsers(usersList);
+    });
+
+    return () => unsubscribeUsers();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const q = query(
+      collection(db, 'meetings'),
+      where('projectId', '==', selectedProject.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Meeting[];
+      setMeetings(data);
+      setIsLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'meetings');
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject?.id]);
+
   const selectedMeeting = meetings.find(m => m.id === selectedMeetingId);
 
-  const handleAddMeeting = () => {
-    if (!newMeeting.topic) return;
-    const meeting: Meeting = {
-      ...newMeeting as Meeting,
-      id: 'm' + (meetings.length + 1),
-      minutes: [],
-    };
-    setMeetings([...meetings, meeting]);
-    setIsAddingMeeting(false);
-    setSelectedMeetingId(meeting.id);
+  const handleAddMeeting = async () => {
+    if (!newMeeting.topic || !selectedProject) return;
+    setIsSaving(true);
+    try {
+      const meetingData = {
+        ...newMeeting,
+        projectId: selectedProject.id,
+        minutes: []
+      };
+      const docRef = await addDoc(collection(db, 'meetings'), meetingData);
+      setIsAddingMeeting(false);
+      setSelectedMeetingId(docRef.id);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'meetings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const addMinute = (meetingId: string) => {
-    setMeetings(meetings.map(m => {
-      if (m.id === meetingId) {
-        const newMinute: MeetingMinute = {
-          id: 'min' + (m.minutes.length + 1),
-          text: '',
-        };
-        return { ...m, minutes: [...m.minutes, newMinute] };
-      }
-      return m;
-    }));
+  const addMinute = async (meetingId: string) => {
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+
+    try {
+      const newMinute: MeetingMinute = {
+        id: 'min' + Date.now(),
+        text: '',
+      };
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        minutes: [...meeting.minutes, newMinute]
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'meetings');
+    }
   };
 
-  const updateMinuteText = (meetingId: string, minuteId: string, text: string) => {
-    setMeetings(meetings.map(m => {
-      if (m.id === meetingId) {
-        return {
-          ...m,
-          minutes: m.minutes.map(min => min.id === minuteId ? { ...min, text } : min)
-        };
-      }
-      return m;
-    }));
+  const updateMinuteText = async (meetingId: string, minuteId: string, text: string) => {
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+
+    try {
+      const updatedMinutes = meeting.minutes.map(min => 
+        min.id === minuteId ? { ...min, text } : min
+      );
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        minutes: updatedMinutes
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'meetings');
+    }
   };
 
-  const assignMinuteToUser = (meetingId: string, minuteId: string, userId: string) => {
-    setMeetings(meetings.map(m => {
-      if (m.id === meetingId) {
-        return {
-          ...m,
-          minutes: m.minutes.map(min => {
-            if (min.id === minuteId) {
-              // Simulate task creation
-              const taskId = 't' + Math.random().toString(36).substr(2, 9);
-              return { ...min, assignedToId: userId, taskId };
-            }
-            return min;
-          })
-        };
-      }
-      return m;
-    }));
+  const assignMinuteToUser = async (meetingId: string, minuteId: string, userId: string) => {
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting || !selectedProject) return;
+
+    const minute = meeting.minutes.find(min => min.id === minuteId);
+    if (!minute) return;
+
+    try {
+      // Create a real task in Firestore
+      const taskData: Partial<Task> = {
+        title: `[Meeting Action] ${meeting.topic}`,
+        description: minute.text,
+        status: 'TO DO',
+        assigneeId: userId,
+        workspaceId: workspaces[0].id, // Default workspace
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week
+        priority: 'Medium',
+        sourceType: 'meeting',
+        sourceId: meetingId,
+        projectId: selectedProject.id as any,
+        history: [{ 
+          id: 'h' + Date.now(), 
+          userId: currentUser.uid, 
+          action: `Created from meeting: ${meeting.topic}`, 
+          timestamp: new Date().toLocaleString() 
+        }]
+      };
+
+      const taskRef = await addDoc(collection(db, 'tasks'), taskData);
+
+      // Update the minute with assigned user and task ID
+      const updatedMinutes = meeting.minutes.map(min => {
+        if (min.id === minuteId) {
+          return { ...min, assignedToId: userId, taskId: taskRef.id };
+        }
+        return min;
+      });
+
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        minutes: updatedMinutes
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'meetings');
+    }
   };
 
-  const getAttendee = (id: string) => users.find(u => u.uid === id);
+  const getAttendee = (id: string) => dbUsers.find(u => u.uid === id) || users.find(u => u.uid === id);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -322,7 +411,7 @@ export const MeetingsView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Attendees</label>
                     <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-100">
-                      {users.map(u => (
+                      {dbUsers.map(u => (
                         <label key={u.uid} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer transition-all">
                           <input 
                             type="checkbox" 
@@ -354,8 +443,10 @@ export const MeetingsView: React.FC = () => {
                 </button>
                 <button 
                   onClick={handleAddMeeting}
-                  className="px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
                 >
+                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   Create Meeting
                 </button>
               </div>

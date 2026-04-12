@@ -12,6 +12,8 @@ import {
   Users, 
   Layout, 
   LogOut,
+  Building2,
+  Grid3X3,
   DraftingCompass,
   Calendar,
   Banknote,
@@ -281,6 +283,7 @@ export const Sidebar: React.FC = () => {
         title: 'REPORTING & GOVERNANCE',
         items: [
           { id: '3.3.3', title: 'Progress Reports', icon: FileText },
+          { id: '2.6.21', title: 'Task Management', icon: LayoutDashboard },
           { id: '2.7', title: 'Risk & Opportunity Hub', icon: AlertTriangle },
           { id: '3.4', title: 'Change Management', icon: FileText },
           { id: '2.6.22', title: 'Meeting Management', icon: Users },
@@ -639,6 +642,46 @@ export const Sidebar: React.FC = () => {
                   >
                     <Users className="w-3.5 h-3.5 mr-3" />
                     <span className="text-xs font-medium">Users</span>
+                  </Link>
+                  <Link
+                    to="/admin/contacts"
+                    className={cn(
+                      "flex items-center px-4 py-2 rounded-lg transition-all group",
+                      location.pathname === '/admin/contacts' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                    )}
+                  >
+                    <Users className="w-3.5 h-3.5 mr-3" />
+                    <span className="text-xs font-medium">Contacts</span>
+                  </Link>
+                  <Link
+                    to="/admin/companies"
+                    className={cn(
+                      "flex items-center px-4 py-2 rounded-lg transition-all group",
+                      location.pathname === '/admin/companies' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                    )}
+                  >
+                    <Building2 className="w-3.5 h-3.5 mr-3" />
+                    <span className="text-xs font-medium">Companies</span>
+                  </Link>
+                  <Link
+                    to="/admin/resources"
+                    className={cn(
+                      "flex items-center px-4 py-2 rounded-lg transition-all group",
+                      location.pathname === '/admin/resources' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                    )}
+                  >
+                    <Package className="w-3.5 h-3.5 mr-3" />
+                    <span className="text-xs font-medium">3M Resources</span>
+                  </Link>
+                  <Link
+                    to="/admin/work-packages"
+                    className={cn(
+                      "flex items-center px-4 py-2 rounded-lg transition-all group",
+                      location.pathname === '/admin/work-packages' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                    )}
+                  >
+                    <Grid3X3 className="w-3.5 h-3.5 mr-3" />
+                    <span className="text-xs font-medium">Work Packages</span>
                   </Link>
                   <Link
                     to="/admin/projects"

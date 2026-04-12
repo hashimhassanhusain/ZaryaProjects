@@ -50,18 +50,23 @@
       "required": ["poId", "supplier", "date", "status", "amount", "workPackageId"]
     },
     "DailyReport": {
-      "title": "Daily Progress Report",
-      "description": "A daily report of site activities.",
+      "title": "Progress Report",
+      "description": "A site progress report (daily, weekly, or monthly).",
       "type": "object",
       "properties": {
+        "type": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "discipline": { "type": "string", "enum": ["Civil", "Mechanical", "Electrical", "TO", "HSE"] },
         "date": { "type": "string", "format": "date" },
         "weather": { "type": "object" },
+        "activities": { "type": "array", "items": { "type": "object" } },
         "generalWorks": { "type": "string" },
         "deliverables": { "type": "string" },
         "incidents": { "type": "string" },
-        "submittedBy": { "type": "string" }
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "submittedBy": { "type": "string" },
+        "projectId": { "type": "string" }
       },
-      "required": ["date", "submittedBy"]
+      "required": ["type", "discipline", "date", "submittedBy", "projectId"]
     },
     "SiteIssue": {
       "title": "Site Issue",
@@ -362,9 +367,48 @@
         "status": { "type": "string", "enum": ["Pending", "Approved", "Implemented"] }
       },
       "required": ["projectId", "workflowName", "currentProcess", "improvedProcess"]
+    },
+    "WorkPackage": {
+      "title": "Work Package",
+      "description": "A group of activities within a WBS and Division.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "wbsId": { "type": "string" },
+        "divisionId": { "type": "string" },
+        "title": { "type": "string" }
+      },
+      "required": ["projectId", "wbsId", "divisionId", "title"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "A single construction activity or task.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "wbsId": { "type": "string" },
+        "workPackage": { "type": "string" },
+        "description": { "type": "string" },
+        "unit": { "type": "string" },
+        "quantity": { "type": "number" },
+        "rate": { "type": "number" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Planned", "In Progress", "Completed", "Converted to PO"] }
+      },
+      "required": ["projectId", "wbsId", "workPackage", "description", "status"]
     }
   },
   "firestore": {
+    "/work_packages/{id}": {
+      "schema": "WorkPackage",
+      "description": "Project work packages."
+    },
+    "/activities/{id}": {
+      "schema": "Activity",
+      "description": "Project activities."
+    },
     "/resource_requirements/{id}": {
       "schema": "ResourceRequirement",
       "description": "Resource requirements per activity."
@@ -421,9 +465,9 @@
       "schema": "PurchaseOrder",
       "description": "Purchase orders."
     },
-    "/dailyReports/{reportId}": {
+    "/progressReports/{reportId}": {
       "schema": "DailyReport",
-      "description": "Daily site reports."
+      "description": "Progress reports (daily, weekly, monthly)."
     },
     "/siteIssues/{issueId}": {
       "schema": "SiteIssue",

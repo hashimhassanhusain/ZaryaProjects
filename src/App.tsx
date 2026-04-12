@@ -34,6 +34,10 @@ import { VendorMasterRegister } from './components/VendorMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
+import { CompaniesView } from './components/CompaniesView';
+import { ResourcesView } from './components/ResourcesView';
+import { ContactsView } from './components/ContactsView';
+import { WorkPackagesView } from './components/WorkPackagesView';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
@@ -291,6 +295,10 @@ const AppLayout = () => {
             <Route path="/profile" element={<UserFormView />} />
             <Route path="/admin/users" element={<AdminUsersView />} />
             <Route path="/admin/users/:uid" element={<UserFormView />} />
+            <Route path="/admin/contacts" element={<ContactsView />} />
+            <Route path="/admin/companies" element={<CompaniesView />} />
+            <Route path="/admin/resources" element={<ResourcesView />} />
+            <Route path="/admin/work-packages" element={<WorkPackagesView />} />
             <Route path="/admin/projects" element={<AdminProjectsView />} />
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />

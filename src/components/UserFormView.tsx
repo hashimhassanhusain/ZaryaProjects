@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
-import { User, Page, Project } from '../types';
-import { ArrowLeft, Save, Shield, Mail, Camera, User as UserIcon, CheckCircle2, Globe, Layout, Send } from 'lucide-react';
+import { doc, getDoc, setDoc, collection, onSnapshot } from 'firebase/firestore';
+import { User, Page, Project, Company, Contact } from '../types';
+import { ArrowLeft, Save, Shield, Mail, Camera, User as UserIcon, CheckCircle2, Globe, Layout, Send, Building2, Search } from 'lucide-react';
 import { pages as allPages } from '../data';
 import { useProject } from '../context/ProjectContext';
 import { motion } from 'motion/react';
@@ -15,11 +15,16 @@ export const UserFormView: React.FC = () => {
   const [loading, setLoading] = useState(!!uid);
   const [saving, setSaving] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<User | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [formData, setFormData] = useState<Partial<User>>({
     name: '',
     email: '',
     role: 'engineer',
     photoURL: '',
+    companyId: '',
+    companyName: '',
+    contactId: '',
     accessiblePages: [],
     accessibleProjects: [],
   });
@@ -29,6 +34,14 @@ export const UserFormView: React.FC = () => {
   const isOwnProfile = auth.currentUser?.uid === uid;
 
   useEffect(() => {
+    const unsubscribeCompanies = onSnapshot(collection(db, 'companies'), (snapshot) => {
+      setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
+    });
+
+    const unsubscribeContacts = onSnapshot(collection(db, 'contacts'), (snapshot) => {
+      setContacts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contact)));
+    });
+
     const fetchData = async () => {
       if (auth.currentUser) {
         const adminSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
@@ -53,15 +66,23 @@ export const UserFormView: React.FC = () => {
       }
     };
     fetchData();
+
+    return () => {
+      unsubscribeCompanies();
+      unsubscribeContacts();
+    };
   }, [uid]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const targetUid = isNew ? `u_${Date.now()}` : uid!;
+      const selectedCompany = companies.find(c => c.id === formData.companyId);
+      
       const finalData = {
         ...formData,
         uid: targetUid,
+        companyName: selectedCompany?.name || '',
       };
 
       await setDoc(doc(db, 'users', targetUid), finalData);
@@ -97,6 +118,43 @@ export const UserFormView: React.FC = () => {
       setFormData({ ...formData, accessibleProjects: current.filter(id => id !== projectId) });
     } else {
       setFormData({ ...formData, accessibleProjects: [...current, projectId] });
+    }
+  };
+
+  const selectAllPages = () => {
+    const hubPages = allPages.filter(p => p.type === 'hub').map(p => p.id);
+    setFormData({ ...formData, accessiblePages: hubPages });
+  };
+
+  const deselectAllPages = () => {
+    setFormData({ ...formData, accessiblePages: [] });
+  };
+
+  const selectAllProjects = () => {
+    const projectIds = allProjects.map(p => p.id);
+    setFormData({ ...formData, accessibleProjects: projectIds });
+  };
+
+  const deselectAllProjects = () => {
+    setFormData({ ...formData, accessibleProjects: [] });
+  };
+
+  const handleContactSelect = (contactId: string) => {
+    const contact = contacts.find(c => c.id === contactId);
+    if (contact) {
+      setFormData({
+        ...formData,
+        contactId,
+        name: contact.name,
+        email: contact.email,
+        companyId: contact.companyId,
+        companyName: contact.companyName,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        contactId: '',
+      });
     }
   };
 
@@ -147,6 +205,31 @@ export const UserFormView: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-8">
+          {/* Link to Contact */}
+          {isNew && (
+            <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+              <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Select from Contacts</h3>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Search className="w-3 h-3" /> Link to Contact
+                </label>
+                <select 
+                  value={formData.contactId}
+                  onChange={(e) => handleContactSelect(e.target.value)}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                >
+                  <option value="">Select a Contact (Optional)</option>
+                  {contacts.map(contact => (
+                    <option key={contact.id} value={contact.id}>
+                      {contact.name} ({contact.type} - {contact.companyName})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 font-medium">Selecting a contact will auto-fill name, email, and company.</p>
+              </div>
+            </section>
+          )}
+
           {/* Basic Info */}
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Basic Information</h3>
@@ -178,6 +261,22 @@ export const UserFormView: React.FC = () => {
                   }`}
                   placeholder="user@zarya.com"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Building2 className="w-3 h-3" /> Company Affiliation
+                </label>
+                <select 
+                  value={formData.companyId}
+                  onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                >
+                  <option value="">Select a Company</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>{company.name} ({company.type})</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -223,9 +322,26 @@ export const UserFormView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Layout className="w-3 h-3" /> Accessible Pages
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Layout className="w-3 h-3" /> Accessible Pages
+                    </label>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={selectAllPages}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button 
+                        onClick={deselectAllPages}
+                        className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     {allPages.filter(p => p.type === 'hub').map((page) => (
                       <label key={page.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-all">
@@ -242,9 +358,26 @@ export const UserFormView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Globe className="w-3 h-3" /> Accessible Projects
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Globe className="w-3 h-3" /> Accessible Projects
+                    </label>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={selectAllProjects}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button 
+                        onClick={deselectAllProjects}
+                        className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     {allProjects.map((project) => (
                       <label key={project.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-all">

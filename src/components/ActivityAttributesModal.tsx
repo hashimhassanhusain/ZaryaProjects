@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor } from '../types';
+import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor, WorkPackage, User, Stakeholder } from '../types';
 import { masterFormatDivisions } from '../data';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart, Layers, Box } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { useProject } from '../context/ProjectContext';
@@ -35,6 +35,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     inputRate: activity.inputRate || marketRate
   });
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [displayAmount, setDisplayAmount] = useState<number>(activity.amount || 0);
   const [displayActualAmount, setDisplayActualAmount] = useState<number>(activity.actualAmount || 0);
 
@@ -50,15 +53,38 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
   }, []);
 
   useEffect(() => {
-    if (!activity.projectId) return;
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'vendors'), where('projectId', '==', activity.projectId)),
+    if (!selectedProject) return;
+    const vUnsubscribe = onSnapshot(
+      query(collection(db, 'vendors'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setVendors(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Vendor)));
       }
     );
-    return () => unsubscribe();
-  }, [activity.projectId]);
+    const wpUnsubscribe = onSnapshot(
+      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+      }
+    );
+    const uUnsubscribe = onSnapshot(
+      collection(db, 'users'),
+      (snapshot) => {
+        setUsers(snapshot.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
+      }
+    );
+    const sUnsubscribe = onSnapshot(
+      query(collection(db, 'stakeholders'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setStakeholders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder)));
+      }
+    );
+    return () => {
+      vUnsubscribe();
+      wpUnsubscribe();
+      uUnsubscribe();
+      sUnsubscribe();
+    };
+  }, [selectedProject]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -283,8 +309,29 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   placeholder="Enter detailed activity description..."
                 />
               </div>
+
+              {/* Hierarchy Selection */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Layers className="w-3 h-3" /> WBS Level
+                </label>
+                <select 
+                  name="wbsId"
+                  value={formData.wbsId || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="">Select WBS...</option>
+                  {wbsLevels.sort((a, b) => a.level - b.level).map(wbs => (
+                    <option key={wbs.id} value={wbs.id}>{wbs.code} - {wbs.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Database className="w-3 h-3" /> MasterFormat Division
+                </label>
                 <select 
                   name="division"
                   value={formData.division || '01'}
@@ -294,6 +341,63 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   {masterFormatDivisions.map(div => (
                     <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                   ))}
+                </select>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Box className="w-3 h-3" /> Work Package
+                </label>
+                <select 
+                  name="workPackage"
+                  value={formData.workPackage || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="">Select Work Package...</option>
+                  {workPackages.filter(wp => 
+                    (!formData.wbsId || wp.wbsId === formData.wbsId) && 
+                    (!formData.division || wp.divisionId === formData.division)
+                  ).map(wp => (
+                    <option key={wp.id} value={wp.title}>{wp.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee (Resource)</label>
+                <select 
+                  name="assigneeId"
+                  value={formData.assigneeId || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="">Unassigned</option>
+                  <optgroup label="System Users">
+                    {users.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Stakeholders">
+                    {stakeholders.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                <select 
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="Planned">Planned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Converted to PO">Converted to PO</option>
                 </select>
               </div>
               <div>

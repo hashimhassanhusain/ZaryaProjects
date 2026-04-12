@@ -1,0 +1,373 @@
+import React, { useState, useEffect } from 'react';
+import { db, OperationType, handleFirestoreError } from '../firebase';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { WorkPackage } from '../types';
+import { masterFormatData } from '../data/masterFormat';
+import { 
+  Plus, 
+  Search, 
+  Edit2, 
+  Trash2, 
+  X, 
+  Save, 
+  Filter,
+  ChevronRight,
+  Layers,
+  Grid3X3,
+  Building2
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { useProject } from '../context/ProjectContext';
+
+export const WorkPackagesView: React.FC = () => {
+  const { selectedProject } = useProject();
+  const projectId = selectedProject?.id || '';
+  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDivision, setSelectedDivision] = useState<string>('All');
+
+  const [formData, setFormData] = useState<Partial<WorkPackage>>({
+    title: '',
+    code: '',
+    divisionId: '',
+    projectId: projectId,
+    status: 'Active'
+  });
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const q = query(collection(db, 'work_packages'), where('projectId', '==', projectId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkPackage));
+      setWorkPackages(data);
+      setLoading(false);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'work_packages'));
+
+    return () => unsubscribe();
+  }, [projectId]);
+
+  const handleSave = async () => {
+    if (!formData.title || !formData.divisionId || !formData.code) {
+      alert('Please fill in all required fields (Division, Code, and Title)');
+      return;
+    }
+
+    try {
+      const data = {
+        ...formData,
+        projectId,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, 'work_packages', editingId), data);
+      } else {
+        await addDoc(collection(db, 'work_packages'), data);
+      }
+
+      setIsAdding(false);
+      setEditingId(null);
+      setFormData({ title: '', code: '', divisionId: '', projectId, status: 'Active' });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'work_packages');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this work package?')) return;
+    try {
+      await deleteDoc(doc(db, 'work_packages', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'work_packages');
+    }
+  };
+
+  const filteredPackages = workPackages.filter(wp => {
+    const matchesSearch = wp.title.toLowerCase().includes(searchTerm.toLowerCase()) || wp.code.includes(searchTerm);
+    const matchesDivision = selectedDivision === 'All' || wp.divisionId === selectedDivision;
+    return matchesSearch && matchesDivision;
+  });
+
+  const handleMFSelect = (item: any) => {
+    setFormData({
+      ...formData,
+      code: item.code,
+      title: item.title
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-10">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+          <span className="hover:text-slate-600 cursor-pointer transition-colors">Admin Settings</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-slate-900">Work Packages (MasterFormat Level 2)</span>
+        </nav>
+
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-200">
+                <Grid3X3 className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Work Packages</h1>
+            </div>
+            <p className="text-slate-500 font-medium max-w-2xl ml-1">
+              Manage project work packages based on CSI MasterFormat Level 2.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setEditingId(null);
+              setFormData({ title: '', code: '', divisionId: '', projectId, status: 'Active' });
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+          >
+            <Plus className="w-4 h-4" />
+            Add Work Package
+          </button>
+        </header>
+
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by code or title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 px-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600">
+              <Filter className="w-4 h-4" />
+              <select 
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="bg-transparent focus:outline-none"
+              >
+                <option value="All">All Divisions</option>
+                {masterFormatData.map(div => (
+                  <option key={div.number} value={div.number}>Div {div.number} - {div.title}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Division</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredPackages.map((wp) => {
+                const division = masterFormatData.find(d => d.number === wp.divisionId);
+                return (
+                  <tr key={wp.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <td className="px-8 py-5">
+                      <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {wp.code}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-slate-900 transition-all">
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{wp.title}</div>
+                          <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Level 2 Item</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                          Div {wp.divisionId}
+                        </span>
+                        <span className="text-sm font-medium text-slate-500">{division?.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                        wp.status === 'Active' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                      )}>
+                        {wp.status || 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => {
+                            setEditingId(wp.id);
+                            setFormData(wp);
+                            setIsAdding(true);
+                          }}
+                          className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(wp.id)}
+                          className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-red-600 transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add/Edit Modal */}
+      <AnimatePresence>
+        {isAdding && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
+            >
+              <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900">
+                  {editingId ? 'Edit Work Package' : 'Add New Work Package'}
+                </h2>
+                <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Division (Level 1)</label>
+                    <select
+                      value={formData.divisionId}
+                      onChange={(e) => setFormData({ ...formData, divisionId: e.target.value, code: '', title: '' })}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                    >
+                      <option value="">Select Division</option>
+                      {masterFormatData.map(div => (
+                        <option key={div.number} value={div.number}>Div {div.number} - {div.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat Suggestions (Level 2)</label>
+                  <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    {formData.divisionId ? (
+                      masterFormatData.find(d => d.number === formData.divisionId)?.items.map(item => (
+                        <button
+                          key={item.code}
+                          onClick={() => handleMFSelect(item)}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-xl text-left transition-all",
+                            formData.code === item.code ? "bg-blue-600 text-white shadow-lg" : "bg-white text-slate-600 hover:bg-blue-50"
+                          )}
+                        >
+                          <span className="text-sm font-bold">{item.title}</span>
+                          <span className="font-mono text-xs opacity-60">{item.code}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400 text-sm italic">
+                        Please select a division first to see suggestions.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Code</label>
+                    <input
+                      type="text"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      placeholder="00000"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Work Package Title"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description (Optional)</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all resize-none"
+                    placeholder="Enter work package details..."
+                  />
+                </div>
+              </div>
+
+              <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                >
+                  Save Work Package
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
