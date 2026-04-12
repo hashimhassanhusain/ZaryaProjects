@@ -8,7 +8,8 @@ import firebaseConfig from '../firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 // @ts-ignore - firestoreDatabaseId is present in the config
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const storage = getStorage(app);
+// Explicitly pass the bucket URL to avoid initialization issues
+export const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

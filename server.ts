@@ -297,6 +297,8 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
       },
       supportsAllDrives: true,
       // @ts-ignore
+      includeItemsFromAllDrives: true,
+      // @ts-ignore
       uploadType: 'multipart',
     });
     
@@ -340,6 +342,8 @@ app.post('/api/drive/create-metadata', async (req: any, res: any) => {
         body: `ZARYA CLOUD STORAGE FILE\n\nThis file is stored in Firebase Cloud Storage for performance and reliability.\n\nDirect Download Link:\n${description.replace('FIREBASE_URL:', '')}\n\nUploaded at: ${new Date().toISOString()}`,
       },
       supportsAllDrives: true,
+      // @ts-ignore
+      includeItemsFromAllDrives: true,
     });
     res.json({ fileId: resDrive.data.id });
   } catch (error: any) {

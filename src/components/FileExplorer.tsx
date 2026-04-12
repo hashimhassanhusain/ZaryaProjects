@@ -166,7 +166,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   };
 
   const handleFileUpload = async () => {
-    console.log('--- Starting File Upload ---');
+    console.log('--- Starting Direct Google Drive Upload ---');
     if (!pendingFile) {
       console.error('No file selected');
       return;
@@ -190,64 +190,49 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const extension = pendingFile.name.split('.').pop();
       const finalName = `${zaryaName}.${extension}`;
       
-      console.log(`Uploading to Firebase: ${finalName}`);
+      console.log(`Uploading directly to Google Drive: ${finalName}`);
       
-      // 1. Upload to Firebase Storage
-      const filePath = `projects/${selectedProjectId}/${finalName}`;
-      const storageRef = ref(storage, filePath);
-      
-      console.log('Calling uploadBytes...');
-      const snapshot = await uploadBytes(storageRef, pendingFile);
-      console.log('Upload successful, getting download URL...');
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log('Download URL obtained:', downloadURL);
-      
-      // 2. Save reference in Firestore
-      console.log('Updating Firestore...');
-      const projectRef = doc(db, 'projects', selectedProjectId);
-      await updateDoc(projectRef, {
-        files: arrayUnion({
-          name: finalName,
-          url: downloadURL,
-          path: filePath,
-          folderId: currentFolderId,
-          uploadedAt: new Date().toISOString(),
-          size: pendingFile.size,
-          type: pendingFile.type
-        })
-      });
-      console.log('Firestore updated.');
+      const formData = new FormData();
+      formData.append('file', pendingFile, finalName);
+      formData.append('projectRootId', project.driveFolderId || '');
+      // Calculate relative path from project root
+      const relativePath = currentPath.join('/');
+      formData.append('path', relativePath);
 
-      // 3. Create metadata in Google Drive (placeholder)
-      console.log('Creating Google Drive metadata...');
-      const res = await fetch('/api/drive/create-metadata', {
+      const res = await fetch('/api/drive/upload-by-path', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: finalName,
-          parents: [currentFolderId],
-          description: `FIREBASE_URL:${downloadURL}`
-        })
+        body: formData,
       });
 
       if (res.ok) {
-        console.log('Drive metadata created successfully.');
-        alert(`File uploaded successfully!\n\nLocation: ${finalName}\nStorage: Firebase Cloud Storage\nLinked: Google Drive Metadata`);
+        const data = await res.json();
+        console.log('Upload successful:', data);
+        
+        // Update Firestore with the Drive file reference
+        const projectRef = doc(db, 'projects', selectedProjectId);
+        await updateDoc(projectRef, {
+          files: arrayUnion({
+            name: finalName,
+            driveId: data.fileId,
+            folderId: data.folderId,
+            uploadedAt: new Date().toISOString(),
+            size: pendingFile.size,
+            type: pendingFile.type
+          })
+        });
+
+        alert(`File uploaded successfully to Google Drive!`);
         setShowNamingModal(false);
         setPendingFile(null);
         fetchFiles(currentFolderId);
       } else {
         const err = await res.json();
-        console.error('Drive metadata creation failed:', err);
-        // Even if Drive fails, the file is in Firebase, so we notify but don't treat as total failure
-        alert(`File saved to Cloud Storage, but Google Drive link failed: ${err.error}`);
-        setShowNamingModal(false);
-        setPendingFile(null);
-        fetchFiles(currentFolderId);
+        console.error('Upload failed:', err);
+        throw new Error(err.error || 'Upload failed');
       }
     } catch (error: any) {
       console.error('CRITICAL UPLOAD ERROR:', error);
-      alert(`Upload failed: ${error.message}\n\nPlease check your internet connection and ensure Firebase Storage is enabled.`);
+      alert(`Upload failed: ${error.message}\n\nIMPORTANT: Ensure your Service Account has "Manager" permissions on the Shared Drive.`);
     } finally {
       setUploading(false);
     }
