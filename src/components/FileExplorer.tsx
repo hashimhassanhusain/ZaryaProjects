@@ -195,9 +195,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const formData = new FormData();
       formData.append('file', pendingFile, finalName);
       formData.append('projectRootId', project.driveFolderId || '');
-      // Calculate relative path from project root
-      const relativePath = currentPath.join('/');
-      formData.append('path', relativePath);
+      // Calculate relative path from project root (skip the first breadcrumb which is the project root itself)
+      const relativePath = breadcrumbs.slice(1).map(b => b.name).join('/');
+      formData.append('path', relativePath || '/');
 
       const res = await fetch('/api/drive/upload-by-path', {
         method: 'POST',
