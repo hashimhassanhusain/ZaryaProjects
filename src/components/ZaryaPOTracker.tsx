@@ -340,7 +340,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         {/* Step 1: Hierarchy Selection */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">1. WBS (Zone/Building)</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">1. WBS Level</label>
             <select
               value={newPO.wbsId}
               onChange={(e) => {
@@ -350,17 +350,17 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 }
                 setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }));
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="">Select WBS...</option>
               {availableWBS.map(w => (
                 <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
               ))}
-              <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
+              <option value="new" className="text-blue-600 font-medium">+ Add New Level...</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">2. MasterFormat</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. MasterFormat</label>
             <select
               value={newPO.masterFormat}
               disabled={!newPO.wbsId}
@@ -371,17 +371,16 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 }
                 setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }));
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
               <option value="">Select Division...</option>
               {availableMasterFormat.map(mf => (
                 <option key={mf} value={mf}>Div. {mf}</option>
               ))}
-              <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">3. Activity / Work Package</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">3. Activity / Work Package</label>
             <select
               value={newPO.activityId}
               disabled={!newPO.masterFormat}
@@ -393,7 +392,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 const act = activities.find(a => a.id === e.target.value);
                 setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: e.target.value }));
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
               <option value="">Select Activity...</option>
               {availableActivities.map(a => (
@@ -407,27 +406,27 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         {/* Step 2: PO Details */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6 pt-6 border-t border-slate-100">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PO Code</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">PO Code</label>
             <input
               type="text"
               value={newPO.id}
               disabled={!!editingPOId}
               onChange={(e) => setNewPO(prev => ({ ...prev, id: e.target.value }))}
               placeholder="e.g. PO-2024-001"
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl disabled:opacity-50"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl disabled:opacity-50"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Date</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Order Date</label>
             <input
               type="date"
               value={newPO.date}
               onChange={(e) => setNewPO(prev => ({ ...prev, date: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Currency</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Currency</label>
             <select
               value={newPO.inputCurrency}
               onChange={(e) => {
@@ -440,14 +439,14 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   return { ...prev, inputCurrency: newCurr, lineItems: updatedLineItems };
                 });
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="USD">USD ($)</option>
               <option value="IQD">IQD (د.ع)</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exchange Rate</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Exchange Rate</label>
             <input
               type="number"
               value={newPO.exchangeRateUsed}
@@ -461,29 +460,29 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   return { ...prev, exchangeRateUsed: newRate, lineItems: updatedLineItems };
                 });
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual Start</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Actual Start</label>
             <input
               type="date"
               value={newPO.actualStartDate || ''}
               onChange={(e) => setNewPO(prev => ({ ...prev, actualStartDate: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual Finish</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Actual Finish</label>
             <input
               type="date"
               value={newPO.actualFinishDate || ''}
               onChange={(e) => setNewPO(prev => ({ ...prev, actualFinishDate: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vendor / Supplier</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Vendor / Supplier</label>
             <select
               value={newPO.supplier}
               onChange={(e) => {
@@ -493,13 +492,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 }
                 setNewPO(prev => ({ ...prev, supplier: e.target.value }));
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="">Select Vendor...</option>
               {vendors.map(v => (
                 <option key={v.id} value={v.name}>{v.vendorCode} - {v.name}</option>
               ))}
-              <option value="new" className="text-blue-600 font-bold">+ Add New Vendor...</option>
+              <option value="new" className="text-blue-600 font-medium">+ Add New Vendor...</option>
             </select>
           </div>
         </div>
@@ -955,7 +954,11 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 const wbs = wbsLevels.find(w => w.id === po.wbsId);
                 const activity = activities.find(a => a.id === po.activityId);
                 return (
-                  <tr key={idx} className="hover:bg-slate-50 transition-colors divide-x divide-slate-100">
+                  <tr 
+                    key={idx} 
+                    onClick={() => handleEditPO(po)}
+                    className="hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer"
+                  >
                     <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-500">Div. {po.masterFormat || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>

@@ -29,7 +29,7 @@ type ScheduleTab = 'gantt' | 'activities' | 'milestones';
 type ViewLevel = 'wbs' | 'masterformat' | 'workpackage' | 'po' | 'poitem';
 
 export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, initialTab }) => {
-  const { selectedProject } = useProject();
+  const { selectedProject, scheduleState, setScheduleState } = useProject();
   const navigate = useNavigate();
   const { formatAmount, currency: baseCurrency } = useCurrency();
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -38,30 +38,41 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedWbs, setExpandedWbs] = useState<Record<string, boolean>>({});
+  
+  const expandedWbs = scheduleState.expandedWbs;
+  const expandedActivities = scheduleState.expandedActivities;
+  const zoomLevel = scheduleState.zoomLevel as ZoomLevel;
+  const viewLevel = scheduleState.viewLevel as ViewLevel;
+  const visibleColumns = scheduleState.visibleColumns;
+
+  const setExpandedWbs = (updater: any) => {
+    setScheduleState(prev => ({
+      ...prev,
+      expandedWbs: typeof updater === 'function' ? updater(prev.expandedWbs) : updater
+    }));
+  };
+
+  const setExpandedActivities = (updater: any) => {
+    setScheduleState(prev => ({
+      ...prev,
+      expandedActivities: typeof updater === 'function' ? updater(prev.expandedActivities) : updater
+    }));
+  };
+
+  const setZoomLevel = (val: ZoomLevel) => setScheduleState(prev => ({ ...prev, zoomLevel: val }));
+  const setViewLevel = (val: ViewLevel) => setScheduleState(prev => ({ ...prev, viewLevel: val }));
+  const setVisibleColumns = (updater: any) => {
+    setScheduleState(prev => ({
+      ...prev,
+      visibleColumns: typeof updater === 'function' ? updater(prev.visibleColumns) : updater
+    }));
+  };
+
   const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab || 'gantt');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('month');
-  const [viewLevel, setViewLevel] = useState<ViewLevel>('masterformat');
-  const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showColumnsMenu, setShowColumnsMenu] = useState(false);
-
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    plannedStart: true,
-    plannedDuration: true,
-    plannedFinish: true,
-    actualStart: true,
-    actualDuration: true,
-    actualFinish: true,
-    progress: true,
-    supplier: true,
-    plannedCost: true,
-    poCost: true,
-    actualCost: true
-  });
 
   const [activityColWidth, setActivityColWidth] = useState(350);
   const [isResizingCol, setIsResizingCol] = useState(false);
@@ -149,7 +160,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     );
 
     const poUnsubscribe = onSnapshot(
-      collection(db, 'purchaseOrders'),
+      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setPurchaseOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
       }
@@ -178,27 +189,6 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     };
   }, [selectedProject]);
 
-  const ensureDivisionNode = async (floorId: string, divisionCode: string, projectId: string) => {
-    const divisionId = `${floorId}-${divisionCode}`;
-    const divisionRef = doc(db, 'wbs', divisionId);
-    const divisionSnap = await getDoc(divisionRef);
-    
-    if (!divisionSnap.exists()) {
-      const divisionInfo = masterFormatDivisions.find(d => d.id === divisionCode);
-      await setDoc(divisionRef, {
-        id: divisionId,
-        projectId,
-        parentId: floorId,
-        title: divisionInfo ? `${divisionCode} ${divisionInfo.title}` : `Division ${divisionCode}`,
-        type: 'Division',
-        level: 5,
-        code: divisionCode,
-        status: 'Not Started'
-      });
-    }
-    return divisionId;
-  };
-
   const generateFromBOQ = async () => {
     if (!selectedProject || boqItems.length === 0) return;
     setIsGenerating(true);
@@ -211,10 +201,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         const divisionCode = item.division?.match(/\d+/)?.[0] || '01';
         const floorId = item.wbsId || '';
         
-        let divisionId = '';
-        if (floorId) {
-          divisionId = await ensureDivisionNode(floorId, divisionCode, selectedProject.id);
-        }
+        // Manual WBS only - don't auto-create division nodes
+        const divisionId = floorId ? `${floorId}-${divisionCode}` : '';
 
         const activity: Activity = {
           id: crypto.randomUUID(),
@@ -235,7 +223,10 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         
         // Trigger rollup from workPackage level
         if (divisionId) {
-          await rollupToParent('workPackage', divisionId);
+          const divisionSnap = await getDoc(doc(db, 'wbs', divisionId));
+          if (divisionSnap.exists()) {
+            await rollupToParent('workPackage', divisionId);
+          }
         }
       }
     } catch (err) {
@@ -343,58 +334,123 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   };
 
   const renderScheduleContent = () => {
+    const wbsIds = new Set(wbsLevels.map(w => w.id));
+    const unassigned = activities.filter(a => !a.wbsId || !wbsIds.has(a.wbsId));
+    const filteredUnassigned = unassigned.filter(a => 
+      !searchQuery || a.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     // Always start from top-level WBS nodes to maintain hierarchy
-    return wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
-      <WbsRow 
-        key={wbs.id}
-        wbs={wbs}
-        allWbs={wbsLevels}
-        activities={activities}
-        boqItems={boqItems}
-        expanded={expandedWbs}
-        expandedActivities={expandedActivities}
-        onToggle={toggleWbs}
-        onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
-        getProgress={getProgress}
-        searchQuery={searchQuery}
-        activeTab={activeTab}
-        purchaseOrders={purchaseOrders}
-        vendors={vendors}
-        calculateWbsProgress={calculateWbsProgress}
-        calculateDivisionProgress={calculateDivisionProgress}
-        navigate={navigate}
-        setEditingActivity={setEditingActivity}
-        rowRefs={rowRefs}
-        visibleColumns={visibleColumns}
-        activityColWidth={activityColWidth}
-        columnWidths={columnWidths}
-        viewLevel={viewLevel}
-        getDateColor={getDateColor}
-        getDurationColor={getDurationColor}
-        getCostColor={getCostColor}
-      />
-    ));
+    return (
+      <>
+        {wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
+          <WbsRow 
+            key={wbs.id}
+            wbs={wbs}
+            allWbs={wbsLevels}
+            activities={activities}
+            boqItems={boqItems}
+            expanded={expandedWbs}
+            expandedActivities={expandedActivities}
+            onToggle={toggleWbs}
+            onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+            getProgress={getProgress}
+            searchQuery={searchQuery}
+            activeTab={activeTab}
+            purchaseOrders={purchaseOrders}
+            vendors={vendors}
+            calculateWbsProgress={calculateWbsProgress}
+            calculateDivisionProgress={calculateDivisionProgress}
+            navigate={navigate}
+            setEditingActivity={setEditingActivity}
+            rowRefs={rowRefs}
+            visibleColumns={visibleColumns}
+            activityColWidth={activityColWidth}
+            columnWidths={columnWidths}
+            viewLevel={viewLevel}
+            getDateColor={getDateColor}
+            getDurationColor={getDurationColor}
+            getCostColor={getCostColor}
+          />
+        ))}
+        {filteredUnassigned.length > 0 && (
+          <div className="mt-8 border-t-2 border-amber-100">
+            <div className="h-12 flex items-center bg-amber-50/30 px-4">
+              <AlertCircle className="w-5 h-5 text-amber-500 mr-3" />
+              <span className="text-xs font-black text-amber-700 uppercase tracking-widest">Unassigned Activities ({filteredUnassigned.length})</span>
+              <span className="ml-4 text-[10px] text-amber-600 font-medium">These activities are not linked to any WBS node.</span>
+            </div>
+            {filteredUnassigned.map(act => (
+              <ActivityRow 
+                key={act.id}
+                act={act}
+                wbsLevel={0}
+                columnWidths={columnWidths}
+                visibleColumns={visibleColumns}
+                purchaseOrders={purchaseOrders}
+                vendors={vendors}
+                setEditingActivity={setEditingActivity}
+                onToggleActivity={(id) => setExpandedActivities(prev => ({ ...prev, [id]: !prev[id] }))}
+                isActExpanded={expandedActivities[act.id]}
+                navigate={navigate}
+                rowRefs={rowRefs}
+                activityColWidth={activityColWidth}
+                getProgress={getProgress}
+                getDateColor={getDateColor}
+                getDurationColor={getDurationColor}
+                getCostColor={getCostColor}
+                viewLevel={viewLevel}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
   };
 
   const renderGanttContent = () => {
+    const wbsIds = new Set(wbsLevels.map(w => w.id));
+    const unassigned = activities.filter(a => !a.wbsId || !wbsIds.has(a.wbsId));
+    const filteredUnassigned = unassigned.filter(a => 
+      !searchQuery || a.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     // Always start from top-level WBS nodes to maintain hierarchy
-    return wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
-      <GanttRow 
-        key={wbs.id}
-        wbs={wbs}
-        allWbs={wbsLevels}
-        activities={activities}
-        expanded={expandedWbs}
-        expandedActivities={expandedActivities}
-        renderBar={renderBar}
-        renderSummaryBar={renderSummaryBar}
-        rowRefs={rowRefs}
-        purchaseOrders={purchaseOrders}
-        visibleColumns={visibleColumns}
-        viewLevel={viewLevel}
-        calculateWbsProgress={calculateWbsProgress}
-      />
-    ));
+    return (
+      <>
+        {wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
+          <GanttRow 
+            key={wbs.id}
+            wbs={wbs}
+            allWbs={wbsLevels}
+            activities={activities}
+            expanded={expandedWbs}
+            expandedActivities={expandedActivities}
+            renderBar={renderBar}
+            renderSummaryBar={renderSummaryBar}
+            rowRefs={rowRefs}
+            purchaseOrders={purchaseOrders}
+            visibleColumns={visibleColumns}
+            viewLevel={viewLevel}
+            calculateWbsProgress={calculateWbsProgress}
+          />
+        ))}
+        {filteredUnassigned.length > 0 && (
+          <div className="mt-8 border-t-2 border-amber-100">
+            <div className="h-12 bg-amber-50/10" />
+            {filteredUnassigned.map(act => (
+              <div 
+                key={act.id}
+                ref={el => { if (el) rowRefs.current.set(`gantt-${act.id}`, el); }}
+                className="h-10 flex items-center bg-white relative border-b border-slate-100"
+              >
+                {renderBar(act)}
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
   };
 
   const handlePrint = async () => {
@@ -762,17 +818,21 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
   const handleSaveAttributes = async (updatedActivity: Activity) => {
     try {
-      // Ensure division node exists if division changed or is new
+      // Manual WBS only - don't auto-create division nodes
       if (updatedActivity.wbsId && updatedActivity.division) {
-        const divId = await ensureDivisionNode(updatedActivity.wbsId, updatedActivity.division, selectedProject!.id);
-        updatedActivity.divisionId = divId;
+        updatedActivity.divisionId = `${updatedActivity.wbsId}-${updatedActivity.division}`;
       }
 
       await setDoc(doc(db, 'activities', updatedActivity.id), updatedActivity);
       
       // Trigger rollup from workPackage level
       if (updatedActivity.divisionId) {
-        await rollupToParent('workPackage', updatedActivity.divisionId);
+        const divisionSnap = await getDoc(doc(db, 'wbs', updatedActivity.divisionId));
+        if (divisionSnap.exists()) {
+          await rollupToParent('workPackage', updatedActivity.divisionId);
+        } else if (updatedActivity.wbsId) {
+          await rollupToParent('floor', updatedActivity.wbsId);
+        }
       } else if (updatedActivity.wbsId) {
         // Fallback if no division
         await rollupToParent('floor', updatedActivity.wbsId);
@@ -1542,8 +1602,9 @@ const WbsRow: React.FC<WbsRowProps> = ({
 
   const wbsActivities = activities.filter(a => {
     if (wbs.type === 'Division') return a.divisionId === wbs.id;
-    if (wbs.type === 'Floor' && hasDivisionNodes) return false;
-    return a.wbsId === wbs.id;
+    // Show if it belongs to this WBS and isn't assigned to an existing child Division node
+    const childDivIds = new Set(allWbs.filter(w => w.parentId === wbs.id && w.type === 'Division').map(w => w.id));
+    return a.wbsId === wbs.id && (!a.divisionId || !childDivIds.has(a.divisionId));
   });
 
   const isExpanded = expanded[wbs.id];
@@ -1645,7 +1706,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
               getCostColor={getCostColor}
             />
           ))}
-          {wbs.type !== 'Division' && !hasDivisionNodes && activeDivisions.map(divId => {
+          {wbs.type !== 'Division' && activeDivisions.map(divId => {
             const division = masterFormatDivisions.find(d => d.id === divId);
             const divActivities = activitiesByDivision[divId];
             const divKey = `${wbs.id}-${divId}`;
@@ -1764,7 +1825,11 @@ const GanttRow: React.FC<GanttRowProps> = ({
   rowRefs, purchaseOrders, visibleColumns, viewLevel, calculateWbsProgress
 }) => {
   const children = allWbs.filter(w => w.parentId === wbs.id);
-  const wbsActivities = activities.filter(a => a.wbsId === wbs.id);
+  const wbsActivities = activities.filter(a => {
+    if (wbs.type === 'Division') return a.divisionId === wbs.id;
+    const childDivIds = new Set(allWbs.filter(w => w.parentId === wbs.id && w.type === 'Division').map(w => w.id));
+    return a.wbsId === wbs.id && (!a.divisionId || !childDivIds.has(a.divisionId));
+  });
   const isExpanded = expanded[wbs.id];
 
   const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');

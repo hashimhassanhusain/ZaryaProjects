@@ -8,6 +8,20 @@ interface ProjectContextType {
   setSelectedProject: (project: Project) => void;
   projects: Project[];
   loading: boolean;
+  scheduleState: {
+    expandedWbs: Record<string, boolean>;
+    expandedActivities: Record<string, boolean>;
+    zoomLevel: string;
+    viewLevel: string;
+    visibleColumns: Record<string, boolean>;
+  };
+  setScheduleState: React.Dispatch<React.SetStateAction<{
+    expandedWbs: Record<string, boolean>;
+    expandedActivities: Record<string, boolean>;
+    zoomLevel: string;
+    viewLevel: string;
+    visibleColumns: Record<string, boolean>;
+  }>>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -15,6 +29,25 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scheduleState, setScheduleState] = useState({
+    expandedWbs: {} as Record<string, boolean>,
+    expandedActivities: {} as Record<string, boolean>,
+    zoomLevel: 'month',
+    viewLevel: 'masterformat',
+    visibleColumns: {
+      plannedStart: true,
+      plannedDuration: true,
+      plannedFinish: true,
+      actualStart: true,
+      actualDuration: true,
+      actualFinish: true,
+      progress: true,
+      supplier: true,
+      plannedCost: true,
+      poCost: true,
+      actualCost: true
+    }
+  });
   const [selectedProject, setSelectedProjectState] = useState<Project | null>(() => {
     const saved = localStorage.getItem('selectedProject');
     if (saved) {
@@ -74,7 +107,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <ProjectContext.Provider value={{ selectedProject, setSelectedProject, projects, loading }}>
+    <ProjectContext.Provider value={{ 
+      selectedProject, 
+      setSelectedProject, 
+      projects, 
+      loading,
+      scheduleState,
+      setScheduleState
+    }}>
       {children}
     </ProjectContext.Provider>
   );

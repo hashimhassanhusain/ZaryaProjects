@@ -419,7 +419,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                         <div>
                           <div className="text-sm font-bold text-slate-900">{v.changeSummary}</div>
                           <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                            {v.userName} • {new Date(v.timestamp).toLocaleString()}
+                            {v.userName} • {new Date(v.timestamp).toLocaleString('en-US')}
                           </div>
                         </div>
                       </div>

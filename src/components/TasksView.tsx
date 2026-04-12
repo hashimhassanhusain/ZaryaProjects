@@ -133,7 +133,7 @@ export const TasksView: React.FC = () => {
       const taskData = {
         ...newTask,
         projectId: selectedProject.id,
-        history: [{ id: 'h' + Date.now(), userId: currentUser.uid, action: 'Created the task', timestamp: new Date().toLocaleString() }]
+        history: [{ id: 'h' + Date.now(), userId: currentUser.uid, action: 'Created the task', timestamp: new Date().toLocaleString('en-US') }]
       };
       await addDoc(collection(db, 'tasks'), taskData);
       setIsAddingTask(false);
@@ -189,7 +189,7 @@ export const TasksView: React.FC = () => {
         id: 'n' + Date.now(),
         userId: currentUser.uid,
         text: newNote.trim(),
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString('en-US')
       };
 
       if (task.sourceType === 'issue') {
@@ -226,7 +226,7 @@ export const TasksView: React.FC = () => {
   };
 
   const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
-    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString() };
+    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Changed status to ${newStatus}`, timestamp: new Date().toLocaleString('en-US') };
     await handleUpdateTask(taskId, { 
       status: newStatus,
       history: [...(tasks.find(t => t.id === taskId)?.history || []), historyItem]
@@ -235,7 +235,7 @@ export const TasksView: React.FC = () => {
 
   const updateTaskAssignee = async (taskId: string, newAssigneeId: string) => {
     const newAssignee = dbUsers.find(u => u.uid === newAssigneeId);
-    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Assigned task to ${newAssignee?.name || 'Unassigned'}`, timestamp: new Date().toLocaleString() };
+    const historyItem = { id: 'h' + Date.now(), userId: currentUser.uid, action: `Assigned task to ${newAssignee?.name || 'Unassigned'}`, timestamp: new Date().toLocaleString('en-US') };
     await handleUpdateTask(taskId, { 
       assigneeId: newAssigneeId,
       history: [...(tasks.find(t => t.id === taskId)?.history || []), historyItem]

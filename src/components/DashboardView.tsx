@@ -103,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
     .map(level => {
       const total = boqItems
         .filter(item => item.wbsId === level.id)
-        .reduce((sum, item) => sum + (item.inputCurrency === 'USD' ? convertToBase(item.amount, 'USD') : item.amount), 0);
+        .reduce((sum, item) => sum + item.amount, 0);
       return { ...level, total };
     })
     .filter(l => l.total > 0)

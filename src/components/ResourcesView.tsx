@@ -210,7 +210,7 @@ export const ResourcesView: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rate</div>
-                  <div className="text-sm font-bold text-slate-700">${resource.rate.toLocaleString()}</div>
+                  <div className="text-sm font-bold text-slate-700">${resource.rate.toLocaleString('en-US')}</div>
                 </div>
               </div>
 

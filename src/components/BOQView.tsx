@@ -903,17 +903,8 @@ export const BOQView: React.FC = () => {
             >
               <h3 className="text-2xl font-bold text-slate-900 mb-6">Add BOQ Item</h3>
               <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
-                  <textarea 
-                    value={newItem.description}
-                    onChange={e => setNewItem({...newItem, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
-                    placeholder="Describe the item..."
-                  />
-                </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">MasterFormat Division</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
                   <select 
                     value={newItem.division}
                     onChange={e => {
@@ -923,16 +914,15 @@ export const BOQView: React.FC = () => {
                       }
                       setNewItem({...newItem, division: e.target.value})
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                     ))}
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
                   <select 
                     value={newItem.workPackage}
                     onChange={e => {
@@ -943,7 +933,7 @@ export const BOQView: React.FC = () => {
                       }
                       setNewItem({...newItem, workPackage: e.target.value})
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   >
                     <option value="">Select Work Package</option>
                     {workPackages
@@ -960,57 +950,66 @@ export const BOQView: React.FC = () => {
                           <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
                         ))
                     }
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
+                    <option value="new" className="text-blue-600 font-medium">+ Add New Work Package...</option>
                   </select>
                 </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
+                  <textarea 
+                    value={newItem.description}
+                    onChange={e => setNewItem({...newItem, description: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20 text-sm resize-none"
+                    placeholder="Describe the item..."
+                  />
+                </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
                   <input 
                     type="number" 
                     value={newItem.quantity}
                     onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit</label>
                   <input 
                     type="text" 
                     value={newItem.unit}
                     onChange={e => setNewItem({...newItem, unit: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     placeholder="m3, ton, m2, etc."
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Currency</label>
+                    <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Currency</label>
                     <select 
                       value={newItem.inputCurrency}
                       onChange={e => setNewItem({...newItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     >
                       <option value="USD">USD ($)</option>
                       <option value="IQD">IQD (د.ع)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate</label>
+                    <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
                     <input 
                       type="number" 
                       value={newItem.inputRate}
                       onChange={e => setNewItem({...newItem, inputRate: parseFloat(e.target.value) || 0})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 USD = X IQD)</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
                   <input 
                     type="number" 
                     value={newItem.exchangeRateUsed}
                     onChange={e => setNewItem({...newItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
                 <div className="flex items-end col-span-2">
@@ -1059,16 +1058,16 @@ export const BOQView: React.FC = () => {
               
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
                   <textarea 
                     value={editingItem.description}
                     onChange={e => setEditingItem({...editingItem, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20 text-sm resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
                   <select 
                     value={editingItem.division}
                     onChange={e => {
@@ -1078,17 +1077,16 @@ export const BOQView: React.FC = () => {
                       }
                       setEditingItem({...editingItem, division: e.target.value})
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                     ))}
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
                   <select 
                     value={editingItem.workPackage}
                     onChange={e => {
@@ -1099,7 +1097,7 @@ export const BOQView: React.FC = () => {
                       }
                       setEditingItem({...editingItem, workPackage: e.target.value})
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   >
                     <option value="">Select Work Package</option>
                     {workPackages
@@ -1121,38 +1119,38 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
                   <input 
                     type="number"
                     value={editingItem.quantity}
                     onChange={e => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit</label>
                   <input 
                     type="text"
                     value={editingItem.unit}
                     onChange={e => setEditingItem({...editingItem, unit: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Rate</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
                   <div className="flex gap-2">
                     <input 
                       type="number"
                       value={editingItem.inputRate}
                       onChange={e => setEditingItem({...editingItem, inputRate: parseFloat(e.target.value) || 0})}
-                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
                     />
                     <select 
                       value={editingItem.inputCurrency}
                       onChange={e => setEditingItem({...editingItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
-                      className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                      className="w-24 px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
                     >
                       <option value="IQD">IQD</option>
                       <option value="USD">USD</option>
@@ -1161,12 +1159,12 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 USD = X IQD)</label>
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
                   <input 
                     type="number" 
                     value={editingItem.exchangeRateUsed}
                     onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
 

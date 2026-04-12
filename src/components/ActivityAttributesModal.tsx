@@ -294,26 +294,14 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         <div className="p-8 overflow-y-auto space-y-8">
           {/* Basic Info */}
           <section className="space-y-4">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Database className="w-3 h-3" /> Basic Information
             </h4>
             <div className="grid grid-cols-2 gap-6">
-              <div className="col-span-2">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
-                <textarea 
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
-                  placeholder="Enter detailed activity description..."
-                />
-              </div>
-
-              {/* Hierarchy Selection */}
+              {/* Hierarchy Selection - Reordered as requested */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Layers className="w-3 h-3" /> WBS Level
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Layers className="w-3 h-3" /> Level 1: WBS Level
                 </label>
                 <select 
                   name="wbsId"
@@ -325,19 +313,19 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Select WBS...</option>
                   {wbsLevels.sort((a, b) => a.level - b.level).map(wbs => (
                     <option key={wbs.id} value={wbs.id}>{wbs.code} - {wbs.title}</option>
                   ))}
-                  <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
+                  <option value="new" className="text-blue-600 font-medium">+ Add New Level...</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Database className="w-3 h-3" /> MasterFormat Division
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Database className="w-3 h-3" /> Level 2: MasterFormat Division
                 </label>
                 <select 
                   name="division"
@@ -349,18 +337,17 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   {masterFormatDivisions.map(div => (
                     <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                   ))}
-                  <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                 </select>
               </div>
 
-              <div className="col-span-2">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Box className="w-3 h-3" /> Work Package
+              <div>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Box className="w-3 h-3" /> Level 3: Work Package
                 </label>
                 <select 
                   name="workPackage"
@@ -372,7 +359,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Select Work Package...</option>
                   {workPackages.filter(wp => 
@@ -386,7 +373,36 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee (Resource)</label>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Link2 className="w-3 h-3" /> Linked BOQ Item
+                </label>
+                <select 
+                  name="boqItemId"
+                  value={formData.boqItemId || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="">Not Linked</option>
+                  {boqItems.map(item => (
+                    <option key={item.id} value={item.id}>{item.description} ({item.workPackage})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Activity Description</label>
+                <textarea 
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[80px] resize-y"
+                  placeholder="Enter detailed activity description..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Assignee (Resource)</label>
                 <select 
                   name="assigneeId"
                   value={formData.assigneeId || ''}
@@ -397,7 +413,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Unassigned</option>
                   <optgroup label="System Users">
@@ -410,17 +426,17 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                     ))}
                   </optgroup>
-                  <option value="new" className="text-blue-600 font-bold">+ Add New User/Stakeholder...</option>
+                  <option value="new" className="text-blue-600 font-medium">+ Add New User/Stakeholder...</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Status</label>
                 <select 
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="Planned">Planned</option>
                   <option value="In Progress">In Progress</option>
@@ -429,7 +445,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Supplier / Vendor</label>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Supplier / Vendor</label>
                 <div className="relative">
                   <ShoppingCart className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <select 
@@ -442,85 +458,87 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       }
                       handleInputChange(e);
                     }}
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                   >
                     <option value="">Select Supplier...</option>
                     {vendors.map(v => (
                       <option key={v.id} value={v.id}>{v.name} ({v.vendorCode})</option>
                     ))}
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Supplier...</option>
+                    <option value="new" className="text-blue-600 font-medium">+ Add New Supplier...</option>
                   </select>
                 </div>
               </div>
-              <div className="flex items-center gap-3 pt-4">
-                <input 
-                  type="checkbox"
-                  id="isMilestone"
-                  checked={formData.activityType === 'Milestone'}
-                  onChange={(e) => {
-                    const isMilestone = e.target.checked;
-                    setFormData(prev => ({
-                      ...prev,
-                      activityType: isMilestone ? 'Milestone' : 'Task',
-                      duration: isMilestone ? 0 : prev.duration
-                    }));
-                  }}
-                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="isMilestone" className="text-sm font-bold text-slate-700 cursor-pointer">
-                  Milestone
-                </label>
-              </div>
-              <div className="flex items-center gap-3 pt-4">
-                <input 
-                  type="checkbox"
-                  id="isCritical"
-                  checked={formData.isCritical || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isCritical: e.target.checked }))}
-                  className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
-                />
-                <label htmlFor="isCritical" className="text-sm font-bold text-slate-700 cursor-pointer">
-                  Critical Path Activity
-                </label>
+              <div className="flex items-center gap-6 pt-4">
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox"
+                    id="isMilestone"
+                    checked={formData.activityType === 'Milestone'}
+                    onChange={(e) => {
+                      const isMilestone = e.target.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        activityType: isMilestone ? 'Milestone' : 'Task',
+                        duration: isMilestone ? 0 : prev.duration
+                      }));
+                    }}
+                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isMilestone" className="text-sm font-medium text-slate-700 cursor-pointer">
+                    Milestone
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox"
+                    id="isCritical"
+                    checked={formData.isCritical || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isCritical: e.target.checked }))}
+                    className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                  />
+                  <label htmlFor="isCritical" className="text-sm font-medium text-slate-700 cursor-pointer">
+                    Critical Path
+                  </label>
+                </div>
               </div>
             </div>
           </section>
 
           {/* Planned Schedule */}
           <section className="space-y-4">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Calendar className="w-3 h-3" /> Planned Schedule (Baseline)
             </h4>
             <div className="grid grid-cols-3 gap-6 bg-blue-50/30 p-6 rounded-2xl border border-blue-100">
               <div>
-                <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Planned Start</label>
+                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Start</label>
                 <input 
                   type="date"
                   name="startDate"
                   value={formData.startDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Planned Duration (Days)</label>
+                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Duration (Days)</label>
                 <input 
                   type="number"
                   name="duration"
                   value={formData.duration || ''}
                   onChange={handleInputChange}
                   disabled={formData.activityType === 'Milestone'}
-                  className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Planned Finish</label>
+                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Finish</label>
                 <input 
                   type="date"
                   name="finishDate"
                   value={formData.finishDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
             </div>
@@ -602,12 +620,12 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
 
           {/* Actual Data */}
           <section className="space-y-4">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <CheckCircle2 className="w-3 h-3" /> Financial Information & Progress
             </h4>
             <div className="grid grid-cols-3 gap-6 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100">
               <div>
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Planned Cost</label>
+                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Planned Cost</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
@@ -617,13 +635,13 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       value={displayAmount || ''}
                       onChange={(e) => handleAmountChange(e, 'amount')}
                       placeholder="0.00"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      className="w-full pl-11 pr-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                     />
                   </div>
                   <select
                     value={formData.inputCurrency || 'IQD'}
                     onChange={handleCurrencyChange}
-                    className="w-24 px-2 py-3 bg-white border border-emerald-100 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-24 px-2 py-2.5 bg-white border border-emerald-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
                   >
                     <option value="IQD">IQD</option>
                     <option value="USD">USD</option>
@@ -631,7 +649,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 </div>
                 {formData.inputCurrency !== baseCurrency && (
                   <div className="mt-2 flex items-center gap-2">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Rate:</label>
+                    <label className="text-[9px] font-medium text-slate-400 uppercase">Rate:</label>
                     <input 
                       type="number"
                       value={formData.inputRate || marketRate}
@@ -646,7 +664,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Cost</label>
+                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Cost</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
@@ -656,7 +674,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       value={displayActualAmount || ''}
                       onChange={(e) => handleAmountChange(e, 'actualAmount')}
                       placeholder="0.00"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      className="w-full pl-11 pr-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                     />
                   </div>
                   {/* Currency select is shared, so we only need it once or keep it for both if we want different currencies (but user said one currency per item) */}
@@ -671,29 +689,29 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Start</label>
+                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Start</label>
                 <input 
                   type="date"
                   name="actualStartDate"
                   value={formData.actualStartDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Actual Finish</label>
+                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Finish</label>
                 <input 
                   type="date"
                   name="actualFinishDate"
                   value={formData.actualFinishDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Manual Progress Update (%)</label>
+                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Manual Progress Update (%)</label>
                 <div className="flex items-center gap-4">
                   <input 
                     type="range"
@@ -704,7 +722,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     onChange={(e) => setFormData(prev => ({ ...prev, percentComplete: parseInt(e.target.value) }))}
                     className="flex-1 h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
-                  <span className="text-sm font-bold text-emerald-600 w-12 text-right">{formData.percentComplete || 0}%</span>
+                  <span className="text-sm font-medium text-emerald-600 w-12 text-right">{formData.percentComplete || 0}%</span>
                 </div>
               </div>
             </div>

@@ -1063,7 +1063,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                       <span className="text-blue-400 font-black">v{v.version.toFixed(1)}</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-white/60">
-                      {new Date(v.date).toLocaleString()}
+                      {new Date(v.date).toLocaleString('en-US')}
                     </td>
                     <td className="px-6 py-4 text-sm font-bold">
                       {v.author}

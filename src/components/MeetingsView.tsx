@@ -133,7 +133,7 @@ export const MeetingsView: React.FC = () => {
           id: 'h' + Date.now(), 
           userId: currentUser.uid, 
           action: `Created from meeting: ${meeting.topic}`, 
-          timestamp: new Date().toLocaleString() 
+          timestamp: new Date().toLocaleString('en-US') 
         }]
       };
 

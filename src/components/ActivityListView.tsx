@@ -133,6 +133,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           id: crypto.randomUUID(),
           projectId: selectedProject.id,
           wbsId: item.wbsId || '',
+          boqItemId: item.id,
           workPackage: item.workPackage,
           description: item.description,
           unit: item.unit,

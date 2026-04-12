@@ -115,23 +115,27 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
     if (!selectedProject) return;
 
     const q = query(
-      collection(db, 'change_requests_hub'),
+      collection(db, 'change_requests'),
       where('projectId', '==', selectedProject.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const changes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChangeRequest));
+      const changes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       setRequests(changes);
       
       const total = changes.length;
       const approved = changes.filter(c => c.status === 'Approved').length;
       const pending = changes.filter(c => c.status === 'Pending').length;
-      const totalImpact = changes.reduce((sum, c) => sum + (c.financials?.netImpact || 0), 0);
+      const totalImpact = changes.reduce((sum, c) => {
+        // Handle both schemas if necessary, but prioritize change_requests schema
+        const impact = c.financialSummary?.currentChangeValue || c.financials?.netImpact || 0;
+        return sum + impact;
+      }, 0);
 
       setStats({ total, approved, pending, totalImpact });
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'change_requests_hub');
+      handleFirestoreError(error, OperationType.LIST, 'change_requests');
       setLoading(false);
     });
 
@@ -200,10 +204,10 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
         version: 1.0
       };
 
-      await addDoc(collection(db, 'change_requests_hub'), entryData);
+      await addDoc(collection(db, 'change_requests'), entryData);
       setView('hub');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'change_requests_hub');
+      handleFirestoreError(err, OperationType.CREATE, 'change_requests');
     } finally {
       setIsSaving(false);
     }
@@ -229,11 +233,11 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
         version: (selectedRequest.version || 1.0) + 0.1
       };
 
-      await updateDoc(doc(db, 'change_requests_hub', selectedRequest.id), updatedData);
+      await updateDoc(doc(db, 'change_requests', selectedRequest.id), updatedData);
       setSelectedRequest(updatedData as ChangeRequest);
       setIsEditing(false);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, 'change_requests_hub');
+      handleFirestoreError(err, OperationType.UPDATE, 'change_requests');
     } finally {
       setIsSaving(false);
     }
@@ -773,9 +777,9 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                     <td className="px-8 py-5">
                       <div className={cn(
                         "text-sm font-black",
-                        (cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
+                        (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
                       )}>
-                        {formatCurrency(cr.financials?.netImpact || 0)}
+                        {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
                       </div>
                     </td>
                     <td className="px-8 py-5 text-right">

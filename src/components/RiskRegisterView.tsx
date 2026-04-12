@@ -462,7 +462,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2rem] p-8 mt-12">
               <div className="flex items-center gap-4 text-white/60 text-xs font-bold uppercase tracking-widest">
                 <Clock className="w-4 h-4" />
-                Last Updated: {editingEntry?.updatedAt ? new Date(editingEntry.updatedAt).toLocaleString() : 'Never'}
+                Last Updated: {editingEntry?.updatedAt ? new Date(editingEntry.updatedAt).toLocaleString('en-US') : 'Never'}
               </div>
               <div className="flex items-center gap-4">
                 <button 
@@ -553,7 +553,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                   <div>
                     <div className="text-sm font-bold">{v.actionType}</div>
                     <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">
-                      {new Date(v.timestamp).toLocaleString()} • {v.editorName}
+                      {new Date(v.timestamp).toLocaleString('en-US')} • {v.editorName}
                     </div>
                   </div>
                 </div>
