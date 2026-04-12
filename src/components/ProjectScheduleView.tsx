@@ -16,7 +16,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, stripNumericPrefix } from '../lib/utils';
 import { rollupToParent } from '../services/rollupService';
 
 interface ProjectScheduleViewProps {
@@ -869,11 +869,11 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             {getParent(page.id) && (
               <>
-                <span className="text-slate-400 font-normal">{getParent(page.id)?.title}</span>
+                <span className="text-slate-400 font-normal">{stripNumericPrefix(getParent(page.id)?.title || '')}</span>
                 <ChevronRight className="w-5 h-5 text-slate-300" />
               </>
             )}
-            {page.title}
+            {stripNumericPrefix(page.title)}
           </h2>
           <p className="text-slate-500 mt-1">Comprehensive project timeline, WBS hierarchy, and performance tracking.</p>
         </div>
@@ -911,64 +911,6 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         </div>
       </header>
 
-      {/* KPI Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { 
-            label: 'Overall Progress', 
-            value: `${Math.round(activities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / (activities.length || 1))}%`, 
-            icon: CheckCircle2, 
-            color: 'text-blue-600', 
-            bg: 'bg-blue-50',
-            desc: 'Average completion across all activities'
-          },
-          { 
-            label: 'Planned Cost', 
-            value: formatCurrency(activities.reduce((sum, a) => sum + (a.amount || 0), 0)), 
-            icon: DollarSign, 
-            color: 'text-slate-600', 
-            bg: 'bg-slate-50',
-            desc: 'Total baseline budget'
-          },
-          { 
-            label: 'Actual Cost', 
-            value: formatCurrency(activities.reduce((sum, a) => sum + (a.actualAmount || 0), 0)), 
-            icon: TrendingUp, 
-            color: 'text-emerald-600', 
-            bg: 'bg-emerald-50',
-            desc: 'Total expenditure to date'
-          },
-          { 
-            label: 'Total Activities', 
-            value: activities.length, 
-            icon: Database, 
-            color: 'text-orange-600', 
-            bg: 'bg-orange-50',
-            desc: 'Total scheduled work packages'
-          }
-        ].map((kpi, i) => (
-          <motion.div 
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className={cn("p-3 rounded-2xl transition-colors", kpi.bg)}>
-                <kpi.icon className={cn("w-6 h-6", kpi.color)} />
-              </div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">KPI</div>
-            </div>
-            <div className="space-y-1">
-              <div className={cn("text-2xl font-black tracking-tight", kpi.color)}>{kpi.value}</div>
-              <div className="text-xs font-bold text-slate-900">{kpi.label}</div>
-              <div className="text-[10px] text-slate-400 leading-tight">{kpi.desc}</div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
       {activeTab === 'gantt' && (
         <>
           {/* Toolbar */}
@@ -1004,19 +946,26 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl">
-                <select 
-                  value={viewLevel}
-                  onChange={(e) => setViewLevel(e.target.value as ViewLevel)}
-                  className="bg-transparent border-none text-[10px] font-bold text-slate-600 px-3 py-1.5 focus:ring-0 cursor-pointer outline-none"
-                >
-                  <option value="wbs">WBS Level</option>
-                  <option value="masterformat">MasterFormat Level</option>
-                  <option value="workpackage">Work Package Level</option>
-                  <option value="po">Purchase Order Level</option>
-                  <option value="poitem">PO Items Level</option>
-                </select>
-              </div>
+              <button 
+                onClick={() => setEditingActivity({
+                  id: crypto.randomUUID(),
+                  projectId: selectedProject!.id,
+                  wbsId: '',
+                  divisionId: '',
+                  workPackage: '',
+                  description: '',
+                  unit: 'LS',
+                  quantity: 1,
+                  rate: 0,
+                  amount: 0,
+                  status: 'Planned',
+                  percentComplete: 0
+                })}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Add Activity
+              </button>
 
               <div className="relative">
                 <button 
@@ -1245,7 +1194,31 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       )}
 
       {activeTab === 'activities' && (
-        <ActivityListView page={page} />
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <button 
+              onClick={() => setEditingActivity({
+                id: crypto.randomUUID(),
+                projectId: selectedProject!.id,
+                wbsId: '',
+                divisionId: '',
+                workPackage: '',
+                description: '',
+                unit: 'LS',
+                quantity: 1,
+                rate: 0,
+                amount: 0,
+                status: 'Planned',
+                percentComplete: 0
+              })}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              New Activity
+            </button>
+          </div>
+          <ActivityListView page={page} />
+        </div>
       )}
 
       {activeTab === 'milestones' && (

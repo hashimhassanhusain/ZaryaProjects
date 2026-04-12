@@ -43,6 +43,14 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
   }).format(amount) + ' ' + currency;
 }
 
+export function stripNumericPrefix(title: string): string {
+  // Matches "1.0 ", "5.1.1 ", "03.1_", etc. at the start or end of the string
+  return title
+    .replace(/^[\d\.]+[_\s-]*/, '') // Start: 1.0 Title
+    .replace(/[\s-]+[\d\.]+$/, '')   // End: Title 1.0
+    .trim();
+}
+
 export function sortDomainPages(items: any[], domainKey: string) {
   return [...items].sort((a, b) => {
     const getWeight = (p: any) => {

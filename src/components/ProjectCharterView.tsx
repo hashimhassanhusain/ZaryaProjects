@@ -375,7 +375,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     y += 5;
     doc.rect(margin, y, pageWidth - 2 * margin, 15);
     doc.setFont('helvetica', 'normal');
-    doc.text(charter.estimatedBudget || '', margin + 2, y + 10);
+    const budgetText = charter.estimatedBudget ? `${charter.currency} ${charter.estimatedBudget.toLocaleString()}` : 'Not Specified';
+    doc.text(budgetText, margin + 5, y + 10);
     y += 25;
 
     autoTable(doc, {

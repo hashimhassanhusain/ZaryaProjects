@@ -345,11 +345,18 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Classification</label>
                 <select 
                   value={formData.classification}
-                  onChange={(e) => setFormData({ ...formData, classification: e.target.value as any })}
+                  onChange={(e) => {
+                    if (e.target.value === 'new') {
+                      // Logic for new classification if needed, but for now just allow it
+                      return;
+                    }
+                    setFormData({ ...formData, classification: e.target.value as any });
+                  }}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
                 >
                   <option value="Internal">Internal</option>
                   <option value="External">External</option>
+                  <option value="new" className="text-blue-600 font-bold">+ Add New...</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -414,7 +421,12 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Engagement Level</label>
                 <select 
                   value={formData.engagementLevel}
-                  onChange={(e) => setFormData({ ...formData, engagementLevel: e.target.value as any })}
+                  onChange={(e) => {
+                    if (e.target.value === 'new') {
+                      return;
+                    }
+                    setFormData({ ...formData, engagementLevel: e.target.value as any });
+                  }}
                   className={cn(
                     "w-full px-6 py-4 border rounded-2xl text-sm font-black focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase tracking-widest",
                     getEngagementColor(formData.engagementLevel || 'Green')
@@ -423,6 +435,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                   <option value="Green">Green (Supportive)</option>
                   <option value="Amber">Amber (Neutral)</option>
                   <option value="Red">Red (Resistant)</option>
+                  <option value="new" className="text-blue-600 font-bold">+ Add New...</option>
                 </select>
               </div>
             </div>

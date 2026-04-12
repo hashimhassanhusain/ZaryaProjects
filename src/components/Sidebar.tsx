@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { pages, getChildren, getBreadcrumbs, getFocusArea } from '../data';
 import { Project } from '../types';
-import { cn, sortDomainPages } from '../lib/utils';
+import { cn, sortDomainPages, stripNumericPrefix } from '../lib/utils';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { signOut, User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
@@ -263,9 +263,10 @@ export const Sidebar: React.FC = () => {
         type: 'section',
         title: 'CORE DATA',
         items: [
-          { id: '2.1.2', title: 'Project management Plan', icon: DraftingCompass },
+          { id: '2.1.2', title: 'Project Management Plan', icon: DraftingCompass },
           { id: '2.6', title: 'Resources & Optimization', icon: Package },
           { id: 'logs', title: 'Project Logs', icon: FileText },
+          { id: '2.2.9', title: 'WBS', icon: Grid3X3 },
         ]
       },
       {
@@ -280,7 +281,7 @@ export const Sidebar: React.FC = () => {
       },
       {
         type: 'section',
-        title: 'REPORTING & GOVERNANCE',
+        title: 'GOVERNANCE',
         items: [
           { id: '3.3.3', title: 'Progress Reports', icon: FileText },
           { id: '2.6.21', title: 'Task Management', icon: LayoutDashboard },
@@ -343,7 +344,7 @@ export const Sidebar: React.FC = () => {
                       "w-4 h-4 mr-3 transition-colors",
                       isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
                     )} />
-                    <span className="text-xs font-semibold truncate">{item.title}</span>
+                    <span className="text-xs font-semibold truncate">{stripNumericPrefix(item.title)}</span>
                     {(item as any).hasDot && (
                       <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                     )}
@@ -495,7 +496,7 @@ export const Sidebar: React.FC = () => {
                       const Icon = getDomainIcon(page.searchKey, page.title);
                       return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />;
                     })()}
-                    <span className="truncate font-semibold">{page.title}</span>
+                    <span className="truncate font-semibold">{stripNumericPrefix(page.title)}</span>
                   </Link>
                 ) : (
                   <Link
@@ -515,10 +516,10 @@ export const Sidebar: React.FC = () => {
                       <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300")} />
                     )}
                     <div className="flex flex-col min-w-0">
-                      <span className="truncate">{page.title}</span>
+                      <span className="truncate">{stripNumericPrefix(page.title)}</span>
                       {viewMode === 'domain' && !page.isCanonical && (
                         <span className="text-[9px] text-slate-500 font-medium truncate">
-                          {getFocusArea(page.id)?.title}
+                          {stripNumericPrefix(getFocusArea(page.id)?.title || '')}
                         </span>
                       )}
                     </div>

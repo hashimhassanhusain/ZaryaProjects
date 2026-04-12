@@ -25,7 +25,7 @@ import {
   Building,
   MapPin
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 import { AIAssistant } from './AIAssistant';
 import { BOQItem } from '../types';
 
@@ -50,7 +50,7 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
       )}
     </div>
     <div className="space-y-1">
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest">{title}</h3>
+      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-bold text-slate-900 tracking-tight">{value}</span>
         {subValue && <span className="text-sm font-medium text-slate-400">{subValue}</span>}
@@ -134,7 +134,7 @@ export const ProjectDashboard: React.FC = () => {
               Project Executive Dashboard
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
-              {selectedProject.name}
+              {stripNumericPrefix(selectedProject.name)}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-slate-500 font-medium text-sm">
               <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">{selectedProject.code}</span>

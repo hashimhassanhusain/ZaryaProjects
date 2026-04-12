@@ -47,7 +47,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
 import { Loader2 } from 'lucide-react';
-import { cn, sortDomainPages } from './lib/utils';
+import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
 import { DriveFolderView } from './components/DriveFolderView';
@@ -136,8 +136,8 @@ const PageRenderer = () => {
       return (
         <div className="max-w-6xl mx-auto">
           <header className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">{domain.title}</h2>
-            <p className="text-slate-500">Overview of performance and documentation for the {domain.title}.</p>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">{stripNumericPrefix(domain.title)}</h2>
+            <p className="text-slate-500">Overview of performance and documentation for the {stripNumericPrefix(domain.title)}.</p>
           </header>
           <DomainDashboard page={virtualPage} />
           <div className="mt-12">

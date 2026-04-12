@@ -29,7 +29,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn, generateZaryaFileName } from '../lib/utils';
+import { cn, generateZaryaFileName, stripNumericPrefix } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc } from 'firebase/firestore';
@@ -4243,9 +4243,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div>
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
               {getParent(page.id) && (
-                <span className="text-slate-400 font-normal">{getParent(page.id)?.title} &gt; </span>
+                <span className="text-slate-400 font-normal">{stripNumericPrefix(getParent(page.id)?.title || '')} &gt; </span>
               )}
-              {page.title}
+              {stripNumericPrefix(page.title)}
             </h2>
             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
               <span>REF: {page.id}</span>

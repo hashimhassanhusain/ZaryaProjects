@@ -19,11 +19,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
   
   const ballControls = useAnimation();
   const handControls = useAnimation();
-  const isMounted = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    isMounted.current = true;
-    return () => { isMounted.current = false; };
+    setIsReady(true);
+    return () => setIsReady(false);
   }, []);
 
   // Physics state
@@ -66,6 +66,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
   };
 
   useEffect(() => {
+    if (!isReady) return;
+    
     let animationFrame: number;
 
     const updatePhysics = () => {
@@ -115,8 +117,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
         if (Math.abs(vel.current.vy) < 0.01) vel.current.vy = 0;
 
         // Update visual position
-        if (isMounted.current) {
-          ballControls.set({ x: pos.current.x, y: pos.current.y, rotate: pos.current.x * 2 });
+        if (isReady) {
+          try {
+            ballControls.set({ x: pos.current.x, y: pos.current.y, rotate: pos.current.x * 2 });
+          } catch (e) {
+            // Silently ignore if not yet mounted
+          }
         }
         
         if (Math.abs(vel.current.vx) > 0.5 || Math.abs(vel.current.vy) > 0.5) {

@@ -343,13 +343,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">1. WBS (Zone/Building)</label>
             <select
               value={newPO.wbsId}
-              onChange={(e) => setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }))}
+              onChange={(e) => {
+                if (e.target.value === 'new') {
+                  window.location.href = '/page/2.2.9';
+                  return;
+                }
+                setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }));
+              }}
               className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="">Select WBS...</option>
               {availableWBS.map(w => (
                 <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
               ))}
+              <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -357,13 +364,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <select
               value={newPO.masterFormat}
               disabled={!newPO.wbsId}
-              onChange={(e) => setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }))}
+              onChange={(e) => {
+                if (e.target.value === 'new') {
+                  window.location.href = '/page/2.2.1';
+                  return;
+                }
+                setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }));
+              }}
               className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
               <option value="">Select Division...</option>
               {availableMasterFormat.map(mf => (
                 <option key={mf} value={mf}>Div. {mf}</option>
               ))}
+              <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -372,6 +386,10 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               value={newPO.activityId}
               disabled={!newPO.masterFormat}
               onChange={(e) => {
+                if (e.target.value === 'new') {
+                  window.location.href = '/page/2.2.10'; // Schedule / Activities
+                  return;
+                }
                 const act = activities.find(a => a.id === e.target.value);
                 setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: act?.workPackage || '' }));
               }}
@@ -381,6 +399,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               {availableActivities.map(a => (
                 <option key={a.id} value={a.id}>{a.description}</option>
               ))}
+              <option value="new" className="text-blue-600 font-bold">+ Add New Activity...</option>
             </select>
           </div>
         </div>
@@ -467,13 +486,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vendor / Supplier</label>
             <select
               value={newPO.supplier}
-              onChange={(e) => setNewPO(prev => ({ ...prev, supplier: e.target.value }))}
+              onChange={(e) => {
+                if (e.target.value === 'new') {
+                  window.location.href = '/page/4.2.1'; // Vendor Master Register
+                  return;
+                }
+                setNewPO(prev => ({ ...prev, supplier: e.target.value }));
+              }}
               className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="">Select Vendor...</option>
               {vendors.map(v => (
                 <option key={v.id} value={v.name}>{v.vendorCode} - {v.name}</option>
               ))}
+              <option value="new" className="text-blue-600 font-bold">+ Add New Vendor...</option>
             </select>
           </div>
         </div>

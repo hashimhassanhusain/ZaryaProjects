@@ -469,12 +469,19 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
                     <select 
                       name="discipline"
                       defaultValue={editingVendor?.discipline || '01'}
+                      onChange={e => {
+                        if (e.target.value === 'new') {
+                          window.location.href = '/page/2.2.1';
+                          return;
+                        }
+                      }}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-sm font-bold focus:ring-0 outline-none"
                       style={{ borderRadius: '0px' }}
                     >
                       {masterFormatDivisions.map(div => (
                         <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
                       ))}
+                      <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                     </select>
                   </div>
                   <div className="col-span-2">

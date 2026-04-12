@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BOQItem, WBSLevel } from '../types';
+import { BOQItem, WBSLevel, WorkPackage } from '../types';
 import { masterFormatDivisions } from '../data';
 import { masterFormatSections } from '../constants/masterFormat';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -23,6 +23,7 @@ export const BOQView: React.FC = () => {
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
+  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'boq' | 'export'>('boq');
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>(null);
@@ -73,9 +74,17 @@ export const BOQView: React.FC = () => {
       }
     );
 
+    const wpUnsubscribe = onSnapshot(
+      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+      }
+    );
+
     return () => {
       boqUnsubscribe();
       wbsUnsubscribe();
+      wpUnsubscribe();
     };
   }, [selectedProject]);
 
@@ -864,76 +873,58 @@ export const BOQView: React.FC = () => {
                     value={newItem.description}
                     onChange={e => setNewItem({...newItem, description: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
-                    placeholder="Describe the work package..."
+                    placeholder="Describe the item..."
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">MasterFormat Division</label>
                   <select 
                     value={newItem.division}
-                    onChange={e => setNewItem({...newItem, division: e.target.value})}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        window.location.href = '/page/2.2.1'; // Governance Policies / MasterFormat
+                        return;
+                      }
+                      setNewItem({...newItem, division: e.target.value})
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                     ))}
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
-                  <div className="flex gap-2">
-                    {isAddingWorkPackage ? (
-                      <div className="flex-1 flex gap-2">
-                        <input 
-                          type="text"
-                          value={newWorkPackage}
-                          onChange={e => setNewWorkPackage(e.target.value)}
-                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="New work package..."
-                          autoFocus
-                        />
-                        <button 
-                          onClick={() => {
-                            if (newWorkPackage.trim()) {
-                              setNewItem({...newItem, workPackage: newWorkPackage.trim()});
-                              setIsAddingWorkPackage(false);
-                              setNewWorkPackage('');
-                            }
-                          }}
-                          className="px-4 bg-blue-600 text-white rounded-xl font-bold"
-                        >
-                          OK
-                        </button>
-                        <button 
-                          onClick={() => setIsAddingWorkPackage(false)}
-                          className="px-4 bg-slate-200 text-slate-600 rounded-xl font-bold"
-                        >
-                          X
-                        </button>
-                      </div>
-                    ) : (
-                      <select 
-                        value={newItem.workPackage}
-                        onChange={e => {
-                          if (e.target.value === 'ADD_NEW') {
-                            setIsAddingWorkPackage(true);
-                          } else {
-                            setNewItem({...newItem, workPackage: e.target.value});
-                          }
-                        }}
-                        className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Work Package</option>
-                        {masterFormatSections
-                          .filter(s => s.divisionId === newItem.division)
-                          .map(section => (
-                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                          ))
-                        }
-                        <option value="ADD_NEW" className="text-blue-600 font-bold">+ Add New...</option>
-                      </select>
-                    )}
-                  </div>
+                  <select 
+                    value={newItem.workPackage}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        window.location.href = '/page/2.2.9?tab=packages';
+                        return;
+                      }
+                      setNewItem({...newItem, workPackage: e.target.value})
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Select Work Package</option>
+                    {workPackages
+                      .filter(wp => wp.divisionId === newItem.division)
+                      .map(wp => (
+                        <option key={wp.id} value={wp.title}>{wp.code} - {wp.title}</option>
+                      ))
+                    }
+                    {/* Fallback to masterFormatSections if no work packages defined for this division */}
+                    {workPackages.filter(wp => wp.divisionId === newItem.division).length === 0 && 
+                      masterFormatSections
+                        .filter(s => s.divisionId === newItem.division)
+                        .map(section => (
+                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                        ))
+                    }
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quantity</label>
@@ -983,7 +974,6 @@ export const BOQView: React.FC = () => {
                     value={newItem.exchangeRateUsed}
                     onChange={e => setNewItem({...newItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    disabled={newItem.inputCurrency === baseCurrency}
                   />
                 </div>
                 <div className="flex items-end col-span-2">
@@ -1044,70 +1034,52 @@ export const BOQView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division</label>
                   <select 
                     value={editingItem.division}
-                    onChange={e => setEditingItem({...editingItem, division: e.target.value})}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        window.location.href = '/page/2.2.1';
+                        return;
+                      }
+                      setEditingItem({...editingItem, division: e.target.value})
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                     ))}
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package</label>
-                  <div className="flex gap-2">
-                    {isAddingWorkPackage ? (
-                      <div className="flex-1 flex gap-2">
-                        <input 
-                          type="text"
-                          value={newWorkPackage}
-                          onChange={e => setNewWorkPackage(e.target.value)}
-                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="New work package..."
-                          autoFocus
-                        />
-                        <button 
-                          onClick={() => {
-                            if (newWorkPackage.trim()) {
-                              setEditingItem({...editingItem, workPackage: newWorkPackage.trim()});
-                              setIsAddingWorkPackage(false);
-                              setNewWorkPackage('');
-                            }
-                          }}
-                          className="px-4 bg-blue-600 text-white rounded-xl font-bold"
-                        >
-                          OK
-                        </button>
-                        <button 
-                          onClick={() => setIsAddingWorkPackage(false)}
-                          className="px-4 bg-slate-200 text-slate-600 rounded-xl font-bold"
-                        >
-                          X
-                        </button>
-                      </div>
-                    ) : (
-                      <select 
-                        value={editingItem.workPackage}
-                        onChange={e => {
-                          if (e.target.value === 'ADD_NEW') {
-                            setIsAddingWorkPackage(true);
-                          } else {
-                            setEditingItem({...editingItem, workPackage: e.target.value});
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Work Package</option>
-                        {masterFormatSections
-                          .filter(s => s.divisionId === editingItem.division)
-                          .map(section => (
-                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                          ))
-                        }
-                        <option value="ADD_NEW" className="text-blue-600 font-bold">+ Add New...</option>
-                      </select>
-                    )}
-                  </div>
+                  <select 
+                    value={editingItem.workPackage}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        window.location.href = '/page/2.2.9?tab=packages';
+                        return;
+                      }
+                      setEditingItem({...editingItem, workPackage: e.target.value})
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Select Work Package</option>
+                    {workPackages
+                      .filter(wp => wp.divisionId === editingItem.division)
+                      .map(wp => (
+                        <option key={wp.id} value={wp.title}>{wp.code} - {wp.title}</option>
+                      ))
+                    }
+                    {/* Fallback to masterFormatSections if no work packages defined for this division */}
+                    {workPackages.filter(wp => wp.divisionId === editingItem.division).length === 0 && 
+                      masterFormatSections
+                        .filter(s => s.divisionId === editingItem.division)
+                        .map(section => (
+                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                        ))
+                    }
+                    <option value="new">+ Add New Work Package...</option>
+                  </select>
                 </div>
 
                 <div>
@@ -1157,7 +1129,6 @@ export const BOQView: React.FC = () => {
                     value={editingItem.exchangeRateUsed}
                     onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    disabled={editingItem.inputCurrency === baseCurrency}
                   />
                 </div>
 

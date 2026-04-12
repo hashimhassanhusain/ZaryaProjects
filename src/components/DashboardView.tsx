@@ -26,7 +26,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 
 interface DashboardViewProps {
   page: Page;
@@ -119,13 +119,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
               <div className="flex items-center gap-2 text-sm font-medium text-blue-600 mb-1 uppercase tracking-wider">
                 {focusArea && focusArea.id !== page.id && (
                   <>
-                    <span>{focusArea.title}</span>
+                    <span>{stripNumericPrefix(focusArea.title)}</span>
                     <ChevronRight className="w-4 h-4 text-slate-300" />
                   </>
                 )}
                 {parent && parent.id !== focusArea?.id && parent.id !== page.id && (
                   <>
-                    <span>{parent.title}</span>
+                    <span>{stripNumericPrefix(parent.title)}</span>
                     <ChevronRight className="w-4 h-4 text-slate-300" />
                   </>
                 )}
@@ -133,7 +133,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
             );
           })()}
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-            {page.title}
+            {stripNumericPrefix(page.title)}
           </h2>
         <p className="text-slate-500 max-w-2xl font-medium">{page.summary}</p>
       </header>
@@ -257,10 +257,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <StatusIcon status={child.status} />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                  {child.title}
+                  {stripNumericPrefix(child.title)}
                 </h3>
                 <div className="text-[10px] text-slate-400 font-medium mb-3 uppercase tracking-wider">
-                  {getFocusArea(child.id)?.title}
+                  {stripNumericPrefix(getFocusArea(child.id)?.title || '')}
                 </div>
                 <p className="text-sm text-slate-500 mb-4 line-clamp-2">
                   {child.summary || child.content}

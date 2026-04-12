@@ -318,13 +318,20 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <select 
                   name="wbsId"
                   value={formData.wbsId || ''}
-                  onChange={handleInputChange}
+                  onChange={e => {
+                    if (e.target.value === 'new') {
+                      window.location.href = '/page/2.2.9';
+                      return;
+                    }
+                    handleInputChange(e);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Select WBS...</option>
                   {wbsLevels.sort((a, b) => a.level - b.level).map(wbs => (
                     <option key={wbs.id} value={wbs.id}>{wbs.code} - {wbs.title}</option>
                   ))}
+                  <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
                 </select>
               </div>
 
@@ -335,12 +342,19 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <select 
                   name="division"
                   value={formData.division || '01'}
-                  onChange={handleInputChange}
+                  onChange={e => {
+                    if (e.target.value === 'new') {
+                      window.location.href = '/page/2.2.1';
+                      return;
+                    }
+                    handleInputChange(e);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   {masterFormatDivisions.map(div => (
                     <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
                   ))}
+                  <option value="new" className="text-blue-600 font-bold">+ Add New Division...</option>
                 </select>
               </div>
 
@@ -351,7 +365,13 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <select 
                   name="workPackage"
                   value={formData.workPackage || ''}
-                  onChange={handleInputChange}
+                  onChange={e => {
+                    if (e.target.value === 'new') {
+                      window.location.href = '/page/2.2.9?tab=packages';
+                      return;
+                    }
+                    handleInputChange(e);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Select Work Package...</option>
@@ -361,6 +381,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   ).map(wp => (
                     <option key={wp.id} value={wp.title}>{wp.title}</option>
                   ))}
+                  <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
                 </select>
               </div>
 
@@ -369,7 +390,13 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <select 
                   name="assigneeId"
                   value={formData.assigneeId || ''}
-                  onChange={handleInputChange}
+                  onChange={e => {
+                    if (e.target.value === 'new') {
+                      window.location.href = '/page/2.2.11';
+                      return;
+                    }
+                    handleInputChange(e);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Unassigned</option>
@@ -383,6 +410,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                     ))}
                   </optgroup>
+                  <option value="new" className="text-blue-600 font-bold">+ Add New User/Stakeholder...</option>
                 </select>
               </div>
 
@@ -407,13 +435,20 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   <select 
                     name="supplierId"
                     value={formData.supplierId || ''}
-                    onChange={handleInputChange}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        window.location.href = '/page/4.2.1';
+                        return;
+                      }
+                      handleInputChange(e);
+                    }}
                     className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                   >
                     <option value="">Select Supplier...</option>
                     {vendors.map(v => (
                       <option key={v.id} value={v.id}>{v.name} ({v.vendorCode})</option>
                     ))}
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Supplier...</option>
                   </select>
                 </div>
               </div>
