@@ -97,6 +97,12 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
         const data = snap.data() as Project;
         if (data.commPlanData) {
           setCommPlan(data.commPlanData as unknown as CommPlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setCommPlan(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.commPlanHistory) {
           setVersions(data.commPlanHistory);
@@ -118,7 +124,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       unsubComm();
       unsubStakeholders();
     };
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

@@ -312,7 +312,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
               ...pData.pmpData,
               baselines: {
                 ...pData.pmpData.baselines,
-                costVariance: `${currentVariance}\n[CR ${entryData.requestId}]: +${newImpact.toLocaleString()} IQD`
+                costVariance: `${currentVariance}\n[CR ${entryData.requestId}]: +${newImpact.toLocaleString('en-US')} IQD`
               }
             };
             await updateDoc(doc(db, 'projects', selectedProject.id), { pmpData: updatedPmp });
@@ -408,10 +408,10 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
     autoTable(doc, {
       startY: y + 2,
       body: [
-        ['Original Contract Value:', formData.financialSummary?.originalContractValue?.toLocaleString() || '0'],
-        ['Previous Changes Value:', formData.financialSummary?.previousChangesValue?.toLocaleString() || '0'],
-        ['Current Change Value:', formData.financialSummary?.currentChangeValue?.toLocaleString() || '0'],
-        ['TOTAL CONTRACT VALUE:', calculateTotal(formData.financialSummary).toLocaleString() || '0']
+        ['Original Contract Value:', formData.financialSummary?.originalContractValue?.toLocaleString('en-US') || '0'],
+        ['Previous Changes Value:', formData.financialSummary?.previousChangesValue?.toLocaleString('en-US') || '0'],
+        ['Current Change Value:', formData.financialSummary?.currentChangeValue?.toLocaleString('en-US') || '0'],
+        ['TOTAL CONTRACT VALUE:', calculateTotal(formData.financialSummary).toLocaleString('en-US') || '0']
       ],
       theme: 'grid',
       styles: { fontSize: 9 },
@@ -646,7 +646,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Contract Value</label>
                   <div className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-black text-blue-400 flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    {calculateTotal(formData.financialSummary).toLocaleString()}
+                    {calculateTotal(formData.financialSummary).toLocaleString('en-US')}
                   </div>
                 </div>
               </div>

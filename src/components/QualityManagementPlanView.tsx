@@ -90,6 +90,12 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
         const data = snap.data() as Project;
         if (data.qmpData) {
           setQmp(data.qmpData as unknown as QMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setQmp(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.qmpHistory) {
           setVersions(data.qmpHistory);
@@ -99,7 +105,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

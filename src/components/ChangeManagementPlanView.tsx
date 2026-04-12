@@ -91,6 +91,16 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
     }
   });
 
+  // Auto-fill project title
+  useEffect(() => {
+    if (selectedProject && !cmp.projectTitle) {
+      setCmp(prev => ({
+        ...prev,
+        projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+      }));
+    }
+  }, [selectedProject, cmp.projectTitle]);
+
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,6 +115,12 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
         const data = snap.data() as Project;
         if (data.cmpData) {
           setCmp(data.cmpData as unknown as CMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setCmp(prev => ({
+            ...prev,
+            projectTitle: `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.cmpHistory) {
           setVersions(data.cmpHistory);
@@ -114,7 +130,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

@@ -115,6 +115,12 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
         const data = snap.data() as Project;
         if (data.hrmpData) {
           setHrmp(data.hrmpData as unknown as HRMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setHrmp(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.hrmpHistory) {
           setVersions(data.hrmpHistory);
@@ -124,7 +130,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleAddRole = () => {
     const newRole: HRRole = {

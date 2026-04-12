@@ -98,6 +98,12 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
         const data = snap.data() as Project;
         if (data.rmpData) {
           setRmp(data.rmpData as unknown as RMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setRmp(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.rmpHistory) {
           setVersions(data.rmpHistory);
@@ -107,7 +113,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

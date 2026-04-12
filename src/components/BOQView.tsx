@@ -33,6 +33,14 @@ export const BOQView: React.FC = () => {
   const [isAddingWorkPackage, setIsAddingWorkPackage] = useState(false);
   const [newWorkPackage, setNewWorkPackage] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddPackageModal, setShowAddPackageModal] = useState(false);
+  const [newPackageData, setNewPackageData] = useState<Partial<WorkPackage>>({
+    title: '',
+    description: '',
+    divisionId: '01',
+    wbsId: '',
+    status: 'Active'
+  });
 
   // Form states
   const [showAddItem, setShowAddItem] = useState(false);
@@ -172,6 +180,34 @@ export const BOQView: React.FC = () => {
     }
   };
 
+  const handleAddWorkPackage = async () => {
+    if (!selectedProject || !newPackageData.title) return;
+    try {
+      const id = crypto.randomUUID();
+      const division = masterFormatDivisions.find(d => d.id === newPackageData.divisionId);
+      const wbs = wbsLevels.find(l => l.id === newPackageData.wbsId);
+      
+      const wp: WorkPackage = {
+        id,
+        projectId: selectedProject.id,
+        wbsId: newPackageData.wbsId || '',
+        divisionId: newPackageData.divisionId || '01',
+        title: newPackageData.title,
+        description: newPackageData.description || '',
+        status: 'Active',
+        code: `${division?.id || '00'}-${wbs?.code || 'GEN'}-${workPackages.length + 1}`,
+        updatedAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, 'work_packages', id), wp);
+      setShowAddPackageModal(false);
+      setNewItem(prev => ({ ...prev, workPackage: wp.title }));
+      setNewPackageData({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'work_packages');
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedProject) return;
@@ -257,7 +293,7 @@ export const BOQView: React.FC = () => {
 
       // Save extracted items to Firestore
       for (const item of extractedItems) {
-        const inputCurrency = item.currency || baseCurrency;
+        const inputCurrency = item.inputCurrency || item.currency || baseCurrency;
         const exchangeRateUsed = globalExchangeRate;
         const inputRate = item.rate || 0;
         const quantity = item.quantity || 0;
@@ -355,7 +391,7 @@ export const BOQView: React.FC = () => {
       const tableBody = divItems.map((item, idx) => [
         `Div ${divId} ${(idx + 1).toString().padStart(2, '0')}`,
         item.description,
-        item.quantity.toLocaleString(),
+        item.quantity.toLocaleString('en-US'),
         item.unit,
         formatAmount(item.inputRate || 0, item.inputCurrency || baseCurrency, item.exchangeRateUsed),
         formatAmount(item.amount, baseCurrency)
@@ -901,7 +937,8 @@ export const BOQView: React.FC = () => {
                     value={newItem.workPackage}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        window.location.href = '/page/2.2.9?tab=packages';
+                        setNewPackageData(prev => ({ ...prev, divisionId: newItem.division, wbsId: selectedWbsId || '' }));
+                        setShowAddPackageModal(true);
                         return;
                       }
                       setNewItem({...newItem, workPackage: e.target.value})
@@ -1056,7 +1093,8 @@ export const BOQView: React.FC = () => {
                     value={editingItem.workPackage}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        window.location.href = '/page/2.2.9?tab=packages';
+                        setNewPackageData(prev => ({ ...prev, divisionId: editingItem.division, wbsId: editingItem.wbsId }));
+                        setShowAddPackageModal(true);
                         return;
                       }
                       setEditingItem({...editingItem, workPackage: e.target.value})
@@ -1156,6 +1194,94 @@ export const BOQView: React.FC = () => {
                     className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                   >
                     Save Changes
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddPackageModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl"
+            >
+              <h3 className="text-2xl font-bold text-slate-900 mb-6">Add Work Package</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      list="boq-masterformat-sections"
+                      value={newPackageData.title}
+                      onChange={e => setNewPackageData({...newPackageData, title: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g. Concrete Substructure"
+                    />
+                    <datalist id="boq-masterformat-sections">
+                      {masterFormatSections
+                        .filter(s => s.divisionId === newPackageData.divisionId)
+                        .map(section => (
+                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                        ))
+                      }
+                    </datalist>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                  <textarea 
+                    value={newPackageData.description}
+                    onChange={e => setNewPackageData({...newPackageData, description: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
+                    placeholder="Describe the scope of this work package..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division</label>
+                    <select 
+                      value={newPackageData.divisionId}
+                      onChange={e => setNewPackageData({...newPackageData, divisionId: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      {masterFormatDivisions.map(div => (
+                        <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">WBS Level</label>
+                    <select 
+                      value={newPackageData.wbsId}
+                      onChange={e => setNewPackageData({...newPackageData, wbsId: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">General / Project Wide</option>
+                      {wbsLevels.map(l => (
+                        <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    onClick={() => setShowAddPackageModal(false)}
+                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleAddWorkPackage}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    Create Package
                   </button>
                 </div>
               </div>

@@ -135,6 +135,16 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
     }))
   });
 
+  // Auto-fill project title
+  useEffect(() => {
+    if (selectedProject && !riskPlan.projectTitle) {
+      setRiskPlan(prev => ({
+        ...prev,
+        projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+      }));
+    }
+  }, [selectedProject, riskPlan.projectTitle]);
+
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +160,12 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
         const data = snap.data() as Project;
         if (data.riskPlanData) {
           setRiskPlan(data.riskPlanData as unknown as RiskPlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setRiskPlan(prev => ({
+            ...prev,
+            projectTitle: `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.riskPlanHistory) {
           setVersions(data.riskPlanHistory);
@@ -169,7 +185,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
       unsubProject();
       unsubStakeholders();
     };
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

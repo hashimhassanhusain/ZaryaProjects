@@ -61,7 +61,7 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
 
 export const ProjectDashboard: React.FC = () => {
   const { selectedProject, setSelectedProject, projects, loading } = useProject();
-  const { formatAmount, convertToIQD } = useCurrency();
+  const { formatAmount, convertToBase } = useCurrency();
   const { projectId } = useParams();
   const [boqTotal, setBoqTotal] = useState(0);
 
@@ -84,13 +84,13 @@ export const ProjectDashboard: React.FC = () => {
         const amount = item.amount || 0;
         const itemCurrency = item.inputCurrency || 'IQD';
         // Convert everything to IQD for the total
-        return sum + (itemCurrency === 'USD' ? convertToIQD(amount, 'USD') : amount);
+        return sum + (itemCurrency === 'USD' ? convertToBase(amount, 'USD') : amount);
       }, 0);
       setBoqTotal(total);
     });
 
     return () => unsubscribe();
-  }, [selectedProject, convertToIQD]);
+  }, [selectedProject, convertToBase]);
 
   if (loading) {
     return (

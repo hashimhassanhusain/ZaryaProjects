@@ -391,7 +391,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   return;
                 }
                 const act = activities.find(a => a.id === e.target.value);
-                setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: act?.workPackage || '' }));
+                setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: e.target.value }));
               }}
               className="w-full bg-slate-50 border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
@@ -784,7 +784,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <div>
               <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest">Global Project Limit</h4>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight">${globalLimit.toLocaleString()}</span>
+                <span className="text-2xl font-black tracking-tight">${globalLimit.toLocaleString('en-US')}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">USD (Synced from PMP)</span>
               </div>
             </div>

@@ -20,7 +20,10 @@ import {
   Package,
   AlertTriangle,
   Target,
-  Settings
+  Settings,
+  ClipboardList,
+  Gavel,
+  Award
 } from 'lucide-react';
 import { pages, getChildren, getBreadcrumbs, getFocusArea } from '../data';
 import { Project } from '../types';
@@ -265,7 +268,10 @@ export const Sidebar: React.FC = () => {
         items: [
           { id: '2.1.2', title: 'Project Management Plan', icon: DraftingCompass },
           { id: '2.6', title: 'Resources & Optimization', icon: Package },
-          { id: 'logs', title: 'Project Logs', icon: FileText },
+          { id: '1.2.1', title: 'Stakeholder Register', icon: Users },
+          { id: '2.1.5', title: 'Assumptions Log', icon: ClipboardList },
+          { id: '3.1.3', title: 'Decision Log', icon: Gavel },
+          { id: '5.1.1', title: 'Lessons Learned', icon: Award },
           { id: '2.2.9', title: 'WBS', icon: Grid3X3 },
         ]
       },

@@ -91,6 +91,12 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
         const data = snap.data() as Project;
         if (data.scopePlanData) {
           setScope(data.scopePlanData as unknown as ScopePlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setScope(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.scopePlanHistory) {
           setVersions(data.scopePlanHistory);
@@ -100,7 +106,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

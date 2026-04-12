@@ -106,6 +106,12 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
         const data = snap.data() as Project;
         if (data.schedulePlanData) {
           setSchedulePlan(data.schedulePlanData as unknown as SchedulePlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setSchedulePlan(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.schedulePlanHistory) {
           setVersions(data.schedulePlanHistory);
@@ -115,7 +121,7 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

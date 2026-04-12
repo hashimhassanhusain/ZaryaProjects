@@ -1645,7 +1645,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
               getCostColor={getCostColor}
             />
           ))}
-          {!hasDivisionNodes && activeDivisions.map(divId => {
+          {wbs.type !== 'Division' && !hasDivisionNodes && activeDivisions.map(divId => {
             const division = masterFormatDivisions.find(d => d.id === divId);
             const divActivities = activitiesByDivision[divId];
             const divKey = `${wbs.id}-${divId}`;
@@ -1716,6 +1716,28 @@ const WbsRow: React.FC<WbsRowProps> = ({
               </React.Fragment>
             );
           })}
+          {wbs.type === 'Division' && wbsActivities.map(act => (
+            <ActivityRow 
+              key={act.id}
+              act={act}
+              wbsLevel={wbs.level}
+              columnWidths={columnWidths}
+              visibleColumns={visibleColumns}
+              purchaseOrders={purchaseOrders}
+              vendors={vendors}
+              setEditingActivity={setEditingActivity}
+              onToggleActivity={onToggleActivity}
+              isActExpanded={expandedActivities[act.id]}
+              navigate={navigate}
+              rowRefs={rowRefs}
+              activityColWidth={activityColWidth}
+              getProgress={getProgress}
+              getDateColor={getDateColor}
+              getDurationColor={getDurationColor}
+              getCostColor={getCostColor}
+              viewLevel={viewLevel}
+            />
+          ))}
         </>
       )}
     </>
@@ -1785,7 +1807,7 @@ const GanttRow: React.FC<GanttRowProps> = ({
               calculateWbsProgress={calculateWbsProgress}
             />
           ))}
-          {activeDivisions.map(divId => {
+          {wbs.type !== 'Division' && activeDivisions.map(divId => {
             const divActivities = activitiesByDivision[divId];
             const divKey = `${wbs.id}-${divId}`;
             const isDivExpanded = expanded[divKey] ?? true;
@@ -1827,6 +1849,32 @@ const GanttRow: React.FC<GanttRowProps> = ({
                     </React.Fragment>
                   );
                 })}
+              </React.Fragment>
+            );
+          })}
+          {wbs.type === 'Division' && wbsActivities.map(act => {
+            const isActExpanded = expandedActivities[act.id];
+            const linkedPO = purchaseOrders.find(po => po.id === act.poId);
+
+            return (
+              <React.Fragment key={act.id}>
+                <div 
+                  ref={el => { if (el) rowRefs.current.set(`gantt-${act.id}`, el); }}
+                  className="h-10 flex items-center bg-white relative border-b border-slate-100"
+                >
+                  {renderBar(act)}
+                </div>
+                {isActExpanded && linkedPO && (
+                  <div className="bg-slate-50/30">
+                    {/* PO Header Row in Gantt if in PO view */}
+                    {(viewLevel === 'po' || viewLevel === 'poitem') && (
+                      <div className="h-9 border-b border-blue-50/50" />
+                    )}
+                    {linkedPO.lineItems.map(li => (
+                      <div key={li.id} className="h-8 border-b border-slate-50/50" />
+                    ))}
+                  </div>
+                )}
               </React.Fragment>
             );
           })}

@@ -47,6 +47,7 @@ export interface WBSLevel {
   plannedCost?: number;
   actualCost?: number;
   progress?: number;
+  divisionCode?: string; // For Division type levels
 }
 
 export interface POLineItem {

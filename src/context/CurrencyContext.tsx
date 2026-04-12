@@ -72,7 +72,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (currency === 'USD') {
       return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(baseAmount);
     } else {
-      return new Intl.NumberFormat('ar-IQ', { 
+      return new Intl.NumberFormat('en-US', { 
         style: 'currency', 
         currency: 'IQD',
         maximumFractionDigits: 0 

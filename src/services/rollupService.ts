@@ -27,8 +27,12 @@ export async function rollupToParent(
     // 1. Fetch all children and calculate values
     if (level === 'lineItem') {
       // Parent is a PO
-      const poDoc = await getDoc(doc(db, 'purchaseOrders', parentId));
-      if (!poDoc.exists()) return;
+      const poRef = doc(db, 'purchaseOrders', parentId);
+      const poDoc = await getDoc(poRef);
+      if (!poDoc.exists()) {
+        console.warn(`Purchase Order ${parentId} not found for rollup`);
+        return;
+      }
       const po = poDoc.data() as PurchaseOrder;
       const children = po.lineItems || [];
 
@@ -47,7 +51,7 @@ export async function rollupToParent(
       const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
 
       // Update PO
-      await updateDoc(doc(db, 'purchaseOrders', parentId), {
+      await updateDoc(poRef, {
         amount: plannedCost,
         actualCost: actualCost,
         completion: Math.round(progress)
@@ -60,12 +64,19 @@ export async function rollupToParent(
     } 
     else if (level === 'po') {
       // Parent is a Work Package (Activity)
+      const parentRef = doc(db, 'activities', parentId);
+      const parentDoc = await getDoc(parentRef);
+      
+      if (!parentDoc.exists()) {
+        console.warn(`Activity ${parentId} not found for rollup. This might happen if workPackageId is a string label instead of a document ID.`);
+        return;
+      }
+
       const q = query(collection(db, 'purchaseOrders'), where('workPackageId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as PurchaseOrder);
 
-      const parentDoc = await getDoc(doc(db, 'activities', parentId));
-      const parentData = parentDoc.exists() ? parentDoc.data() as Activity : null;
+      const parentData = parentDoc.data() as Activity;
       const manualPlannedCost = parentData?.amount || 0;
       const manualActualCost = parentData?.actualAmount || 0;
 
@@ -111,7 +122,7 @@ export async function rollupToParent(
         updateData.duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      await updateDoc(doc(db, 'activities', parentId), updateData);
+      await updateDoc(parentRef, updateData);
 
       // Continue rollup to Division
       if (parentData?.division && parentData?.wbsId) {
@@ -123,12 +134,19 @@ export async function rollupToParent(
     else if (level === 'workPackage') {
       // Parent is a Division
       // Division documents are in 'wbs' collection with type 'Division'
+      const parentRef = doc(db, 'wbs', parentId);
+      const parentDoc = await getDoc(parentRef);
+      
+      if (!parentDoc.exists()) {
+        console.warn(`Division WBS node ${parentId} not found for rollup`);
+        return;
+      }
+
       const q = query(collection(db, 'activities'), where('divisionId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as Activity);
 
-      const parentDoc = await getDoc(doc(db, 'wbs', parentId));
-      const parentData = parentDoc.exists() ? parentDoc.data() as any : null;
+      const parentData = parentDoc.data() as any;
 
       children.forEach(child => {
         if (child.startDate) {
@@ -170,7 +188,7 @@ export async function rollupToParent(
         updateData.plannedDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      await updateDoc(doc(db, 'wbs', parentId), updateData);
+      await updateDoc(parentRef, updateData);
 
       if (parentData?.parentId) {
         await rollupToParent('division', parentData.parentId);
@@ -178,12 +196,19 @@ export async function rollupToParent(
     }
     else {
       // Parent is Floor, Building, Area, or Zone (all in 'wbs' collection)
+      const parentRef = doc(db, 'wbs', parentId);
+      const parentDoc = await getDoc(parentRef);
+      
+      if (!parentDoc.exists()) {
+        console.warn(`WBS node ${parentId} not found for rollup`);
+        return;
+      }
+
       const q = query(collection(db, 'wbs'), where('parentId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as any);
 
-      const parentDoc = await getDoc(doc(db, 'wbs', parentId));
-      const parentData = parentDoc.exists() ? parentDoc.data() as any : null;
+      const parentData = parentDoc.data() as any;
 
       children.forEach(child => {
         if (child.plannedStart) {
@@ -225,7 +250,7 @@ export async function rollupToParent(
         updateData.plannedDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      await updateDoc(doc(db, 'wbs', parentId), updateData);
+      await updateDoc(parentRef, updateData);
 
       if (parentData?.parentId) {
         const currentLevelIndex = LEVEL_ORDER.indexOf(level);

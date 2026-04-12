@@ -159,6 +159,12 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         const data = snap.data() as Project;
         if (data.charterData) {
           setCharter(data.charterData as unknown as CharterData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setCharter(prev => ({
+            ...prev,
+            projectTitle: `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.charterHistory) {
           setVersions(data.charterHistory);
@@ -168,7 +174,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;
@@ -375,7 +381,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     y += 5;
     doc.rect(margin, y, pageWidth - 2 * margin, 15);
     doc.setFont('helvetica', 'normal');
-    const budgetText = charter.estimatedBudget ? `${charter.currency} ${charter.estimatedBudget.toLocaleString()}` : 'Not Specified';
+    const budgetText = charter.estimatedBudget ? `${charter.currency} ${charter.estimatedBudget.toLocaleString('en-US')}` : 'Not Specified';
     doc.text(budgetText, margin + 5, y + 10);
     y += 25;
 

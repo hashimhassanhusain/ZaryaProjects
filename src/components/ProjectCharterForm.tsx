@@ -211,7 +211,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                   {formData['Estimated Budget'] ? (
                     isNaN(Number(formData['Estimated Budget'])) ? 
                       formData['Estimated Budget'] : 
-                      new Intl.NumberFormat(formData['Base Currency'] === 'IQD' ? 'ar-IQ' : 'en-US', {
+                      new Intl.NumberFormat('en-US', {
                         style: 'currency',
                         currency: formData['Base Currency'] || 'IQD',
                         maximumFractionDigits: 0
@@ -317,7 +317,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Date</p>
-                <p className="text-sm font-medium">{new Date().toLocaleDateString()}</p>
+                <p className="text-sm font-medium">{new Date().toLocaleDateString('en-US')}</p>
               </div>
             </div>
 
@@ -334,7 +334,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Date</p>
-                <p className="text-sm font-medium">{new Date().toLocaleDateString()}</p>
+                <p className="text-sm font-medium">{new Date().toLocaleDateString('en-US')}</p>
               </div>
             </div>
           </div>

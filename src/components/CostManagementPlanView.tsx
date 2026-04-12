@@ -107,6 +107,12 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
         const data = snap.data() as Project;
         if (data.costPlanData) {
           setCostPlan(data.costPlanData as unknown as CostPlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setCostPlan(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.costPlanHistory) {
           setVersions(data.costPlanHistory);
@@ -116,7 +122,7 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const calculateThresholdValue = () => {
     if (!selectedProject?.charterData?.estimatedBudget) return null;

@@ -194,7 +194,7 @@ export const Header: React.FC = () => {
                         currency === 'IQD' ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20" : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                       )}
                     >
-                      IQD (د.ع)
+                      IQD
                     </button>
                   </div>
                 </div>

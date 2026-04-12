@@ -16,7 +16,7 @@ export const ResourcesView: React.FC = () => {
   const [dbUsers, setDbUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'All' | 'Material' | 'Machine'>('All');
+  const [filterType, setFilterType] = useState<'All' | 'Manpower' | 'Material' | 'Machine'>('All');
   const [isAdding, setIsAdding] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource3M | null>(null);
   const [formData, setFormData] = useState<Partial<Resource3M>>({
@@ -146,7 +146,7 @@ export const ResourcesView: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex bg-slate-100 p-1 rounded-xl">
-          {(['All', 'Material', 'Machine'] as const).map((type) => (
+          {(['All', 'Manpower', 'Material', 'Machine'] as const).map((type) => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
@@ -271,7 +271,7 @@ export const ResourcesView: React.FC = () => {
                     <div className="col-span-2">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Resource Type</label>
                       <div className="flex gap-2">
-                        {(['Material', 'Machine'] as const).map(type => (
+                        {(['Manpower', 'Material', 'Machine'] as const).map(type => (
                           <button
                             key={type}
                             type="button"

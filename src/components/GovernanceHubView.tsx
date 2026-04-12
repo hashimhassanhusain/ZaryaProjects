@@ -56,14 +56,15 @@ interface GovernanceHubViewProps {
   page: Page;
 }
 
-type MainTab = 'charter' | 'policies' | 'plans' | 'schedule' | 'logs' | 'resource-hub';
+type MainTab = 'schedule' | 'charter' | 'policies' | 'plans';
 type PlanSubTab = 'pmp' | 'cmp' | 'qmp' | 'comm' | 'smp' | 'rmp' | 'scope' | 'hrmp' | 'schedule' | 'cost' | 'procurement' | 'risk' | 'quality';
 type LogSubTab = 'stakeholders' | 'assumptions' | 'decisions' | 'lessons';
 
 export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) => {
-  const [activeTab, setActiveTab] = useState<MainTab>('charter');
+  const [activeTab, setActiveTab] = useState<MainTab>('schedule');
   const [activePlan, setActivePlan] = useState<PlanSubTab>('pmp');
   const [activeLog, setActiveLog] = useState<LogSubTab>('stakeholders');
+  const [viewMode, setViewMode] = useState<'plan' | 'log'>('plan');
 
   // Sync active tab with page.id if needed
   useEffect(() => {
@@ -71,14 +72,21 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     if (page.id === '1.1.2') setActiveTab('policies');
     if (page.id === '2.3') setActiveTab('schedule');
     if (['1.2.1', '2.1.5', '3.1.3', '5.1.1'].includes(page.id)) {
-      setActiveTab('logs');
+      setActiveTab('plans');
+      setViewMode('log');
       if (page.id === '1.2.1') setActiveLog('stakeholders');
       if (page.id === '2.1.5') setActiveLog('assumptions');
       if (page.id === '3.1.3') setActiveLog('decisions');
       if (page.id === '5.1.1') setActiveLog('lessons');
     }
     if (page.id.startsWith('2.1') && page.id !== '2.1.5') {
-      setActiveTab('plans');
+      if (page.id === '2.1.2') {
+        setActiveTab('schedule');
+        setViewMode('plan');
+      } else {
+        setActiveTab('plans');
+        setViewMode('plan');
+      }
       if (page.id === '2.1.2') setActivePlan('pmp');
       if (page.id === '2.1.1') setActivePlan('cmp');
       if (page.id === '2.1.3') setActivePlan('qmp');
@@ -96,12 +104,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   }, [page.id]);
 
   const mainTabs = [
+    { id: 'schedule', title: 'Schedule', icon: Calendar, pageId: '2.3' },
     { id: 'charter', title: 'Project Charter', icon: Award, pageId: '1.1.1' },
     { id: 'policies', title: 'Policies & Procedures', icon: Gavel, pageId: '1.1.2' },
-    { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' },
-    { id: 'schedule', title: 'Schedule', icon: Calendar, pageId: '2.3' },
-    { id: 'logs', title: 'Project Logs', icon: FileText, pageId: '1.2.1' },
-    { id: 'resource-hub', title: 'Resources & Optimization', icon: Users, pageId: '2.6' }
+    { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' }
   ];
 
   const managementPlans = [
@@ -159,20 +165,23 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
               {managementPlans.map((plan) => (
                 <button
                   key={plan.id}
-                  onClick={() => setActivePlan(plan.id as PlanSubTab)}
+                  onClick={() => {
+                    setActivePlan(plan.id as PlanSubTab);
+                    setViewMode('plan');
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all text-left",
-                    activePlan === plan.id 
+                    (activePlan === plan.id && viewMode === 'plan')
                       ? "bg-blue-50 text-blue-600 shadow-sm border border-blue-100" 
                       : "text-slate-500 hover:bg-slate-50"
                   )}
                 >
-                  <plan.icon className={cn("w-4 h-4", activePlan === plan.id ? "text-blue-600" : "text-slate-400")} />
+                  <plan.icon className={cn("w-4 h-4", (activePlan === plan.id && viewMode === 'plan') ? "text-blue-600" : "text-slate-400")} />
                   {plan.title}
                 </button>
               ))}
             </div>
-            
+
             <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200">
               <Settings className="w-8 h-8 mb-4 opacity-50" />
               <h4 className="font-bold mb-2">Plan Integration</h4>
@@ -183,37 +192,11 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
           </aside>
         )}
 
-        {/* Project Logs Side Menu */}
-        {activeTab === 'logs' && (
-          <aside className="lg:w-72 space-y-4">
-            <div className="bg-white rounded-[2rem] border border-slate-200 p-4 shadow-sm">
-              <div className="px-4 py-3 mb-2">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Logs</h3>
-              </div>
-              {logTabs.map((log) => (
-                <button
-                  key={log.id}
-                  onClick={() => setActiveLog(log.id as LogSubTab)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all text-left",
-                    activeLog === log.id 
-                      ? "bg-blue-50 text-blue-600 shadow-sm border border-blue-100" 
-                      : "text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  <log.icon className={cn("w-4 h-4", activeLog === log.id ? "text-blue-600" : "text-slate-400")} />
-                  {log.title}
-                </button>
-              ))}
-            </div>
-          </aside>
-        )}
-
         {/* Content Area */}
-        <main className={cn("flex-1", (activeTab !== 'plans' && activeTab !== 'logs') && "w-full")}>
+        <main className={cn("flex-1", (activeTab !== 'plans') && "w-full")}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${activeTab}-${activePlan}`}
+              key={`${activeTab}-${activePlan}-${activeLog}-${viewMode}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -222,33 +205,33 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
               {activeTab === 'charter' && <ProjectCharterView page={page} />}
               {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
               {activeTab === 'schedule' && <ProjectScheduleView page={{ ...page, id: '2.3', title: 'Project Schedule' }} />}
-              {activeTab === 'resource-hub' && <ResourceOptimizationHub page={{ ...page, id: '2.6', title: 'Resources & Optimization' }} />}
-              {activeTab === 'logs' && (
-                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                  <div className="p-10">
-                    {activeLog === 'stakeholders' && <StakeholderRegisterView page={{ ...page, id: '1.2.1' }} />}
-                    {activeLog === 'assumptions' && <AssumptionConstraintView page={{ ...page, id: '2.1.5' }} />}
-                    {activeLog === 'decisions' && <DecisionLogView page={{ ...page, id: '3.1.3' }} />}
-                    {activeLog === 'lessons' && <LessonsLearnedView page={{ ...page, id: '5.1.1' }} />}
-                  </div>
-                </div>
-              )}
               {activeTab === 'plans' && (
                 <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                   <div className="p-10">
-                    {activePlan === 'pmp' && <ProjectManagementPlanView page={page} />}
-                    {activePlan === 'cmp' && <ChangeManagementPlanView page={page} />}
-                    {activePlan === 'qmp' && <QualityManagementPlanView page={page} />}
-                    {activePlan === 'comm' && <CommunicationsManagementPlanView page={page} />}
-                    {activePlan === 'smp' && <StakeholderManagementPlanView page={page} />}
-                    {activePlan === 'rmp' && <RequirementsManagementPlanView page={page} />}
-                    {activePlan === 'scope' && <ScopeManagementPlanView page={page} />}
-                    {activePlan === 'hrmp' && <HumanResourceManagementPlanView page={page} />}
-                    {activePlan === 'schedule' && <ScheduleManagementPlanView page={page} />}
-                    {activePlan === 'cost' && <CostManagementPlanView page={page} />}
-                    {activePlan === 'procurement' && <ProcurementManagementPlanView page={page} />}
-                    {activePlan === 'risk' && <RiskManagementPlanView page={page} />}
-                    {activePlan === 'quality' && <QualityMetricsRegisterView page={page} />}
+                    {viewMode === 'plan' ? (
+                      <>
+                        {activePlan === 'pmp' && <ProjectManagementPlanView page={page} />}
+                        {activePlan === 'cmp' && <ChangeManagementPlanView page={page} />}
+                        {activePlan === 'qmp' && <QualityManagementPlanView page={page} />}
+                        {activePlan === 'comm' && <CommunicationsManagementPlanView page={page} />}
+                        {activePlan === 'smp' && <StakeholderManagementPlanView page={page} />}
+                        {activePlan === 'rmp' && <RequirementsManagementPlanView page={page} />}
+                        {activePlan === 'scope' && <ScopeManagementPlanView page={page} />}
+                        {activePlan === 'hrmp' && <HumanResourceManagementPlanView page={page} />}
+                        {activePlan === 'schedule' && <ScheduleManagementPlanView page={page} />}
+                        {activePlan === 'cost' && <CostManagementPlanView page={page} />}
+                        {activePlan === 'procurement' && <ProcurementManagementPlanView page={page} />}
+                        {activePlan === 'risk' && <RiskManagementPlanView page={page} />}
+                        {activePlan === 'quality' && <QualityMetricsRegisterView page={page} />}
+                      </>
+                    ) : (
+                      <>
+                        {activeLog === 'stakeholders' && <StakeholderRegisterView page={{ ...page, id: '1.2.1' }} />}
+                        {activeLog === 'assumptions' && <AssumptionConstraintView page={{ ...page, id: '2.1.5' }} />}
+                        {activeLog === 'decisions' && <DecisionLogView page={{ ...page, id: '3.1.3' }} />}
+                        {activeLog === 'lessons' && <LessonsLearnedView page={{ ...page, id: '5.1.1' }} />}
+                      </>
+                    )}
                   </div>
                 </div>
               )}

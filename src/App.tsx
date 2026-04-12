@@ -176,7 +176,7 @@ const PageRenderer = () => {
   const isGovernanceHubPage = [
     '1.1.1', '1.1.2', // Charter, Policies
     '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
-    '2.1.5' // Logs
+    '2.1.5', '1.2.1', '3.1.3', '5.1.1' // Logs
   ].includes(page.id);
   const isChangeRequestPage = page.id === '3.1.1';
   const isDecisionLogPage = page.id === '3.1.3';
@@ -221,14 +221,14 @@ const PageRenderer = () => {
           <RiskRegisterView page={page} />
         ) : isRiskHubPage ? (
           <RiskOpportunityHub page={page} />
+        ) : isGovernanceHubPage ? (
+          <GovernanceHubView page={page} />
         ) : isStakeholderRegisterPage ? (
           <StakeholderRegisterView page={page} />
         ) : isLessonsLearnedPage ? (
           <LessonsLearnedView page={page} />
         ) : isResourceOptimizationPage ? (
           <ResourceOptimizationHub page={page} />
-        ) : isGovernanceHubPage ? (
-          <GovernanceHubView page={page} />
         ) : isDecisionLogPage ? (
           <DecisionLogView page={page} />
         ) : isChangeManagementHubPage ? (

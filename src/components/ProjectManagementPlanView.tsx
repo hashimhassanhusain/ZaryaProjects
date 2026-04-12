@@ -112,6 +112,16 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
     projectReviews: ''
   });
 
+  // Auto-fill project title
+  useEffect(() => {
+    if (selectedProject && !pmp.projectTitle) {
+      setPmp(prev => ({
+        ...prev,
+        projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+      }));
+    }
+  }, [selectedProject, pmp.projectTitle]);
+
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -126,6 +136,12 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
         const data = snap.data() as Project;
         if (data.pmpData) {
           setPmp(data.pmpData as unknown as PMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setPmp(prev => ({
+            ...prev,
+            projectTitle: `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.pmpHistory) {
           setVersions(data.pmpHistory);
@@ -135,7 +151,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

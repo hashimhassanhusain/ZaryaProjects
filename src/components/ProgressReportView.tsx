@@ -702,7 +702,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Report Date</label>
                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 font-medium">
                   <Calendar className="w-4 h-4 text-slate-400" />
-                  {editingReport?.date || new Date().toLocaleDateString()}
+                  {editingReport?.date || new Date().toLocaleDateString('en-US')}
                 </div>
               </div>
             </section>
@@ -716,7 +716,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Site Weather</h3>
-                    <p className="text-sm text-slate-500">Automatically recorded for {editingReport?.date || new Date().toLocaleDateString()}</p>
+                    <p className="text-sm text-slate-500">Automatically recorded for {editingReport?.date || new Date().toLocaleDateString('en-US')}</p>
                   </div>
                 </div>
                 {weather && (

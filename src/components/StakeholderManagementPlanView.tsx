@@ -98,6 +98,12 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
         const data = snap.data() as Project;
         if (data.smpData) {
           setSmp(data.smpData as unknown as SMPData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setSmp(prev => ({
+            ...prev,
+            projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.smpHistory) {
           setVersions(data.smpHistory);
@@ -116,7 +122,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
       unsubSMP();
       unsubStakeholders();
     };
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;

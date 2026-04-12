@@ -144,6 +144,16 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
     ]
   });
 
+  // Auto-fill project title
+  useEffect(() => {
+    if (selectedProject && !procPlan.projectTitle) {
+      setProcPlan(prev => ({
+        ...prev,
+        projectTitle: prev.projectTitle || `${selectedProject.name} (${selectedProject.code})`
+      }));
+    }
+  }, [selectedProject, procPlan.projectTitle]);
+
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -158,6 +168,12 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         const data = snap.data() as Project;
         if (data.procurementPlanData) {
           setProcPlan(data.procurementPlanData as unknown as ProcurementPlanData);
+        } else {
+          // Auto-fill project title if no data exists yet
+          setProcPlan(prev => ({
+            ...prev,
+            projectTitle: `${selectedProject.name} (${selectedProject.code})`
+          }));
         }
         if (data.procurementPlanHistory) {
           setVersions(data.procurementPlanHistory);
@@ -167,7 +183,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
     });
 
     return () => unsub();
-  }, [selectedProject?.id]);
+  }, [selectedProject?.id, selectedProject?.name, selectedProject?.code]);
 
   const totalWeight = procPlan.selectionCriteria.reduce((sum, c) => sum + c.weight, 0);
 

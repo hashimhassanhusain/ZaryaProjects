@@ -59,7 +59,7 @@ const getDomainIcon = (domain?: string, title?: string) => {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChildren }) => {
   const { selectedProject } = useProject();
-  const { formatAmount, convertToIQD } = useCurrency();
+  const { formatAmount, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -103,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
     .map(level => {
       const total = boqItems
         .filter(item => item.wbsId === level.id)
-        .reduce((sum, item) => sum + (item.currency === 'USD' ? convertToIQD(item.amount, 'USD') : item.amount), 0);
+        .reduce((sum, item) => sum + (item.inputCurrency === 'USD' ? convertToBase(item.amount, 'USD') : item.amount), 0);
       return { ...level, total };
     })
     .filter(l => l.total > 0)

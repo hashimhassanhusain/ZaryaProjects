@@ -13,6 +13,7 @@ import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
 import { GoogleGenAI, Type } from "@google/genai";
 import { masterFormatDivisions } from '../data';
+import { masterFormatSections } from '../constants/masterFormat';
 
 export const WBSView: React.FC = () => {
   const { selectedProject } = useProject();
@@ -26,6 +27,9 @@ export const WBSView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'packages'>('hierarchy');
   const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
+  
+  const [isManualTitle, setIsManualTitle] = useState(false);
+  const [manualTitle, setManualTitle] = useState('');
   
   // Work Package states
   const [showAddPackage, setShowAddPackage] = useState(false);
@@ -44,6 +48,7 @@ export const WBSView: React.FC = () => {
       case 'Area': return 'A';
       case 'Building': return 'B';
       case 'Floor': return 'F';
+      case 'Division': return 'DIV';
       default: return 'O';
     }
   };
@@ -78,8 +83,10 @@ export const WBSView: React.FC = () => {
           {
             parts: [
               { text: `Analyze this project document and generate a comprehensive Work Breakdown Structure (WBS) for the project: ${selectedProject.name}. 
-              The WBS should be hierarchical (Zone -> Area -> Building -> Floor). 
-              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Floor, or Other), and parentTitle (if applicable).` },
+              The WBS should be hierarchical (Zone -> Area -> Building -> Floor -> Division). 
+              Use the 'Division' type for MasterFormat divisions (01-16). 
+              Avoid redundant naming (e.g., don't create a sub-level with the same name as its parent).
+              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Floor, Division, or Other), and parentTitle (if applicable).` },
               { inlineData: { data: base64Data, mimeType: file.type } }
             ]
           }
@@ -92,7 +99,7 @@ export const WBSView: React.FC = () => {
               type: Type.OBJECT,
               properties: {
                 title: { type: Type.STRING },
-                type: { type: Type.STRING, enum: ['Zone', 'Area', 'Building', 'Floor', 'Other'] },
+                type: { type: Type.STRING, enum: ['Zone', 'Area', 'Building', 'Floor', 'Division', 'Other'] },
                 parentTitle: { type: Type.STRING }
               },
               required: ['title', 'type']
@@ -119,7 +126,8 @@ export const WBSView: React.FC = () => {
           type: item.type,
           code,
           status: 'Not Started',
-          level: parentId ? (currentLevels.find(l => l.id === parentId)?.level || 0) + 1 : 1
+          level: parentId ? (currentLevels.find(l => l.id === parentId)?.level || 0) + 1 : 1,
+          divisionCode: item.type === 'Division' ? (item.title.match(/\d+/)?.[0] || '01') : undefined
         };
 
         if (parentId) {
@@ -222,6 +230,13 @@ export const WBSView: React.FC = () => {
       const parent = wbsLevels.find(l => l.id === newWbs.parentId);
       const code = generateCode(newWbs.type, newWbs.parentId || undefined, wbsLevels);
       
+      // Extract division code if type is Division
+      let divisionCode = '';
+      if (newWbs.type === 'Division') {
+        const div = masterFormatDivisions.find(d => d.title === newWbs.title);
+        divisionCode = div ? div.id : (newWbs.title.match(/\d+/)?.[0] || '01');
+      }
+
       const level: any = {
         id: crypto.randomUUID(),
         projectId: selectedProject.id,
@@ -229,7 +244,8 @@ export const WBSView: React.FC = () => {
         type: newWbs.type,
         code,
         status: 'Not Started',
-        level: parent ? parent.level + 1 : 1
+        level: parent ? parent.level + 1 : 1,
+        divisionCode
       };
 
       if (newWbs.parentId) {
@@ -567,6 +583,7 @@ export const WBSView: React.FC = () => {
                       <option value="Area">Area</option>
                       <option value="Building">Building</option>
                       <option value="Floor">Floor</option>
+                      <option value="Division">Division</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
@@ -584,18 +601,58 @@ export const WBSView: React.FC = () => {
                     </select>
                   </div>
                 </div>
+                {editingWbs.type === 'Division' ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division Title</label>
+                    <div className="space-y-2">
+                      <select 
+                        value={masterFormatDivisions.some(d => d.title === editingWbs.title) ? editingWbs.title : 'manual'}
+                        onChange={e => {
+                          if (e.target.value === 'manual') {
+                            setEditingWbs({...editingWbs, title: ''});
+                          } else {
+                            setEditingWbs({...editingWbs, title: e.target.value});
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="">Select Division...</option>
+                        {masterFormatDivisions.map(div => (
+                          <option key={div.id} value={div.title}>{div.id} - {div.title}</option>
+                        ))}
+                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                      </select>
+                      {(!masterFormatDivisions.some(d => d.title === editingWbs.title) || editingWbs.title === '') && (
+                        <input 
+                          type="text" 
+                          value={editingWbs.title}
+                          onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="Enter custom division title..."
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Parent Level</label>
                   <select 
                     value={editingWbs.parentId || ''}
-                    onChange={e => setEditingWbs({...editingWbs, parentId: e.target.value})}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        setEditingWbs(null);
+                        setShowAddWbs(true);
+                        return;
+                      }
+                      setEditingWbs({...editingWbs, parentId: e.target.value});
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">None (Root Level)</option>
                     {wbsLevels.filter(l => l.id !== editingWbs.id).map(l => (
                       <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
                     ))}
-                    <option value="new">+ Add New Level...</option>
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
                   </select>
                 </div>
                 <div className="flex gap-3 pt-4">
@@ -608,7 +665,14 @@ export const WBSView: React.FC = () => {
                   <button 
                     onClick={async () => {
                       try {
-                        await setDoc(doc(db, 'wbs', editingWbs.id), editingWbs);
+                        let updatedWbs = { ...editingWbs };
+                        if (updatedWbs.type === 'Division') {
+                          const div = masterFormatDivisions.find(d => d.title === updatedWbs.title);
+                          updatedWbs.divisionCode = div ? div.id : (updatedWbs.title.match(/\d+/)?.[0] || '01');
+                        } else {
+                          updatedWbs.divisionCode = undefined;
+                        }
+                        await setDoc(doc(db, 'wbs', editingWbs.id), updatedWbs);
                         setEditingWbs(null);
                       } catch (err) {
                         handleFirestoreError(err, OperationType.WRITE, 'wbs');
@@ -641,13 +705,50 @@ export const WBSView: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
-                  <input 
-                    type="text" 
-                    value={editingPackage ? editingPackage.title : newPackage.title}
-                    onChange={e => editingPackage ? setEditingPackage({...editingPackage, title: e.target.value}) : setNewPackage({...newPackage, title: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="e.g. Concrete Substructure"
-                  />
+                  {!isManualTitle ? (
+                    <select 
+                      value={editingPackage ? editingPackage.title : newPackage.title}
+                      onChange={e => {
+                        if (e.target.value === 'manual') {
+                          setIsManualTitle(true);
+                          return;
+                        }
+                        if (editingPackage) {
+                          setEditingPackage({...editingPackage, title: e.target.value});
+                        } else {
+                          setNewPackage({...newPackage, title: e.target.value});
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">Select from MasterFormat...</option>
+                      {masterFormatSections
+                        .filter(s => s.divisionId === (editingPackage ? editingPackage.divisionId : newPackage.divisionId))
+                        .map(section => (
+                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                        ))
+                      }
+                      <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)...</option>
+                    </select>
+                  ) : (
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={editingPackage ? editingPackage.title : newPackage.title}
+                        onChange={e => editingPackage ? setEditingPackage({...editingPackage, title: e.target.value}) : setNewPackage({...newPackage, title: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                        placeholder="Enter custom title..."
+                        autoFocus
+                      />
+                      <button 
+                        onClick={() => setIsManualTitle(false)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                        title="Back to list"
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
@@ -687,7 +788,16 @@ export const WBSView: React.FC = () => {
                           setShowAddWbs(true);
                           return;
                         }
-                        editingPackage ? setEditingPackage({...editingPackage, wbsId: e.target.value}) : setNewPackage({...newPackage, wbsId: e.target.value})
+                        const selectedWbs = wbsLevels.find(l => l.id === e.target.value);
+                        if (selectedWbs && selectedWbs.type === 'Division' && selectedWbs.divisionCode) {
+                          if (editingPackage) {
+                            setEditingPackage({...editingPackage, wbsId: e.target.value, divisionId: selectedWbs.divisionCode});
+                          } else {
+                            setNewPackage({...newPackage, wbsId: e.target.value, divisionId: selectedWbs.divisionCode});
+                          }
+                        } else {
+                          editingPackage ? setEditingPackage({...editingPackage, wbsId: e.target.value}) : setNewPackage({...newPackage, wbsId: e.target.value})
+                        }
                       }}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                     >
@@ -752,9 +862,43 @@ export const WBSView: React.FC = () => {
                     <option value="Area">Area</option>
                     <option value="Building">Building</option>
                     <option value="Floor">Floor</option>
+                    <option value="Division">Division</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
+                {newWbs.type === 'Division' ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Division Title</label>
+                    <div className="space-y-2">
+                      <select 
+                        value={masterFormatDivisions.some(d => d.title === newWbs.title) ? newWbs.title : (newWbs.title ? 'manual' : '')}
+                        onChange={e => {
+                          if (e.target.value === 'manual') {
+                            setNewWbs({...newWbs, title: ''});
+                          } else {
+                            setNewWbs({...newWbs, title: e.target.value});
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="">Select Division...</option>
+                        {masterFormatDivisions.map(div => (
+                          <option key={div.id} value={div.title}>{div.id} - {div.title}</option>
+                        ))}
+                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                      </select>
+                      {(!masterFormatDivisions.some(d => d.title === newWbs.title) && newWbs.title !== '') && (
+                        <input 
+                          type="text" 
+                          value={newWbs.title}
+                          onChange={e => setNewWbs({...newWbs, title: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="Enter custom division title..."
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Parent Level</label>
                   <select 
