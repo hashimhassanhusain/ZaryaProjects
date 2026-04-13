@@ -111,33 +111,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
 
   return (
     <div className="space-y-8">
-      <header>
-          {(() => {
-            const focusArea = getFocusArea(page.id);
-            const parent = getParent(page.id);
-            return (
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-600 mb-1 uppercase tracking-wider">
-                {focusArea && focusArea.id !== page.id && (
-                  <>
-                    <span>{stripNumericPrefix(focusArea.title)}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </>
-                )}
-                {parent && parent.id !== focusArea?.id && parent.id !== page.id && (
-                  <>
-                    <span>{stripNumericPrefix(parent.title)}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </>
-                )}
-              </div>
-            );
-          })()}
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-            {stripNumericPrefix(page.title)}
-          </h2>
-        <p className="text-slate-500 max-w-2xl font-medium">{page.summary}</p>
-      </header>
-
       {hasDashboard && <DomainDashboard page={page} />}
 
       {/* BOQ Summary by Location - Only on main dashboard */}

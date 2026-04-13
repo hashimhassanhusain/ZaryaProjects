@@ -304,16 +304,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-            <Layers className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Project Management Plan</h2>
-            <p className="text-xs text-slate-500 font-medium">Core integration and baseline management</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           <button 
             onClick={generatePDF}

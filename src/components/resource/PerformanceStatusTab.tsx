@@ -613,7 +613,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                           onChange={(e) => setStatusData({ ...statusData, rootCauseOfVariances: e.target.value })}
                           rows={4}
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none resize-none"
-                          placeholder="Explain technically why an activity was not accomplished (e.g., delay in material delivery Div 03)..."
+                          placeholder="Explain technically why an activity was not accomplished (e.g., delay in material delivery MasterFormat 16 Divisions: 03 - Concrete)..."
                         />
                       </section>
                     </div>

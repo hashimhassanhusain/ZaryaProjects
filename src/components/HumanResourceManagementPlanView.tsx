@@ -87,7 +87,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
     projectTitle: '',
     datePrepared: new Date().toISOString().split('T')[0],
     roles: [
-      { id: '1', role: 'Senior Civil Engineer', responsibility: 'Technical oversight of civil works', authority: 'Approval of material submittals up to Div 04', name: '' },
+      { id: '1', role: 'Senior Civil Engineer', responsibility: 'Technical oversight of civil works', authority: 'Approval of material submittals up to MasterFormat 16 Divisions: 04 - Masonry', name: '' },
       { id: '2', role: 'Project Manager', responsibility: 'Overall project delivery', authority: 'Budget approval up to $50k', name: '' },
       { id: '3', role: 'HSE Officer', responsibility: 'Safety compliance and audits', authority: 'Stop-work authority for safety violations', name: 'Ivan' }
     ],

@@ -201,8 +201,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         const divisionCode = item.division?.match(/\d+/)?.[0] || '01';
         const floorId = item.wbsId || '';
         
-        // Manual WBS only - don't auto-create division nodes
-        const divisionId = floorId ? `${floorId}-${divisionCode}` : '';
+    // Manual WBS only - don't auto-create cost account nodes
+    const divisionId = floorId ? `${floorId}-${divisionCode}` : '';
 
         const activity: Activity = {
           id: crypto.randomUUID(),
@@ -360,7 +360,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             purchaseOrders={purchaseOrders}
             vendors={vendors}
             calculateWbsProgress={calculateWbsProgress}
-            calculateDivisionProgress={calculateDivisionProgress}
+            calculateDivisionProgress={calculateCostAccountProgress}
             navigate={navigate}
             setEditingActivity={setEditingActivity}
             rowRefs={rowRefs}
@@ -767,7 +767,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     return totalAmount > 0 ? Math.round(weightedProgress / totalAmount) : 0;
   };
 
-  const calculateDivisionProgress = (divActivities: Activity[]) => {
+  const calculateCostAccountProgress = (divActivities: Activity[]) => {
     const totalAmount = divActivities.reduce((sum, a) => sum + a.amount, 0);
     const weightedProgress = divActivities.reduce((sum, a) => sum + (a.amount * getProgress(a)), 0);
     return totalAmount > 0 ? Math.round(weightedProgress / totalAmount) : 0;
@@ -924,19 +924,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
   return (
     <div className="space-y-6 pb-20">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            {getParent(page.id) && (
-              <>
-                <span className="text-slate-400 font-normal">{stripNumericPrefix(getParent(page.id)?.title || '')}</span>
-                <ChevronRight className="w-5 h-5 text-slate-300" />
-              </>
-            )}
-            {stripNumericPrefix(page.title)}
-          </h2>
-          <p className="text-slate-500 mt-1">Comprehensive project timeline, WBS hierarchy, and performance tracking.</p>
-        </div>
+      <div className="flex flex-col md:flex-row justify-end items-center gap-4">
         <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl shadow-inner">
           <button 
             onClick={() => setActiveTab('gantt')}
@@ -969,7 +957,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             Milestones
           </button>
         </div>
-      </header>
+      </div>
 
       {activeTab === 'gantt' && (
         <>
@@ -1724,7 +1712,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
                       {isDivExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
                       <Database className="w-3 h-3 text-slate-400 mr-2" />
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                        {division?.title || 'Unknown Division'}
+                        {division ? `${division.id} - ${division.title}` : 'Unknown Division'}
                       </span>
                     </div>
                     {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-mono">{wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') || '-'}</div>}

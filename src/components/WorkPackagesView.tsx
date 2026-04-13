@@ -53,7 +53,7 @@ export const WorkPackagesView: React.FC = () => {
 
   const handleSave = async () => {
     if (!formData.title || !formData.divisionId || !formData.code) {
-      alert('Please fill in all required fields (Division, Code, and Title)');
+      alert('Please fill in all required fields (Cost Account, Code, and Title)');
       return;
     }
 
@@ -157,9 +157,9 @@ export const WorkPackagesView: React.FC = () => {
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="bg-transparent focus:outline-none"
               >
-                <option value="All">All Divisions</option>
+                <option value="All">All Cost Accounts</option>
                 {masterFormatData.map(div => (
-                  <option key={div.number} value={div.number}>Div {div.number} - {div.title}</option>
+                  <option key={div.number} value={div.number}>{div.number} - {div.title}</option>
                 ))}
               </select>
             </div>
@@ -173,7 +173,7 @@ export const WorkPackagesView: React.FC = () => {
               <tr className="bg-slate-50/50 border-b border-slate-200">
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Division</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost Account</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -202,7 +202,7 @@ export const WorkPackagesView: React.FC = () => {
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                          Div {wp.divisionId}
+                          {wp.divisionId}
                         </span>
                         <span className="text-sm font-medium text-slate-500">{division?.title}</span>
                       </div>
@@ -265,15 +265,15 @@ export const WorkPackagesView: React.FC = () => {
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Division (Level 1)</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Account (Level 1)</label>
                     <select
                       value={formData.divisionId}
                       onChange={(e) => setFormData({ ...formData, divisionId: e.target.value, code: '', title: '' })}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
                     >
-                      <option value="">Select Division</option>
+                      <option value="">Select Cost Account</option>
                       {masterFormatData.map(div => (
-                        <option key={div.number} value={div.number}>Div {div.number} - {div.title}</option>
+                        <option key={div.number} value={div.number}>{div.number} - {div.title}</option>
                       ))}
                     </select>
                   </div>
@@ -291,7 +291,7 @@ export const WorkPackagesView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat Suggestions (Level 2)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Cost Accounts Suggestions</label>
                   <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     {formData.divisionId ? (
                       masterFormatData.find(d => d.number === formData.divisionId)?.items.map(item => (
@@ -309,7 +309,7 @@ export const WorkPackagesView: React.FC = () => {
                       ))
                     ) : (
                       <div className="text-center py-8 text-slate-400 text-sm italic">
-                        Please select a division first to see suggestions.
+                        Please select a cost account first to see suggestions.
                       </div>
                     )}
                   </div>

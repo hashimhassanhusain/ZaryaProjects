@@ -164,7 +164,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         buyerName: 'Bawan Jamal',
         currency: 'IQD',
         workflowStatus: 'Approved',
-        divisions: 'Div. 03 - Concrete',
+        divisions: '03 - Concrete',
         completion: 100,
         location: 'Villa 2',
         lineItems: [
@@ -360,7 +360,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. MasterFormat</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. MasterFormat 16 Divisions</label>
             <select
               value={newPO.masterFormat}
               disabled={!newPO.wbsId}
@@ -375,7 +375,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             >
               <option value="">Select Division...</option>
               {availableMasterFormat.map(mf => (
-                <option key={mf} value={mf}>Div. {mf}</option>
+                <option key={mf} value={mf}>{mf}</option>
               ))}
             </select>
           </div>
@@ -731,8 +731,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 <th className="px-4 py-2 text-right">Total PO Amount</th>
                 <th className="px-4 py-2 text-right">Received Qty</th>
                 <th className="px-4 py-2 text-right">Received Amount</th>
-                <th className="px-4 py-2 text-right">MasterFormat Qty</th>
-                <th className="px-4 py-2 text-right">MasterFormat Amount</th>
+                <th className="px-4 py-2 text-right">MasterFormat 16 Divisions Qty</th>
+                <th className="px-4 py-2 text-right">MasterFormat 16 Divisions Amount</th>
                 <th className="px-4 py-2">Status</th>
               </tr>
             </thead>
@@ -960,7 +960,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                     className="hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer"
                   >
                     <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
-                    <td className="px-3 py-3 text-slate-500">Div. {po.masterFormat || 'N/A'}</td>
+                    <td className="px-3 py-3 text-slate-500">{po.masterFormat || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>
                     <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
                     <td className="px-3 py-3 text-slate-500">{po.date}</td>
@@ -1014,25 +1014,19 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-end">
-        <div>
-          <div className="text-sm font-medium text-blue-600 mb-2 uppercase tracking-wider">Zarya Construction Co.</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{page.title}</h2>
-        </div>
-        <div className="flex gap-2">
-           {items.length === 0 && (
-             <button 
-               onClick={seedData}
-               className="px-4 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2"
-             >
-               <Database className="w-3 h-3" />
-               Seed PO Data
-             </button>
-           )}
-           <div className="px-4 py-2 bg-slate-100 rounded-lg text-xs font-bold text-slate-500">SYSTEM: ACTIVE</div>
-           <div className="px-4 py-2 bg-blue-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-blue-500/20">LIVE SYNC</div>
-        </div>
-      </header>
+      <div className="flex justify-end gap-2 mb-8">
+         {items.length === 0 && (
+           <button 
+             onClick={seedData}
+             className="px-4 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+           >
+             <Database className="w-3 h-3" />
+             Seed PO Data
+           </button>
+         )}
+         <div className="px-4 py-2 bg-slate-100 rounded-lg text-xs font-bold text-slate-500">SYSTEM: ACTIVE</div>
+         <div className="px-4 py-2 bg-blue-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-blue-500/20">LIVE SYNC</div>
+      </div>
 
       {page.id === '4.2.3' && renderPaymentCertificate()}
       {page.id === '4.2.4' && renderCumulativeTracking()}

@@ -658,16 +658,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
 
   return (
     <div className="space-y-10 pb-20">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-slate-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-slate-200">
-            <Zap className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">Change Management Hub</h1>
-            <p className="text-slate-500 font-medium">Centralized control for project variations, scope changes, and impact assessments.</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-end">
         <button 
           onClick={() => navigate('/page/2.1.1')}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-blue-600/20"
@@ -675,7 +666,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
           <ShieldCheck className="w-3.5 h-3.5" />
           Change Management Plan
         </button>
-      </header>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

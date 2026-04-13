@@ -135,10 +135,6 @@ const PageRenderer = () => {
 
       return (
         <div className="max-w-6xl mx-auto">
-          <header className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">{stripNumericPrefix(domain.title)}</h2>
-            <p className="text-slate-500">Overview of performance and documentation for the {stripNumericPrefix(domain.title)}.</p>
-          </header>
           <DomainDashboard page={virtualPage} />
           <div className="mt-12">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6">Domain Documentation & Forms</h3>

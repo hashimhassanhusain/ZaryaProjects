@@ -132,37 +132,24 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <header className="flex justify-between items-start">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-            {parent && <span className="text-slate-400 font-medium">{parent.title} &gt; </span>}
-            <span>{page.title}</span>
-          </h2>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Updated: {new Date().toLocaleDateString()}</span>
-            <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> Automated Data Sync: Active</span>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync with Project Data'}
+      <div className="flex justify-end gap-3 mb-8">
+        <button 
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Syncing...' : 'Sync with Project Data'}
+        </button>
+        <div className="flex gap-2">
+          <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
+            <Printer className="w-4 h-4" />
           </button>
-          <div className="flex gap-2">
-            <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
-              <Printer className="w-4 h-4" />
-            </button>
-            <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
+          <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
+            <Download className="w-4 h-4" />
+          </button>
         </div>
-      </header>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">

@@ -234,7 +234,7 @@ export const BOQView: React.FC = () => {
 
       const prompt = `Extract all Bill of Quantities (BOQ) items from the provided document.
       For each item, identify:
-      - MasterFormat 16 Divisions ID (e.g., '01', '03', '09')
+      - MasterFormat 16 Cost Accounts ID (e.g., '01', '03', '09')
       - Work Package name (e.g., 'Earthworks', 'Concrete Structure')
       - Detailed Description of the item
       - Quantity (number)
@@ -270,7 +270,7 @@ export const BOQView: React.FC = () => {
             items: {
               type: Type.OBJECT,
               properties: {
-                division: { type: Type.STRING, description: "MasterFormat 16 Divisions ID" },
+                division: { type: Type.STRING, description: "MasterFormat 16 Cost Accounts ID" },
                 workPackage: { type: Type.STRING, description: "Work Package name" },
                 description: { type: Type.STRING, description: "Detailed description of the item" },
                 quantity: { type: Type.NUMBER, description: "Quantity of the item" },
@@ -316,7 +316,7 @@ export const BOQView: React.FC = () => {
       }
 
       setIsAnalyzing(false);
-      alert(`AI Analysis complete: ${extractedItems.length} items identified and categorized by MasterFormat 16 Divisions.`);
+      alert(`AI Analysis complete: ${extractedItems.length} items identified and categorized by MasterFormat 16 Cost Accounts.`);
     } catch (err) {
       console.error("AI Analysis failed:", err);
       setIsAnalyzing(false);
@@ -356,7 +356,7 @@ export const BOQView: React.FC = () => {
 
     autoTable(doc, {
       startY: 60,
-      head: [['Div', 'Description', 'Total']],
+      head: [['Cost Account', 'Description', 'Total']],
       body: [...summaryData, ['', 'GRAND TOTAL', formatAmount(grandTotal, baseCurrency)]],
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -371,7 +371,7 @@ export const BOQView: React.FC = () => {
       }
     });
 
-    // --- DIVISION PAGES ---
+    // --- COST ACCOUNT PAGES ---
     const activeDivisions = [...new Set(currentItems.map(item => item.division))].sort();
 
     activeDivisions.forEach(divId => {
@@ -383,14 +383,14 @@ export const BOQView: React.FC = () => {
       
       doc.setFontSize(14);
       doc.setTextColor(37, 99, 235); // blue-600
-      doc.text(`Division ${divId} - ${div?.title || 'Unknown'}`, pageWidth / 2, 30, { align: 'center' });
+      doc.text(`${divId} - ${div?.title || 'Unknown'}`, pageWidth / 2, 30, { align: 'center' });
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
       doc.text(`Location: ${locationName}`, pageWidth / 2, 37, { align: 'center' });
 
       const divItems = currentItems.filter(item => item.division === divId);
       const tableBody = divItems.map((item, idx) => [
-        `Div ${divId} ${(idx + 1).toString().padStart(2, '0')}`,
+        `${divId}.${(idx + 1).toString().padStart(2, '0')}`,
         item.description,
         item.quantity.toLocaleString('en-US'),
         item.unit,
@@ -503,16 +503,7 @@ export const BOQView: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-blue-600 font-medium text-[10px] uppercase tracking-widest">
-            <Banknote className="w-3.5 h-3.5" />
-            Project Financials
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Bill of Quantities</h1>
-          <p className="text-slate-500 text-sm font-medium">MasterFormat 16 Divisions structured cost planning linked to WBS levels.</p>
-        </div>
-        
+      <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-3 bg-slate-100 p-1 rounded-2xl">
           <button 
             onClick={() => setActiveTab('boq')}
@@ -535,7 +526,7 @@ export const BOQView: React.FC = () => {
             Export & Reports
           </button>
         </div>
-      </header>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content Area */}
@@ -544,11 +535,7 @@ export const BOQView: React.FC = () => {
             <div className="space-y-8">
               {!selectedWbsId ? (
                 <div className="space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-900">Project BOQ Hub</h3>
-                      <p className="text-slate-500 text-sm font-medium">Select a WBS level to manage its specific Bill of Quantities.</p>
-                    </div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -681,7 +668,7 @@ export const BOQView: React.FC = () => {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Division</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cost Account</th>
                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Qty</th>
                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit</th>
@@ -714,7 +701,7 @@ export const BOQView: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                       <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                                       <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">
-                                        Division {divId}
+                                        {divId}
                                       </span>
                                       <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
                                         — {masterFormatDivisions.find(d => d.id === divId)?.title || 'Other'}
@@ -864,18 +851,18 @@ export const BOQView: React.FC = () => {
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Export?</h3>
                   <p className="text-slate-500 text-sm font-medium">
-                    Generate a professional BOQ document organized by MasterFormat 16 Divisions.
+                    Generate a professional BOQ document organized by MasterFormat 16 Cost Accounts.
                   </p>
                 </div>
                 
                 <div className="space-y-4 text-left bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                   <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    Summary Page with Division Totals
+                    Summary Page with Cost Account Totals
                   </div>
                   <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    Detailed Pages for each Active Division
+                    Detailed Pages for each Active Cost Account
                   </div>
                   <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -883,7 +870,7 @@ export const BOQView: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    MasterFormat 16 Divisions Compliant
+                    MasterFormat 16 Cost Accounts Compliant
                   </div>
                 </div>
 
@@ -923,7 +910,7 @@ export const BOQView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat 16 Cost Accounts</label>
                   <select 
                     value={newItem.division}
                     onChange={e => {
@@ -1088,7 +1075,7 @@ export const BOQView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat Division</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat 16 Cost Accounts</label>
                   <select 
                     value={editingItem.division}
                     onChange={e => {
@@ -1272,7 +1259,7 @@ export const BOQView: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Division</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Cost Account</label>
                     <select 
                       value={newPackageData.divisionId}
                       onChange={e => setNewPackageData({...newPackageData, divisionId: e.target.value})}

@@ -6,6 +6,7 @@ import { Project } from '../types';
 import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { motion } from 'motion/react';
+import { Breadcrumbs } from './Breadcrumbs';
 
 export const ProjectFormView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -138,41 +139,25 @@ export const ProjectFormView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-6">
-      <header className="flex items-center justify-between mb-12">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              {isNew ? 'Create New Project' : 'Edit Project Details'}
-            </h1>
-            <p className="text-slate-500 text-sm">
-              {isNew ? 'Initialize a new project workspace and Google Drive structure.' : 'Update core project information and metadata.'}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-all"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isNew ? 'Initialize Project' : 'Save Changes'}
-          </button>
-        </div>
-      </header>
+    <div className="max-w-5xl mx-auto py-6 px-6">
+      <Breadcrumbs currentPageId="admin-projects" />
+
+      <div className="flex justify-end gap-3 mb-12">
+        <button 
+          onClick={() => navigate(-1)}
+          className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-all"
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={handleSave}
+          disabled={saving}
+          className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {isNew ? 'Initialize Project' : 'Save Changes'}
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-8">

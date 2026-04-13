@@ -34,7 +34,7 @@ export interface WBSLevel {
   projectId: string;
   parentId?: string;
   title: string;
-  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Division' | 'Other';
+  type: 'Zone' | 'Area' | 'Building' | 'Cost Account' | 'Work Package' | 'Other';
   level: number; // 1, 2, 3...
   code: string; // e.g. Z1, Z1-A1
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
@@ -47,7 +47,7 @@ export interface WBSLevel {
   plannedCost?: number;
   actualCost?: number;
   progress?: number;
-  divisionCode?: string; // For Division type levels
+  divisionCode?: string; // For Cost Account type levels
 }
 
 export interface POLineItem {
@@ -516,6 +516,7 @@ export interface Page {
   formFields?: string[];
   kpis?: KPI[];
   alerts?: Alert[];
+  icon?: string;
   automatedFields?: string[]; // Fields that should be read-only and calculated
   details?: {
     variance?: string;

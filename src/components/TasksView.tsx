@@ -254,11 +254,7 @@ export const TasksView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Task Management</h2>
-          <p className="text-slate-500 text-sm">Track and manage your team's progress</p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button 

@@ -68,21 +68,6 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           <span className="text-slate-900">Resources & Optimization Hub</span>
         </nav>
 
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-200">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Resources & Optimization</h1>
-            </div>
-            <p className="text-slate-500 font-medium max-w-2xl ml-1">
-              Comprehensive resource management: requirements, structure, assignments, performance, and knowledge optimization.
-            </p>
-          </div>
-        </header>
-
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-[2rem] border border-slate-200 shadow-sm w-full overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (

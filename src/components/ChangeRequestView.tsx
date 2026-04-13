@@ -734,19 +734,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-slate-200">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-1">{page.title}</h1>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">REF: {page.id}</span>
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">Total Requests: {entries.length}</span>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-6">
         <div className="flex items-center gap-3">
           <button 
             onClick={generatePDF}
@@ -763,7 +751,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
             New Request
           </button>
         </div>
-      </header>
+      </div>
 
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">

@@ -4234,27 +4234,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Form Header */}
-      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              {getParent(page.id) && (
-                <span className="text-slate-400 font-normal">{stripNumericPrefix(getParent(page.id)?.title || '')} &gt; </span>
-              )}
-              {stripNumericPrefix(page.title)}
-            </h2>
-            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-              <span>REF: {page.id}</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full" />
-              <span>v1.0</span>
-            </div>
-          </div>
-        </div>
-
+      {/* Form Actions Header */}
+      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex justify-end items-center gap-4">
         <div className="flex items-center gap-3">
           {isEditing ? (
             <div className="flex items-center gap-2">

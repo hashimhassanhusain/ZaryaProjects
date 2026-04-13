@@ -325,7 +325,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
 
               <div>
                 <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Database className="w-3 h-3" /> Level 2: MasterFormat Division
+                  <Database className="w-3 h-3" /> MasterFormat 16 Cost Accounts
                 </label>
                 <select 
                   name="division"
@@ -474,6 +474,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     type="checkbox"
                     id="isMilestone"
                     checked={formData.activityType === 'Milestone'}
+                    disabled={activity.activityType === 'Milestone'}
                     onChange={(e) => {
                       const isMilestone = e.target.checked;
                       setFormData(prev => ({
@@ -482,7 +483,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                         duration: isMilestone ? 0 : prev.duration
                       }));
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                   />
                   <label htmlFor="isMilestone" className="text-sm font-medium text-slate-700 cursor-pointer">
                     Milestone

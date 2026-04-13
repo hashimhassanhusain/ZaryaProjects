@@ -403,19 +403,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-emerald-600 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-emerald-200">
-            <Lightbulb className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-1">{page.title}</h1>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">REF: {page.id}</span>
-              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md">Lessons Captured: {entries.length}</span>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-6">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowHistory(!showHistory)}
@@ -439,7 +427,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
             Capture Lesson
           </button>
         </div>
-      </header>
+      </div>
 
       {showHistory && (
         <motion.div 

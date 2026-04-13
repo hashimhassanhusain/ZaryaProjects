@@ -163,12 +163,7 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
 
   return (
     <div className="space-y-6 pb-20 font-sans">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <div className="text-sm font-bold text-blue-600 mb-1 uppercase tracking-[0.2em]">Resources Performance Domain</div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Vendor Master Register</h2>
-          <p className="text-slate-500 font-medium">Project P16314 - Procurement & Subcontractor Database</p>
-        </div>
+      <div className="flex flex-col md:flex-row justify-end items-start md:items-end gap-4">
         <button 
           onClick={() => setIsAddingVendor(true)}
           className="bg-slate-900 text-white px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
@@ -177,7 +172,7 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
           <Plus className="w-4 h-4" />
           Add New Vendor
         </button>
-      </header>
+      </div>
 
       {/* Toolbar */}
       <div className="bg-white border border-slate-200 flex flex-wrap items-center gap-4 p-4" style={{ borderRadius: '0px' }}>
@@ -465,7 +460,7 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Discipline (MasterFormat)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Discipline (MasterFormat 16 Divisions)</label>
                     <select 
                       name="discipline"
                       defaultValue={editingVendor?.discipline || '01'}

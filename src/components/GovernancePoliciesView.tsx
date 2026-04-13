@@ -95,7 +95,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
     communicationProtocols: 'الاجتماع الأسبوعي: الخميس الساعة 2:00 ظهراً لكامل الفريق الهندسي. الرسمية: البريد الإلكتروني والكتب الموقعة هي الوسائل الرسمية الوحيدة.',
     archivingNamingProtocol: '[P16314]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]',
     folderStructure: '00-Transmittals, 01-Management, 02-Planning_Controls, 03-Technical, 04-Procurement, 05-Handover',
-    technicalStandards: 'MasterFormat 95 Standard for all technical specifications and BOQ coding.',
+    technicalStandards: 'MasterFormat 16 Divisions Standard for all technical specifications and BOQ coding.',
     procurementStandards: 'All POs must be categorized by Division and approved by Hashim Hassan.',
     disciplinaryCode: 'الشفافية: إخفاء المشاكل أو الحوادث عن قيادة المشروع يعتبر مخالفة جسيمة تستوجب المساءلة.'
   });
@@ -596,7 +596,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                   {activeTab === 'standards' && (
                     <div className="space-y-10">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical Standards (MasterFormat 95)</label>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical Standards (MasterFormat 16 Divisions)</label>
                         <textarea 
                           value={policies.technicalStandards}
                           onChange={(e) => setPolicies({ ...policies, technicalStandards: e.target.value })}

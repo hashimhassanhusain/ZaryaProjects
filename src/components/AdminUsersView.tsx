@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { User as UserType } from '../types';
+import { Breadcrumbs } from './Breadcrumbs';
 
 export const AdminUsersView: React.FC = () => {
   const navigate = useNavigate();
@@ -58,27 +59,17 @@ export const AdminUsersView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-12 px-6">
-      <header className="flex justify-between items-center mb-12">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">User Management</h1>
-            <p className="text-slate-500 text-sm">Manage user access, permissions, and company affiliations.</p>
-          </div>
-        </div>
+    <div className="max-w-6xl mx-auto py-6 px-6">
+      <Breadcrumbs currentPageId="admin-users" />
+
+      <div className="flex justify-end items-center mb-12">
         <button 
           onClick={handleAddUser}
           className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
         >
           <UserPlus className="w-4 h-4" /> Add New User
         </button>
-      </header>
+      </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">

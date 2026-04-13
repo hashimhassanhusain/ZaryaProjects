@@ -510,19 +510,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
   return (
     <div className="space-y-8 pb-20">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-slate-200">
-            <Award className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-1">{page.title}</h1>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">REF: {page.id}</span>
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">Baseline: v{(versions[0]?.version || 1.0).toFixed(1)}</span>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-6">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowHistory(!showHistory)}
@@ -556,7 +544,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Section Navigation */}
       <div className="flex items-center gap-2 bg-white p-2 rounded-[1.5rem] border border-slate-200 shadow-sm overflow-x-auto no-scrollbar">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { masterFormatData } from '../data/masterFormat';
 import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder, WorkPackage, User, Stakeholder } from '../types';
+import { masterFormatDivisions } from '../data';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
 import { 
@@ -31,6 +32,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [showAddActivity, setShowAddActivity] = useState(false);
 
   // Cascading Filter State
   const [selectedWbsId, setSelectedWbsId] = useState<string>('');
@@ -251,83 +253,29 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
 
   return (
     <div className="space-y-6">
-      {/* Cascading Filters */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Filter className="w-4 h-4" />
+            <List className="w-5 h-5" />
           </div>
-          <h3 className="font-bold text-slate-900">Hierarchical Activity Filter</h3>
+          <h3 className="text-xl font-bold text-slate-900">Project Activities</h3>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Level 1: WBS */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Layers className="w-3 h-3" /> Level 1: WBS
-            </label>
-            <select 
-              value={selectedWbsId}
-              onChange={(e) => {
-                setSelectedWbsId(e.target.value);
-                setSelectedDivisionId('');
-                setSelectedWorkPackageId('');
-              }}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            >
-              <option value="">Select WBS Level...</option>
-              {wbsLevels.sort((a, b) => a.level - b.level).map(wbs => (
-                <option key={wbs.id} value={wbs.id}>
-                  {wbs.code} - {wbs.title} ({wbs.type})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Level 2: MasterFormat Division */}
-          <div className={cn("space-y-2 transition-all", !selectedWbsId && "opacity-50 pointer-events-none")}>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Database className="w-3 h-3" /> Level 2: MasterFormat 16 Div
-            </label>
-            <select 
-              value={selectedDivisionId}
-              onChange={(e) => {
-                setSelectedDivisionId(e.target.value);
-                setSelectedWorkPackageId('');
-              }}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            >
-              <option value="">Select Division...</option>
-              {masterFormatData.map(div => (
-                <option key={div.number} value={div.number}>{div.number} - {div.title}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Level 3: Work Package */}
-          <div className={cn("space-y-2 transition-all", (!selectedDivisionId || !selectedWbsId) && "opacity-50 pointer-events-none")}>
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Box className="w-3 h-3" /> Level 3: Work Package
-              </label>
-              <button 
-                onClick={() => setIsAddingWP(true)}
-                className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1"
-              >
-                <Plus className="w-2.5 h-2.5" /> New WP
-              </button>
-            </div>
-            <select 
-              value={selectedWorkPackageId}
-              onChange={(e) => setSelectedWorkPackageId(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            >
-              <option value="">Select Work Package...</option>
-              {filteredWPs.map(wp => (
-                <option key={wp.id} value={wp.id}>{wp.title}</option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={generateFromBOQ}
+            disabled={isGenerating || boqItems.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+          >
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Generate from BOQ
+          </button>
+          <button 
+            onClick={() => setShowAddActivity(true)}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Plus className="w-4 h-4" />
+            Add Activity
+          </button>
         </div>
       </div>
 
@@ -344,7 +292,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
               <h3 className="text-lg font-bold text-slate-900 mb-6">Add New Work Package</h3>
               <div className="space-y-4">
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">MasterFormat Suggestions (Level 2)</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat 16 Cost Accounts Suggestions</label>
                   <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100">
                     {selectedDivisionId ? (
                       masterFormatData.find(d => d.number === selectedDivisionId)?.items.map(item => (
@@ -409,17 +357,6 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         )}
       </AnimatePresence>
 
-      <div className="flex justify-end">
-        <button 
-          onClick={generateFromBOQ}
-          disabled={isGenerating || boqItems.length === 0}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
-        >
-          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Generate from BOQ
-        </button>
-      </div>
-
       <div className="space-y-6">
         {Object.keys(groupedActivities).length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-3xl p-20 text-center">
@@ -428,7 +365,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                 <List className="w-10 h-10 text-slate-300" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No Activities Found</h3>
-              <p className="text-slate-500 mb-8">Adjust your filters or click "Generate from BOQ" to build your activity list.</p>
+              <p className="text-slate-500 mb-8">Click "Add Activity" or "Generate from BOQ" to build your activity list.</p>
             </div>
           </div>
         ) : (
@@ -477,7 +414,12 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                           <div className="text-sm font-bold text-slate-900">{act.description}</div>
                           <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
                             <span className="bg-slate-100 px-1.5 py-0.5 rounded uppercase">{act.activityType || 'Task'}</span>
-                            <span>{act.division || '01'}</span>
+                            <span className="text-blue-600 font-medium">
+                              {(() => {
+                                const div = masterFormatDivisions.find(d => d.id === act.division);
+                                return div ? `${div.id} - ${div.title}` : (act.division || '01 - General Requirements');
+                              })()}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -540,6 +482,34 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
       </div>
 
       <AnimatePresence>
+        {showAddActivity && (
+          <ActivityAttributesModal 
+            activity={{
+              id: crypto.randomUUID(),
+              projectId: selectedProject?.id || '',
+              wbsId: '',
+              workPackage: '',
+              description: '',
+              unit: 'EA',
+              quantity: 1,
+              rate: 0,
+              amount: 0,
+              status: 'Planned'
+            }}
+            allActivities={activities}
+            boqItems={boqItems}
+            wbsLevels={wbsLevels}
+            onClose={() => setShowAddActivity(false)}
+            onSave={async (updatedActivity) => {
+              try {
+                await setDoc(doc(db, 'activities', updatedActivity.id), updatedActivity);
+                setShowAddActivity(false);
+              } catch (err) {
+                handleFirestoreError(err, OperationType.WRITE, 'activities');
+              }
+            }}
+          />
+        )}
         {editingActivity && (
           <ActivityAttributesModal 
             activity={editingActivity}

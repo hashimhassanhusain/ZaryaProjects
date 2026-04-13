@@ -110,11 +110,7 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">{page.title}</h1>
-          <p className="text-slate-500 max-w-2xl">{page.content}</p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <button
           onClick={handleAdd}
           className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
@@ -122,7 +118,7 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
           <Plus className="w-5 h-5" />
           Add {page.title.replace(' Management', '')}
         </button>
-      </header>
+      </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">

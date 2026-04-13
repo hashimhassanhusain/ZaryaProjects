@@ -7,6 +7,7 @@ import { Project } from '../types';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 import { useProject } from '../context/ProjectContext';
+import { Breadcrumbs } from './Breadcrumbs';
 
 export const AdminProjectsView: React.FC = () => {
   const navigate = useNavigate();
@@ -204,54 +205,42 @@ export const AdminProjectsView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-12 px-6">
-      <header className="flex justify-between items-center mb-12">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Project Management</h1>
-            <p className="text-slate-500 text-sm">Create and manage project instances within the Zarya ecosystem.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleSeedData}
-            disabled={isSeeding}
-            className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-blue-500" />}
-            Seed Demo Project
-          </button>
-          <button 
-            onClick={handleTestDrive}
-            disabled={isTestingDrive}
-            className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            {isTestingDrive ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4 text-emerald-500" />}
-            Test Drive
-          </button>
-          <button 
-            onClick={handleBackupCode}
-            disabled={isBackingUp}
-            className="px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all flex items-center gap-2 disabled:opacity-50"
-            title="Backup source code to Google Drive for Antigravity review"
-          >
-            {isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-            {isBackingUp ? 'Backing up...' : 'Backup Codebase'}
-          </button>
-          <button 
-            onClick={() => navigate('/admin/projects/new')}
-            className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Create New Project
-          </button>
-        </div>
-      </header>
+    <div className="max-w-6xl mx-auto py-6 px-6">
+      <Breadcrumbs currentPageId="admin-projects" />
+
+      <div className="flex flex-wrap items-center justify-end gap-4 mb-12">
+        <button 
+          onClick={handleSeedData}
+          disabled={isSeeding}
+          className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
+        >
+          {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-blue-500" />}
+          Seed Demo Project
+        </button>
+        <button 
+          onClick={handleTestDrive}
+          disabled={isTestingDrive}
+          className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
+        >
+          {isTestingDrive ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4 text-emerald-500" />}
+          Test Drive
+        </button>
+        <button 
+          onClick={handleBackupCode}
+          disabled={isBackingUp}
+          className="px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all flex items-center gap-2 disabled:opacity-50"
+          title="Backup source code to Google Drive for Antigravity review"
+        >
+          {isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
+          {isBackingUp ? 'Backing up...' : 'Backup Codebase'}
+        </button>
+        <button 
+          onClick={() => navigate('/admin/projects/new')}
+          className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Create New Project
+        </button>
+      </div>
 
       {projectsLoading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">

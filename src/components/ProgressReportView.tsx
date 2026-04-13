@@ -508,46 +508,40 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   return (
     <div className="space-y-6 pb-20">
-      <header className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Progress Reporting</h2>
-          <p className="text-slate-500">Site activity logging and performance tracking.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            {(['daily', 'weekly', 'monthly'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  setView('list');
-                }}
-                className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
-                  activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          {view === 'list' && activeTab === 'daily' && canCreateReport && (
-            <button 
-              onClick={handleNewReport}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+      <div className="flex justify-end items-center gap-4 mb-8">
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          {(['daily', 'weekly', 'monthly'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                setView('list');
+              }}
+              className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
+                activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
             >
-              <Plus className="w-4 h-4" /> New Report
+              {tab}
             </button>
-          )}
-          {view === 'form' && (
-            <button 
-              onClick={() => setView('list')}
-              className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-            >
-              Back to List
-            </button>
-          )}
+          ))}
         </div>
-      </header>
+        {view === 'list' && activeTab === 'daily' && canCreateReport && (
+          <button 
+            onClick={handleNewReport}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+          >
+            <Plus className="w-4 h-4" /> New Report
+          </button>
+        )}
+        {view === 'form' && (
+          <button 
+            onClick={() => setView('list')}
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+          >
+            Back to List
+          </button>
+        )}
+      </div>
 
       <AnimatePresence mode="wait">
         {view === 'list' ? (
