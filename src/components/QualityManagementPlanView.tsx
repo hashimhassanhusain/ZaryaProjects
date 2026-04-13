@@ -234,7 +234,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Quality Management Plan</h2>
-            <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Governance Hub • Project P16314</p>
+            <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Governance Hub • Project {selectedProject?.code || 'PRJ'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">

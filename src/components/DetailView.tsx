@@ -666,13 +666,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         fileName = `${selectedProject.code || 'P00000'}_Stakeholder_Analysis_Matrix_v${version}_${dateStr}.pdf`;
       } else if (isChangeManagementPlan) {
         const vStr = changePlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'P16314'}-ZRY-MGT-PLN-CHG-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-CHG-${dateStr}-V${vStr}.pdf`;
       } else if (isProjectManagementPlan) {
         const vStr = pmPlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'P16314'}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`;
       } else if (isQualityManagementPlan) {
         const vStr = qualityPlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'P16314'}-ZRY-MGT-PLN-QUA-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-QUA-${dateStr}-V${vStr}.pdf`;
       } else {
         fileName = `${generateZaryaFileName({
             projectCode: selectedProject.code || 'P00000',

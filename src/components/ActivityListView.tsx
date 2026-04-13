@@ -143,8 +143,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           rate: item.rate,
           amount: item.amount,
           division: item.division || '01',
-          status: 'Planned',
-          boqItemId: item.id
+          status: 'Planned'
         };
         await setDoc(doc(db, 'activities', activity.id), activity);
       }

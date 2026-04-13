@@ -84,7 +84,7 @@ interface PolicyData {
 export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [policies, setPolicies] = useState<PolicyData>({
-    projectTitle: 'P16314 - Villa 2',
+    projectTitle: `${selectedProject?.code || ''} - ${selectedProject?.name || ''}`,
     revisionHistory: [
       { id: '1', version: 'V01.0', date: '2026-01-08', description: 'الإصدار الأول المعتمد', by: 'هاشم حسن' }
     ],
@@ -93,7 +93,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
       { id: '2', name: 'دانا صالح', title: 'Co-Leader (Field/Schedule)', responsibilities: 'المسؤول عن التنفيذ الميداني، إدارة الجدول الزمني، حل التعارضات الميدانية.', permissionLevel: 'Field/Schedule Supervisor' }
     ],
     communicationProtocols: 'الاجتماع الأسبوعي: الخميس الساعة 2:00 ظهراً لكامل الفريق الهندسي. الرسمية: البريد الإلكتروني والكتب الموقعة هي الوسائل الرسمية الوحيدة.',
-    archivingNamingProtocol: '[P16314]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]',
+    archivingNamingProtocol: `[${selectedProject?.code || 'PCODE'}]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]`,
     folderStructure: '00-Transmittals, 01-Management, 02-Planning_Controls, 03-Technical, 04-Procurement, 05-Handover',
     technicalStandards: 'MasterFormat 16 Divisions Standard for all technical specifications and BOQ coding.',
     procurementStandards: 'All POs must be categorized by Division and approved by Hashim Hassan.',
