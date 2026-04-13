@@ -104,10 +104,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   }, [page.id]);
 
   const mainTabs = [
-    { id: 'schedule', title: 'Schedule', icon: Calendar, pageId: '2.3' },
     { id: 'charter', title: 'Project Charter', icon: Award, pageId: '1.1.1' },
     { id: 'policies', title: 'Policies & Procedures', icon: Gavel, pageId: '1.1.2' },
-    { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' }
+    { id: 'plans', title: 'Management Plans', icon: Layers, pageId: '2.1.2' },
+    { id: 'schedule', title: 'Schedule', icon: Calendar, pageId: '2.3' }
   ];
 
   const managementPlans = [

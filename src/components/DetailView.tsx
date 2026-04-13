@@ -43,6 +43,7 @@ import { CharterMilestones } from './CharterMilestones';
 import { ProjectCharterForm } from './ProjectCharterForm';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion } from '../types';
+import { ProjectScheduleView } from './ProjectScheduleView';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -96,7 +97,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
   const [pmVersions, setPmVersions] = useState<ProjectManagementVersion[]>([]);
   const [showPmHistory, setShowPmHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lifecycle' | 'tailoring' | 'baselines'>('lifecycle');
+  const [activeTab, setActiveTab] = useState<'plan' | 'schedule'>('schedule');
+  const [pmTab, setPmTab] = useState<'lifecycle' | 'tailoring' | 'baselines'>('lifecycle');
   const [isPhaseModalOpen, setIsPhaseModalOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<ProjectPhase | null>(null);
   const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
@@ -3292,37 +3294,66 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         {/* Tabs Navigation */}
         <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-[2rem] w-fit">
           <button 
-            onClick={() => setActiveTab('lifecycle')}
+            onClick={() => setActiveTab('schedule')}
             className={cn(
               "px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'lifecycle' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              activeTab === 'schedule' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            Life Cycle & Phases
+            Project Schedule
           </button>
           <button 
-            onClick={() => setActiveTab('tailoring')}
+            onClick={() => setActiveTab('plan')}
             className={cn(
               "px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'tailoring' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              activeTab === 'plan' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            Process Tailoring
-          </button>
-          <button 
-            onClick={() => setActiveTab('baselines')}
-            className={cn(
-              "px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'baselines' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            Baselines
+            Management Plan
           </button>
         </div>
 
+        {activeTab === 'plan' && (
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl w-fit">
+            <button 
+              onClick={() => setPmTab('lifecycle')}
+              className={cn(
+                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                pmTab === 'lifecycle' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              Life Cycle & Phases
+            </button>
+            <button 
+              onClick={() => setPmTab('tailoring')}
+              className={cn(
+                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                pmTab === 'tailoring' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              Process Tailoring
+            </button>
+            <button 
+              onClick={() => setPmTab('baselines')}
+              className={cn(
+                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                pmTab === 'baselines' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              Baselines
+            </button>
+          </div>
+        )}
+
         {/* Tab Content */}
-        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
-          {activeTab === 'lifecycle' && (
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden min-h-[600px]">
+          {activeTab === 'schedule' && (
+            <div className="p-6">
+              <ProjectScheduleView page={page} />
+            </div>
+          )}
+
+          {activeTab === 'plan' && pmTab === 'lifecycle' && (
             <div className="p-10">
               <div className="flex items-center justify-between mb-10">
                 <div>
@@ -3390,7 +3421,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
           )}
 
-          {activeTab === 'tailoring' && (
+          {activeTab === 'plan' && pmTab === 'tailoring' && (
             <div className="p-10">
               <div className="mb-10">
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Process Tailoring</h3>
@@ -3438,7 +3469,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
           )}
 
-          {activeTab === 'baselines' && (
+          {activeTab === 'plan' && pmTab === 'baselines' && (
             <div className="p-10">
               <div className="mb-10">
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Project Baselines</h3>

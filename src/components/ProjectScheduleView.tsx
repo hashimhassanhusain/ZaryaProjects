@@ -13,6 +13,23 @@ import {
   ArrowRight, Link2, Plus, MoreHorizontal, Maximize2,
   ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target
 } from 'lucide-react';
+import { 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -26,7 +43,51 @@ interface ProjectScheduleViewProps {
 
 type ZoomLevel = 'day' | 'week' | 'month' | 'quarter';
 type ScheduleTab = 'gantt' | 'activities' | 'milestones';
-type ViewLevel = 'wbs' | 'masterformat' | 'workpackage' | 'po' | 'poitem';
+type ViewLevel = 'wbs' | 'costaccount' | 'workpackage' | 'po' | 'poitem';
+
+const SortableHeader: React.FC<{
+  id: string;
+  label: string;
+  width: number;
+  align?: 'right' | 'center';
+  onResize: (id: string) => void;
+}> = ({ id, label, width, align, onResize }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    width,
+    zIndex: isDragging ? 50 : 0,
+    opacity: isDragging ? 0.5 : 1
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest h-full flex items-center relative group cursor-grab active:cursor-grabbing hover:bg-slate-100/50 transition-colors",
+        align === 'right' ? "justify-end text-right" : "justify-center text-center"
+      )}
+    >
+      {label}
+      <div 
+        onMouseDown={(e) => { e.stopPropagation(); onResize(id); }}
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
+      />
+    </div>
+  );
+};
 
 export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, initialTab }) => {
   const { selectedProject, scheduleState, setScheduleState } = useProject();
@@ -39,11 +100,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const expandedWbs = scheduleState.expandedWbs;
-  const expandedActivities = scheduleState.expandedActivities;
-  const zoomLevel = scheduleState.zoomLevel as ZoomLevel;
-  const viewLevel = scheduleState.viewLevel as ViewLevel;
-  const visibleColumns = scheduleState.visibleColumns;
+  const { expandedWbs, expandedActivities, zoomLevel, viewLevel, visibleColumns, columnOrder } = scheduleState;
 
   const setExpandedWbs = (updater: any) => {
     setScheduleState(prev => ({
@@ -66,6 +123,27 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       ...prev,
       visibleColumns: typeof updater === 'function' ? updater(prev.visibleColumns) : updater
     }));
+  };
+  const setColumnOrder = (newOrder: string[]) => setScheduleState(prev => ({ ...prev, columnOrder: newOrder }));
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = columnOrder.indexOf(active.id as string);
+      const newIndex = columnOrder.indexOf(over.id as string);
+      setColumnOrder(arrayMove(columnOrder, oldIndex, newIndex));
+    }
   };
 
   const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab || 'gantt');
@@ -365,6 +443,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             setEditingActivity={setEditingActivity}
             rowRefs={rowRefs}
             visibleColumns={visibleColumns}
+            columnOrder={columnOrder}
             activityColWidth={activityColWidth}
             columnWidths={columnWidths}
             viewLevel={viewLevel}
@@ -387,6 +466,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 wbsLevel={0}
                 columnWidths={columnWidths}
                 visibleColumns={visibleColumns}
+                columnOrder={columnOrder}
                 purchaseOrders={purchaseOrders}
                 vendors={vendors}
                 setEditingActivity={setEditingActivity}
@@ -924,199 +1004,175 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex flex-col md:flex-row justify-end items-center gap-4">
-        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl shadow-inner">
+      {/* Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search activities or WBS..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
           <button 
-            onClick={() => setActiveTab('gantt')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
-              activeTab === 'gantt' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
+            onClick={() => setZoomLevel('day')}
+            className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'day' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+          >Day</button>
+          <button 
+            onClick={() => setZoomLevel('week')}
+            className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'week' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+          >Week</button>
+          <button 
+            onClick={() => setZoomLevel('month')}
+            className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'month' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+          >Month</button>
+          <button 
+            onClick={() => setZoomLevel('quarter')}
+            className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'quarter' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+          >Quarter</button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setEditingActivity({
+              id: crypto.randomUUID(),
+              projectId: selectedProject!.id,
+              wbsId: '',
+              divisionId: '',
+              workPackage: '',
+              description: '',
+              unit: 'LS',
+              quantity: 1,
+              rate: 0,
+              amount: 0,
+              status: 'Planned',
+              percentComplete: 0
+            })}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-md"
           >
-            <BarChart3 className="w-4 h-4" />
-            Gantt Chart
+            <Plus className="w-4 h-4" />
+            Add Activity
           </button>
-          <button 
-            onClick={() => setActiveTab('activities')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
-              activeTab === 'activities' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+
+          <div className="relative">
+            <button 
+              onClick={() => setShowColumnsMenu(!showColumnsMenu)}
+              className={cn(
+                "p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1",
+                showColumnsMenu && "bg-slate-100 text-blue-600"
+              )}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="text-[10px] font-bold">Columns</span>
+            </button>
+            
+            {showColumnsMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowColumnsMenu(false)}
+                />
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
+                  {Object.keys(visibleColumns).map(col => (
+                    <label key={col} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={visibleColumns[col]} 
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-xs font-medium text-slate-600 capitalize">{col.replace(/([A-Z])/g, ' $1')}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
             )}
-          >
-            <Database className="w-4 h-4" />
-            Activity List
-          </button>
+          </div>
           <button 
-            onClick={() => setActiveTab('milestones')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
-              activeTab === 'milestones' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
+            onClick={handlePrint}
+            disabled={isPrinting}
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1"
           >
-            <Calendar className="w-4 h-4" />
-            Milestones
+            {isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+            <span className="text-[10px] font-bold">Print PDF</span>
           </button>
         </div>
       </div>
 
-      {activeTab === 'gantt' && (
-        <>
-          {/* Toolbar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search activities or WBS..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-              <button 
-                onClick={() => setZoomLevel('day')}
-                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'day' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-              >Day</button>
-              <button 
-                onClick={() => setZoomLevel('week')}
-                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'week' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-              >Week</button>
-              <button 
-                onClick={() => setZoomLevel('month')}
-                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'month' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-              >Month</button>
-              <button 
-                onClick={() => setZoomLevel('quarter')}
-                className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'quarter' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-              >Quarter</button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setEditingActivity({
-                  id: crypto.randomUUID(),
-                  projectId: selectedProject!.id,
-                  wbsId: '',
-                  divisionId: '',
-                  workPackage: '',
-                  description: '',
-                  unit: 'LS',
-                  quantity: 1,
-                  rate: 0,
-                  amount: 0,
-                  status: 'Planned',
-                  percentComplete: 0
-                })}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-md"
+      <div 
+        ref={containerRef}
+        className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex h-[75vh] relative"
+      >
+        {/* Left Panel: WBS & Activity List */}
+        <div 
+          ref={leftPanelRef}
+          onScroll={(e) => handleScroll(e, 'left')}
+          style={{ width: activityColWidth }}
+          className="border-r border-slate-200 overflow-y-auto overflow-x-auto flex-shrink-0 relative bg-slate-50/30 no-scrollbar"
+        >
+          <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 h-12 flex items-center">
+            <div className="flex items-center h-full divide-x divide-slate-200">
+              <div 
+                style={{ width: columnWidths.activityWbs }}
+                className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[300px] h-full flex items-center relative group"
               >
-                <Plus className="w-4 h-4" />
-                Add Activity
-              </button>
-
-              <div className="relative">
-                <button 
-                  onClick={() => setShowColumnsMenu(!showColumnsMenu)}
-                  className={cn(
-                    "p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1",
-                    showColumnsMenu && "bg-slate-100 text-blue-600"
-                  )}
-                >
-                  <Filter className="w-4 h-4" />
-                  <span className="text-[10px] font-bold">Columns</span>
-                </button>
-                
-                {showColumnsMenu && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowColumnsMenu(false)}
-                    />
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
-                      {Object.keys(visibleColumns).map(col => (
-                        <label key={col} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={visibleColumns[col]} 
-                            onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-xs font-medium text-slate-600 capitalize">{col.replace(/([A-Z])/g, ' $1')}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )}
+                Activity / WBS
+                <div 
+                  onMouseDown={(e) => { e.stopPropagation(); setResizingColumn('activityWbs'); }}
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
+                />
               </div>
-              <button 
-                onClick={handlePrint}
-                disabled={isPrinting}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-1"
+              
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
               >
-                {isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                <span className="text-[10px] font-bold">Print PDF</span>
-              </button>
+                <SortableContext 
+                  items={columnOrder}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  {columnOrder.map(colId => {
+                    if (!visibleColumns[colId]) return null;
+                    const colInfo = [
+                      { id: 'plannedStart', label: 'P. Start' },
+                      { id: 'actualStart', label: 'A. Start' },
+                      { id: 'plannedDuration', label: 'P. Dur' },
+                      { id: 'actualDuration', label: 'A. Dur' },
+                      { id: 'plannedFinish', label: 'P. Finish' },
+                      { id: 'actualFinish', label: 'A. Finish' },
+                      { id: 'progress', label: '%' },
+                      { id: 'supplier', label: 'Supplier' },
+                      { id: 'plannedCost', label: 'P. Cost', align: 'right' },
+                      { id: 'poCost', label: 'PO Cost', align: 'right' },
+                      { id: 'actualCost', label: 'A. Cost', align: 'right' }
+                    ].find(c => c.id === colId);
+
+                    if (!colInfo) return null;
+
+                    return (
+                      <SortableHeader 
+                        key={colId}
+                        id={colId}
+                        label={colInfo.label}
+                        width={columnWidths[colId]}
+                        align={colInfo.align as any}
+                        onResize={setResizingColumn}
+                      />
+                    );
+                  })}
+                </SortableContext>
+              </DndContext>
             </div>
           </div>
-
-          <div 
-            ref={containerRef}
-            className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex h-[70vh] relative"
-          >
-            {/* Left Panel: WBS & Activity List */}
-            <div 
-              ref={leftPanelRef}
-              onScroll={(e) => handleScroll(e, 'left')}
-              style={{ width: activityColWidth }}
-              className="border-r border-slate-200 overflow-y-auto overflow-x-auto flex-shrink-0 relative bg-slate-50/30 no-scrollbar"
-            >
-              <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 h-12 flex items-center">
-                <div className="flex items-center h-full divide-x divide-slate-200">
-                  <div 
-                    style={{ width: columnWidths.activityWbs }}
-                    className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[300px] h-full flex items-center relative group"
-                  >
-                    Activity / WBS
-                    <div 
-                      onMouseDown={(e) => { e.stopPropagation(); setResizingColumn('activityWbs'); }}
-                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
-                    />
-                  </div>
-                  {[
-                    { id: 'plannedStart', label: 'P. Start' },
-                    { id: 'actualStart', label: 'A. Start' },
-                    { id: 'plannedDuration', label: 'P. Dur' },
-                    { id: 'actualDuration', label: 'A. Dur' },
-                    { id: 'plannedFinish', label: 'P. Finish' },
-                    { id: 'actualFinish', label: 'A. Finish' },
-                    { id: 'progress', label: '%' },
-                    { id: 'supplier', label: 'Supplier' },
-                    { id: 'plannedCost', label: 'P. Cost', align: 'right' },
-                    { id: 'poCost', label: 'PO Cost', align: 'right' },
-                    { id: 'actualCost', label: 'A. Cost', align: 'right' }
-                  ].map(col => visibleColumns[col.id] && (
-                    <div 
-                      key={col.id} 
-                      style={{ width: columnWidths[col.id] }}
-                      className={cn(
-                        "px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest h-full flex items-center relative group",
-                        col.align === 'right' ? "justify-end text-right" : "justify-center text-center"
-                      )}
-                    >
-                      {col.label}
-                      <div 
-                        onMouseDown={(e) => { e.stopPropagation(); setResizingColumn(col.id); }}
-                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-10"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {renderScheduleContent()}
-              </div>
-            </div>
+          <div className="divide-y divide-slate-100">
+            {renderScheduleContent()}
+          </div>
+        </div>
 
             {/* Main Middle Resize Handle */}
             <div 
@@ -1238,130 +1294,20 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
               </div>
             </div>
           </div>
-        </>
-      )}
 
-      {activeTab === 'activities' && (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <button 
-              onClick={() => setEditingActivity({
-                id: crypto.randomUUID(),
-                projectId: selectedProject!.id,
-                wbsId: '',
-                divisionId: '',
-                workPackage: '',
-                description: '',
-                unit: 'LS',
-                quantity: 1,
-                rate: 0,
-                amount: 0,
-                status: 'Planned',
-                percentComplete: 0
-              })}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-            >
-              <Plus className="w-4 h-4" />
-              New Activity
-            </button>
-          </div>
-          <ActivityListView page={page} />
+          <AnimatePresence>
+            {editingActivity && (
+              <ActivityAttributesModal 
+                activity={editingActivity}
+                onClose={() => setEditingActivity(null)}
+                onSave={handleSaveAttributes}
+                boqItems={boqItems}
+                wbsLevels={wbsLevels}
+                allActivities={activities}
+              />
+            )}
+          </AnimatePresence>
         </div>
-      )}
-
-      {activeTab === 'milestones' && (
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="p-10">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                  <Target className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">Project Milestones</h3>
-                  <p className="text-sm text-slate-500">Key project events and deadlines tracked across the timeline.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Milestones:</span>
-                <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
-                  {activities.filter(a => a.duration === 0).length}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activities.filter(a => a.duration === 0).length === 0 ? (
-                <div className="col-span-full p-12 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
-                  <Target className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                  <p className="text-slate-400 italic">No milestones defined in the schedule yet.</p>
-                </div>
-              ) : (
-                activities.filter(a => a.duration === 0).map((m) => (
-                  <motion.div 
-                    key={m.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-6 bg-white border border-slate-100 rounded-[2rem] flex items-center justify-between hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
-                        m.percentComplete === 100 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                      )}>
-                        <Target className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-base font-bold text-slate-900">{m.description}</p>
-                        <div className="flex items-center gap-4 mt-1">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                            <Calendar className="w-3.5 h-3.5" />
-                            PLN: <span className="text-slate-600">{m.startDate || m.finishDate || 'TBD'}</span>
-                          </div>
-                          {m.actualFinishDate && (
-                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              ACT: {m.actualFinishDate}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        m.percentComplete === 100 ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
-                      )}>
-                        {m.percentComplete === 100 ? 'Completed' : 'Planned'}
-                      </div>
-                      <button 
-                        onClick={() => setEditingActivity(m)}
-                        className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <AnimatePresence>
-        {editingActivity && (
-          <ActivityAttributesModal 
-            activity={editingActivity}
-            onClose={() => setEditingActivity(null)}
-            onSave={handleSaveAttributes}
-            boqItems={boqItems}
-            wbsLevels={wbsLevels}
-            allActivities={activities}
-          />
-        )}
-      </AnimatePresence>
-    </div>
   );
 };
 
@@ -1387,6 +1333,7 @@ interface WbsRowProps {
   setEditingActivity: (act: Activity) => void;
   rowRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
   visibleColumns: Record<string, boolean>;
+  columnOrder: string[];
   activityColWidth: number;
   columnWidths: Record<string, number>;
   viewLevel: ViewLevel;
@@ -1400,6 +1347,7 @@ const ActivityRow: React.FC<{
   wbsLevel: number;
   columnWidths: Record<string, number>;
   visibleColumns: Record<string, boolean>;
+  columnOrder: string[];
   purchaseOrders: PurchaseOrder[];
   vendors: Vendor[];
   setEditingActivity: (act: Activity) => void;
@@ -1414,7 +1362,7 @@ const ActivityRow: React.FC<{
   getCostColor: (actual: number | undefined, planned: number | undefined) => string;
   viewLevel: ViewLevel;
 }> = ({ 
-  act, wbsLevel, columnWidths, visibleColumns, purchaseOrders, vendors, 
+  act, wbsLevel, columnWidths, visibleColumns, columnOrder, purchaseOrders, vendors, 
   setEditingActivity, onToggleActivity, isActExpanded, navigate, rowRefs, 
   activityColWidth, getProgress, getDateColor, getDurationColor, getCostColor,
   viewLevel
@@ -1481,28 +1429,73 @@ const ActivityRow: React.FC<{
               </div>
             </div>
           </div>
-          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{act.startDate || 'TBD'}</div>}
-          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualStartDate, act.startDate))}>{act.actualStartDate || '-'}</div>}
-          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center justify-center text-[9px] font-bold text-slate-500">{isMilestone ? '-' : `${act.duration || 0}d`}</div>}
-          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className={cn("h-full flex items-center justify-center text-[9px] font-bold", getDurationColor(act.actualDuration, act.duration))}>{isMilestone ? '-' : `${act.actualDuration || 0}d`}</div>}
-          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center justify-center text-[9px] font-mono text-slate-500">{isMilestone ? '-' : (act.finishDate || 'TBD')}</div>}
-          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className={cn("h-full flex items-center justify-center text-[9px] font-mono", getDateColor(act.actualFinishDate, act.finishDate))}>{isMilestone ? '-' : (act.actualFinishDate || '-')}</div>}
-          {visibleColumns.progress && (
-            <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
-              <span className="text-[10px] font-bold text-blue-600 mb-0.5">{progress}%</span>
-              <div className="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
+          
+          {columnOrder.map(colId => {
+            if (!visibleColumns[colId]) return null;
+            
+            let content = null;
+            let align = 'center';
+
+            switch (colId) {
+              case 'plannedStart':
+                content = act.startDate || 'TBD';
+                break;
+              case 'actualStart':
+                content = <span className={getDateColor(act.actualStartDate, act.startDate)}>{act.actualStartDate || '-'}</span>;
+                break;
+              case 'plannedDuration':
+                content = isMilestone ? '-' : `${act.duration || 0}d`;
+                break;
+              case 'actualDuration':
+                content = <span className={getDurationColor(act.actualDuration, act.duration)}>{isMilestone ? '-' : `${act.actualDuration || 0}d`}</span>;
+                break;
+              case 'plannedFinish':
+                content = isMilestone ? '-' : (act.finishDate || 'TBD');
+                break;
+              case 'actualFinish':
+                content = <span className={getDateColor(act.actualFinishDate, act.finishDate)}>{isMilestone ? '-' : (act.actualFinishDate || '-')}</span>;
+                break;
+              case 'progress':
+                content = (
+                  <div className="flex flex-col items-center justify-center w-full px-2">
+                    <span className="text-[10px] font-bold text-blue-600 mb-0.5">{progress}%</span>
+                    <div className="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                );
+                break;
+              case 'supplier':
+                content = vendors.find(v => v.id === act.supplierId)?.name || linkedPO?.supplier || '-';
+                break;
+              case 'plannedCost':
+                content = formatAmount(act.amount, baseCurrency);
+                align = 'right';
+                break;
+              case 'poCost':
+                content = formatAmount(poCost, baseCurrency);
+                align = 'right';
+                break;
+              case 'actualCost':
+                content = <span className={getCostColor(actualCost, poCost)}>{formatAmount(actualCost, baseCurrency)}</span>;
+                align = 'right';
+                break;
+            }
+
+            return (
+              <div 
+                key={colId}
+                style={{ width: columnWidths[colId] }}
+                className={cn(
+                  "h-full flex items-center px-2 text-[9px] font-mono",
+                  align === 'right' ? "justify-end text-right" : "justify-center text-center",
+                  (colId === 'plannedDuration' || colId === 'actualDuration' || colId === 'plannedCost' || colId === 'poCost' || colId === 'actualCost') && "font-bold"
+                )}
+              >
+                {content}
               </div>
-            </div>
-          )}
-          {visibleColumns.supplier && (
-            <div style={{ width: columnWidths.supplier }} className="h-full flex items-center px-2 text-[9px] text-slate-500 truncate">
-              {vendors.find(v => v.id === act.supplierId)?.name || linkedPO?.supplier || '-'}
-            </div>
-          )}
-          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatAmount(act.amount, baseCurrency)}</div>}
-          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-blue-600 font-mono">{formatAmount(poCost, baseCurrency)}</div>}
-          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className={cn("h-full flex items-center justify-end px-2 text-[10px] font-bold font-mono", getCostColor(actualCost, poCost))}>{formatAmount(actualCost, baseCurrency)}</div>}
+            );
+          })}
         </div>
       </div>
 
@@ -1581,7 +1574,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
   wbs, allWbs, activities, boqItems, expanded, expandedActivities, onToggle, 
   onToggleActivity, getProgress, searchQuery, activeTab, purchaseOrders, vendors, 
   calculateWbsProgress, calculateDivisionProgress, navigate, setEditingActivity, 
-  rowRefs, visibleColumns, activityColWidth, columnWidths, viewLevel,
+  rowRefs, visibleColumns, columnOrder, activityColWidth, columnWidths, viewLevel,
   getDateColor, getDurationColor, getCostColor
 }) => {
   const { formatAmount, currency: baseCurrency } = useCurrency();
@@ -1641,24 +1634,50 @@ const WbsRow: React.FC<WbsRowProps> = ({
             <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
             <span className="text-xs font-bold text-slate-700 truncate">{wbs.title}</span>
           </div>
-          {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsPlannedStart || '-'}</div>}
-          {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsActualStart || '-'}</div>}
-          {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbsPlannedDuration ? `${wbsPlannedDuration}d` : '-'}</div>}
-          {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-bold">{wbsActualDuration ? `${wbsActualDuration}d` : '-'}</div>}
-          {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsPlannedFinish || '-'}</div>}
-          {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-500 font-mono">{wbsActualFinish || '-'}</div>}
-          {visibleColumns.progress && (
-            <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
-              <span className="text-[10px] font-bold text-blue-600 mb-0.5">{wbsProgress}%</span>
-              <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: `${wbsProgress}%` }} />
+          
+          {columnOrder.map(colId => {
+            if (!visibleColumns[colId]) return null;
+            
+            let content = null;
+            let align = 'center';
+
+            switch (colId) {
+              case 'plannedStart': content = wbsPlannedStart || '-'; break;
+              case 'actualStart': content = wbsActualStart || '-'; break;
+              case 'plannedDuration': content = wbsPlannedDuration ? `${wbsPlannedDuration}d` : '-'; break;
+              case 'actualDuration': content = wbsActualDuration ? `${wbsActualDuration}d` : '-'; break;
+              case 'plannedFinish': content = wbsPlannedFinish || '-'; break;
+              case 'actualFinish': content = wbsActualFinish || '-'; break;
+              case 'progress':
+                content = (
+                  <div className="flex flex-col items-center justify-center w-full px-2">
+                    <span className="text-[10px] font-bold text-blue-600 mb-0.5">{wbsProgress}%</span>
+                    <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${wbsProgress}%` }} />
+                    </div>
+                  </div>
+                );
+                break;
+              case 'supplier': content = '-'; break;
+              case 'plannedCost': content = formatAmount(wbsPlannedCost, baseCurrency); align = 'right'; break;
+              case 'poCost': content = '-'; align = 'right'; break;
+              case 'actualCost': content = formatAmount(wbsActualCost, baseCurrency); align = 'right'; break;
+            }
+
+            return (
+              <div 
+                key={colId}
+                style={{ width: columnWidths[colId] }}
+                className={cn(
+                  "h-full flex items-center px-2 text-[10px] text-slate-500 font-mono",
+                  align === 'right' ? "justify-end text-right" : "justify-center text-center",
+                  (colId === 'plannedDuration' || colId === 'actualDuration' || colId === 'plannedCost' || colId === 'poCost' || colId === 'actualCost') && "font-bold"
+                )}
+              >
+                {content}
               </div>
-            </div>
-          )}
-          {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
-          {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-900 font-mono">{formatAmount(wbsPlannedCost, baseCurrency)}</div>}
-          {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
-          {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-600 font-mono">{formatAmount(wbsActualCost, baseCurrency)}</div>}
+            );
+          })}
         </div>
       </div>
       
@@ -1686,6 +1705,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
               setEditingActivity={setEditingActivity}
               rowRefs={rowRefs}
               visibleColumns={visibleColumns}
+              columnOrder={columnOrder}
               activityColWidth={activityColWidth}
               columnWidths={columnWidths}
               viewLevel={viewLevel}
@@ -1712,31 +1732,53 @@ const WbsRow: React.FC<WbsRowProps> = ({
                       {isDivExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
                       <Database className="w-3 h-3 text-slate-400 mr-2" />
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                        {division ? `${division.id} - ${division.title}` : 'Unknown Division'}
+                         {division ? `${division.id} - ${division.title}` : 'Unknown Division'}
                       </span>
                     </div>
-                    {visibleColumns.plannedStart && <div style={{ width: columnWidths.plannedStart }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-mono">{wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') || '-'}</div>}
-                    {visibleColumns.actualStart && <div style={{ width: columnWidths.actualStart }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-mono">{wbsActivities.reduce((min, a) => !min || (a.actualStartDate && a.actualStartDate < min) ? a.actualStartDate : min, '') || '-'}</div>}
-                    {visibleColumns.plannedDuration && <div style={{ width: columnWidths.plannedDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-bold">{wbsActivities.reduce((sum, a) => sum + (a.duration || 0), 0)}d</div>}
-                    {visibleColumns.actualDuration && <div style={{ width: columnWidths.actualDuration }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-bold">{wbsActivities.reduce((sum, a) => sum + (a.actualDuration || 0), 0)}d</div>}
-                    {visibleColumns.plannedFinish && <div style={{ width: columnWidths.plannedFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-mono">{wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') || '-'}</div>}
-                    {visibleColumns.actualFinish && <div style={{ width: columnWidths.actualFinish }} className="h-full flex items-center px-2 text-[10px] text-slate-400 font-mono">{wbsActivities.reduce((max, a) => !max || (a.actualFinishDate && a.actualFinishDate > max) ? a.actualFinishDate : max, '') || '-'}</div>}
-                    {visibleColumns.progress && (
-                      <div style={{ width: columnWidths.progress }} className="h-full flex flex-col items-center justify-center px-2">
-                        <span className="text-[10px] font-bold text-blue-400 mb-0.5">{divProgress}%</span>
-                        <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-400" style={{ width: `${divProgress}%` }} />
+                    
+                    {columnOrder.map(colId => {
+                      if (!visibleColumns[colId]) return null;
+                      
+                      let content = null;
+                      let align = 'center';
+
+                      switch (colId) {
+                        case 'plannedStart': content = divActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') || '-'; break;
+                        case 'actualStart': content = divActivities.reduce((min, a) => !min || (a.actualStartDate && a.actualStartDate < min) ? a.actualStartDate : min, '') || '-'; break;
+                        case 'plannedDuration': content = `${divActivities.reduce((sum, a) => sum + (a.duration || 0), 0)}d`; break;
+                        case 'actualDuration': content = `${divActivities.reduce((sum, a) => sum + (a.actualDuration || 0), 0)}d`; break;
+                        case 'plannedFinish': content = divActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') || '-'; break;
+                        case 'actualFinish': content = divActivities.reduce((max, a) => !max || (a.actualFinishDate && a.actualFinishDate > max) ? a.actualFinishDate : max, '') || '-'; break;
+                        case 'progress':
+                          content = (
+                            <div className="flex flex-col items-center justify-center w-full px-2">
+                              <span className="text-[10px] font-bold text-blue-400 mb-0.5">{divProgress}%</span>
+                              <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-400" style={{ width: `${divProgress}%` }} />
+                              </div>
+                            </div>
+                          );
+                          break;
+                        case 'supplier': content = '-'; break;
+                        case 'plannedCost': content = formatAmount(divActivities.reduce((sum, a) => sum + a.amount, 0), baseCurrency); align = 'right'; break;
+                        case 'poCost': content = '-'; align = 'right'; break;
+                        case 'actualCost': content = formatAmount(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0), baseCurrency); align = 'right'; break;
+                      }
+
+                      return (
+                        <div 
+                          key={colId}
+                          style={{ width: columnWidths[colId] }}
+                          className={cn(
+                            "h-full flex items-center px-2 text-[10px] text-slate-400 font-mono",
+                            align === 'right' ? "justify-end text-right" : "justify-center text-center",
+                            (colId === 'plannedDuration' || colId === 'actualDuration' || colId === 'plannedCost' || colId === 'poCost' || colId === 'actualCost') && "font-bold"
+                          )}
+                        >
+                          {content}
                         </div>
-                      </div>
-                    )}
-                    {visibleColumns.supplier && <div style={{ width: columnWidths.supplier }} className="h-full" />}
-                    {visibleColumns.plannedCost && <div style={{ width: columnWidths.plannedCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-slate-400 font-mono">
-                      {formatAmount(divActivities.reduce((sum, a) => sum + a.amount, 0), baseCurrency)}
-                    </div>}
-                    {visibleColumns.poCost && <div style={{ width: columnWidths.poCost }} className="h-full" />}
-                    {visibleColumns.actualCost && <div style={{ width: columnWidths.actualCost }} className="h-full flex items-center justify-end px-2 text-[10px] font-bold text-emerald-400 font-mono">
-                      {formatAmount(divActivities.reduce((sum, a) => sum + (a.actualAmount || 0), 0), baseCurrency)}
-                    </div>}
+                      );
+                    })}
                   </div>
                 </div>
                 
@@ -1747,6 +1789,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
                     wbsLevel={wbs.level + 1}
                     columnWidths={columnWidths}
                     visibleColumns={visibleColumns}
+                    columnOrder={columnOrder}
                     purchaseOrders={purchaseOrders}
                     vendors={vendors}
                     setEditingActivity={setEditingActivity}
@@ -1772,6 +1815,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
               wbsLevel={wbs.level}
               columnWidths={columnWidths}
               visibleColumns={visibleColumns}
+              columnOrder={columnOrder}
               purchaseOrders={purchaseOrders}
               vendors={vendors}
               setEditingActivity={setEditingActivity}

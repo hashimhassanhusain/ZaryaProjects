@@ -14,6 +14,7 @@ interface ProjectContextType {
     zoomLevel: string;
     viewLevel: string;
     visibleColumns: Record<string, boolean>;
+    columnOrder: string[];
   };
   setScheduleState: React.Dispatch<React.SetStateAction<{
     expandedWbs: Record<string, boolean>;
@@ -21,6 +22,7 @@ interface ProjectContextType {
     zoomLevel: string;
     viewLevel: string;
     visibleColumns: Record<string, boolean>;
+    columnOrder: string[];
   }>>;
 }
 
@@ -33,7 +35,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     expandedWbs: {} as Record<string, boolean>,
     expandedActivities: {} as Record<string, boolean>,
     zoomLevel: 'month',
-    viewLevel: 'masterformat',
+    viewLevel: 'costaccount',
     visibleColumns: {
       plannedStart: true,
       plannedDuration: true,
@@ -42,11 +44,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       actualDuration: true,
       actualFinish: true,
       progress: true,
-      supplier: true,
+      supplier: false,
       plannedCost: true,
-      poCost: true,
-      actualCost: true
-    }
+      poCost: false,
+      actualCost: false
+    },
+    columnOrder: ['plannedStart', 'plannedFinish', 'plannedDuration', 'actualStart', 'actualFinish', 'actualDuration', 'progress', 'plannedCost', 'supplier', 'poCost', 'actualCost']
   });
   const [selectedProject, setSelectedProjectState] = useState<Project | null>(() => {
     const saved = localStorage.getItem('selectedProject');

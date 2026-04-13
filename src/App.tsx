@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Breadcrumbs } from './components/Breadcrumbs';
@@ -249,6 +249,7 @@ const PageRenderer = () => {
 
 const AppLayout = () => {
   const { isSidebarOpen, closeSidebar, sidebarWidth } = useUI();
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative">
@@ -284,7 +285,11 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
+        <main className={cn(
+          "flex-1 overflow-y-auto",
+          // Remove padding for schedule page to allow full width as requested
+          location.pathname.includes('/page/2.3') ? "p-0" : "p-4 md:p-8 lg:p-12"
+        )}>
           <Routes>
             <Route path="/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />

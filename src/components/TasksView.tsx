@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2 } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -7,6 +7,27 @@ import { motion, AnimatePresence } from 'motion/react';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { 
+  DndContext, 
+  closestCorners, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
+  DropAnimation
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export const TasksView: React.FC = () => {
   const { selectedProject } = useProject();
@@ -31,6 +52,10 @@ export const TasksView: React.FC = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  const getAssignee = (uid: string) => {
+    return dbUsers.find(u => u.uid === uid) || { name: 'Unassigned', photoURL: 'https://picsum.photos/seed/user/200/200' };
+  };
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -242,7 +267,176 @@ export const TasksView: React.FC = () => {
     });
   };
 
-  const getAssignee = (uid: string) => dbUsers.find(u => u.uid === uid) || users.find(u => u.uid === uid);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const taskId = active.id as string;
+    let newStatus = over.id as string;
+
+    // If dragging over a task, get its status
+    const overTask = tasks.find(t => t.id === over.id);
+    if (overTask) {
+      newStatus = overTask.status;
+    }
+
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.status !== newStatus) {
+      // Check if newStatus is a valid status from customStatuses
+      if (customStatuses.includes(newStatus as TaskStatus)) {
+        await updateTaskStatus(taskId, newStatus as TaskStatus);
+      }
+    }
+  };
+
+  const dropAnimation: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: '0.5',
+        },
+      },
+    }),
+  };
+
+  const DraggableTaskCard: React.FC<{ task: Task }> = ({ task }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging
+    } = useSortable({ id: task.id });
+
+    const style = {
+      transform: CSS.Translate.toString(transform),
+      transition,
+      opacity: isDragging ? 0.3 : 1,
+    };
+
+    return (
+      <div 
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        onClick={() => setSelectedTaskId(task.id)}
+        className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-grab active:cursor-grabbing relative"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+              task.priority === 'High' ? "bg-red-50 text-red-600" :
+              task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+            )}>
+              {task.priority}
+            </span>
+            {task.sourceType === 'assumption_constraint' && (
+              <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                A&C
+              </span>
+            )}
+            {task.sourceType === 'issue' && (
+              <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Issue
+              </span>
+            )}
+            {task.sourceType === 'meeting' && (
+              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                Meeting
+              </span>
+            )}
+          </div>
+          <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
+        </div>
+        <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-blue-600 transition-colors">{task.title}</h4>
+        <p className="text-slate-500 text-xs line-clamp-2 mb-4">{task.description}</p>
+        
+        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+          <div className="flex items-center gap-2">
+            <img 
+              src={getAssignee(task.assigneeId)?.photoURL} 
+              alt="" 
+              className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+            />
+            <span className="text-[10px] font-medium text-slate-400">{getAssignee(task.assigneeId)?.name}</span>
+          </div>
+          <div className="flex items-center gap-1 text-slate-400">
+            <Calendar className="w-3 h-3" />
+            <span className="text-[10px] font-medium">{task.endDate}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const KanbanColumn: React.FC<{ status: string, tasks: Task[] }> = ({ status, tasks }) => {
+    const { setNodeRef, isOver } = useSortable({ id: status });
+
+    return (
+      <div 
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-4 min-w-[300px] bg-slate-50/50 p-3 rounded-2xl border transition-colors",
+          isOver ? "border-blue-300 bg-blue-50/50" : "border-slate-100"
+        )}
+      >
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              status === 'TO DO' ? "bg-slate-400" :
+              status === 'PLANNING' ? "bg-purple-500" :
+              status === 'RFP' ? "bg-orange-500" :
+              status === 'TENDERING' ? "bg-pink-500" :
+              status === 'IN PROGRESS' ? "bg-blue-500" :
+              status === 'AT RISK' ? "bg-red-500" :
+              status === 'UPDATE REQUIRED' ? "bg-amber-500" : "bg-green-500"
+            )}></div>
+            <h3 className="font-bold text-slate-700 text-sm">{status}</h3>
+            <span className="bg-white text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-slate-200">
+              {tasks.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 min-h-[150px]">
+          <SortableContext 
+            items={tasks.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {tasks.map(task => (
+              <DraggableTaskCard key={task.id} task={task} />
+            ))}
+          </SortableContext>
+        </div>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -326,130 +520,82 @@ export const TasksView: React.FC = () => {
       </div>
 
       {viewMode === 'kanban' ? (
-        <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px] items-start">
-          {customStatuses.map(status => (
-            <div key={status} className="flex flex-col gap-4 min-w-[300px] bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-              <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    status === 'TO DO' ? "bg-slate-400" :
-                    status === 'PLANNING' ? "bg-purple-500" :
-                    status === 'RFP' ? "bg-orange-500" :
-                    status === 'TENDERING' ? "bg-pink-500" :
-                    status === 'IN PROGRESS' ? "bg-blue-500" :
-                    status === 'AT RISK' ? "bg-red-500" :
-                    status === 'UPDATE REQUIRED' ? "bg-amber-500" : "bg-green-500"
-                  )}></div>
-                  <h3 className="font-bold text-slate-700 text-sm">{status}</h3>
-                  <span className="bg-white text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-slate-200">
-                    {filteredTasks.filter(t => t.status === status).length}
-                  </span>
-                </div>
-              </div>
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px] items-start">
+            {customStatuses.map(status => (
+              <KanbanColumn 
+                key={status} 
+                status={status} 
+                tasks={filteredTasks.filter(t => t.status === status)} 
+              />
+            ))}
 
-              <div className="flex flex-col gap-3 min-h-[100px]">
-                {filteredTasks.filter(t => t.status === status).map(task => (
-                  <motion.div 
-                    layout
-                    key={task.id}
-                    onClick={() => setSelectedTaskId(task.id)}
-                    className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                          task.priority === 'High' ? "bg-red-50 text-red-600" :
-                          task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                        )}>
-                          {task.priority}
-                        </span>
-                        {task.sourceType === 'assumption_constraint' && (
-                          <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            A&C
-                          </span>
-                        )}
-                        {task.sourceType === 'issue' && (
-                          <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            Issue
-                          </span>
-                        )}
-                        {task.sourceType === 'meeting' && (
-                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            Meeting
-                          </span>
-                        )}
-                      </div>
-                      <button className="text-slate-300 hover:text-slate-600 transition-colors">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-blue-600 transition-colors">{task.title}</h4>
-                    <p className="text-slate-500 text-xs line-clamp-2 mb-4">{task.description}</p>
-                    
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                      <div className="flex items-center gap-2">
-                        <img 
-                          src={getAssignee(task.assigneeId)?.photoURL} 
-                          alt="" 
-                          className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                        />
-                        <span className="text-[10px] font-medium text-slate-400">{getAssignee(task.assigneeId)?.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-slate-400">
-                        <Calendar className="w-3 h-3" />
-                        <span className="text-[10px] font-medium">{task.endDate}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+            {/* Add Status Column */}
+            <div className="min-w-[300px] flex flex-col gap-4">
+              {isAddingStatus ? (
+                <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-lg shadow-blue-50">
+                  <input 
+                    autoFocus
+                    type="text" 
+                    value={newStatusName}
+                    onChange={(e) => setNewStatusName(e.target.value)}
+                    placeholder="Status Name..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500/20"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                  />
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleAddStatus}
+                      className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                    >
+                      Add
+                    </button>
+                    <button 
+                      onClick={() => setIsAddingStatus(false)}
+                      className="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsAddingStatus(true)}
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Status
+                </button>
+              )}
             </div>
-          ))}
-
-          {/* Add Status Column */}
-          <div className="min-w-[300px] flex flex-col gap-4">
-            {isAddingStatus ? (
-              <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-lg shadow-blue-50">
-                <input 
-                  autoFocus
-                  type="text" 
-                  value={newStatusName}
-                  onChange={(e) => setNewStatusName(e.target.value)}
-                  placeholder="Status Name..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500/20"
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
-                />
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleAddStatus}
-                    className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
-                  >
-                    Add
-                  </button>
-                  <button 
-                    onClick={() => setIsAddingStatus(false)}
-                    className="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button 
-                onClick={() => setIsAddingStatus(true)}
-                className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Status
-              </button>
-            )}
           </div>
-        </div>
+          
+          <DragOverlay dropAnimation={dropAnimation}>
+            {activeId ? (
+              <div className="bg-white p-4 rounded-xl border border-blue-400 shadow-xl opacity-90 scale-105 cursor-grabbing">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                      tasks.find(t => t.id === activeId)?.priority === 'High' ? "bg-red-50 text-red-600" :
+                      tasks.find(t => t.id === activeId)?.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                    )}>
+                      {tasks.find(t => t.id === activeId)?.priority}
+                    </span>
+                  </div>
+                  <GripVertical className="w-4 h-4 text-blue-500" />
+                </div>
+                <h4 className="font-bold text-slate-800 text-sm mb-1">{tasks.find(t => t.id === activeId)?.title}</h4>
+                <p className="text-slate-500 text-xs line-clamp-2">{tasks.find(t => t.id === activeId)?.description}</p>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full text-left border-collapse">
