@@ -188,9 +188,11 @@ const PageRenderer = () => {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -10 }}
         transition={{ duration: 0.2 }}
-        className={cn("mx-auto", !isSchedulePage && "max-w-6xl")}
+        className={cn((isSchedulePage || page.id === '2.1.2') ? "w-full" : "mx-auto max-w-6xl")}
       >
-        <Breadcrumbs currentPageId={page.id} />
+        <div className={cn(isSchedulePage || page.id === '2.1.2' ? "px-6 pt-6" : "")}>
+          <Breadcrumbs currentPageId={page.id} />
+        </div>
         {isTasksPage ? (
           <TasksView />
         ) : isMeetingsPage ? (
@@ -287,8 +289,8 @@ const AppLayout = () => {
         <Header />
         <main className={cn(
           "flex-1 overflow-y-auto",
-          // Remove padding for schedule page to allow full width as requested
-          location.pathname.includes('/page/2.3') ? "p-0" : "p-4 md:p-8 lg:p-12"
+          // Remove padding for schedule and governance hub to allow full width as requested
+          (location.pathname.includes('/page/2.3') || location.pathname.includes('/page/2.1.2')) ? "p-0" : "p-4 md:p-8 lg:p-12"
         )}>
           <Routes>
             <Route path="/page/:id" element={<PageRenderer />} />

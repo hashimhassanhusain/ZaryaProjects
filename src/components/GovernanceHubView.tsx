@@ -134,9 +134,12 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   ];
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className={cn("pb-20", activeTab === 'schedule' ? "space-y-0" : "space-y-6")}>
       {/* Top Navigation Bar */}
-      <nav className="bg-white rounded-[2rem] border border-slate-200 p-2 shadow-sm flex items-center gap-2 overflow-x-auto no-scrollbar">
+      <nav className={cn(
+        "bg-white border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto no-scrollbar",
+        activeTab === 'schedule' ? "border-b px-6 py-2" : "rounded-[2rem] border p-2 mx-6 mt-6"
+      )}>
         {mainTabs.map((tab) => (
           <button
             key={tab.id}
@@ -157,7 +160,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Management Plans Side Menu */}
         {activeTab === 'plans' && (
-          <aside className="lg:w-72 space-y-4">
+          <aside className="lg:w-72 space-y-4 ml-6">
             <div className="bg-white rounded-[2rem] border border-slate-200 p-4 shadow-sm">
               <div className="px-4 py-3 mb-2">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Governance Plans</h3>
@@ -193,7 +196,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
         )}
 
         {/* Content Area */}
-        <main className={cn("flex-1", (activeTab !== 'plans') && "w-full")}>
+        <main className={cn("flex-1", (activeTab !== 'plans') && "w-full", activeTab !== 'schedule' && "px-6")}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${activeTab}-${activePlan}-${activeLog}-${viewMode}`}

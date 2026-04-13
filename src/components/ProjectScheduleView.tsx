@@ -10,7 +10,7 @@ import {
   Calendar, Clock, Database, ChevronRight, ChevronDown,
   Loader2, Edit2, Search, Filter, Download, Printer,
   BarChart3, DollarSign, CheckCircle2, AlertCircle,
-  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2,
+  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2, Minimize2,
   ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target
 } from 'lucide-react';
 import { 
@@ -1003,9 +1003,9 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+      <div className="bg-white px-6 py-3 border-b border-slate-200 flex flex-wrap items-center gap-4 shrink-0">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
@@ -1036,7 +1036,52 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           >Quarter</button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+          <button 
+            onClick={() => {
+              const today = new Date();
+              const container = ganttRef.current;
+              if (container) {
+                const diff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                container.scrollLeft = diff * dayWidth - container.clientWidth / 2;
+              }
+            }}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-bold text-[10px] hover:bg-slate-200 transition-all flex items-center gap-1.5"
+          >
+            <Target className="w-3.5 h-3.5" />
+            Today
+          </button>
+          
+          <button 
+            onClick={() => {
+              const allIds = new Set<string>();
+              const addIds = (items: any[]) => {
+                items.forEach(item => {
+                  if (item.type === 'wbs') {
+                    allIds.add(item.id);
+                    if (item.children) addIds(item.children);
+                  }
+                });
+              };
+              addIds(wbsHierarchy);
+              setExpandedItems(allIds);
+            }}
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            title="Expand All"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          
+          <button 
+            onClick={() => setExpandedItems(new Set())}
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            title="Collapse All"
+          >
+            <Minimize2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
           <button 
             onClick={() => setEditingActivity({
               id: crypto.randomUUID(),
@@ -1105,7 +1150,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
       <div 
         ref={containerRef}
-        className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex h-[75vh] relative"
+        className="bg-white border-b border-slate-200 overflow-hidden flex-1 flex relative"
       >
         {/* Left Panel: WBS & Activity List */}
         <div 
