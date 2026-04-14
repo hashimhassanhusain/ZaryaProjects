@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn, generateZaryaFileName, stripNumericPrefix } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
-import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc, limit, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 
 interface DetailViewProps {
@@ -41,8 +41,11 @@ interface DetailViewProps {
 
 import { CharterMilestones } from './CharterMilestones';
 import { ProjectCharterForm } from './ProjectCharterForm';
+import { QualityAuditForm } from './QualityAuditForm';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
-import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion } from '../types';
+import { MeetingsArchiveView } from './MeetingsArchiveView';
+import { MeetingMinutesForm } from './MeetingMinutesForm';
+import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion, QualityAudit, Meeting } from '../types';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -53,6 +56,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isCharterPage = page.id === '1.1.1';
+  const isQualityAuditPage = page.id === '3.1.4';
+  const isMeetingsPage = page.id === '2.6.22';
   
   const [isCreating, setIsCreating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -80,6 +85,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [analysisVersions, setAnalysisVersions] = useState<StakeholderAnalysisVersion[]>([]);
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
   const [analysisSearch, setAnalysisSearch] = useState('');
+  const [globalSearch, setGlobalSearch] = useState('');
 
   // --- CHANGE MANAGEMENT PLAN STATE ---
   const [isChangeManagementPlan, setIsChangeManagementPlan] = useState(false);
@@ -111,6 +117,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [showQualityHistory, setShowQualityHistory] = useState(false);
   const [isQualityRoleModalOpen, setIsQualityRoleModalOpen] = useState(false);
   const [editingQualityRole, setEditingQualityRole] = useState<QualityRole | null>(null);
+
+  const [qualityAuditData, setQualityAuditData] = useState<QualityAudit | null>(null);
+
+  // --- MEETINGS STATE ---
+  const [meetingViewMode, setMeetingViewMode] = useState<'archive' | 'form'>('archive');
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
     setIsStakeholderRegister(page.id === '1.2.1');
@@ -867,6 +879,21 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           console.error('Error loading milestones:', e);
           setCharterMilestones([]);
         }
+      } else if (isQualityAuditPage && selectedProject) {
+        const q = query(
+          collection(db, 'quality_audits'),
+          where('projectId', '==', selectedProject.id),
+          orderBy('createdAt', 'desc'),
+          limit(1)
+        );
+        const unsubscribe = onSnapshot(q, (snap) => {
+          if (!snap.empty) {
+            setQualityAuditData({ id: snap.docs[0].id, ...snap.docs[0].data() } as QualityAudit);
+          } else {
+            setQualityAuditData(null);
+          }
+        });
+        return () => unsubscribe();
       } else if (isStakeholderRegister && selectedProject) {
         try {
           const q = query(collection(db, 'stakeholders'), where('projectId', '==', selectedProject.id));
@@ -1485,7 +1512,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     if (relevantDocs.length === 0 && dataHistory.length === 0) return null;
 
     return (
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
+      <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-8">
         <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-blue-500" />
@@ -1584,7 +1611,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   const renderCharterSummary = () => {
     if (!selectedProject?.charterData) return (
-      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-xl">
         <FileText className="w-12 h-12 text-slate-200 mx-auto mb-4" />
         <p className="text-slate-400 italic">No charter data available for this project.</p>
         <button 
@@ -1600,7 +1627,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {page.formFields?.map((field, index) => (
-            <div key={index} className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-blue-100 transition-colors group">
+            <div key={index} className="p-6 bg-slate-50/50 rounded-xl border border-slate-100 hover:border-blue-100 transition-colors group">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block group-hover:text-blue-400 transition-colors">
                 {field}
               </label>
@@ -1611,7 +1638,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           ))}
         </div>
 
-        <div className="flex items-center justify-between p-6 bg-blue-50 rounded-2xl border border-blue-100">
+        <div className="flex items-center justify-between p-6 bg-blue-50 rounded-xl border border-blue-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <History className="w-5 h-5 text-blue-600" />
@@ -1693,7 +1720,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
         >
           <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <h3 className="text-lg font-bold text-slate-900">Stakeholder Version History</h3>
@@ -1703,7 +1730,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
           <div className="p-8 max-h-[60vh] overflow-y-auto space-y-4">
             {stakeholderVersions.map((v, i) => (
-              <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between">
+              <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[10px] font-bold">v{v.version}</span>
@@ -1752,7 +1779,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
           {Object.entries(quadrants).map(([title, members], idx) => (
             <div key={title} className={cn(
-              "p-6 rounded-3xl border-2 flex flex-col gap-4 transition-all",
+              "p-6 rounded-xl border-2 flex flex-col gap-4 transition-all",
               idx === 0 ? "bg-red-50/30 border-red-100" : 
               idx === 1 ? "bg-amber-50/30 border-amber-100" :
               idx === 2 ? "bg-blue-50/30 border-blue-100" :
@@ -1818,7 +1845,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     return (
       <div className="space-y-12 pb-20">
         {/* Matrix Visualization */}
-        <div className="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50">
+        <div className="bg-white p-12 rounded-xl border border-slate-100 shadow-xl shadow-slate-200/50">
           <div className="grid grid-cols-2 gap-6 aspect-square max-w-3xl mx-auto relative">
             {/* Axis Labels */}
             <div className="absolute -left-16 top-1/2 -rotate-90 text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Power (1-10)</div>
@@ -1826,7 +1853,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
             {Object.entries(quadrants).map(([strategy, members], idx) => (
               <div key={strategy} className={cn(
-                "p-8 rounded-[2.5rem] border-2 flex flex-col gap-6 transition-all relative group overflow-hidden",
+                "p-8 rounded-xl border-2 flex flex-col gap-6 transition-all relative group overflow-hidden",
                 strategy === 'Manage Closely' ? "bg-rose-50/40 border-rose-100" : 
                 strategy === 'Keep Satisfied' ? "bg-amber-50/40 border-amber-100" :
                 strategy === 'Keep Informed' ? "bg-blue-50/40 border-blue-100" :
@@ -1849,7 +1876,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       key={m.id} 
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="px-4 py-2 bg-white border border-slate-100 rounded-2xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-2 hover:shadow-md transition-all cursor-pointer"
+                      className="px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-2 hover:shadow-md transition-all cursor-pointer"
                       onClick={() => {
                         setEditingAnalysis(m);
                         setIsAnalysisModalOpen(true);
@@ -1882,7 +1909,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         </div>
 
         {/* List View Table */}
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
           <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Stakeholder Analysis List</h3>
@@ -1896,7 +1923,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   placeholder="Search analysis..."
                   value={analysisSearch}
                   onChange={e => setAnalysisSearch(e.target.value)}
-                  className="pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all w-64"
+                  className="pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all w-64"
                 />
               </div>
             </div>
@@ -2100,7 +2127,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
 
             {/* Strategy Preview */}
-            <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-4 shadow-2xl shadow-slate-900/20">
+            <div className="p-8 bg-slate-900 rounded-xl text-white space-y-4 shadow-2xl shadow-slate-900/20">
               <div className="flex items-center gap-3 opacity-60">
                 <BarChart3 className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Calculated Strategy</span>
@@ -2128,13 +2155,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={() => handleSaveStakeholderAnalysis(false)}
-                    className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-3xl text-sm font-black hover:bg-slate-50 transition-all shadow-sm"
+                    className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-xl text-sm font-black hover:bg-slate-50 transition-all shadow-sm"
                   >
                     Update Current
                   </button>
                   <button 
                     onClick={() => handleSaveStakeholderAnalysis(true)}
-                    className="py-4 bg-blue-600 text-white rounded-3xl text-sm font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
+                    className="py-4 bg-blue-600 text-white rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
                   >
                     Save as v{editingAnalysis.version + 1}.0
                   </button>
@@ -2169,7 +2196,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
+          className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
         >
           <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
@@ -2190,7 +2217,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             {analysisVersions.map((v, idx) => (
               <div key={v.id} className="relative pl-8 pb-6 border-l-2 border-slate-100 last:border-0 last:pb-0">
                 <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
-                <div className="bg-slate-50 rounded-2xl p-6 space-y-3">
+                <div className="bg-slate-50 rounded-xl p-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">Version {v.version}.0</span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(v.timestamp).toLocaleString()}</span>
@@ -2540,10 +2567,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     return (
       <div className="space-y-12 pb-20">
         {/* Header Section */}
-        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-8 shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
                 <ShieldCheck className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -2630,7 +2657,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
+              <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
                 <UserCheck className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -2643,7 +2670,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 setEditingCCBMember({ id: crypto.randomUUID(), name: '', role: '', responsibility: '', authority: 'Low' });
                 setIsCCBModalOpen(true);
               }}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Add CCB Member
             </button>
@@ -4156,26 +4183,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
     return (
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search records..." 
-                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-64"
-              />
-            </div>
-            <button className="p-2 text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 rounded-lg transition-all">
-              <Filter className="w-4 h-4" />
-            </button>
-          </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20">
-            <Plus className="w-4 h-4" />
-            Add New Entry
-          </button>
-        </div>
-        
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -4266,7 +4273,21 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   return (
     <div className="space-y-8 pb-20">
       {/* Form Actions Header */}
-      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex justify-end items-center gap-4">
+      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex justify-between items-center gap-4">
+        <div className="flex-1 max-w-md">
+          {isLogPage && (
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder={`Search ${page.title}...`}
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+              />
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           {isEditing ? (
             <div className="flex items-center gap-2">
@@ -4337,8 +4358,76 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 setStakeholders={setStakeholders}
                 isEditing={isEditing}
                 onEditAttributes={(m) => setEditingMilestone(m)}
+                project={selectedProject}
               />
             </div>
+          ) : isQualityAuditPage ? (
+            <QualityAuditForm 
+              audit={qualityAuditData || undefined}
+              isEditing={isEditing}
+              onSave={async (data) => {
+                if (!selectedProject) return;
+                try {
+                  if (qualityAuditData?.id) {
+                    await updateDoc(doc(db, 'quality_audits', qualityAuditData.id), {
+                      ...data,
+                      updatedAt: serverTimestamp()
+                    });
+                  } else {
+                    await addDoc(collection(db, 'quality_audits'), {
+                      ...data,
+                      projectId: selectedProject.id,
+                      createdAt: serverTimestamp(),
+                      updatedAt: serverTimestamp()
+                    });
+                  }
+                  setIsEditing(false);
+                } catch (error) {
+                  console.error("Error saving quality audit:", error);
+                }
+              }}
+            />
+          ) : isMeetingsPage ? (
+            meetingViewMode === 'archive' ? (
+              <MeetingsArchiveView 
+                project={selectedProject!}
+                onNewMeeting={() => {
+                  setSelectedMeeting(null);
+                  setMeetingViewMode('form');
+                }}
+                onViewMeeting={(m) => {
+                  setSelectedMeeting(m);
+                  setMeetingViewMode('form');
+                }}
+              />
+            ) : (
+              <MeetingMinutesForm 
+                project={selectedProject!}
+                meeting={selectedMeeting || undefined}
+                onSave={async (data) => {
+                  if (!selectedProject) return;
+                  try {
+                    if (selectedMeeting?.id) {
+                      await updateDoc(doc(db, 'meetings', selectedMeeting.id), {
+                        ...data,
+                        updatedAt: serverTimestamp()
+                      });
+                    } else {
+                      await addDoc(collection(db, 'meetings'), {
+                        ...data,
+                        projectId: selectedProject.id,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                      });
+                    }
+                    setMeetingViewMode('archive');
+                  } catch (error) {
+                    console.error("Error saving meeting:", error);
+                  }
+                }}
+                onCancel={() => setMeetingViewMode('archive')}
+              />
+            )
           ) : isEditing ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}

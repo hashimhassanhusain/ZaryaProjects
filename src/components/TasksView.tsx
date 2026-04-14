@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2 } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -38,9 +38,12 @@ export const TasksView: React.FC = () => {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(workspaces[0].id);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'assumption_constraint' | 'issue' | 'meeting'>('all');
+  const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isAddingStatus, setIsAddingStatus] = useState(false);
+  const [isManagingStatuses, setIsManagingStatuses] = useState(false);
+  const [editingStatus, setEditingStatus] = useState<{ oldName: string, newName: string } | null>(null);
   const [newStatusName, setNewStatusName] = useState('');
   const [newNote, setNewNote] = useState('');
   const [customStatuses, setCustomStatuses] = useState<string[]>(['TO DO', 'PLANNING', 'RFP', 'TENDERING', 'IN PROGRESS', 'AT RISK', 'UPDATE REQUIRED', 'COMPLETED']);
@@ -63,6 +66,13 @@ export const TasksView: React.FC = () => {
       setCustomStatuses(selectedProject.taskStatuses);
     }
   }, [selectedProject?.taskStatuses]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('filter') === 'my') {
+      setShowOnlyMyTasks(true);
+    }
+  }, [window.location.search]);
 
   useEffect(() => {
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -145,6 +155,7 @@ export const TasksView: React.FC = () => {
   const filteredTasks = tasks.filter(t => 
     t.workspaceId === selectedWorkspaceId &&
     (filterType === 'all' || t.sourceType === filterType) &&
+    (showOnlyMyTasks ? t.assigneeId === auth.currentUser?.uid : true) &&
     (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
      t.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -248,6 +259,86 @@ export const TasksView: React.FC = () => {
     }
     setNewStatusName('');
     setIsAddingStatus(false);
+  };
+
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusToDelete, setStatusToDelete] = useState<string | null>(null);
+
+  const handleDeleteStatus = async (status: string) => {
+    if (!selectedProject || !customStatuses.includes(status)) return;
+    
+    const tasksInStatus = tasks.filter(t => t.status === status);
+    if (tasksInStatus.length > 0) {
+      setStatusError(`Cannot delete status "${status}" because it contains ${tasksInStatus.length} tasks.`);
+      setTimeout(() => setStatusError(null), 3000);
+      return;
+    }
+
+    setStatusToDelete(status);
+  };
+
+  const confirmDeleteStatus = async () => {
+    if (!statusToDelete || !selectedProject) return;
+
+    const updatedStatuses = customStatuses.filter(s => s !== statusToDelete);
+    setCustomStatuses(updatedStatuses);
+    try {
+      await updateDoc(doc(db, 'projects', selectedProject.id), {
+        taskStatuses: updatedStatuses
+      });
+      setStatusToDelete(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'projects');
+    }
+  };
+
+  const handleRenameStatus = async () => {
+    if (!selectedProject || !editingStatus || !editingStatus.newName.trim()) return;
+    const { oldName, newName } = editingStatus;
+    const trimmedNewName = newName.trim().toUpperCase();
+
+    if (oldName === trimmedNewName) {
+      setEditingStatus(null);
+      return;
+    }
+
+    if (customStatuses.includes(trimmedNewName)) {
+      setStatusError('A status with this name already exists.');
+      setTimeout(() => setStatusError(null), 3000);
+      return;
+    }
+
+    const updatedStatuses = customStatuses.map(s => s === oldName ? trimmedNewName : s);
+    setCustomStatuses(updatedStatuses);
+    
+    try {
+      // Update project statuses
+      await updateDoc(doc(db, 'projects', selectedProject.id), {
+        taskStatuses: updatedStatuses
+      });
+
+      // Update all tasks with this status
+      const tasksToUpdate = tasks.filter(t => t.status === oldName);
+      for (const task of tasksToUpdate) {
+        await updateDoc(doc(db, 'tasks', task.id), { status: trimmedNewName });
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'projects/tasks');
+    }
+    setEditingStatus(null);
+  };
+
+  const handleReorderStatuses = async (oldIndex: number, newIndex: number) => {
+    if (!selectedProject) return;
+    const updatedStatuses = arrayMove(customStatuses, oldIndex, newIndex);
+    setCustomStatuses(updatedStatuses);
+    try {
+      await updateDoc(doc(db, 'projects', selectedProject.id), {
+        taskStatuses: updatedStatuses
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'projects');
+    }
   };
 
   const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
@@ -378,11 +469,18 @@ export const TasksView: React.FC = () => {
         
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <div className="flex items-center gap-2">
-            <img 
-              src={getAssignee(task.assigneeId)?.photoURL} 
-              alt="" 
-              className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-            />
+            {getAssignee(task.assigneeId)?.photoURL ? (
+              <img 
+                src={getAssignee(task.assigneeId)?.photoURL} 
+                alt="" 
+                className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm bg-slate-100 flex items-center justify-center">
+                <User className="w-3 h-3 text-slate-400" />
+              </div>
+            )}
             <span className="text-[10px] font-medium text-slate-400">{getAssignee(task.assigneeId)?.name}</span>
           </div>
           <div className="flex items-center gap-1 text-slate-400">
@@ -392,6 +490,30 @@ export const TasksView: React.FC = () => {
         </div>
       </div>
     );
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'TO DO': return { dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600', icon: Clock };
+      case 'PLANNING': return { dot: 'bg-purple-500', badge: 'bg-purple-100 text-purple-600', icon: Calendar };
+      case 'RFP': return { dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-600', icon: AlertCircle };
+      case 'TENDERING': return { dot: 'bg-pink-500', badge: 'bg-pink-100 text-pink-600', icon: AlertCircle };
+      case 'IN PROGRESS': return { dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-600', icon: Clock };
+      case 'AT RISK': return { dot: 'bg-red-500', badge: 'bg-red-100 text-red-600', icon: AlertTriangle };
+      case 'UPDATE REQUIRED': return { dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-600', icon: AlertCircle };
+      case 'COMPLETED': return { dot: 'bg-green-500', badge: 'bg-green-100 text-green-600', icon: CheckCircle2 };
+      default: 
+        // Generate a stable color based on status name
+        const colors = [
+          { dot: 'bg-indigo-500', badge: 'bg-indigo-100 text-indigo-600' },
+          { dot: 'bg-cyan-500', badge: 'bg-cyan-100 text-cyan-600' },
+          { dot: 'bg-teal-500', badge: 'bg-teal-100 text-teal-600' },
+          { dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-600' },
+          { dot: 'bg-violet-500', badge: 'bg-violet-100 text-violet-600' },
+        ];
+        const index = status.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+        return { ...colors[index], icon: AlertCircle };
+    }
   };
 
   const KanbanColumn: React.FC<{ status: string, tasks: Task[] }> = ({ status, tasks }) => {
@@ -407,16 +529,7 @@ export const TasksView: React.FC = () => {
       >
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
-            <div className={cn(
-              "w-2 h-2 rounded-full",
-              status === 'TO DO' ? "bg-slate-400" :
-              status === 'PLANNING' ? "bg-purple-500" :
-              status === 'RFP' ? "bg-orange-500" :
-              status === 'TENDERING' ? "bg-pink-500" :
-              status === 'IN PROGRESS' ? "bg-blue-500" :
-              status === 'AT RISK' ? "bg-red-500" :
-              status === 'UPDATE REQUIRED' ? "bg-amber-500" : "bg-green-500"
-            )}></div>
+            <div className={cn("w-2 h-2 rounded-full", getStatusStyle(status).dot)}></div>
             <h3 className="font-bold text-slate-700 text-sm">{status}</h3>
             <span className="bg-white text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-slate-200">
               {tasks.length}
@@ -450,6 +563,22 @@ export const TasksView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsManagingStatuses(true)}
+            className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Manage Statuses
+          </button>
+          <button 
+            onClick={() => setShowOnlyMyTasks(!showOnlyMyTasks)}
+            className={cn(
+              "px-4 py-2 rounded-xl text-sm font-bold transition-all border",
+              showOnlyMyTasks ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+            )}
+          >
+            {showOnlyMyTasks ? "All Tasks" : "My Tasks"}
+          </button>
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button 
               onClick={() => setViewMode('kanban')}
@@ -644,28 +773,21 @@ export const TasksView: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className={cn(
                       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      task.status === 'TO DO' ? "bg-slate-100 text-slate-600" :
-                      task.status === 'PLANNING' ? "bg-purple-100 text-purple-600" :
-                      task.status === 'RFP' ? "bg-orange-100 text-orange-600" :
-                      task.status === 'TENDERING' ? "bg-pink-100 text-pink-600" :
-                      task.status === 'IN PROGRESS' ? "bg-blue-100 text-blue-600" :
-                      task.status === 'AT RISK' ? "bg-red-100 text-red-600" :
-                      task.status === 'UPDATE REQUIRED' ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
+                      getStatusStyle(task.status).badge
                     )}>
-                      {task.status === 'TO DO' && <Clock className="w-3 h-3" />}
-                      {task.status === 'PLANNING' && <Calendar className="w-3 h-3" />}
-                      {task.status === 'RFP' && <AlertCircle className="w-3 h-3" />}
-                      {task.status === 'TENDERING' && <AlertCircle className="w-3 h-3" />}
-                      {task.status === 'IN PROGRESS' && <Clock className="w-3 h-3" />}
-                      {task.status === 'AT RISK' && <AlertTriangle className="w-3 h-3" />}
-                      {task.status === 'UPDATE REQUIRED' && <AlertCircle className="w-3 h-3" />}
-                      {task.status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3" />}
+                      {React.createElement(getStatusStyle(task.status).icon, { className: "w-3 h-3" })}
                       {task.status}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <img src={getAssignee(task.assigneeId)?.photoURL} className="w-6 h-6 rounded-full" alt="" />
+                      {getAssignee(task.assigneeId)?.photoURL ? (
+                        <img src={getAssignee(task.assigneeId)?.photoURL} className="w-6 h-6 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                          <User className="w-3 h-3 text-slate-400" />
+                        </div>
+                      )}
                       <span className="text-xs font-medium text-slate-600">{getAssignee(task.assigneeId)?.name}</span>
                     </div>
                   </td>
@@ -687,6 +809,110 @@ export const TasksView: React.FC = () => {
           </table>
         </div>
       )}
+
+      {/* Status Management Modal */}
+      <AnimatePresence>
+        {isManagingStatuses && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsManagingStatuses(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col p-8"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-800">Manage Statuses</h3>
+                <button onClick={() => setIsManagingStatuses(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+                  <Plus className="w-6 h-6 rotate-45 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                {customStatuses.map((status, index) => (
+                  <div key={status} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                    <div className="flex-1">
+                      {editingStatus?.oldName === status ? (
+                        <input 
+                          autoFocus
+                          type="text"
+                          value={editingStatus.newName}
+                          onChange={(e) => setEditingStatus({ ...editingStatus, newName: e.target.value })}
+                          className="w-full px-2 py-1 bg-white border border-blue-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameStatus();
+                            if (e.key === 'Escape') setEditingStatus(null);
+                          }}
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-slate-700">{status}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {editingStatus?.oldName === status ? (
+                        <button onClick={handleRenameStatus} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button onClick={() => setEditingStatus({ oldName: status, newName: status })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleDeleteStatus(status)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <div className="flex flex-col gap-0.5 ml-1">
+                        <button 
+                          disabled={index === 0}
+                          onClick={() => handleReorderStatuses(index, index - 1)}
+                          className="p-0.5 text-slate-400 hover:text-slate-600 disabled:opacity-30"
+                        >
+                          <Plus className="w-3 h-3 rotate-180" />
+                        </button>
+                        <button 
+                          disabled={index === customStatuses.length - 1}
+                          onClick={() => handleReorderStatuses(index, index + 1)}
+                          className="p-0.5 text-slate-400 hover:text-slate-600 disabled:opacity-30"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newStatusName}
+                    onChange={(e) => setNewStatusName(e.target.value)}
+                    placeholder="New status name..."
+                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                  />
+                  <button 
+                    onClick={handleAddStatus}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Task Detail Modal */}
       <AnimatePresence>
@@ -769,7 +995,13 @@ export const TasksView: React.FC = () => {
                             <div key={note.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <img src={getAssignee(note.userId)?.photoURL} className="w-5 h-5 rounded-full" alt="" />
+                                  {getAssignee(note.userId)?.photoURL ? (
+                                    <img src={getAssignee(note.userId)?.photoURL} className="w-5 h-5 rounded-full" alt="" />
+                                  ) : (
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                                      <User className="w-2.5 h-2.5 text-slate-400" />
+                                    </div>
+                                  )}
                                   <span className="text-xs font-bold text-slate-700">{getAssignee(note.userId)?.name}</span>
                                 </div>
                                 <span className="text-[10px] text-slate-400">{note.timestamp}</span>
@@ -789,7 +1021,13 @@ export const TasksView: React.FC = () => {
                             {idx !== selectedTask.history!.length - 1 && (
                               <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-slate-100"></div>
                             )}
-                            <img src={getAssignee(item.userId)?.photoURL} className="w-8 h-8 rounded-full z-10" alt="" />
+                            {getAssignee(item.userId)?.photoURL ? (
+                              <img src={getAssignee(item.userId)?.photoURL} className="w-8 h-8 rounded-full z-10" alt="" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full z-10 bg-slate-100 flex items-center justify-center border border-slate-200">
+                                <User className="w-4 h-4 text-slate-400" />
+                              </div>
+                            )}
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm font-bold text-slate-700">{getAssignee(item.userId)?.name}</span>
@@ -959,6 +1197,58 @@ export const TasksView: React.FC = () => {
                   className="px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
                 >
                   Create Task
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Status Error Message */}
+      <AnimatePresence>
+        {statusError && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-red-600 text-white rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-2"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            {statusError}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Status Delete Confirmation Modal */}
+      <AnimatePresence>
+        {statusToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-slate-900">Delete Status?</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Are you sure you want to delete the status "{statusToDelete}"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setStatusToDelete(null)}
+                  className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteStatus}
+                  className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-red-200 hover:bg-red-700 transition-all"
+                >
+                  Delete
                 </button>
               </div>
             </motion.div>

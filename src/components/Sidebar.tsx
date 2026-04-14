@@ -23,7 +23,8 @@ import {
   Settings,
   ClipboardList,
   Gavel,
-  Award
+  Award,
+  Languages
 } from 'lucide-react';
 import { pages, getChildren, getBreadcrumbs, getFocusArea } from '../data';
 import { Project } from '../types';
@@ -34,6 +35,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
 import { ProjectManagementPlan } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 interface SidebarProps {
@@ -65,10 +67,10 @@ export const Sidebar: React.FC = () => {
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'focus' | 'domain' | 'files'>('focus');
   const { sidebarWidth, setSidebarWidth } = useUI();
   const [isResizing, setIsResizing] = useState(false);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
+  const { language, setLanguage, t, isRtl } = useLanguage();
 
   useEffect(() => {
     const fetchPmPlan = async () => {
@@ -198,24 +200,23 @@ export const Sidebar: React.FC = () => {
   };
 
   useEffect(() => {
-    if (viewMode === 'files' && projectRootId) {
-      fetchDriveFolders(projectRootId);
-    }
-  }, [viewMode, projectRootId]);
+    // We no longer need to fetch drive folders here as the tab is removed
+  }, []);
 
   const renderDriveTree = (folderId: string, depth = 0) => {
     const files = driveFolders[folderId] || [];
     const isLoading = loadingFolders.includes(folderId);
 
     if (isLoading && files.length === 0) {
-      return <div className="ml-4 text-[10px] text-slate-500 py-1 italic">Loading...</div>;
+      return <div className="ms-4 text-[10px] text-slate-500 py-1 italic">{t('loading')}</div>;
     }
 
     return (
-      <div className={cn("space-y-1", depth > 0 && "ml-4 border-l border-white/5 pl-2")}>
+      <div className={cn("space-y-1", depth > 0 && "ms-4 border-s border-slate-200 ps-2")}>
         {files.map(file => {
           const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
           const isExpanded = expandedIds.includes(file.id);
+          const isActive = location.pathname === `/explorer/${file.id}`;
           
           return (
             <div key={file.id} className="space-y-1">
@@ -230,15 +231,15 @@ export const Sidebar: React.FC = () => {
                   }}
                   className={cn(
                     "sidebar-item flex-1 group cursor-pointer",
-                    location.pathname === `/explorer/${file.id}` ? "sidebar-item-active" : "sidebar-item-inactive"
+                    isActive ? "sidebar-item-active" : "sidebar-item-inactive"
                   )}
                 >
                   {isFolder ? (
-                    <FolderOpen className="w-4 h-4 mr-2 text-slate-500 group-hover:text-slate-300" />
+                    <FolderOpen className={cn("w-4 h-4 me-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
                   ) : (
-                    <FileText className="w-4 h-4 mr-2 text-slate-500 group-hover:text-slate-300" />
+                    <FileText className={cn("w-4 h-4 me-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
                   )}
-                  <span className="truncate text-xs">{file.name}</span>
+                  <span className="truncate text-xs font-medium">{file.name}</span>
                 </Link>
                 {isFolder && (
                   <button 
@@ -246,7 +247,7 @@ export const Sidebar: React.FC = () => {
                       toggleExpand(file.id, true);
                       fetchDriveFolders(file.id);
                     }}
-                    className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-white transition-colors"
+                    className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-900 transition-colors"
                   >
                     {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   </button>
@@ -260,176 +261,9 @@ export const Sidebar: React.FC = () => {
     );
   };
 
-  const renderHierarchy = () => {
-    const sections = [
-      {
-        type: 'section',
-        title: 'CORE DATA',
-        items: [
-          { id: '2.1.2', title: 'Project Management Plan', icon: DraftingCompass },
-          { id: '2.6', title: 'Resources & Optimization', icon: Package },
-          { id: '1.2.1', title: 'Stakeholder Register', icon: Users },
-          { id: '2.1.5', title: 'Assumptions Log', icon: ClipboardList },
-          { id: '3.1.3', title: 'Decision Log', icon: Gavel },
-          { id: '5.1.1', title: 'Lessons Learned', icon: Award },
-          { id: '2.2.9', title: 'WBS', icon: Grid3X3 },
-        ]
-      },
-      {
-        type: 'section',
-        title: 'FINANCE',
-        items: [
-          { id: '2.4.0', title: 'BOQ', icon: Banknote },
-          { id: '4.2.6', title: 'PO Management', icon: Package },
-          { id: '4.2.3', title: 'Payment Certificate', icon: FileText },
-          { id: '4.2.2', title: 'Earned Value Report', icon: Banknote },
-        ]
-      },
-      {
-        type: 'section',
-        title: 'GOVERNANCE',
-        items: [
-          { id: '3.3.3', title: 'Progress Reports', icon: FileText },
-          { id: '2.6.21', title: 'Task Management', icon: LayoutDashboard },
-          { id: '2.7', title: 'Risk & Opportunity Hub', icon: AlertTriangle },
-          { id: '3.4', title: 'Change Management', icon: FileText },
-          { id: '2.6.22', title: 'Meeting Management', icon: Users },
-        ]
-      },
-      {
-        type: 'section',
-        title: 'UTILITIES',
-        items: [
-          { id: 'files', title: 'Project Files', icon: FolderOpen },
-          { id: 'settings', title: 'Settings', icon: Settings, path: '/profile' },
-        ]
-      }
-    ];
-
-    return (
-      <div className="space-y-8 py-2">
-        {/* Dashboard Link */}
-        <Link
-          to="/"
-          className={cn(
-            "flex items-center px-4 py-3 rounded-xl transition-all group",
-            location.pathname === '/' 
-              ? "bg-blue-600/5 text-blue-600 border-l-4 border-blue-600" 
-              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-          )}
-        >
-          <LayoutDashboard className={cn(
-            "w-5 h-5 mr-3 transition-colors",
-            location.pathname === '/' ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
-          )} />
-          <span className="text-sm font-bold tracking-wide">Dashboard</span>
-        </Link>
-
-        {sections.map((section, idx) => (
-          <div key={idx} className="space-y-3">
-            <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-              {section.title}
-            </h3>
-            <div className="space-y-1">
-              {section.items.map(item => {
-                const path = item.path || `/page/${item.id}`;
-                const isActive = location.pathname === path || (item.id && currentPath === item.id);
-                
-                return (
-                  <Link
-                    key={item.id}
-                    to={path}
-                    className={cn(
-                      "flex items-center px-4 py-2.5 rounded-xl transition-all group relative",
-                      isActive 
-                        ? "bg-blue-600/5 text-blue-600 border-l-4 border-blue-600" 
-                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                    )}
-                  >
-                    <item.icon className={cn(
-                      "w-4 h-4 mr-3 transition-colors",
-                      isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
-                    )} />
-                    <span className="text-xs font-semibold truncate">{stripNumericPrefix(item.title)}</span>
-                    {(item as any).hasDot && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderTree = (parentId?: string, depth = 0) => {
-    if (viewMode === 'focus') {
-      return renderHierarchy();
-    }
-
-    if (viewMode === 'files') {
-      if (!projectRootId) {
-        return <div className="px-4 py-2 text-xs text-slate-500 italic">Select a project to view files.</div>;
-      }
-      return renderDriveTree(projectRootId, depth);
-    }
-
-    let items: any[] = [];
+  const renderTree = (parentId: string | undefined, depth = 0) => {
+    let items = pages.filter(p => p.parentId === parentId);
     
-    const CANONICAL_DOMAINS = [
-      { id: 'dom_gov', title: 'Governance Domain', searchKey: 'governance' },
-      { id: 'dom_scope', title: 'Scope Domain', searchKey: 'scope' },
-      { id: 'dom_sched', title: 'Schedule Domain', searchKey: 'schedule' },
-      { id: 'dom_fin', title: 'Finance Domain', searchKey: 'finance' },
-      { id: 'dom_stake', title: 'Stakeholders Domain', searchKey: 'stakeholders' },
-      { id: 'dom_res', title: 'Resources Domain', searchKey: 'resources' },
-      { id: 'dom_risk', title: 'Risk Domain', searchKey: 'risk' },
-    ];
-
-    if (viewMode === 'focus') {
-      items = parentId ? getChildren(parentId) : pages.filter(p => !p.parentId);
-    } else if (viewMode === 'domain') {
-      // Domain View Logic
-      if (!parentId) {
-        items = CANONICAL_DOMAINS.map(d => ({
-          id: d.id,
-          title: d.title,
-          type: 'hub',
-          isCanonical: true,
-          searchKey: d.searchKey
-        }));
-      } else {
-        const canonical = CANONICAL_DOMAINS.find(d => d.id === parentId);
-        if (canonical) {
-          // Find all pages that belong to this domain
-          const domainHubs = pages.filter(p => 
-            p.type === 'hub' && 
-            p.domain === canonical.searchKey
-          );
-          const hubIds = domainHubs.map(h => h.id);
-          
-          // Get all terminal pages under these hubs
-          items = pages.filter(p => p.parentId && hubIds.includes(p.parentId));
-          
-          // Logical Sorting:
-          items = sortDomainPages(items, canonical.searchKey);
-        } else {
-          items = getChildren(parentId);
-        }
-      }
-    } else {
-      // Master File Explorer Logic
-      if (!parentId) {
-        items = [
-          { id: 'files_root', title: projectRootName, type: 'hub', path: '/page/files' }
-        ];
-      } else {
-        items = []; // In a real app, we'd fetch subfolders here
-      }
-    }
-
     // Apply Tailoring Logic
     if (pmPlan && pmPlan.tailoringDecisions) {
       const tailoredOutAreas = pmPlan.tailoringDecisions
@@ -437,100 +271,58 @@ export const Sidebar: React.FC = () => {
         .map(d => d.knowledgeArea.toLowerCase());
 
       items = items.filter(item => {
-        // Check if the item's domain is tailored out
         const itemDomain = item.domain?.toLowerCase() || '';
-        const isTailoredOut = tailoredOutAreas.some(area => itemDomain.includes(area));
-        
-        // Special case for Folder 2.7 (Risk)
-        if (item.id === '2.7' && tailoredOutAreas.includes('risk')) return false;
-        
-        return !isTailoredOut;
+        return !tailoredOutAreas.some(area => itemDomain.includes(area));
       });
     }
     
     const filteredItems = items.filter(item => {
-      // Filter by permissions if not admin
+      const title = stripNumericPrefix(t(item.id) || item.title);
+      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
+      const hasMatchingChild = pages.some(p => 
+        p.parentId === item.id && (stripNumericPrefix(t(p.id) || p.title)).toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      
+      if (searchQuery && !matchesSearch && !hasMatchingChild) return false;
+
       if (!isAdmin && userProfile?.accessiblePages?.length > 0) {
-        // If it's a hub, check if it or any of its children are accessible
-        if (item.type === 'hub') {
-          const isHubAccessible = userProfile.accessiblePages.includes(item.id);
-          const hasAccessibleChild = pages.some(p => p.parentId === item.id && userProfile.accessiblePages.includes(p.id));
-          if (!isHubAccessible && !hasAccessibleChild) return false;
-        } else {
-          if (!userProfile.accessiblePages.includes(item.id)) return false;
-        }
+        const isAccessible = userProfile.accessiblePages.includes(item.id);
+        const hasAccessibleChild = pages.some(p => p.parentId === item.id && userProfile.accessiblePages.includes(p.id));
+        if (!isAccessible && !hasAccessibleChild) return false;
       }
 
-      if (searchQuery === '') return true;
-      const matchesSelf = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-      if (item.isCanonical) {
-        // For canonical domains, check if any of their "virtual" children match
-        const hubIds = pages.filter(p => 
-          p.type === 'hub' && 
-          p.domain === item.searchKey
-        ).map(h => h.id);
-        return matchesSelf || pages.some(p => p.parentId && hubIds.includes(p.parentId) && p.title.toLowerCase().includes(searchQuery.toLowerCase()));
-      }
-      const hasMatchingChild = pages.some(p => 
-        p.parentId === item.id && p.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      return matchesSelf || hasMatchingChild;
+      return true;
     });
 
     if (filteredItems.length === 0 && searchQuery !== '') return null;
 
     return (
-      <div className={cn("space-y-1", depth > 0 && "ml-4 border-l border-slate-200 pl-2")}>
+      <div className={cn("space-y-1", depth > 0 && "ms-4 border-s border-slate-200 ps-2")}>
         {filteredItems.map(page => {
           const isActive = currentPath === page.id;
-          const hasChildren = page.isCanonical || getChildren(page.id).length > 0;
+          const hasChildren = pages.some(p => p.parentId === page.id);
           const isExpanded = expandedIds.includes(page.id) || searchQuery !== '';
+          const title = stripNumericPrefix(t(page.id) || page.title);
           
           return (
             <div key={page.id} className="space-y-1">
               <div className="flex items-center group">
-                {page.isCanonical ? (
-                  <Link
-                    to={`/page/${page.id}`}
-                    onClick={() => toggleExpand(page.id, true)}
-                    className={cn(
-                      "sidebar-item flex-1 group text-left",
-                      isActive ? "sidebar-item-active" : "text-slate-500 hover:text-slate-900"
-                    )}
-                  >
-                    {(() => {
-                      const Icon = getDomainIcon(page.searchKey, page.title);
-                      return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />;
-                    })()}
-                    <span className="truncate font-semibold">{stripNumericPrefix(page.title)}</span>
-                  </Link>
-                ) : (
-                  <Link
-                    to={`/page/${page.id}`}
-                    onClick={() => toggleExpand(page.id, page.type === 'hub')}
-                    className={cn(
-                      "sidebar-item flex-1 group",
-                      isActive ? "sidebar-item-active" : "sidebar-item-inactive"
-                    )}
-                  >
-                    {page.type === 'hub' ? (
-                      (() => {
-                        const Icon = getDomainIcon(page.domain, page.title);
-                        return <Icon className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />;
-                      })()
-                    ) : (
-                      <FileText className={cn("w-4 h-4 mr-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
-                    )}
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate">{stripNumericPrefix(page.title)}</span>
-                      {viewMode === 'domain' && !page.isCanonical && (
-                        <span className="text-[9px] text-slate-400 font-medium truncate">
-                          {stripNumericPrefix(getFocusArea(page.id)?.title || '')}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                )}
+                <Link
+                  to={`/page/${page.id}`}
+                  onClick={() => toggleExpand(page.id, hasChildren)}
+                  className={cn(
+                    "sidebar-item flex-1 group",
+                    isActive ? "sidebar-item-active" : "sidebar-item-inactive"
+                  )}
+                >
+                  {(() => {
+                    const Icon = getDomainIcon(page.domain, page.title);
+                    return <Icon className={cn("w-4 h-4 me-2 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />;
+                  })()}
+                  <span className={cn("truncate", depth === 0 ? "font-bold uppercase text-[10px] tracking-wider" : "text-xs font-medium")}>
+                    {title}
+                  </span>
+                </Link>
                 {hasChildren && (
                   <button 
                     onClick={(e) => {
@@ -554,12 +346,12 @@ export const Sidebar: React.FC = () => {
   return (
     <aside 
       style={{ width: sidebarWidth }}
-      className="h-screen bg-white border-r border-slate-200 p-4 flex flex-col relative group/sidebar shrink-0"
+      className="h-screen bg-[#f8fafc] border-r border-slate-200 p-4 flex flex-col relative group/sidebar shrink-0"
     >
       {/* Resize Handle */}
       <div
         onMouseDown={() => setIsResizing(true)}
-        className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-600/50 transition-all z-50 group-hover/sidebar:bg-slate-100"
+        className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-600/50 transition-all z-50 group-hover/sidebar:bg-slate-200"
       >
         <div className={cn(
           "absolute right-0 top-0 w-0.5 h-full transition-colors",
@@ -570,52 +362,59 @@ export const Sidebar: React.FC = () => {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Search pages..."
+          placeholder={t('search_pages')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
+          className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all shadow-sm"
         />
       </div>
 
-      <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
-        <button
-          onClick={() => setViewMode('focus')}
-          className={cn(
-            "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'focus' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-          )}
-        >
-          HIERARCHY
-        </button>
-        <button
-          onClick={() => setViewMode('domain')}
-          className={cn(
-            "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'domain' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-          )}
-        >
-          DOMAINS
-        </button>
-        <button
-          onClick={() => setViewMode('files')}
-          className={cn(
-            "flex-1 py-1.5 text-[9px] font-semibold rounded-lg transition-all",
-            viewMode === 'files' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-          )}
-        >
-          DRIVE
-        </button>
-      </div>
-      
-      <nav className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
         <div>
-          <div>
-            {renderTree()}
-          </div>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-4">{t('hierarchy')}</div>
+          {renderTree(undefined)}
         </div>
+
+        {selectedProject && (
+          <div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-4">{t('drive')}</div>
+            <div className="space-y-1">
+              <div className="flex items-center group">
+                <Link
+                  to={`/explorer/${selectedProject.driveFolderId}`}
+                  onClick={() => {
+                    toggleExpand(selectedProject.driveFolderId || '', true);
+                    if (selectedProject.driveFolderId) fetchDriveFolders(selectedProject.driveFolderId);
+                  }}
+                  className={cn(
+                    "sidebar-item flex-1 group",
+                    location.pathname === `/explorer/${selectedProject.driveFolderId}` ? "sidebar-item-active" : "sidebar-item-inactive"
+                  )}
+                >
+                  <FolderOpen className={cn("w-4 h-4 me-2 transition-colors", location.pathname.includes('/explorer') ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
+                  <span className="truncate text-xs font-bold uppercase tracking-wider">
+                    {selectedProject.code} Workspace
+                  </span>
+                </Link>
+                <button 
+                  onClick={() => {
+                    if (selectedProject.driveFolderId) {
+                      toggleExpand(selectedProject.driveFolderId, true);
+                      fetchDriveFolders(selectedProject.driveFolderId);
+                    }
+                  }}
+                  className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  {expandedIds.includes(selectedProject.driveFolderId || '') ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                </button>
+              </div>
+              {selectedProject.driveFolderId && expandedIds.includes(selectedProject.driveFolderId) && renderDriveTree(selectedProject.driveFolderId, 1)}
+            </div>
+          </div>
+        )}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-slate-100 space-y-4">
+      <div className="mt-auto pt-6 border-t border-slate-200 space-y-4">
         {isAdmin && (
           <div className="px-2">
             <button
@@ -626,8 +425,8 @@ export const Sidebar: React.FC = () => {
               )}
             >
               <div className="flex items-center">
-                <Shield className={cn("w-4 h-4 mr-3 transition-colors", isAdminExpanded ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
-                <span className="font-bold text-xs">Admin Settings</span>
+                <Shield className={cn("w-4 h-4 me-3 transition-colors", isAdminExpanded ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
+                <span className="font-bold text-xs">{t('admin_settings')}</span>
               </div>
               <ChevronRight className={cn("w-4 h-4 transition-transform", isAdminExpanded ? "rotate-90" : "")} />
             </button>
@@ -638,7 +437,7 @@ export const Sidebar: React.FC = () => {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden ml-4 border-l border-slate-200 pl-2 mt-1 space-y-1"
+                  className="overflow-hidden ms-4 border-s border-slate-200 ps-2 mt-1 space-y-1"
                 >
                   <Link
                     to="/admin/users"
@@ -647,8 +446,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/users' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Users className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">Users</span>
+                    <Users className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('users')}</span>
                   </Link>
                   <Link
                     to="/admin/contacts"
@@ -657,8 +456,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/contacts' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Users className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">Contacts</span>
+                    <Users className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('contacts')}</span>
                   </Link>
                   <Link
                     to="/admin/companies"
@@ -667,8 +466,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/companies' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Building2 className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">Companies</span>
+                    <Building2 className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('companies')}</span>
                   </Link>
                   <Link
                     to="/admin/resources"
@@ -677,8 +476,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/resources' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Package className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">3M Resources</span>
+                    <Package className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('3m_resources')}</span>
                   </Link>
                   <Link
                     to="/admin/work-packages"
@@ -687,8 +486,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/work-packages' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Grid3X3 className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">Work Packages</span>
+                    <Grid3X3 className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('work_packages')}</span>
                   </Link>
                   <Link
                     to="/admin/projects"
@@ -697,8 +496,8 @@ export const Sidebar: React.FC = () => {
                       location.pathname === '/admin/projects' ? "bg-blue-600/5 text-blue-600" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
-                    <Layout className="w-3.5 h-3.5 mr-3" />
-                    <span className="text-xs font-medium">Projects</span>
+                    <Layout className="w-3.5 h-3.5 me-3" />
+                    <span className="text-xs font-medium">{t('projects')}</span>
                   </Link>
                 </motion.div>
               )}

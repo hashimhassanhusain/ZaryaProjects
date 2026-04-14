@@ -303,7 +303,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
           </div>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
           <div className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
@@ -348,7 +348,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             </div>
 
             {(formData.category === 'Cost/Price' || formData.category === 'Schedule') && (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex items-start gap-4 animate-pulse">
+              <div className="bg-amber-50 border border-amber-100 rounded-lg p-6 flex items-start gap-4 animate-pulse">
                 <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
                 <div>
                   <h4 className="text-sm font-bold text-amber-900 uppercase tracking-tight">Protected Domain Warning</h4>
@@ -411,7 +411,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                 </h3>
                 <div className="space-y-4">
                   {versions.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
                           <span className="text-[10px] font-black text-blue-600">v{v.version.toFixed(1)}</span>
@@ -436,7 +436,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2rem] p-8 mt-12">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-xl p-8 mt-12">
               <div className="flex items-center gap-4 text-white/60 text-xs font-bold uppercase tracking-widest">
                 <Info className="w-4 h-4" />
                 Decision Log Audit Trail Active
@@ -444,21 +444,21 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setView('list')}
-                  className="px-8 py-4 text-white font-bold text-sm hover:bg-white/10 rounded-2xl transition-all"
+                  className="px-8 py-4 text-white font-bold text-sm hover:bg-white/10 rounded-lg transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleSave(true)}
                   disabled={isSaving}
-                  className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all flex items-center gap-2"
+                  className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-lg hover:bg-white/20 transition-all flex items-center gap-2"
                 >
                   Save as New Version
                 </button>
                 <button 
                   onClick={() => handleSave(false)}
                   disabled={isSaving}
-                  className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
+                  className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Overwrite Current
@@ -473,7 +473,18 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-end gap-6">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search by ID, Decision or Responsible Party..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+          />
+        </div>
+
         <div className="flex items-center gap-4">
           <button 
             onClick={generatePDF}
@@ -492,25 +503,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search by ID, Decision or Responsible Party..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-3 text-slate-500 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 transition-all">
-              <Filter className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -583,7 +576,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-[2rem] p-8 flex items-start gap-6">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 flex items-start gap-6">
         <HelpCircle className="w-8 h-8 text-blue-500 shrink-0" />
         <div>
           <h4 className="text-lg font-bold text-blue-900 mb-2">Decision Log Guidance</h4>
@@ -608,7 +601,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden"
             >
               <div className="p-10 text-center space-y-6">
                 <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto">
@@ -623,7 +616,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                 <div className="flex flex-col gap-3">
                   <button 
                     onClick={showPrompt.onConfirm}
-                    className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                    className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                   >
                     Yes, Propose Draft Link
                   </button>
@@ -632,7 +625,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                       setShowPrompt(null);
                       setView('list');
                     }}
-                    className="w-full py-4 bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+                    className="w-full py-4 bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-slate-200 transition-all"
                   >
                     No, Save Only
                   </button>

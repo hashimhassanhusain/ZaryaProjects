@@ -79,6 +79,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'plan' | 'metrics' | 'acceptance'>('plan');
 
@@ -239,6 +240,18 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
+          <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
@@ -291,60 +304,98 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-              <input 
-                type="text"
-                value={qmp.projectTitle}
-                onChange={(e) => setQmp({ ...qmp, projectTitle: e.target.value })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                placeholder="Enter Project Title..."
-              />
+              {isEditing ? (
+                <input 
+                  type="text"
+                  value={qmp.projectTitle}
+                  onChange={(e) => setQmp({ ...qmp, projectTitle: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  placeholder="Enter Project Title..."
+                />
+              ) : (
+                <div className="px-1 py-1 text-lg font-bold text-slate-900">
+                  {qmp.projectTitle || '---'}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-              <input 
-                type="date"
-                value={qmp.datePrepared}
-                onChange={(e) => setQmp({ ...qmp, datePrepared: e.target.value })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-              />
+              {isEditing ? (
+                <input 
+                  type="date"
+                  value={qmp.datePrepared}
+                  onChange={(e) => setQmp({ ...qmp, datePrepared: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                />
+              ) : (
+                <div className="px-1 py-1 text-sm font-medium text-slate-600">
+                  {qmp.datePrepared || '---'}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Roles and Responsibilities */}
           <section className="space-y-6">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Quality Roles and Responsibilities</h3>
-            <div className="grid grid-cols-1 gap-4">
-              {qmp.roles.map((role, idx) => (
-                <div key={role.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
-                    <input 
-                      type="text"
-                      value={role.role}
-                      onChange={(e) => {
-                        const newRoles = [...qmp.roles];
-                        newRoles[idx].role = e.target.value;
-                        setQmp({ ...qmp, roles: newRoles });
-                      }}
-                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
-                    />
+            {isEditing ? (
+              <div className="grid grid-cols-1 gap-4">
+                {qmp.roles.map((role, idx) => (
+                  <div key={role.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
+                      <input 
+                        type="text"
+                        value={role.role}
+                        onChange={(e) => {
+                          const newRoles = [...qmp.roles];
+                          newRoles[idx].role = e.target.value;
+                          setQmp({ ...qmp, roles: newRoles });
+                        }}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
+                      <input 
+                        type="text"
+                        value={role.responsibilities}
+                        onChange={(e) => {
+                          const newRoles = [...qmp.roles];
+                          newRoles[idx].responsibilities = e.target.value;
+                          setQmp({ ...qmp, roles: newRoles });
+                        }}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
-                    <input 
-                      type="text"
-                      value={role.responsibilities}
-                      onChange={(e) => {
-                        const newRoles = [...qmp.roles];
-                        newRoles[idx].responsibilities = e.target.value;
-                        setQmp({ ...qmp, roles: newRoles });
-                      }}
-                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50">
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Role</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibilities</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {qmp.roles.filter(r => r.role || r.responsibilities).map((role) => (
+                      <tr key={role.id} className="group hover:bg-slate-50/30 transition-all">
+                        <td className="px-8 py-6 text-sm font-bold text-slate-900">{role.role || '---'}</td>
+                        <td className="px-8 py-6 text-sm text-slate-600 leading-relaxed">{role.responsibilities || '---'}</td>
+                      </tr>
+                    ))}
+                    {qmp.roles.filter(r => r.role || r.responsibilities).length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="px-8 py-12 text-center text-sm text-slate-400 italic">No roles defined.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           {/* Approaches */}
@@ -358,13 +409,19 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
             ].map((section) => (
               <section key={section.key} className="space-y-4">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
-                <textarea 
-                  value={(qmp as any)[section.key]}
-                  onChange={(e) => setQmp({ ...qmp, [section.key]: e.target.value })}
-                  rows={4}
-                  className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                  placeholder={`Define the ${section.title.toLowerCase()}...`}
-                />
+                {isEditing ? (
+                  <textarea 
+                    value={(qmp as any)[section.key]}
+                    onChange={(e) => setQmp({ ...qmp, [section.key]: e.target.value })}
+                    rows={4}
+                    className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+                    placeholder={`Define the ${section.title.toLowerCase()}...`}
+                  />
+                ) : (
+                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {(qmp as any)[section.key] || '---'}
+                  </div>
+                )}
               </section>
             ))}
           </div>

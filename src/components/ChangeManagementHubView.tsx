@@ -668,35 +668,6 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
         </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {loading ? (
-          Array(4).fill(0).map((_, i) => (
-            <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm animate-pulse">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 mb-6" />
-              <div className="h-8 bg-slate-100 rounded w-1/2 mb-2" />
-              <div className="h-3 bg-slate-50 rounded w-3/4" />
-            </div>
-          ))
-        ) : (
-          kpis.map((kpi, idx) => (
-            <motion.div
-              key={kpi.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110", kpi.bg)}>
-                <kpi.icon className={cn("w-6 h-6", kpi.color)} />
-              </div>
-              <div className="text-3xl font-black text-slate-900 mb-1">{kpi.value}</div>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{kpi.label}</div>
-            </motion.div>
-          ))
-        )}
-      </div>
-
       {/* Change Request Register Table */}
       <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between bg-slate-50/50 gap-4">

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, Layout, Calendar, ArrowLeft, MoreVertical, CheckCircle2, Clock, Loader2, ShieldAlert, Download, CloudUpload, Edit2 } from 'lucide-react';
+import { Plus, Search, Trash2, Layout, Calendar, ArrowLeft, MoreVertical, CheckCircle2, Clock, Loader2, ShieldAlert, Download, CloudUpload, Edit2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth, OperationType, handleFirestoreError } from '../firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { Project } from '../types';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { useLanguage } from '../context/LanguageContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { useProject } from '../context/ProjectContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -12,6 +14,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 export const AdminProjectsView: React.FC = () => {
   const navigate = useNavigate();
   const { projects, loading: projectsLoading } = useProject();
+  const { t, language, isRtl } = useLanguage();
   const [isAdding, setIsAdding] = useState(false);
   const [isInitializingDrive, setIsInitializingDrive] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -41,11 +44,11 @@ export const AdminProjectsView: React.FC = () => {
         method: 'POST'
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Backup failed');
-      alert(`Codebase backed up successfully to Google Drive!\nFile: ${data.fileName}`);
+      if (!res.ok) throw new Error(data.error || t('backup_failed'));
+      alert(`${t('backup_success')}\nFile: ${data.fileName}`);
     } catch (error: any) {
       console.error('Backup error:', error);
-      alert(`Backup failed: ${error.message}`);
+      alert(`${t('backup_failed')}: ${error.message}`);
     } finally {
       setIsBackingUp(false);
     }
@@ -74,10 +77,10 @@ export const AdminProjectsView: React.FC = () => {
       }
 
       const data = await res.json();
-      alert(`✅ Success! Connected to Google Drive.\n\nFolder Name: ${data.folderName}\nService Account: ${data.clientEmail}`);
+      alert(`✅ ${t('drive_connected_success')}\n\nFolder Name: ${data.folderName}\nService Account: ${data.clientEmail}`);
     } catch (error: any) {
       console.error('Test Drive Error:', error);
-      alert(`❌ Connection Failed!\n\nReason: ${error.message}\n\nCheck the server logs for more details.`);
+      alert(`❌ ${t('connection_failed')}\n\nReason: ${error.message}\n\nCheck the server logs for more details.`);
     } finally {
       setIsTestingDrive(false);
     }
@@ -113,9 +116,9 @@ export const AdminProjectsView: React.FC = () => {
         driveFolderId: rootFolderId
       };
       await addDoc(collection(db, 'projects'), demoProject);
-      alert('✅ Demo project added to database and Google Drive structure initialized!');
+      alert(`✅ ${t('demo_project_added_success')}`);
     } catch (error: any) {
-      alert(`❌ Failed to add demo project: ${error.message}`);
+      alert(`❌ ${t('failed_to_add_demo_project')}: ${error.message}`);
     } finally {
       setIsSeeding(false);
     }
@@ -154,28 +157,37 @@ export const AdminProjectsView: React.FC = () => {
       
       setIsAdding(false);
       setNewProject({ name: '', code: '', manager: '', status: 'active' });
-      alert('Project created successfully with Google Drive workspace!');
+      alert(t('project_created_success'));
       
       // Navigate to the new project's dashboard
       navigate(`/project/${docRef.id}`);
     } catch (error: any) {
       console.error('Error creating project:', error);
-      alert(`Failed to create project: ${error.message || 'Unknown error'}`);
+      alert(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
     } finally {
       setIsInitializingDrive(false);
     }
   };
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this project? This will only remove it from the database.')) return;
+    setDeleteConfirmId(projectId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
     
     setIsLoading(true);
     try {
-      await deleteDoc(doc(db, 'projects', projectId));
-      alert('Project deleted from database.');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}`);
+      console.log('Attempting to delete project:', deleteConfirmId);
+      await deleteDoc(doc(db, 'projects', deleteConfirmId));
+      console.log('Project deleted successfully:', deleteConfirmId);
+      setDeleteConfirmId(null);
+    } catch (error: any) {
+      console.error('Error deleting project:', error);
+      handleFirestoreError(error, OperationType.DELETE, `projects/${deleteConfirmId}`);
     } finally {
       setIsLoading(false);
     }
@@ -188,17 +200,16 @@ export const AdminProjectsView: React.FC = () => {
           <ShieldAlert className="w-10 h-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-slate-900">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{t('access_denied')}</h2>
           <p className="text-slate-500 max-w-md mx-auto">
-            You do not have administrative privileges to manage projects. 
-            Please sign in with an authorized account.
+            {t('no_admin_privileges')}
           </p>
         </div>
         <button 
           onClick={() => navigate('/')}
           className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
         >
-          Return to Dashboard
+          {t('return_to_dashboard')}
         </button>
       </div>
     );
@@ -215,7 +226,7 @@ export const AdminProjectsView: React.FC = () => {
           className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
         >
           {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-blue-500" />}
-          Seed Demo Project
+          {t('seed_demo_project')}
         </button>
         <button 
           onClick={handleTestDrive}
@@ -223,7 +234,7 @@ export const AdminProjectsView: React.FC = () => {
           className="px-4 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
         >
           {isTestingDrive ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4 text-emerald-500" />}
-          Test Drive
+          {t('test_drive')}
         </button>
         <button 
           onClick={handleBackupCode}
@@ -232,20 +243,20 @@ export const AdminProjectsView: React.FC = () => {
           title="Backup source code to Google Drive for Antigravity review"
         >
           {isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-          {isBackingUp ? 'Backing up...' : 'Backup Codebase'}
+          {isBackingUp ? t('backing_up') : t('backup_codebase')}
         </button>
         <button 
           onClick={() => navigate('/admin/projects/new')}
           className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" /> Create New Project
+          <Plus className="w-4 h-4" /> {t('create_new_project')}
         </button>
       </div>
 
       {projectsLoading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-          <p className="text-slate-500 font-medium">Loading projects...</p>
+          <p className="text-slate-500 font-medium">{t('loading_projects')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -287,7 +298,7 @@ export const AdminProjectsView: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                     <Layout className="w-3 h-3" /> 
-                    <span>PM: {project.manager || 'Unassigned'}</span>
+                    <span>{t('manager')}: {project.manager || t('unassigned')}</span>
                   </div>
                 </div>
 
@@ -295,11 +306,11 @@ export const AdminProjectsView: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     {project.status === 'active' ? (
                       <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
-                        <CheckCircle2 className="w-3 h-3" /> Active
+                        <CheckCircle2 className="w-3 h-3" /> {t('active')}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                        <Clock className="w-3 h-3" /> Archived
+                        <Clock className="w-3 h-3" /> {t('archived')}
                       </span>
                     )}
                   </div>
@@ -310,6 +321,45 @@ export const AdminProjectsView: React.FC = () => {
           ))}
         </div>
       )}
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-slate-900">{t('confirm_delete_project')}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  This action is permanent and will delete all associated data. Are you sure you want to proceed?
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all"
+                >
+                  {t('cancel')}
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {t('delete')}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

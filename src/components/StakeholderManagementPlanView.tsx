@@ -86,8 +86,8 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -308,26 +308,18 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            <button 
-              onClick={() => setActivePage(1)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 1 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 1
-            </button>
-            <button 
-              onClick={() => setActivePage(2)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 2 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 2
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -356,266 +348,317 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={smp.projectTitle}
-            onChange={(e) => setSmp({ ...smp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={smp.projectTitle}
+              onChange={(e) => setSmp({ ...smp, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {smp.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={smp.datePrepared}
-            onChange={(e) => setSmp({ ...smp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={smp.datePrepared}
+              onChange={(e) => setSmp({ ...smp, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {smp.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 ? (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-10"
-          >
-            {/* Engagement Matrix */}
-            <section className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Engagement Assessment Matrix</h3>
-                <button onClick={addStakeholder} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
-                  <Plus className="w-3 h-3" />
-                  Add Stakeholder
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                      {levels.map(l => (
-                        <th key={l} className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{l}</th>
-                      ))}
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {smp.engagements.map((eng, idx) => (
-                      <tr key={eng.id} className="group">
-                        <td className="px-6 py-4">
-                          <select 
-                            value={eng.stakeholderId}
-                            onChange={(e) => {
+      <div className="space-y-12">
+        {/* Engagement Matrix */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Engagement Assessment Matrix</h3>
+            {isEditing && (
+              <button onClick={addStakeholder} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
+                <Plus className="w-3 h-3" />
+                Add Stakeholder
+              </button>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  {levels.map(l => (
+                    <th key={l} className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{l}</th>
+                  ))}
+                  {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {smp.engagements.map((eng, idx) => (
+                  <tr key={eng.id} className="group">
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <select 
+                          value={eng.stakeholderId}
+                          onChange={(e) => {
+                            const newEng = [...smp.engagements];
+                            newEng[idx].stakeholderId = e.target.value;
+                            newEng[idx].stakeholderName = stakeholders.find(s => s.id === e.target.value)?.name || '';
+                            setSmp({ ...smp, engagements: newEng });
+                          }}
+                          className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold"
+                        >
+                          <option value="">Select Stakeholder...</option>
+                          {stakeholders.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-900">{eng.stakeholderName || '---'}</span>
+                      )}
+                    </td>
+                    {levels.map(l => (
+                      <td key={l} className="px-4 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => {
+                              if (!isEditing) return;
                               const newEng = [...smp.engagements];
-                              newEng[idx].stakeholderId = e.target.value;
-                              newEng[idx].stakeholderName = stakeholders.find(s => s.id === e.target.value)?.name || '';
+                              newEng[idx].current = l;
                               setSmp({ ...smp, engagements: newEng });
                             }}
-                            className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold"
+                            className={cn(
+                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
+                              eng.current === l ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200",
+                              !isEditing && "cursor-default"
+                            )}
+                            title="Current Engagement Level"
                           >
-                            <option value="">Select Stakeholder...</option>
-                            {stakeholders.map(s => (
-                              <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                        {levels.map(l => (
-                          <td key={l} className="px-4 py-4 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button 
-                                onClick={() => {
-                                  const newEng = [...smp.engagements];
-                                  newEng[idx].current = l;
-                                  setSmp({ ...smp, engagements: newEng });
-                                }}
-                                className={cn(
-                                  "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
-                                  eng.current === l ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                                )}
-                                title="Current Engagement Level"
-                              >
-                                C
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  const newEng = [...smp.engagements];
-                                  newEng[idx].desired = l;
-                                  setSmp({ ...smp, engagements: newEng });
-                                }}
-                                className={cn(
-                                  "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
-                                  eng.desired === l ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                                )}
-                                title="Desired Engagement Level"
-                              >
-                                D
-                              </button>
-                            </div>
-                          </td>
-                        ))}
-                        <td className="px-6 py-4 text-right">
-                          <button onClick={() => removeStakeholder(eng.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-4 h-4" />
+                            C
                           </button>
-                        </td>
-                      </tr>
+                          <button 
+                            onClick={() => {
+                              if (!isEditing) return;
+                              const newEng = [...smp.engagements];
+                              newEng[idx].desired = l;
+                              setSmp({ ...smp, engagements: newEng });
+                            }}
+                            className={cn(
+                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
+                              eng.desired === l ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200",
+                              !isEditing && "cursor-default"
+                            )}
+                            title="Desired Engagement Level"
+                          >
+                            D
+                          </button>
+                        </div>
+                      </td>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex items-center gap-4 text-[10px] text-slate-400 font-medium italic px-4 py-2 bg-slate-50 rounded-xl w-fit">
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-600 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">C</span> Current Level</div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-amber-500 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">D</span> Desired Level</div>
-              </div>
-            </section>
+                    {isEditing && (
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => removeStakeholder(eng.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {smp.engagements.length === 0 && (
+                  <tr>
+                    <td colSpan={isEditing ? levels.length + 2 : levels.length + 1} className="px-6 py-12 text-center text-sm text-slate-400 italic">No stakeholders added.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center gap-4 text-[10px] text-slate-400 font-medium italic px-4 py-2 bg-slate-50 rounded-xl w-fit">
+            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-600 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">C</span> Current Level</div>
+            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-amber-500 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">D</span> Desired Level</div>
+          </div>
+        </section>
 
-            {/* Communication Needs */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Needs</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Needs</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method/Medium</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
+        {/* Communication Needs */}
+        <section className="space-y-6">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Needs</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Needs</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method/Medium</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {smp.engagements.map((eng, idx) => (
+                  <tr key={eng.id}>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-900">{eng.stakeholderName || '---'}</td>
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <input 
+                          type="text"
+                          value={eng.commNeeds}
+                          onChange={(e) => {
+                            const newEng = [...smp.engagements];
+                            newEng[idx].commNeeds = e.target.value;
+                            setSmp({ ...smp, engagements: newEng });
+                          }}
+                          className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                          placeholder="Example: Monthly Budget Status"
+                        />
+                      ) : (
+                        <span className="text-sm text-slate-600">{eng.commNeeds || '---'}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <input 
+                          type="text"
+                          value={eng.method}
+                          onChange={(e) => {
+                            const newEng = [...smp.engagements];
+                            newEng[idx].method = e.target.value;
+                            setSmp({ ...smp, engagements: newEng });
+                          }}
+                          className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                          placeholder="Example: Official Letter"
+                        />
+                      ) : (
+                        <span className="text-sm text-slate-600">{eng.method || '---'}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <input 
+                          type="text"
+                          value={eng.timing}
+                          onChange={(e) => {
+                            const newEng = [...smp.engagements];
+                            newEng[idx].timing = e.target.value;
+                            setSmp({ ...smp, engagements: newEng });
+                          }}
+                          className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                          placeholder="Example: Last Thursday"
+                        />
+                      ) : (
+                        <span className="text-sm text-slate-600">{eng.timing || '---'}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {smp.engagements.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-sm text-slate-400 italic">No communication needs defined.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pending Stakeholder Changes</label>
+          {isEditing ? (
+            <textarea 
+              value={smp.pendingChanges}
+              onChange={(e) => setSmp({ ...smp, pendingChanges: e.target.value })}
+              rows={4}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Document any pending changes in stakeholder engagement..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {smp.pendingChanges || '---'}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stakeholder Relationships</label>
+          {isEditing ? (
+            <textarea 
+              value={smp.relationships}
+              onChange={(e) => setSmp({ ...smp, relationships: e.target.value })}
+              rows={6}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Describe key relationships between stakeholders..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {smp.relationships || '---'}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-6">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Stakeholder Engagement Approach</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Approach</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {smp.engagements.map((eng, idx) => {
+                  const isRequired = eng.current !== eng.desired;
+                  return (
+                    <tr key={eng.id}>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-900">{eng.stakeholderName || 'N/A'}</span>
+                          {isRequired && (
+                            <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest mt-1">Required: Gap Detected</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {isEditing ? (
+                          <textarea 
+                            value={eng.approach}
+                            onChange={(e) => {
+                              const newEng = [...smp.engagements];
+                              newEng[idx].approach = e.target.value;
+                              setSmp({ ...smp, engagements: newEng });
+                            }}
+                            rows={2}
+                            className={cn(
+                              "w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all resize-none",
+                              isRequired && !eng.approach ? "bg-amber-50 border border-amber-200" : "bg-slate-50 border border-slate-100"
+                            )}
+                            placeholder={`Example: Regular briefings on project ROI and milestones...`}
+                          />
+                        ) : (
+                          <div className="text-sm text-slate-600 leading-relaxed">
+                            {eng.approach || '---'}
+                          </div>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {smp.engagements.map((eng, idx) => (
-                      <tr key={eng.id}>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900">{eng.stakeholderName || 'Select Stakeholder Above'}</td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="text"
-                            value={eng.commNeeds}
-                            onChange={(e) => {
-                              const newEng = [...smp.engagements];
-                              newEng[idx].commNeeds = e.target.value;
-                              setSmp({ ...smp, engagements: newEng });
-                            }}
-                            className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            placeholder="Example: Monthly Budget Status"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="text"
-                            value={eng.method}
-                            onChange={(e) => {
-                              const newEng = [...smp.engagements];
-                              newEng[idx].method = e.target.value;
-                              setSmp({ ...smp, engagements: newEng });
-                            }}
-                            className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            placeholder="Example: Official Letter"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="text"
-                            value={eng.timing}
-                            onChange={(e) => {
-                              const newEng = [...smp.engagements];
-                              newEng[idx].timing = e.target.value;
-                              setSmp({ ...smp, engagements: newEng });
-                            }}
-                            className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            placeholder="Example: Last Thursday"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pending Stakeholder Changes</label>
-              <textarea 
-                value={smp.pendingChanges}
-                onChange={(e) => setSmp({ ...smp, pendingChanges: e.target.value })}
-                rows={4}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Document any pending changes in stakeholder engagement..."
-              />
-            </section>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-10"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stakeholder Relationships</label>
-              <textarea 
-                value={smp.relationships}
-                onChange={(e) => setSmp({ ...smp, relationships: e.target.value })}
-                rows={6}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Describe key relationships between stakeholders..."
-              />
-            </section>
-
-            <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Stakeholder Engagement Approach</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Approach</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {smp.engagements.map((eng, idx) => {
-                      const isRequired = eng.current !== eng.desired;
-                      return (
-                        <tr key={eng.id}>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold text-slate-900">{eng.stakeholderName || 'N/A'}</span>
-                              {isRequired && (
-                                <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest mt-1">Required: Gap Detected</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <textarea 
-                              value={eng.approach}
-                              onChange={(e) => {
-                                const newEng = [...smp.engagements];
-                                newEng[idx].approach = e.target.value;
-                                setSmp({ ...smp, engagements: newEng });
-                              }}
-                              rows={2}
-                              className={cn(
-                                "w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all resize-none",
-                                isRequired && !eng.approach ? "bg-amber-50 border border-amber-200" : "bg-slate-50 border border-slate-100"
-                              )}
-                              placeholder={`Example: Regular briefings on project ROI and milestones...`}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  );
+                })}
+                {smp.engagements.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="px-6 py-12 text-center text-sm text-slate-400 italic">No engagement approaches defined.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

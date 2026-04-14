@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import { 
   Search, 
   Download, 
@@ -36,6 +37,7 @@ interface RAMTabProps {
 type RACIValue = 'R' | 'A' | 'C' | 'I' | '';
 
 export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
+  const { t, isRtl } = useLanguage();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [roles, setRoles] = useState<RoleResponsibility[]>([]);
@@ -109,11 +111,11 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
     const date = new Date().toLocaleDateString();
     
     doc.setFontSize(20);
-    doc.text('RAM / RACI MATRIX', 148, 20, { align: 'center' });
+    doc.text(t('ram_raci_matrix'), 148, 20, { align: 'center' });
     doc.setFontSize(10);
     doc.text(`Project: ${projectId} | Date: ${date}`, 148, 30, { align: 'center' });
 
-    const headers = ['WBS / Activity', ...stakeholders.map(s => s.name)];
+    const headers = [t('activity_wbs'), ...stakeholders.map(s => s.name)];
     const body = wbsLevels.map(wbs => [
       `${wbs.code} - ${wbs.title}`,
       ...stakeholders.map(s => raciData[wbs.id]?.[s.id] || '')
@@ -143,23 +145,23 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">RAM / RACI Matrix</h2>
-          <p className="text-sm text-slate-500">Intersection of WBS work packages and assigned personnel.</p>
+          <h2 className="text-2xl font-black text-slate-900">{t('ram_raci_matrix')}</h2>
+          <p className="text-sm text-slate-500">{t('intersection_wbs_personnel')}</p>
         </div>
         <button
           onClick={exportPDF}
           className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
         >
           <Download className="w-4 h-4" />
-          Export Landscape PDF
+          {t('export_landscape_pdf')}
         </button>
       </div>
 
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1200px]">
+        <table className={cn("w-full border-collapse min-w-[1200px]", isRtl ? "text-right" : "text-left")}>
           <thead>
             <tr className="bg-slate-50/50 border-b border-slate-200">
-              <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50 z-10 w-64">WBS / Activity</th>
+              <th className={cn("px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest sticky bg-slate-50 z-10 w-64", isRtl ? "right-0" : "left-0")}>{t('activity_wbs')}</th>
               {stakeholders.map(s => (
                 <th key={s.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center min-w-[120px]">
                   <div className="flex flex-col items-center gap-1">
@@ -173,7 +175,7 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
           <tbody className="divide-y divide-slate-100">
             {wbsLevels.map((wbs) => (
               <tr key={wbs.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100">
+                <td className={cn("px-6 py-4 sticky bg-white group-hover:bg-slate-50 z-10 border-slate-100", isRtl ? "right-0 border-l" : "left-0 border-r")}>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono font-bold text-slate-400">{wbs.code}</span>
                     <span className="text-xs font-bold text-slate-900 truncate max-w-[200px]">{wbs.title}</span>
@@ -211,23 +213,23 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
       <div className="flex flex-wrap items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs border border-blue-100">R</div>
-          <div className="text-xs font-bold text-slate-600">Responsible</div>
+          <div className="text-xs font-bold text-slate-600">{t('responsible')}</div>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-xs border border-slate-900">A</div>
-          <div className="text-xs font-bold text-slate-600">Accountable</div>
+          <div className="text-xs font-bold text-slate-600">{t('accountable')}</div>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-black text-xs border border-amber-100">C</div>
-          <div className="text-xs font-bold text-slate-600">Consulted</div>
+          <div className="text-xs font-bold text-slate-600">{t('consulted')}</div>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-xs border border-emerald-100">I</div>
-          <div className="text-xs font-bold text-slate-600">Informed</div>
+          <div className="text-xs font-bold text-slate-600">{t('informed')}</div>
         </div>
-        <div className="ml-auto flex items-center gap-2 text-slate-400">
+        <div className={cn("flex items-center gap-2 text-slate-400", isRtl ? "mr-auto" : "ml-auto")}>
           <AlertCircle className="w-4 h-4" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Accountable (A) requires approved Role definition</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">{t('accountable_requires_definition')}</span>
         </div>
       </div>
     </div>

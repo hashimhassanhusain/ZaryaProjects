@@ -1,8 +1,9 @@
 import React from 'react';
-import { Activity } from '../types';
+import { Activity, Project } from '../types';
 import { CharterMilestones } from './CharterMilestones';
-import { Plus, Trash2, Users, Target, Shield, DollarSign, Scale, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Users, Target, Shield, DollarSign, Scale, AlertCircle, Sparkles, Check, X } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ProjectCharterFormProps {
   formData: Record<string, string>;
@@ -13,6 +14,7 @@ interface ProjectCharterFormProps {
   setStakeholders: (stakeholders: { name: string; role: string }[]) => void;
   isEditing: boolean;
   onEditAttributes?: (milestone: Activity) => void;
+  project?: Project | null;
 }
 
 export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
@@ -23,8 +25,77 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
   stakeholders,
   setStakeholders,
   isEditing,
-  onEditAttributes
+  onEditAttributes,
+  project
 }) => {
+  const [showAiSuggestion, setShowAiSuggestion] = React.useState<string | null>(null);
+
+  const getAiSuggestion = (field: string) => {
+    const suggestions: Record<string, string> = {
+      'Project Purpose or Justification': 'To establish a modern residential complex that meets the growing demand for high-quality housing in the region, utilizing sustainable construction practices.',
+      'High-Level Requirements': '1. Completion of all 50 villas within 24 months.\n2. Adherence to international safety standards.\n3. Integration of smart home technologies.',
+      'High-Level Risks': '1. Fluctuations in material costs.\n2. Potential delays due to weather conditions.\n3. Regulatory changes in building codes.'
+    };
+    return suggestions[field];
+  };
+
+  const applyAiSuggestion = (field: string) => {
+    const suggestion = getAiSuggestion(field);
+    if (suggestion) {
+      setFormData({ ...formData, [field]: suggestion });
+    }
+    setShowAiSuggestion(null);
+  };
+
+  const AISuggestionBox = ({ field }: { field: string }) => {
+    const suggestion = getAiSuggestion(field);
+    if (!suggestion || formData[field]) return null;
+
+    return (
+      <div className="relative">
+        <button 
+          onClick={() => setShowAiSuggestion(showAiSuggestion === field ? null : field)}
+          className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition-all animate-pulse"
+        >
+          <Sparkles className="w-3 h-3" /> AI Suggestion
+        </button>
+        
+        <AnimatePresence>
+          {showAiSuggestion === field && (
+            <motion.div 
+              initial={{ opacity: 0, y: 5, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 5, scale: 0.95 }}
+              className="absolute top-full mt-2 left-0 w-64 bg-slate-900 text-white p-4 rounded-xl shadow-2xl z-50 border border-slate-700"
+            >
+              <div className="flex items-center gap-2 mb-2 text-blue-400">
+                <Sparkles className="w-3 h-3" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Zarya AI Suggests</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
+                "{suggestion}"
+              </p>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => applyAiSuggestion(field)}
+                  className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                >
+                  <Check className="w-3 h-3" /> Accept
+                </button>
+                <button 
+                  onClick={() => setShowAiSuggestion(null)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   const updateField = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
   };
@@ -44,11 +115,14 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
   };
 
   const renderField = (label: string, fieldName: string, type: 'text' | 'textarea' | 'date' = 'text', fullWidth = false) => {
-    const value = formData[fieldName] || '';
+    const value = formData[fieldName] || (fieldName === 'Project Title' ? project?.name : fieldName === 'Project Manager' ? project?.manager : fieldName === 'Project Sponsor' ? project?.sponsor : fieldName === 'Project Customer' ? project?.customer : fieldName === 'Date Prepared' ? project?.startDate : '') || '';
     
     return (
       <div className={cn("space-y-1", fullWidth ? "col-span-full" : "")}>
-        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+          {isEditing && AISuggestionBox({ field: fieldName })}
+        </div>
         {isEditing ? (
           type === 'textarea' ? (
             <textarea
@@ -120,7 +194,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
           <h3 className="text-lg font-bold text-slate-900">2. Project Objectives & Milestones</h3>
         </div>
         
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
@@ -177,7 +251,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
           </table>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
           <CharterMilestones 
             milestones={milestones}
             onChange={setMilestones}
@@ -297,7 +371,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
           {renderField('Conflict Resolution', 'Conflict Resolution', 'textarea')}
         </div>
 
-        <div className="mt-12 p-8 bg-slate-900 rounded-3xl text-white space-y-8">
+        <div className="mt-12 p-8 bg-slate-900 rounded-xl text-white space-y-8">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-blue-400" />
             <h4 className="text-xl font-bold">Approvals</h4>

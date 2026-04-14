@@ -74,6 +74,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CommunicationPlanEntry | null>(null);
@@ -293,6 +294,18 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
+          <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
@@ -320,22 +333,34 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={commPlan.projectTitle}
-            onChange={(e) => setCommPlan({ ...commPlan, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={commPlan.projectTitle}
+              onChange={(e) => setCommPlan({ ...commPlan, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {commPlan.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={commPlan.datePrepared}
-            onChange={(e) => setCommPlan({ ...commPlan, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={commPlan.datePrepared}
+              onChange={(e) => setCommPlan({ ...commPlan, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {commPlan.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
@@ -343,13 +368,15 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Section A: Communications Matrix</h3>
-          <button 
-            onClick={() => setIsAddingEntry(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all"
-          >
-            <Plus className="w-3 h-3" />
-            Add Communication Requirement
-          </button>
+          {isEditing && (
+            <button 
+              onClick={() => setIsAddingEntry(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all"
+            >
+              <Plus className="w-3 h-3" />
+              Add Communication Requirement
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -361,7 +388,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sender</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -386,17 +413,19 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                       {entry.sender || 'Unassigned'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => removeEntry(entry.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+                  {isEditing && (
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => removeEntry(entry.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {commPlan.matrix.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400 italic">
-                    No communication requirements defined. Click "Add Communication Requirement" to start.
+                  <td colSpan={isEditing ? 6 : 5} className="px-6 py-12 text-center text-sm text-slate-400 italic">
+                    No communication requirements defined. {isEditing && 'Click "Add Communication Requirement" to start.'}
                   </td>
                 </tr>
               )}
@@ -409,23 +438,35 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Section B: Assumptions</label>
-          <textarea 
-            value={commPlan.assumptions}
-            onChange={(e) => setCommPlan({ ...commPlan, assumptions: e.target.value })}
-            rows={4}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none"
-            placeholder="List any communication assumptions..."
-          />
+          {isEditing ? (
+            <textarea 
+              value={commPlan.assumptions}
+              onChange={(e) => setCommPlan({ ...commPlan, assumptions: e.target.value })}
+              rows={4}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none"
+              placeholder="List any communication assumptions..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {commPlan.assumptions || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Section B: Constraints</label>
-          <textarea 
-            value={commPlan.constraints}
-            onChange={(e) => setCommPlan({ ...commPlan, constraints: e.target.value })}
-            rows={4}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none"
-            placeholder="List any communication constraints..."
-          />
+          {isEditing ? (
+            <textarea 
+              value={commPlan.constraints}
+              onChange={(e) => setCommPlan({ ...commPlan, constraints: e.target.value })}
+              rows={4}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none"
+              placeholder="List any communication constraints..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {commPlan.constraints || '---'}
+            </div>
+          )}
         </div>
       </section>
 
@@ -435,13 +476,19 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
           <BookOpen className="w-3 h-3 text-slate-400" />
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Section C: Glossary of Terms or Acronyms</label>
         </div>
-        <textarea 
-          value={commPlan.glossary}
-          onChange={(e) => setCommPlan({ ...commPlan, glossary: e.target.value })}
-          rows={6}
-          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-          placeholder="Define terms and acronyms used in this plan..."
-        />
+        {isEditing ? (
+          <textarea 
+            value={commPlan.glossary}
+            onChange={(e) => setCommPlan({ ...commPlan, glossary: e.target.value })}
+            rows={6}
+            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+            placeholder="Define terms and acronyms used in this plan..."
+          />
+        ) : (
+          <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {commPlan.glossary || '---'}
+          </div>
+        )}
       </section>
 
       {/* Add Entry Modal */}

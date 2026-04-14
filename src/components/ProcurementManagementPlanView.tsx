@@ -157,8 +157,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -412,20 +412,18 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            {[1, 2, 3].map((p) => (
-              <button 
-                key={p}
-                onClick={() => setActivePage(p as any)}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  activePage === p ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                )}
-              >
-                Page {p}
-              </button>
-            ))}
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -467,42 +465,49 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={procPlan.projectTitle}
-            onChange={(e) => setProcPlan({ ...procPlan, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={procPlan.projectTitle}
+              onChange={(e) => setProcPlan({ ...procPlan, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {procPlan.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={procPlan.datePrepared}
-            onChange={(e) => setProcPlan({ ...procPlan, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={procPlan.datePrepared}
+              onChange={(e) => setProcPlan({ ...procPlan, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {procPlan.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 && (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Authority</label>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">
-                  <User className="w-3 h-3" />
-                  Approver: Hashim Hassan
-                </div>
+      <div className="space-y-12">
+        {/* Section 1: Authority & Roles */}
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Authority</label>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">
+                <User className="w-3 h-3" />
+                Approver: Hashim Hassan
               </div>
+            </div>
+            {isEditing ? (
               <textarea 
                 value={procPlan.authority}
                 onChange={(e) => setProcPlan({ ...procPlan, authority: e.target.value })}
@@ -510,11 +515,17 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define procurement authority levels..."
               />
-            </section>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {procPlan.authority || '---'}
+              </div>
+            )}
+          </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Manager Responsibilities</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section className="space-y-4">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Manager Responsibilities</label>
+              {isEditing ? (
                 <div className="space-y-3">
                   {procPlan.pmResponsibilities.map((r, i) => (
                     <div key={i} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 group">
@@ -547,9 +558,23 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                     + Add Responsibility
                   </button>
                 </div>
-              </section>
-              <section className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Department Responsibilities</label>
+              ) : (
+                <div className="space-y-2 px-1">
+                  {procPlan.pmResponsibilities.filter(r => r.trim()).map((r, i) => (
+                    <div key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed">
+                      <span className="text-blue-500 font-bold shrink-0">{i + 1}.</span>
+                      <span>{r}</span>
+                    </div>
+                  ))}
+                  {procPlan.pmResponsibilities.filter(r => r.trim()).length === 0 && (
+                    <div className="text-sm text-slate-400 italic">No responsibilities defined.</div>
+                  )}
+                </div>
+              )}
+            </section>
+            <section className="space-y-4">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Department Responsibilities</label>
+              {isEditing ? (
                 <div className="space-y-3">
                   {procPlan.procurementResponsibilities.map((r, i) => (
                     <div key={i} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 group">
@@ -582,11 +607,25 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                     + Add Responsibility
                   </button>
                 </div>
-              </section>
-            </div>
+              ) : (
+                <div className="space-y-2 px-1">
+                  {procPlan.procurementResponsibilities.filter(r => r.trim()).map((r, i) => (
+                    <div key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed">
+                      <span className="text-blue-500 font-bold shrink-0">{i + 1}.</span>
+                      <span>{r}</span>
+                    </div>
+                  ))}
+                  {procPlan.procurementResponsibilities.filter(r => r.trim()).length === 0 && (
+                    <div className="text-sm text-slate-400 italic">No responsibilities defined.</div>
+                  )}
+                </div>
+              )}
+            </section>
+          </div>
 
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Standard Procurement Documents</label>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Standard Procurement Documents</label>
+            {isEditing ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {procPlan.standardDocuments.map((d, i) => (
                   <div key={i} className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 group">
@@ -620,10 +659,24 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   Add Document
                 </button>
               </div>
-            </section>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
+                {procPlan.standardDocuments.filter(d => d.trim()).map((d, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                    <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    <span className="text-sm font-medium text-slate-700">{d}</span>
+                  </div>
+                ))}
+                {procPlan.standardDocuments.filter(d => d.trim()).length === 0 && (
+                  <div className="text-sm text-slate-400 italic col-span-full">No standard documents defined.</div>
+                )}
+              </div>
+            )}
+          </section>
 
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Type</label>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Type</label>
+            {isEditing ? (
               <textarea 
                 value={procPlan.contractType}
                 onChange={(e) => setProcPlan({ ...procPlan, contractType: e.target.value })}
@@ -631,20 +684,19 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Lump Sum for Civil Works / Unit Price for Finishing"
               />
-            </section>
-          </motion.div>
-        )}
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {procPlan.contractType || '---'}
+              </div>
+            )}
+          </section>
+        </div>
 
-        {activePage === 2 && (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bonding and Insurance Requirements</label>
+        {/* Section 2: Requirements & Criteria */}
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bonding and Insurance Requirements</label>
+            {isEditing ? (
               <textarea 
                 value={procPlan.bondingInsurance}
                 onChange={(e) => setProcPlan({ ...procPlan, bondingInsurance: e.target.value })}
@@ -652,19 +704,25 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define bonding and insurance requirements..."
               />
-            </section>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {procPlan.bondingInsurance || '---'}
+              </div>
+            )}
+          </section>
 
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Selection Criteria</label>
-                  <div className={cn(
-                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                    totalWeight === 100 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                  )}>
-                    Total: {totalWeight}% {totalWeight !== 100 && "(Must be 100%)"}
-                  </div>
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Selection Criteria</label>
+                <div className={cn(
+                  "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                  totalWeight === 100 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                )}>
+                  Total: {totalWeight}% {totalWeight !== 100 && "(Must be 100%)"}
                 </div>
+              </div>
+              {isEditing && (
                 <button 
                   onClick={handleAddCriteria}
                   className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
@@ -672,29 +730,35 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   <Plus className="w-3 h-3" />
                   Add Criteria
                 </button>
-              </div>
+              )}
+            </div>
 
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Weight (%)</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criteria</th>
-                      <th className="px-6 py-4 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {procPlan.selectionCriteria.map((c) => (
-                      <tr key={c.id} className="group hover:bg-slate-50/30 transition-all">
-                        <td className="px-6 py-4">
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Weight (%)</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criteria</th>
+                    {isEditing && <th className="px-8 py-4 w-16"></th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {procPlan.selectionCriteria.map((c) => (
+                    <tr key={c.id} className="group hover:bg-slate-50/30 transition-all">
+                      <td className="px-8 py-6">
+                        {isEditing ? (
                           <input 
                             type="number"
                             value={c.weight}
                             onChange={(e) => handleCriteriaChange(c.id, 'weight', parseInt(e.target.value) || 0)}
                             className="w-full bg-transparent border-none text-sm font-bold text-blue-600 outline-none"
                           />
-                        </td>
-                        <td className="px-6 py-4">
+                        ) : (
+                          <span className="text-sm font-bold text-blue-600">{c.weight}%</span>
+                        )}
+                      </td>
+                      <td className="px-8 py-6">
+                        {isEditing ? (
                           <input 
                             type="text"
                             value={c.criteria}
@@ -702,8 +766,12 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300"
                             placeholder="Criteria description..."
                           />
-                        </td>
-                        <td className="px-6 py-4 text-right">
+                        ) : (
+                          <span className="text-sm text-slate-600">{c.criteria || '---'}</span>
+                        )}
+                      </td>
+                      {isEditing && (
+                        <td className="px-8 py-6 text-right">
                           <button 
                             onClick={() => handleRemoveCriteria(c.id)}
                             className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
@@ -711,15 +779,22 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                      )}
+                    </tr>
+                  ))}
+                  {procPlan.selectionCriteria.length === 0 && (
+                    <tr>
+                      <td colSpan={isEditing ? 3 : 2} className="px-8 py-12 text-center text-sm text-slate-400 italic">No selection criteria defined.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Assumptions and Constraints</label>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Assumptions and Constraints</label>
+            {isEditing ? (
               <textarea 
                 value={procPlan.assumptionsConstraints}
                 onChange={(e) => setProcPlan({ ...procPlan, assumptionsConstraints: e.target.value })}
@@ -727,33 +802,32 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define assumptions and constraints..."
               />
-            </section>
-          </motion.div>
-        )}
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {procPlan.assumptionsConstraints || '---'}
+              </div>
+            )}
+          </section>
+        </div>
 
-        {activePage === 3 && (
-          <motion.div 
-            key="page3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-6">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Integration Requirements</label>
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
-                <table className="w-full text-left border-collapse">
-                  <tbody className="divide-y divide-slate-50">
-                    {[
-                      { label: 'WBS', key: 'integrationWBS' },
-                      { label: 'Schedule', key: 'integrationSchedule' },
-                      { label: 'Documentation', key: 'integrationDocumentation' },
-                      { label: 'Risk', key: 'integrationRisk' },
-                      { label: 'Performance Reporting', key: 'performanceReporting' }
-                    ].map((row) => (
-                      <tr key={row.key} className="group hover:bg-slate-50/30 transition-all">
-                        <td className="px-8 py-6 text-sm font-bold text-slate-900 w-1/3 bg-slate-50/50">{row.label}</td>
-                        <td className="px-8 py-6">
+        {/* Section 3: Integration & Performance */}
+        <div className="space-y-8">
+          <section className="space-y-6">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Integration Requirements</label>
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+              <table className="w-full text-left border-collapse">
+                <tbody className="divide-y divide-slate-50">
+                  {[
+                    { label: 'WBS', key: 'integrationWBS' },
+                    { label: 'Schedule', key: 'integrationSchedule' },
+                    { label: 'Documentation', key: 'integrationDocumentation' },
+                    { label: 'Risk', key: 'integrationRisk' },
+                    { label: 'Performance Reporting', key: 'performanceReporting' }
+                  ].map((row) => (
+                    <tr key={row.key} className="group hover:bg-slate-50/30 transition-all">
+                      <td className="px-8 py-6 text-sm font-bold text-slate-900 w-1/3 bg-slate-50/50">{row.label}</td>
+                      <td className="px-8 py-6">
+                        {isEditing ? (
                           <textarea 
                             value={(procPlan as any)[row.key]}
                             onChange={(e) => setProcPlan({ ...procPlan, [row.key]: e.target.value })}
@@ -761,17 +835,23 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             rows={2}
                             placeholder={`Define ${row.label} integration...`}
                           />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                        ) : (
+                          <div className="text-sm text-slate-600 leading-relaxed">
+                            {(procPlan as any)[row.key] || '---'}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Performance Metrics</label>
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Performance Metrics</label>
+              {isEditing && (
                 <button 
                   onClick={handleAddMetric}
                   className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
@@ -779,21 +859,23 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   <Plus className="w-3 h-3" />
                   Add Metric
                 </button>
-              </div>
+              )}
+            </div>
 
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Domain</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Metric Measurement</th>
-                      <th className="px-6 py-4 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {procPlan.performanceMetrics.map((m) => (
-                      <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
-                        <td className="px-6 py-4">
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Domain</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Metric Measurement</th>
+                    {isEditing && <th className="px-8 py-4 w-16"></th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {procPlan.performanceMetrics.map((m) => (
+                    <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
+                      <td className="px-8 py-6">
+                        {isEditing ? (
                           <input 
                             type="text"
                             value={m.domain}
@@ -801,8 +883,12 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             className="w-full bg-transparent border-none text-sm font-bold text-slate-900 outline-none placeholder:text-slate-300"
                             placeholder="Domain (e.g. Quality)..."
                           />
-                        </td>
-                        <td className="px-6 py-4">
+                        ) : (
+                          <span className="text-sm font-bold text-slate-900">{m.domain || '---'}</span>
+                        )}
+                      </td>
+                      <td className="px-8 py-6">
+                        {isEditing ? (
                           <input 
                             type="text"
                             value={m.metric}
@@ -810,8 +896,12 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300"
                             placeholder="Metric description..."
                           />
-                        </td>
-                        <td className="px-6 py-4 text-right">
+                        ) : (
+                          <span className="text-sm text-slate-600">{m.metric || '---'}</span>
+                        )}
+                      </td>
+                      {isEditing && (
+                        <td className="px-8 py-6 text-right">
                           <button 
                             onClick={() => handleRemoveMetric(m.id)}
                             className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
@@ -819,15 +909,20 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                      )}
+                    </tr>
+                  ))}
+                  {procPlan.performanceMetrics.length === 0 && (
+                    <tr>
+                      <td colSpan={isEditing ? 3 : 2} className="px-8 py-12 text-center text-sm text-slate-400 italic">No performance metrics defined.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

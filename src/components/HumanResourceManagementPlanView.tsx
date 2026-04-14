@@ -104,8 +104,8 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -339,26 +339,18 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            <button 
-              onClick={() => setActivePage(1)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 1 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 1
-            </button>
-            <button 
-              onClick={() => setActivePage(2)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 2 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 2
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -387,68 +379,77 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={hrmp.projectTitle}
-            onChange={(e) => setHrmp({ ...hrmp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={hrmp.projectTitle}
+              onChange={(e) => setHrmp({ ...hrmp, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {hrmp.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={hrmp.datePrepared}
-            onChange={(e) => setHrmp({ ...hrmp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={hrmp.datePrepared}
+              onChange={(e) => setHrmp({ ...hrmp, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {hrmp.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 ? (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roles, Responsibilities, and Authority</label>
-                  <div className="group relative">
-                    <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
-                      Authority levels defined here govern digital signatures in Change Requests and POs.
-                    </div>
-                  </div>
+      <div className="space-y-12">
+        {/* Roles and Responsibilities */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roles, Responsibilities, and Authority</label>
+              <div className="group relative">
+                <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
+                  Authority levels defined here govern digital signatures in Change Requests and POs.
                 </div>
-                <button 
-                  onClick={handleAddRole}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Role
-                </button>
               </div>
+            </div>
+            {isEditing && (
+              <button 
+                onClick={handleAddRole}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+              >
+                <Plus className="w-3 h-3" />
+                Add Role
+              </button>
+            )}
+          </div>
 
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role & Name</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority</th>
-                      <th className="px-6 py-4 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {hrmp.roles.map((role) => (
-                      <tr key={role.id} className="group hover:bg-slate-50/30 transition-all">
-                        <td className="px-6 py-4 space-y-2">
+          <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role & Name</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority</th>
+                  {isEditing && <th className="px-6 py-4 w-16"></th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {hrmp.roles.map((role) => (
+                  <tr key={role.id} className="group hover:bg-slate-50/30 transition-all">
+                    <td className="px-6 py-4 space-y-2">
+                      {isEditing ? (
+                        <>
                           <input 
                             type="text"
                             value={role.role}
@@ -466,147 +467,166 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
                               placeholder="Assign Name (Populates Stakeholders)..."
                             />
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <textarea 
-                            value={role.responsibility}
-                            onChange={(e) => handleRoleChange(role.id, 'responsibility', e.target.value)}
-                            className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
-                            rows={2}
-                            placeholder="Define responsibilities..."
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <textarea 
-                            value={role.authority}
-                            onChange={(e) => handleRoleChange(role.id, 'authority', e.target.value)}
-                            className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
-                            rows={2}
-                            placeholder="Define authority levels..."
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => handleRemoveRole(role.id)}
-                            className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                        </>
+                      ) : (
+                        <div>
+                          <div className="text-sm font-bold text-slate-900">{role.role || '---'}</div>
+                          {role.name && (
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                              <User className="w-3 h-3" />
+                              {role.name}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <textarea 
+                          value={role.responsibility}
+                          onChange={(e) => handleRoleChange(role.id, 'responsibility', e.target.value)}
+                          className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
+                          rows={2}
+                          placeholder="Define responsibilities..."
+                        />
+                      ) : (
+                        <div className="text-sm text-slate-600 whitespace-pre-wrap">{role.responsibility || '---'}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {isEditing ? (
+                        <textarea 
+                          value={role.authority}
+                          onChange={(e) => handleRoleChange(role.id, 'authority', e.target.value)}
+                          className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
+                          rows={2}
+                          placeholder="Define authority levels..."
+                        />
+                      ) : (
+                        <div className="text-sm text-slate-600 whitespace-pre-wrap">{role.authority || '---'}</div>
+                      )}
+                    </td>
+                    {isEditing && (
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleRemoveRole(role.id)}
+                          className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {hrmp.roles.length === 0 && (
+                  <tr>
+                    <td colSpan={isEditing ? 4 : 3} className="px-6 py-12 text-center text-sm text-slate-400 italic">No roles defined.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Organizational Structure</label>
-              <div className="w-full aspect-[21/9] bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-400 group hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Network className="w-8 h-8 text-slate-300 group-hover:text-blue-400" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-bold text-slate-500 group-hover:text-blue-600 transition-colors">Visual Organizational Chart</p>
-                  <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest">Click to upload or generate structure</p>
-                </div>
-              </div>
-            </section>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Acquisition</label>
-                <textarea 
-                  value={hrmp.staffAcquisition}
-                  onChange={(e) => setHrmp({ ...hrmp, staffAcquisition: e.target.value })}
-                  rows={4}
-                  className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                  placeholder="Define staff acquisition process..."
-                />
-              </section>
-              <section className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Release</label>
-                <textarea 
-                  value={hrmp.staffRelease}
-                  onChange={(e) => setHrmp({ ...hrmp, staffRelease: e.target.value })}
-                  rows={4}
-                  className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                  placeholder="Define staff release criteria..."
-                />
-              </section>
+        {/* Organizational Structure */}
+        <section className="space-y-4">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Organizational Structure</label>
+          <div className="w-full aspect-[21/9] bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-400 group hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer">
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Network className="w-8 h-8 text-slate-300 group-hover:text-blue-400" />
             </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-slate-500 group-hover:text-blue-600 transition-colors">Visual Organizational Chart</p>
+              <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest">
+                {isEditing ? 'Click to upload or generate structure' : 'Organizational Chart Visual Placeholder'}
+              </p>
+            </div>
+          </div>
+        </section>
 
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Calendars</label>
+        {/* Staffing Management Plan */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Acquisition</label>
+            {isEditing ? (
               <textarea 
-                value={hrmp.resourceCalendars}
-                onChange={(e) => setHrmp({ ...hrmp, resourceCalendars: e.target.value })}
-                rows={3}
+                value={hrmp.staffAcquisition}
+                onChange={(e) => setHrmp({ ...hrmp, staffAcquisition: e.target.value })}
+                rows={4}
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Example: Saturday - Thursday, 08:00 AM - 05:00 PM"
+                placeholder="Define staff acquisition process..."
               />
-            </section>
-
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Training Requirements</label>
-              <textarea 
-                value={hrmp.trainingRequirements}
-                onChange={(e) => setHrmp({ ...hrmp, trainingRequirements: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define training needs for the project team..."
-              />
-            </section>
-
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rewards and Recognition</label>
-              <textarea 
-                value={hrmp.rewardsRecognition}
-                onChange={(e) => setHrmp({ ...hrmp, rewardsRecognition: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define team rewards and recognition program..."
-              />
-            </section>
-
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Regulations, Standards, and Policy Compliance</label>
-              <textarea 
-                value={hrmp.policyCompliance}
-                onChange={(e) => setHrmp({ ...hrmp, policyCompliance: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define compliance requirements..."
-              />
-            </section>
-
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Safety</label>
-                <div className="flex items-center gap-2 text-[10px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded">
-                  <Stethoscope className="w-3 h-3" />
-                  Linked to HSE Officer (Ivan)
-                </div>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {hrmp.staffAcquisition || '---'}
               </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Release</label>
+            {isEditing ? (
               <textarea 
-                value={hrmp.safety}
-                onChange={(e) => setHrmp({ ...hrmp, safety: e.target.value })}
+                value={hrmp.staffRelease}
+                onChange={(e) => setHrmp({ ...hrmp, staffRelease: e.target.value })}
+                rows={4}
+                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+                placeholder="Define staff release criteria..."
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {hrmp.staffRelease || '---'}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {[
+          { label: 'Resource Calendars', key: 'resourceCalendars', placeholder: 'Example: Saturday - Thursday, 08:00 AM - 05:00 PM' },
+          { label: 'Training Requirements', key: 'trainingRequirements', placeholder: 'Define training needs for the project team...' },
+          { label: 'Rewards and Recognition', key: 'rewardsRecognition', placeholder: 'Define team rewards and recognition program...' },
+          { label: 'Regulations, Standards, and Policy Compliance', key: 'policyCompliance', placeholder: 'Define compliance requirements...' }
+        ].map((section) => (
+          <section key={section.key} className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+            {isEditing ? (
+              <textarea 
+                value={(hrmp as any)[section.key]}
+                onChange={(e) => setHrmp({ ...hrmp, [section.key]: e.target.value })}
                 rows={3}
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define safety requirements and roles..."
+                placeholder={section.placeholder}
               />
-            </section>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {(hrmp as any)[section.key] || '---'}
+              </div>
+            )}
+          </section>
+        ))}
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Safety</label>
+            <div className="flex items-center gap-2 text-[10px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded">
+              <Stethoscope className="w-3 h-3" />
+              Linked to HSE Officer (Ivan)
+            </div>
+          </div>
+          {isEditing ? (
+            <textarea 
+              value={hrmp.safety}
+              onChange={(e) => setHrmp({ ...hrmp, safety: e.target.value })}
+              rows={3}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Define safety requirements and roles..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {hrmp.safety || '---'}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

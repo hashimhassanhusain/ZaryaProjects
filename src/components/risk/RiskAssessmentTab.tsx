@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   DollarSign,
   ChevronRight,
-  Shield
+  Shield,
+  Search
 } from 'lucide-react';
 import { RiskEntry } from '../../types';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
@@ -25,9 +26,15 @@ interface RiskAssessmentTabProps {
 
 export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, projectId }) => {
   const [selectedRiskId, setSelectedRiskId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const selectedRisk = risks.find(r => r.id === selectedRiskId);
+
+  const filteredRisks = risks.filter(r => 
+    r.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.riskId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const levels = [
     { value: 5, label: 'Very High', color: 'bg-red-500' },
@@ -93,16 +100,35 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Risk Selection List */}
-      <div className="lg:col-span-1 space-y-4">
-        <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
-            Select Risk to Assess
-          </h3>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {risks.map(risk => (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+          <AlertTriangle className="w-6 h-6 text-red-600" />
+          Risk Assessment Matrix
+        </h3>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search risks..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Risk Selection List */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+              Select Risk to Assess
+            </h3>
+            
+            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredRisks.map(risk => (
               <button
                 key={risk.id}
                 onClick={() => setSelectedRiskId(risk.id)}
@@ -146,10 +172,10 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
             Map impacts to project objectives to determine overall severity.
           </p>
         </div>
-      </div>
+        </div>
 
-      {/* PI Matrix & Impact Mapping */}
-      <div className="lg:col-span-2 space-y-8">
+        {/* PI Matrix & Impact Mapping */}
+        <div className="lg:col-span-2 space-y-8">
         {!selectedRisk ? (
           <div className="bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 p-20 text-center">
             <Grid className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -267,6 +293,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
             </div>
           </motion.div>
         )}
+        </div>
       </div>
     </div>
   );

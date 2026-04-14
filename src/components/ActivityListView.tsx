@@ -15,6 +15,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ActivityListViewProps {
   page: Page;
@@ -23,6 +24,7 @@ interface ActivityListViewProps {
 export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { formatAmount, currency: baseCurrency } = useCurrency();
+  const { t, language, isRtl } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
@@ -147,7 +149,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         };
         await setDoc(doc(db, 'activities', activity.id), activity);
       }
-      alert('Activities generated from BOQ successfully.');
+      alert(t('activities_generated_success'));
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'activities');
     } finally {
@@ -196,14 +198,14 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         });
       }
       
-      alert(`Purchase Order ${poId} created successfully.`);
+      alert(`${t('po_created_success')} ${poId}`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'purchaseOrders');
     }
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this activity?')) return;
+    if (!confirm(t('confirm_delete_activity'))) return;
     try {
       await deleteDoc(doc(db, 'activities', id));
     } catch (err) {
@@ -258,7 +260,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
             <List className="w-5 h-5" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">Project Activities</h3>
+          <h3 className="text-xl font-bold text-slate-900">{t('project_activities')}</h3>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -267,14 +269,14 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Generate from BOQ
+            {t('generate_from_boq')}
           </button>
           <button 
             onClick={() => setShowAddActivity(true)}
             className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
             <Plus className="w-4 h-4" />
-            Add Activity
+            {t('add_activity')}
           </button>
         </div>
       </div>
@@ -289,10 +291,10 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
             >
-              <h3 className="text-lg font-bold text-slate-900 mb-6">Add New Work Package</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-6">{t('add_new_work_package')}</h3>
               <div className="space-y-4">
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat 16 Cost Accounts Suggestions</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('masterformat_suggestions')}</label>
                   <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100">
                     {selectedDivisionId ? (
                       masterFormatData.find(d => d.number === selectedDivisionId)?.items.map(item => (
@@ -313,7 +315,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                       ))
                     ) : (
                       <div className="text-center py-4 text-slate-400 text-xs italic">
-                        Please select a division first.
+                        {t('select_division_first')}
                       </div>
                     )}
                   </div>
@@ -321,7 +323,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Code</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">{t('code')}</label>
                     <input 
                       type="text"
                       value={newWPCode}
@@ -331,7 +333,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Title</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">{t('title')}</label>
                     <input 
                       type="text"
                       value={newWPTitle}
@@ -342,13 +344,13 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-8">
-                  <button onClick={() => setIsAddingWP(false)} className="px-4 py-2 text-slate-500 font-bold text-sm">Cancel</button>
+                  <button onClick={() => setIsAddingWP(false)} className="px-4 py-2 text-slate-500 font-bold text-sm">{t('cancel')}</button>
                   <button 
                     onClick={handleAddWorkPackage}
                     disabled={!newWPTitle.trim() || !newWPCode.trim()}
                     className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all disabled:opacity-50"
                   >
-                    Create Package
+                    {t('create_package')}
                   </button>
                 </div>
               </div>
@@ -364,8 +366,8 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <List className="w-10 h-10 text-slate-300" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Activities Found</h3>
-              <p className="text-slate-500 mb-8">Click "Add Activity" or "Generate from BOQ" to build your activity list.</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t('no_activities_found')}</h3>
+              <p className="text-slate-500 mb-8">{t('no_activities_hint')}</p>
             </div>
           </div>
         ) : (
@@ -378,7 +380,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900">{wp}</h4>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">Work Package</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('work_package')}</p>
                   </div>
                 </div>
                 <button 
@@ -387,18 +389,18 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all disabled:opacity-50"
                 >
                   <ShoppingCart className="w-3 h-3" />
-                  Convert to PO
+                  {t('convert_to_po')}
                 </button>
               </div>
               <table className="w-full text-left">
                 <thead>
                   <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="px-6 py-3">Description</th>
-                    <th className="px-6 py-3">Assignee</th>
-                    <th className="px-6 py-3">Planned Dates</th>
-                    <th className="px-6 py-3 text-right">Planned Cost</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3 text-center">Actions</th>
+                    <th className="px-6 py-3">{t('description')}</th>
+                    <th className="px-6 py-3">{t('assignee')}</th>
+                    <th className="px-6 py-3">{t('planned_dates')}</th>
+                    <th className="px-6 py-3 text-right">{t('planned_cost')}</th>
+                    <th className="px-6 py-3">{t('status')}</th>
+                    <th className="px-6 py-3 text-center">{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -413,7 +415,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                         <td className="px-6 py-4">
                           <div className="text-sm font-bold text-slate-900">{act.description}</div>
                           <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
-                            <span className="bg-slate-100 px-1.5 py-0.5 rounded uppercase">{act.activityType || 'Task'}</span>
+                            <span className="bg-slate-100 px-1.5 py-0.5 rounded uppercase">{act.activityType || t('task')}</span>
                             <span className="text-blue-600 font-medium">
                               {(() => {
                                 const div = masterFormatDivisions.find(d => d.id === act.division);
@@ -432,7 +434,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                                 <span className="text-xs text-slate-600">{assignee.name}</span>
                               </>
                             ) : (
-                              <span className="text-xs text-slate-400 italic">Unassigned</span>
+                              <span className="text-xs text-slate-400 italic">{t('unassigned')}</span>
                             )}
                           </div>
                         </td>
