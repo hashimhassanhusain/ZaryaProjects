@@ -171,7 +171,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page }) => {
               </div>
             </div>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 w-full" style={{ minHeight: 256, minWidth: 0 }}>
             {getChartData() || (
               <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <p className="text-slate-400 text-sm">No chart data available for this domain.</p>
