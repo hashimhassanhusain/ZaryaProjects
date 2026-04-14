@@ -33,6 +33,11 @@ export const WBSView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
   const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    id: string;
+    type: 'wbs' | 'package';
+    title: string;
+  } | null>(null);
   
   const [isManualTitle, setIsManualTitle] = useState(false);
   const [manualTitle, setManualTitle] = useState('');
@@ -238,9 +243,15 @@ export const WBSView: React.FC = () => {
   };
 
   const handleDeleteWorkPackage = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this work package?')) return;
+    const wp = workPackages.find(p => p.id === id);
+    if (!wp) return;
+    setDeleteConfirmation({ id, type: 'package', title: wp.title });
+  };
+
+  const executeDeleteWorkPackage = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'work_packages', id));
+      setDeleteConfirmation(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'work_packages');
     }
@@ -286,9 +297,39 @@ export const WBSView: React.FC = () => {
   };
 
   const handleDeleteWbs = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this WBS level and all its sub-levels?')) return;
+    const level = wbsLevels.find(l => l.id === id);
+    if (!level) return;
+    setDeleteConfirmation({ id, type: 'wbs', title: level.title });
+  };
+
+  const executeDeleteWbs = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'wbs', id));
+      // Find all children recursively
+      const findChildren = (parentId: string): string[] => {
+        const children = wbsLevels.filter(l => l.parentId === parentId);
+        let ids = children.map(c => c.id);
+        children.forEach(c => {
+          ids = [...ids, ...findChildren(c.id)];
+        });
+        return ids;
+      };
+
+      const idsToDelete = [id, ...findChildren(id)];
+      
+      // Delete all WBS levels
+      await Promise.all(idsToDelete.map(wbsId => deleteDoc(doc(db, 'wbs', wbsId))));
+      
+      // Also delete associated work packages and activities linked to these WBS IDs
+      const wpToDelete = workPackages.filter(wp => idsToDelete.includes(wp.wbsId));
+      await Promise.all(wpToDelete.map(wp => deleteDoc(doc(db, 'work_packages', wp.id))));
+      
+      const actToDelete = activities.filter(act => idsToDelete.includes(act.wbsId));
+      await Promise.all(actToDelete.map(act => deleteDoc(doc(db, 'activities', act.id))));
+
+      const boqToDelete = boqItems.filter(item => idsToDelete.includes(item.wbsId));
+      await Promise.all(boqToDelete.map(item => deleteDoc(doc(db, 'boq', item.id))));
+
+      setDeleteConfirmation(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'wbs');
     }
@@ -1179,6 +1220,50 @@ export const WBSView: React.FC = () => {
                     Create Level
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmation && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
+              <p className="text-slate-500 text-center mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
+                {deleteConfirmation.type === 'wbs' && " This will also delete all its sub-levels, work packages, and activities."}
+                {deleteConfirmation.type === 'package' && " This action cannot be undone."}
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    if (deleteConfirmation.type === 'wbs') {
+                      executeDeleteWbs(deleteConfirmation.id);
+                    } else {
+                      executeDeleteWorkPackage(deleteConfirmation.id);
+                    }
+                  }}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+                >
+                  Delete
+                </button>
               </div>
             </motion.div>
           </div>

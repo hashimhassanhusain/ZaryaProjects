@@ -106,6 +106,39 @@ export interface ActivityDependency {
   lag: number; // in days, can be negative for lead
 }
 
+export interface QualityDeficiency {
+  id: string;
+  defect: string;
+  action: string;
+  responsiblePartyId: string;
+  dueDate: string;
+  status: 'Open' | 'Resolved' | 'Converted to CR';
+  attachments?: string[];
+}
+
+export interface QualityAudit {
+  id: string;
+  projectId: string;
+  title: string;
+  preparationDate: string;
+  auditorId: string;
+  auditDate: string;
+  scope: {
+    processes: boolean;
+    requirements: boolean;
+    changes: boolean;
+    plan: boolean;
+  };
+  findings: {
+    goodPractices: string;
+    areasForImprovement: string;
+  };
+  deficiencies: QualityDeficiency[];
+  complianceRate: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Activity {
   id: string;
   projectId: string;
@@ -619,19 +652,48 @@ export interface Workspace {
   memberIds: string[];
 }
 
-export interface MeetingMinute {
+export interface MeetingAgendaItem {
   id: string;
-  text: string;
-  assignedToId?: string;
-  taskId?: string;
+  topic: string;
+  isCompleted: boolean;
+}
+
+export interface MeetingTask {
+  id: string;
+  description: string;
+  assigneeId: string;
+  dueDate: string;
+  wbsId?: string;
+  status: 'Open' | 'Completed';
+  taskId?: string; // Link to the created task in Task Management
+}
+
+export interface MeetingDecision {
+  id: string;
+  decision: string;
+  category: 'Schedule' | 'Cost/Price' | 'Quantity' | 'Quality' | 'Scope';
+  responsibleParty: string;
+  decisionLogId?: string; // Link to Decision Log entry
 }
 
 export interface Meeting {
   id: string;
-  topic: string;
+  projectId: string;
+  title: string;
   date: string;
+  time: string;
+  location: string;
+  coordinates?: { lat: number; lng: number };
+  type: 'Risk Management' | 'Technical Review' | 'Owner Meeting' | 'General' | 'Kick-off' | 'Progress';
   attendeeIds: string[];
-  minutes: MeetingMinute[];
+  agenda: MeetingAgendaItem[];
+  decisions: MeetingDecision[];
+  tasks: MeetingTask[];
+  notes: string;
+  status: 'Draft' | 'Published';
+  meetingHealth?: number; // % of tasks completed
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface POItem {

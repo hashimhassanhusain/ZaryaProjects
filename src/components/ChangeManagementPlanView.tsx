@@ -104,6 +104,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
@@ -289,6 +290,18 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
+          <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
@@ -316,79 +329,82 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={cmp.projectTitle}
-            onChange={(e) => setCmp({ ...cmp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={cmp.projectTitle}
+              onChange={(e) => setCmp({ ...cmp, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {cmp.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={cmp.datePrepared}
-            onChange={(e) => setCmp({ ...cmp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={cmp.datePrepared}
+              onChange={(e) => setCmp({ ...cmp, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {cmp.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Approach */}
       <section className="space-y-4">
         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Change Management Approach</label>
-        <textarea 
-          value={cmp.approach}
-          onChange={(e) => setCmp({ ...cmp, approach: e.target.value })}
-          rows={4}
-          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-          placeholder="Define the overall strategy for managing changes..."
-        />
+        {isEditing ? (
+          <textarea 
+            value={cmp.approach}
+            onChange={(e) => setCmp({ ...cmp, approach: e.target.value })}
+            rows={4}
+            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+            placeholder="Define the overall strategy for managing changes..."
+          />
+        ) : (
+          <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {cmp.approach || '---'}
+          </div>
+        )}
       </section>
 
       {/* Definitions of Change */}
       <section className="space-y-6">
         <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Definitions of Change (Thresholds)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule Change</label>
-            <input 
-              type="text"
-              value={cmp.definitions.schedule}
-              onChange={(e) => setCmp({ ...cmp, definitions: { ...cmp.definitions, schedule: e.target.value } })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-              placeholder="Example: Any delay affecting the Critical Path by more than 5 days"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Budget Change</label>
-            <input 
-              type="text"
-              value={cmp.definitions.budget}
-              onChange={(e) => setCmp({ ...cmp, definitions: { ...cmp.definitions, budget: e.target.value } })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-              placeholder="Example: Any increase exceeding 10,000,000 IQD"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scope Change</label>
-            <input 
-              type="text"
-              value={cmp.definitions.scope}
-              onChange={(e) => setCmp({ ...cmp, definitions: { ...cmp.definitions, scope: e.target.value } })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Document Changes</label>
-            <input 
-              type="text"
-              value={cmp.definitions.documents}
-              onChange={(e) => setCmp({ ...cmp, definitions: { ...cmp.definitions, documents: e.target.value } })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-            />
-          </div>
+          {[
+            { label: 'Schedule Change', key: 'schedule' },
+            { label: 'Budget Change', key: 'budget' },
+            { label: 'Scope Change', key: 'scope' },
+            { label: 'Project Document Changes', key: 'documents' }
+          ].map((def) => (
+            <div key={def.key} className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{def.label}</label>
+              {isEditing ? (
+                <input 
+                  type="text"
+                  value={(cmp.definitions as any)[def.key]}
+                  onChange={(e) => setCmp({ ...cmp, definitions: { ...cmp.definitions, [def.key]: e.target.value } })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
+                  placeholder={`Define ${def.label} threshold...`}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-600">
+                  {(cmp.definitions as any)[def.key] || '---'}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -396,10 +412,12 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Change Control Board (CCB)</h3>
-          <button onClick={addMember} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
-            <UserPlus className="w-3 h-3" />
-            Add Member
-          </button>
+          {isEditing && (
+            <button onClick={addMember} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
+              <UserPlus className="w-3 h-3" />
+              Add Member
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -409,71 +427,101 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {cmp.ccbMembers.map((member, idx) => (
                 <tr key={member.id} className="group">
                   <td className="px-6 py-4">
-                    <input 
-                      type="text"
-                      value={member.name}
-                      onChange={(e) => {
-                        const newMembers = [...cmp.ccbMembers];
-                        newMembers[idx].name = e.target.value;
-                        setCmp({ ...cmp, ccbMembers: newMembers });
-                      }}
-                      className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold"
-                    />
+                    {isEditing ? (
+                      <input 
+                        type="text"
+                        value={member.name}
+                        onChange={(e) => {
+                          const newMembers = [...cmp.ccbMembers];
+                          newMembers[idx].name = e.target.value;
+                          setCmp({ ...cmp, ccbMembers: newMembers });
+                        }}
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-slate-900">{member.name || '---'}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    <input 
-                      type="text"
-                      placeholder="Example: Technical Manager"
-                      value={member.role}
-                      onChange={(e) => {
-                        const newMembers = [...cmp.ccbMembers];
-                        newMembers[idx].role = e.target.value;
-                        setCmp({ ...cmp, ccbMembers: newMembers });
-                      }}
-                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                    />
+                    {isEditing ? (
+                      <input 
+                        type="text"
+                        placeholder="Example: Technical Manager"
+                        value={member.role}
+                        onChange={(e) => {
+                          const newMembers = [...cmp.ccbMembers];
+                          newMembers[idx].role = e.target.value;
+                          setCmp({ ...cmp, ccbMembers: newMembers });
+                        }}
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                      />
+                    ) : (
+                      <span className="text-sm text-slate-600">{member.role || '---'}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    <input 
-                      type="text"
-                      value={member.responsibility}
-                      onChange={(e) => {
-                        const newMembers = [...cmp.ccbMembers];
-                        newMembers[idx].responsibility = e.target.value;
-                        setCmp({ ...cmp, ccbMembers: newMembers });
-                      }}
-                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                    />
+                    {isEditing ? (
+                      <input 
+                        type="text"
+                        value={member.responsibility}
+                        onChange={(e) => {
+                          const newMembers = [...cmp.ccbMembers];
+                          newMembers[idx].responsibility = e.target.value;
+                          setCmp({ ...cmp, ccbMembers: newMembers });
+                        }}
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                      />
+                    ) : (
+                      <span className="text-sm text-slate-600">{member.responsibility || '---'}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    <select 
-                      value={member.authority}
-                      onChange={(e) => {
-                        const newMembers = [...cmp.ccbMembers];
-                        newMembers[idx].authority = e.target.value as any;
-                        setCmp({ ...cmp, ccbMembers: newMembers });
-                      }}
-                      className="bg-transparent border-none focus:ring-0 text-xs font-black uppercase tracking-widest text-blue-600"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
+                    {isEditing ? (
+                      <select 
+                        value={member.authority}
+                        onChange={(e) => {
+                          const newMembers = [...cmp.ccbMembers];
+                          newMembers[idx].authority = e.target.value as any;
+                          setCmp({ ...cmp, ccbMembers: newMembers });
+                        }}
+                        className="bg-transparent border-none focus:ring-0 text-xs font-black uppercase tracking-widest text-blue-600"
+                      >
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                      </select>
+                    ) : (
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded",
+                        member.authority === 'High' ? "bg-red-50 text-red-600" :
+                        member.authority === 'Medium' ? "bg-amber-50 text-amber-600" :
+                        "bg-blue-50 text-blue-600"
+                      )}>
+                        {member.authority}
+                      </span>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => removeMember(member.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+                  {isEditing && (
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => removeMember(member.id)} className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
+              {cmp.ccbMembers.length === 0 && (
+                <tr>
+                  <td colSpan={isEditing ? 5 : 4} className="px-6 py-12 text-center text-sm text-slate-400 italic">No CCB members defined.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -486,42 +534,28 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       <section className="space-y-6">
         <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Change Control Process</h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">Submittal</label>
-            <textarea 
-              value={cmp.process.submittal}
-              onChange={(e) => setCmp({ ...cmp, process: { ...cmp.process, submittal: e.target.value } })}
-              className="md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none"
-              rows={2}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">Tracking</label>
-            <textarea 
-              value={cmp.process.tracking}
-              onChange={(e) => setCmp({ ...cmp, process: { ...cmp.process, tracking: e.target.value } })}
-              className="md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none"
-              rows={2}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">Review</label>
-            <textarea 
-              value={cmp.process.review}
-              onChange={(e) => setCmp({ ...cmp, process: { ...cmp.process, review: e.target.value } })}
-              className="md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none"
-              rows={2}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">Disposition</label>
-            <textarea 
-              value={cmp.process.disposition}
-              onChange={(e) => setCmp({ ...cmp, process: { ...cmp.process, disposition: e.target.value } })}
-              className="md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none"
-              rows={2}
-            />
-          </div>
+          {[
+            { label: 'Submittal', key: 'submittal' },
+            { label: 'Tracking', key: 'tracking' },
+            { label: 'Review', key: 'review' },
+            { label: 'Disposition', key: 'disposition' }
+          ].map((row) => (
+            <div key={row.key} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">{row.label}</label>
+              {isEditing ? (
+                <textarea 
+                  value={(cmp.process as any)[row.key]}
+                  onChange={(e) => setCmp({ ...cmp, process: { ...cmp.process, [row.key]: e.target.value } })}
+                  className="md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="md:col-span-3 px-1 py-3 text-sm text-slate-700 leading-relaxed">
+                  {(cmp.process as any)[row.key] || '---'}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 

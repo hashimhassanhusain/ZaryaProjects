@@ -96,6 +96,7 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
@@ -270,6 +271,18 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
+          <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
@@ -309,22 +322,34 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={schedulePlan.projectTitle}
-            onChange={(e) => setSchedulePlan({ ...schedulePlan, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={schedulePlan.projectTitle}
+              onChange={(e) => setSchedulePlan({ ...schedulePlan, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {schedulePlan.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-          <input 
-            type="date"
-            value={schedulePlan.datePrepared}
-            onChange={(e) => setSchedulePlan({ ...schedulePlan, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={schedulePlan.datePrepared}
+              onChange={(e) => setSchedulePlan({ ...schedulePlan, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {schedulePlan.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
@@ -337,46 +362,70 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
               CPM Standard
             </div>
           </div>
-          <textarea 
-            value={schedulePlan.methodology}
-            onChange={(e) => setSchedulePlan({ ...schedulePlan, methodology: e.target.value })}
-            rows={3}
-            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-            placeholder="Critical Path Method (CPM) using Zarya Web-App"
-          />
+          {isEditing ? (
+            <textarea 
+              value={schedulePlan.methodology}
+              onChange={(e) => setSchedulePlan({ ...schedulePlan, methodology: e.target.value })}
+              rows={3}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Critical Path Method (CPM) using Zarya Web-App"
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {schedulePlan.methodology || '---'}
+            </div>
+          )}
         </section>
 
         <section className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Tools</label>
-          <textarea 
-            value={schedulePlan.tools}
-            onChange={(e) => setSchedulePlan({ ...schedulePlan, tools: e.target.value })}
-            rows={3}
-            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-            placeholder="Zarya Integrated Schedule Domain..."
-          />
+          {isEditing ? (
+            <textarea 
+              value={schedulePlan.tools}
+              onChange={(e) => setSchedulePlan({ ...schedulePlan, tools: e.target.value })}
+              rows={3}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Zarya Integrated Schedule Domain..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {schedulePlan.tools || '---'}
+            </div>
+          )}
         </section>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <section className="space-y-4">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Level of Accuracy</label>
-            <textarea 
-              value={schedulePlan.accuracy}
-              onChange={(e) => setSchedulePlan({ ...schedulePlan, accuracy: e.target.value })}
-              rows={3}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-              placeholder="+/- 5%"
-            />
+            {isEditing ? (
+              <textarea 
+                value={schedulePlan.accuracy}
+                onChange={(e) => setSchedulePlan({ ...schedulePlan, accuracy: e.target.value })}
+                rows={3}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+                placeholder="+/- 5%"
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {schedulePlan.accuracy || '---'}
+              </div>
+            )}
           </section>
           <section className="space-y-4">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Units of Measure</label>
-            <textarea 
-              value={schedulePlan.units}
-              onChange={(e) => setSchedulePlan({ ...schedulePlan, units: e.target.value })}
-              rows={3}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-              placeholder="Working Days / Man-Hours"
-            />
+            {isEditing ? (
+              <textarea 
+                value={schedulePlan.units}
+                onChange={(e) => setSchedulePlan({ ...schedulePlan, units: e.target.value })}
+                rows={3}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+                placeholder="Working Days / Man-Hours"
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {schedulePlan.units || '---'}
+              </div>
+            )}
           </section>
           <section className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
@@ -388,25 +437,37 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
                 </div>
               </div>
             </div>
-            <textarea 
-              value={schedulePlan.varianceThresholds}
-              onChange={(e) => setSchedulePlan({ ...schedulePlan, varianceThresholds: e.target.value })}
-              rows={3}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-              placeholder="Example: 5% Variance requires status explanation..."
-            />
+            {isEditing ? (
+              <textarea 
+                value={schedulePlan.varianceThresholds}
+                onChange={(e) => setSchedulePlan({ ...schedulePlan, varianceThresholds: e.target.value })}
+                rows={3}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+                placeholder="Example: 5% Variance requires status explanation..."
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {schedulePlan.varianceThresholds || '---'}
+              </div>
+            )}
           </section>
         </div>
 
         <section className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Reporting and Format</label>
-          <textarea 
-            value={schedulePlan.reportingFormat}
-            onChange={(e) => setSchedulePlan({ ...schedulePlan, reportingFormat: e.target.value })}
-            rows={3}
-            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-            placeholder="Weekly Progress Reports..."
-          />
+          {isEditing ? (
+            <textarea 
+              value={schedulePlan.reportingFormat}
+              onChange={(e) => setSchedulePlan({ ...schedulePlan, reportingFormat: e.target.value })}
+              rows={3}
+              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Weekly Progress Reports..."
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {schedulePlan.reportingFormat || '---'}
+            </div>
+          )}
         </section>
 
         <section className="space-y-6">
@@ -430,16 +491,20 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
                   <tr key={row.key} className="group hover:bg-slate-50/30 transition-all">
                     <td className="px-8 py-6 text-sm font-bold text-slate-900 w-1/3 bg-slate-50/50">{row.label}</td>
                     <td className="px-8 py-6">
-                      <textarea 
-                        value={(schedulePlan.processManagement as any)[row.key]}
-                        onChange={(e) => setSchedulePlan({
-                          ...schedulePlan,
-                          processManagement: { ...schedulePlan.processManagement, [row.key]: e.target.value }
-                        })}
-                        className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
-                        rows={2}
-                        placeholder={`Define ${row.label.toLowerCase()} process...`}
-                      />
+                      {isEditing ? (
+                        <textarea 
+                          value={(schedulePlan.processManagement as any)[row.key]}
+                          onChange={(e) => setSchedulePlan({
+                            ...schedulePlan,
+                            processManagement: { ...schedulePlan.processManagement, [row.key]: e.target.value }
+                          })}
+                          className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
+                          rows={2}
+                          placeholder={`Define ${row.label.toLowerCase()} process...`}
+                        />
+                      ) : (
+                        <span className="text-sm text-slate-600 leading-relaxed block">{(schedulePlan.processManagement as any)[row.key] || '---'}</span>
+                      )}
                     </td>
                   </tr>
                 ))}

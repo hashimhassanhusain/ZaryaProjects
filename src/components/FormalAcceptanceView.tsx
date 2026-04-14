@@ -274,44 +274,24 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
 
   return (
     <div className={cn("space-y-8", embedded && "mt-0 pt-0")}>
-      {/* Hub Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-green-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Formal Acceptance</p>
-            <h4 className="text-2xl font-bold text-slate-900">{percentComplete}% <span className="text-xs text-slate-400 font-medium">Complete</span></h4>
-          </div>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text"
+            placeholder="Search requirements..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          />
         </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-            <ClipboardCheck className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Requirements</p>
-            <h4 className="text-2xl font-bold text-slate-900">{totalCount} <span className="text-xs text-slate-400 font-medium">Items</span></h4>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">
-            <Clock className="w-6 h-6 text-amber-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Sign-off</p>
-            <h4 className="text-2xl font-bold text-slate-900">{totalCount - acceptedCount} <span className="text-xs text-slate-400 font-medium">Items</span></h4>
-          </div>
-        </div>
-      </div>
 
-      <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           <button 
             onClick={generatePDF}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
+            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
           >
-            <Printer className="w-3 h-3" />
+            <Printer className="w-4 h-4" />
             Export Form
           </button>
           <button 
@@ -334,19 +314,6 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
             <Plus className="w-4 h-4" />
             New Sign-off
           </button>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search requirements..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
         </div>
       </div>
 

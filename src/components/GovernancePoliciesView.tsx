@@ -22,9 +22,7 @@ import {
   Settings,
   Info,
   Users,
-  Gavel,
-  FileSearch,
-  HardDrive
+  Gavel
 } from 'lucide-react';
 import { Page, Project, PageVersion } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
@@ -84,7 +82,7 @@ interface PolicyData {
 export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [policies, setPolicies] = useState<PolicyData>({
-    projectTitle: 'P16314 - Villa 2',
+    projectTitle: `${selectedProject?.code || ''} - ${selectedProject?.name || ''}`,
     revisionHistory: [
       { id: '1', version: 'V01.0', date: '2026-01-08', description: 'الإصدار الأول المعتمد', by: 'هاشم حسن' }
     ],
@@ -93,7 +91,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
       { id: '2', name: 'دانا صالح', title: 'Co-Leader (Field/Schedule)', responsibilities: 'المسؤول عن التنفيذ الميداني، إدارة الجدول الزمني، حل التعارضات الميدانية.', permissionLevel: 'Field/Schedule Supervisor' }
     ],
     communicationProtocols: 'الاجتماع الأسبوعي: الخميس الساعة 2:00 ظهراً لكامل الفريق الهندسي. الرسمية: البريد الإلكتروني والكتب الموقعة هي الوسائل الرسمية الوحيدة.',
-    archivingNamingProtocol: '[P16314]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]',
+    archivingNamingProtocol: `[${selectedProject?.code || 'PCODE'}]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]`,
     folderStructure: '00-Transmittals, 01-Management, 02-Planning_Controls, 03-Technical, 04-Procurement, 05-Handover',
     technicalStandards: 'MasterFormat 16 Divisions Standard for all technical specifications and BOQ coding.',
     procurementStandards: 'All POs must be categorized by Division and approved by Hashim Hassan.',
@@ -103,9 +101,9 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activeTab, setActiveTab] = useState<'governance' | 'communication' | 'archiving' | 'standards'>('governance');
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -292,20 +290,29 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
 
   return (
     <div className="space-y-8 pb-20">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-slate-200">
-            <Gavel className="w-8 h-8 text-white" />
+          <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+            <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-1">{page.title}</h1>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">REF: {page.id}</span>
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">Constitution v{(versions[0]?.version || 1.0).toFixed(1)}</span>
-            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Governance Policies</h2>
+            <p className="text-xs text-slate-500 font-medium">Project rules, roles, and standard operating procedures</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={() => setShowHistory(!showHistory)}
             className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
@@ -338,297 +345,276 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar Nav */}
-        <aside className="lg:col-span-1 space-y-4">
-          <div className="bg-white rounded-[2rem] border border-slate-200 p-4 shadow-sm">
-            <button 
-              onClick={() => setActiveTab('governance')}
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all",
-                activeTab === 'governance' ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Users className="w-4 h-4" />
-              Governance & Roles
-            </button>
-            <button 
-              onClick={() => setActiveTab('communication')}
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all mt-2",
-                activeTab === 'communication' ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <MessageSquare className="w-4 h-4" />
-              Communication
-            </button>
-            <button 
-              onClick={() => setActiveTab('archiving')}
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all mt-2",
-                activeTab === 'archiving' ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <FolderTree className="w-4 h-4" />
-              Archiving & Naming
-            </button>
-            <button 
-              onClick={() => setActiveTab('standards')}
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all mt-2",
-                activeTab === 'standards' ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Shield className="w-4 h-4" />
-              Standards & Code
-            </button>
+      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[600px]">
+        <div className="p-10 space-y-12">
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+            {isEditing ? (
+              <input 
+                type="text"
+                value={policies.projectTitle}
+                onChange={(e) => setPolicies({ ...policies, projectTitle: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                placeholder="Enter Project Code and Name (e.g., P16314 - Villa 2)"
+              />
+            ) : (
+              <div className="px-1 py-1 text-lg font-bold text-slate-900">{policies.projectTitle || '---'}</div>
+            )}
           </div>
 
-          <div className="bg-blue-600 rounded-[2rem] p-8 text-white shadow-xl shadow-blue-200">
-            <Info className="w-8 h-8 mb-4 opacity-50" />
-            <h4 className="font-bold mb-2">Zarya FNC Standard</h4>
-            <p className="text-xs text-blue-100 leading-relaxed">
-              Files must be named using the Zarya FNC standard before uploading to maintain data integrity across the master folder structure.
-            </p>
-          </div>
-        </aside>
-
-        {/* Content Area */}
-        <main className="lg:col-span-3">
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[600px]">
-            <div className="p-10 space-y-12">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-                <input 
-                  type="text"
-                  value={policies.projectTitle}
-                  onChange={(e) => setPolicies({ ...policies, projectTitle: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  placeholder="Enter Project Code and Name (e.g., P16314 - Villa 2)"
-                />
-              </div>
-
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-10"
-                >
-                  {activeTab === 'governance' && (
-                    <div className="space-y-10">
-                      <section className="space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Revision History</h3>
-                          <button onClick={addRevision} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="space-y-4">
-                          {policies.revisionHistory.map((rev, idx) => (
-                            <div key={rev.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl">
-                              <input 
-                                type="text" 
-                                value={rev.version} 
-                                readOnly 
-                                className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-black text-blue-600"
-                              />
-                              <input 
-                                type="date" 
-                                value={rev.date} 
-                                onChange={(e) => {
-                                  const newHist = [...policies.revisionHistory];
-                                  newHist[idx].date = e.target.value;
-                                  setPolicies({ ...policies, revisionHistory: newHist });
-                                }}
-                                className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium"
-                              />
-                              <input 
-                                type="text" 
-                                placeholder="Revision Description..."
-                                value={rev.description} 
-                                onChange={(e) => {
-                                  const newHist = [...policies.revisionHistory];
-                                  newHist[idx].description = e.target.value;
-                                  setPolicies({ ...policies, revisionHistory: newHist });
-                                }}
-                                className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium md:col-span-1"
-                              />
-                              <input 
-                                type="text" 
-                                value={rev.by} 
-                                onChange={(e) => {
-                                  const newHist = [...policies.revisionHistory];
-                                  newHist[idx].by = e.target.value;
-                                  setPolicies({ ...policies, revisionHistory: newHist });
-                                }}
-                                className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-
-                      <section className="space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Governance Roles</h3>
-                          <button onClick={addRole} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="space-y-6">
-                          {policies.governanceRoles.map((role, idx) => (
-                            <div key={role.id} className="p-6 bg-slate-50 rounded-[2rem] space-y-4 border border-slate-100 group relative">
-                              <button 
-                                onClick={() => {
-                                  const newRoles = policies.governanceRoles.filter(r => r.id !== role.id);
-                                  setPolicies({ ...policies, governanceRoles: newRoles });
-                                }}
-                                className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</label>
-                                  <input 
-                                    type="text" 
-                                    value={role.name}
-                                    onChange={(e) => {
-                                      const newRoles = [...policies.governanceRoles];
-                                      newRoles[idx].name = e.target.value;
-                                      setPolicies({ ...policies, governanceRoles: newRoles });
-                                    }}
-                                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</label>
-                                  <input 
-                                    type="text" 
-                                    value={role.title}
-                                    onChange={(e) => {
-                                      const newRoles = [...policies.governanceRoles];
-                                      newRoles[idx].title = e.target.value;
-                                      setPolicies({ ...policies, governanceRoles: newRoles });
-                                    }}
-                                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold"
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibilities</label>
-                                <textarea 
-                                  value={role.responsibilities}
-                                  onChange={(e) => {
-                                    const newRoles = [...policies.governanceRoles];
-                                    newRoles[idx].responsibilities = e.target.value;
-                                    setPolicies({ ...policies, governanceRoles: newRoles });
-                                  }}
-                                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium resize-none"
-                                  rows={2}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission Level</label>
-                                <select 
-                                  value={role.permissionLevel}
-                                  onChange={(e) => {
-                                    const newRoles = [...policies.governanceRoles];
-                                    newRoles[idx].permissionLevel = e.target.value as any;
-                                    setPolicies({ ...policies, governanceRoles: newRoles });
-                                  }}
-                                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-blue-600 outline-none"
-                                >
-                                  <option value="Financial/Technical Approver">Financial/Technical Approver</option>
-                                  <option value="Field/Schedule Supervisor">Field/Schedule Supervisor</option>
-                                  <option value="Standard User">Standard User</option>
-                                </select>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    </div>
-                  )}
-
-                  {activeTab === 'communication' && (
-                    <div className="space-y-8">
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Communication & Reporting Protocols</label>
-                        <textarea 
-                          value={policies.communicationProtocols}
-                          onChange={(e) => setPolicies({ ...policies, communicationProtocols: e.target.value })}
-                          rows={10}
-                          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none leading-relaxed"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'archiving' && (
-                    <div className="space-y-10">
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Naming Protocol (Zarya FNC)</label>
-                        <input 
-                          type="text"
-                          value={policies.archivingNamingProtocol}
-                          onChange={(e) => setPolicies({ ...policies, archivingNamingProtocol: e.target.value })}
-                          className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-mono text-blue-400 outline-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Master Folder Structure</label>
-                        <textarea 
-                          value={policies.folderStructure}
-                          onChange={(e) => setPolicies({ ...policies, folderStructure: e.target.value })}
-                          rows={8}
-                          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none leading-relaxed"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'standards' && (
-                    <div className="space-y-10">
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical Standards (MasterFormat 16 Divisions)</label>
-                        <textarea 
-                          value={policies.technicalStandards}
-                          onChange={(e) => setPolicies({ ...policies, technicalStandards: e.target.value })}
-                          rows={4}
-                          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Standards</label>
-                        <textarea 
-                          value={policies.procurementStandards}
-                          onChange={(e) => setPolicies({ ...policies, procurementStandards: e.target.value })}
-                          rows={4}
-                          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disciplinary Code & Ethics</label>
-                        <textarea 
-                          value={policies.disciplinaryCode}
-                          onChange={(e) => setPolicies({ ...policies, disciplinaryCode: e.target.value })}
-                          rows={4}
-                          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+          {/* Revision History */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Revision History</h3>
+              {isEditing && (
+                <button onClick={addRevision} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          </div>
-        </main>
+            <div className="space-y-4">
+              {policies.revisionHistory.map((rev, idx) => (
+                <div key={rev.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl">
+                  <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-black text-blue-600 flex items-center">
+                    {rev.version}
+                  </div>
+                  {isEditing ? (
+                    <input 
+                      type="date" 
+                      value={rev.date} 
+                      onChange={(e) => {
+                        const newHist = [...policies.revisionHistory];
+                        newHist[idx].date = e.target.value;
+                        setPolicies({ ...policies, revisionHistory: newHist });
+                      }}
+                      className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium"
+                    />
+                  ) : (
+                    <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium flex items-center">{rev.date}</div>
+                  )}
+                  {isEditing ? (
+                    <input 
+                      type="text" 
+                      placeholder="Revision Description..."
+                      value={rev.description} 
+                      onChange={(e) => {
+                        const newHist = [...policies.revisionHistory];
+                        newHist[idx].description = e.target.value;
+                        setPolicies({ ...policies, revisionHistory: newHist });
+                      }}
+                      className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium md:col-span-1"
+                    />
+                  ) : (
+                    <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium flex items-center">{rev.description || '---'}</div>
+                  )}
+                  {isEditing ? (
+                    <input 
+                      type="text" 
+                      value={rev.by} 
+                      onChange={(e) => {
+                        const newHist = [...policies.revisionHistory];
+                        newHist[idx].by = e.target.value;
+                        setPolicies({ ...policies, revisionHistory: newHist });
+                      }}
+                      className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium"
+                    />
+                  ) : (
+                    <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-medium flex items-center">{rev.by}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Governance Roles */}
+          <section className="space-y-6 pt-12 border-t border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Governance Roles</h3>
+              {isEditing && (
+                <button onClick={addRole} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-6">
+              {policies.governanceRoles.map((role, idx) => (
+                <div key={role.id} className="p-6 bg-slate-50 rounded-[2rem] space-y-4 border border-slate-100 group relative">
+                  {isEditing && (
+                    <button 
+                      onClick={() => {
+                        const newRoles = policies.governanceRoles.filter(r => r.id !== role.id);
+                        setPolicies({ ...policies, governanceRoles: newRoles });
+                      }}
+                      className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</label>
+                      {isEditing ? (
+                        <input 
+                          type="text" 
+                          value={role.name}
+                          onChange={(e) => {
+                            const newRoles = [...policies.governanceRoles];
+                            newRoles[idx].name = e.target.value;
+                            setPolicies({ ...policies, governanceRoles: newRoles });
+                          }}
+                          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold"
+                        />
+                      ) : (
+                        <div className="text-sm font-bold text-slate-900">{role.name || '---'}</div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</label>
+                      {isEditing ? (
+                        <input 
+                          type="text" 
+                          value={role.title}
+                          onChange={(e) => {
+                            const newRoles = [...policies.governanceRoles];
+                            newRoles[idx].title = e.target.value;
+                            setPolicies({ ...policies, governanceRoles: newRoles });
+                          }}
+                          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold"
+                        />
+                      ) : (
+                        <div className="text-sm font-bold text-slate-900">{role.title || '---'}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibilities</label>
+                    {isEditing ? (
+                      <textarea 
+                        value={role.responsibilities}
+                        onChange={(e) => {
+                          const newRoles = [...policies.governanceRoles];
+                          newRoles[idx].responsibilities = e.target.value;
+                          setPolicies({ ...policies, governanceRoles: newRoles });
+                        }}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium resize-none"
+                        rows={2}
+                      />
+                    ) : (
+                      <div className="text-sm text-slate-600 leading-relaxed">{role.responsibilities || '---'}</div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission Level</label>
+                    {isEditing ? (
+                      <select 
+                        value={role.permissionLevel}
+                        onChange={(e) => {
+                          const newRoles = [...policies.governanceRoles];
+                          newRoles[idx].permissionLevel = e.target.value as any;
+                          setPolicies({ ...policies, governanceRoles: newRoles });
+                        }}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-blue-600 outline-none"
+                      >
+                        <option value="Financial/Technical Approver">Financial/Technical Approver</option>
+                        <option value="Field/Schedule Supervisor">Field/Schedule Supervisor</option>
+                        <option value="Standard User">Standard User</option>
+                      </select>
+                    ) : (
+                      <div className="text-xs font-black uppercase tracking-widest text-blue-600">{role.permissionLevel}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Communication Protocols */}
+          <section className="space-y-6 pt-12 border-t border-slate-100">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Protocols</h3>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Weekly Meetings & Formal Communication</label>
+              {isEditing ? (
+                <textarea 
+                  value={policies.communicationProtocols} 
+                  onChange={(e) => setPolicies({ ...policies, communicationProtocols: e.target.value })}
+                  rows={6}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
+                  placeholder="Define meeting schedules and official communication channels..."
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{policies.communicationProtocols || '---'}</div>
+              )}
+            </div>
+          </section>
+
+          {/* Archiving & Naming */}
+          <section className="space-y-6 pt-12 border-t border-slate-100">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Archiving & Naming Protocols</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Naming Standard (Zarya FNC)</label>
+                {isEditing ? (
+                  <input 
+                    type="text" 
+                    value={policies.archivingNamingProtocol} 
+                    onChange={(e) => setPolicies({ ...policies, archivingNamingProtocol: e.target.value })}
+                    className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-mono text-blue-400 outline-none"
+                  />
+                ) : (
+                  <div className="px-4 py-4 bg-slate-900 rounded-2xl text-sm font-mono text-blue-400">{policies.archivingNamingProtocol || '---'}</div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Master Folder Structure</label>
+                {isEditing ? (
+                  <textarea 
+                    value={policies.folderStructure} 
+                    onChange={(e) => setPolicies({ ...policies, folderStructure: e.target.value })}
+                    rows={4}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
+                  />
+                ) : (
+                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{policies.folderStructure || '---'}</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Standards & Code */}
+          <section className="space-y-6 pt-12 border-t border-slate-100">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Technical Standards & Disciplinary Code</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical & Procurement Standards</label>
+                {isEditing ? (
+                  <textarea 
+                    value={policies.technicalStandards} 
+                    onChange={(e) => setPolicies({ ...policies, technicalStandards: e.target.value })}
+                    rows={4}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
+                  />
+                ) : (
+                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{policies.technicalStandards || '---'}</div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disciplinary Code & Ethics</label>
+                {isEditing ? (
+                  <textarea 
+                    value={policies.disciplinaryCode} 
+                    onChange={(e) => setPolicies({ ...policies, disciplinaryCode: e.target.value })}
+                    rows={4}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
+                  />
+                ) : (
+                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{policies.disciplinaryCode || '---'}</div>
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
 
       {/* History List */}

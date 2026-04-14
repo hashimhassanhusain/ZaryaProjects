@@ -80,8 +80,8 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -235,26 +235,18 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            <button 
-              onClick={() => setActivePage(1)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 1 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 1
-            </button>
-            <button 
-              onClick={() => setActivePage(2)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 2 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 2
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -283,36 +275,43 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={scope.projectTitle}
-            onChange={(e) => setScope({ ...scope, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={scope.projectTitle}
+              onChange={(e) => setScope({ ...scope, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {scope.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-          <input 
-            type="date"
-            value={scope.datePrepared}
-            onChange={(e) => setScope({ ...scope, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={scope.datePrepared}
+              onChange={(e) => setScope({ ...scope, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {scope.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 ? (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Statement Development</label>
+      <div className="space-y-12">
+        {/* Section 1 */}
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Statement Development</label>
+            {isEditing ? (
               <textarea 
                 value={scope.scopeStatement}
                 onChange={(e) => setScope({ ...scope, scopeStatement: e.target.value })}
@@ -320,15 +319,21 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define the process for developing the project scope statement..."
               />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WBS Structure</label>
-                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
-                  <Layers className="w-3 h-3" />
-                  Mandatory Hierarchy for Reports
-                </div>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.scopeStatement || '---'}
               </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WBS Structure</label>
+              <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
+                <Layers className="w-3 h-3" />
+                Mandatory Hierarchy for Reports
+              </div>
+            </div>
+            {isEditing ? (
               <textarea 
                 value={scope.wbsStructure}
                 onChange={(e) => setScope({ ...scope, wbsStructure: e.target.value })}
@@ -336,21 +341,27 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Example: 03-Concrete Works > 03.1-Foundations > 03.1.1-Rebar"
               />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 ml-1">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">WBS Dictionary</label>
-                <div className="group relative">
-                  <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    The WBS Dictionary defines the work content of each component in detail.
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded ml-auto">
-                  <BarChart3 className="w-3 h-3" />
-                  Linked to Quality Metrics
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.wbsStructure || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 ml-1">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">WBS Dictionary</label>
+              <div className="group relative">
+                <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  The WBS Dictionary defines the work content of each component in detail.
                 </div>
               </div>
+              <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded ml-auto">
+                <BarChart3 className="w-3 h-3" />
+                Linked to Quality Metrics
+              </div>
+            </div>
+            {isEditing ? (
               <textarea 
                 value={scope.wbsDictionary}
                 onChange={(e) => setScope({ ...scope, wbsDictionary: e.target.value })}
@@ -358,18 +369,19 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define the work content of each WBS component..."
               />
-            </section>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Maintenance</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.wbsDictionary || '---'}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Section 2 */}
+        <div className="pt-8 border-t border-slate-100 space-y-8">
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Maintenance</label>
+            {isEditing ? (
               <textarea 
                 value={scope.baselineMaintenance}
                 onChange={(e) => setScope({ ...scope, baselineMaintenance: e.target.value })}
@@ -377,9 +389,15 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define how the scope baseline will be maintained..."
               />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Change</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.baselineMaintenance || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Change</label>
+            {isEditing ? (
               <textarea 
                 value={scope.scopeChange}
                 onChange={(e) => setScope({ ...scope, scopeChange: e.target.value })}
@@ -387,15 +405,21 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Instruction: Describe the process for approving scope creep..."
               />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deliverable Acceptance</label>
-                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
-                  <ShieldCheck className="w-3 h-3" />
-                  Connected to QC Approach
-                </div>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.scopeChange || '---'}
               </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deliverable Acceptance</label>
+              <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
+                <ShieldCheck className="w-3 h-3" />
+                Connected to QC Approach
+              </div>
+            </div>
+            {isEditing ? (
               <textarea 
                 value={scope.deliverableAcceptance}
                 onChange={(e) => setScope({ ...scope, deliverableAcceptance: e.target.value })}
@@ -403,9 +427,15 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Example: Technical sign-off from Consultant + Lab test results"
               />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope and Requirements Integration</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.deliverableAcceptance || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope and Requirements Integration</label>
+            {isEditing ? (
               <textarea 
                 value={scope.requirementsIntegration}
                 onChange={(e) => setScope({ ...scope, requirementsIntegration: e.target.value })}
@@ -413,10 +443,14 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define how scope and requirements are integrated..."
               />
-            </section>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {scope.requirementsIntegration || '---'}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

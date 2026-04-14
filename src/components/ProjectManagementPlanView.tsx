@@ -7,6 +7,7 @@ import {
   Trash2, 
   AlertTriangle, 
   CheckCircle2, 
+  Settings,
   Clock, 
   FileText,
   Printer,
@@ -125,6 +126,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [activeSection, setActiveSection] = useState(1);
 
@@ -304,8 +306,29 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+            <Layers className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Project Management Plan</h2>
+            <p className="text-xs text-slate-500 font-medium">Integration and overall project management strategy</p>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -334,22 +357,34 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={pmp.projectTitle}
-            onChange={(e) => setPmp({ ...pmp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Example: P16314 - Villa 2"
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={pmp.projectTitle}
+              onChange={(e) => setPmp({ ...pmp, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Example: P16314 - Villa 2"
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {pmp.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={pmp.datePrepared}
-            onChange={(e) => setPmp({ ...pmp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={pmp.datePrepared}
+              onChange={(e) => setPmp({ ...pmp, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {pmp.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
@@ -357,46 +392,58 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Project Life Cycle</h3>
-          <button onClick={addPhase} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
-            <Plus className="w-4 h-4" />
-          </button>
+          {isEditing && (
+            <button onClick={addPhase} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <div className="space-y-4">
           {pmp.lifeCycle.map((l, idx) => (
             <div key={l.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl group relative">
-              <button 
-                onClick={() => removePhase(l.id)}
-                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 rounded-full text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              {isEditing && (
+                <button 
+                  onClick={() => removePhase(l.id)}
+                  className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 rounded-full text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phase</label>
-                <input 
-                  type="text" 
-                  placeholder="Example: Phase: Execution"
-                  value={l.phase}
-                  onChange={(e) => {
-                    const newLife = [...pmp.lifeCycle];
-                    newLife[idx].phase = e.target.value;
-                    setPmp({ ...pmp, lifeCycle: newLife });
-                  }}
-                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
-                />
+                {isEditing ? (
+                  <input 
+                    type="text" 
+                    placeholder="Example: Phase: Execution"
+                    value={l.phase}
+                    onChange={(e) => {
+                      const newLife = [...pmp.lifeCycle];
+                      newLife[idx].phase = e.target.value;
+                      setPmp({ ...pmp, lifeCycle: newLife });
+                    }}
+                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                  />
+                ) : (
+                  <div className="text-sm font-bold text-slate-900">{l.phase || '---'}</div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Deliverables</label>
-                <input 
-                  type="text" 
-                  placeholder="Example: Deliverables: Structural Completion"
-                  value={l.deliverables}
-                  onChange={(e) => {
-                    const newLife = [...pmp.lifeCycle];
-                    newLife[idx].deliverables = e.target.value;
-                    setPmp({ ...pmp, lifeCycle: newLife });
-                  }}
-                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
-                />
+                {isEditing ? (
+                  <input 
+                    type="text" 
+                    placeholder="Example: Deliverables: Structural Completion"
+                    value={l.deliverables}
+                    onChange={(e) => {
+                      const newLife = [...pmp.lifeCycle];
+                      newLife[idx].deliverables = e.target.value;
+                      setPmp({ ...pmp, lifeCycle: newLife });
+                    }}
+                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none"
+                  />
+                ) : (
+                  <div className="text-sm text-slate-600">{l.deliverables || '---'}</div>
+                )}
               </div>
             </div>
           ))}
@@ -420,29 +467,37 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                 <tr key={t.knowledgeArea}>
                   <td className="px-6 py-4 font-bold text-slate-900 text-sm">{t.knowledgeArea}</td>
                   <td className="px-6 py-4">
-                    <input 
-                      type="text"
-                      value={t.processes}
-                      onChange={(e) => {
-                        const newTailoring = [...pmp.tailoring];
-                        newTailoring[idx].processes = e.target.value;
-                        setPmp({ ...pmp, tailoring: newTailoring });
-                      }}
-                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                    />
+                    {isEditing ? (
+                      <input 
+                        type="text"
+                        value={t.processes}
+                        onChange={(e) => {
+                          const newTailoring = [...pmp.tailoring];
+                          newTailoring[idx].processes = e.target.value;
+                          setPmp({ ...pmp, tailoring: newTailoring });
+                        }}
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                      />
+                    ) : (
+                      <div className="text-sm text-slate-600">{t.processes || '---'}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    <input 
-                      type="text"
-                      placeholder={t.knowledgeArea === 'Risk' ? "Example: Full Risk Register used for this project" : ""}
-                      value={t.decisions}
-                      onChange={(e) => {
-                        const newTailoring = [...pmp.tailoring];
-                        newTailoring[idx].decisions = e.target.value;
-                        setPmp({ ...pmp, tailoring: newTailoring });
-                      }}
-                      className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                    />
+                    {isEditing ? (
+                      <input 
+                        type="text"
+                        placeholder={t.knowledgeArea === 'Risk' ? "Example: Full Risk Register used for this project" : ""}
+                        value={t.decisions}
+                        onChange={(e) => {
+                          const newTailoring = [...pmp.tailoring];
+                          newTailoring[idx].decisions = e.target.value;
+                          setPmp({ ...pmp, tailoring: newTailoring });
+                        }}
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm"
+                      />
+                    ) : (
+                      <div className="text-sm text-slate-600">{t.decisions || '---'}</div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -458,17 +513,21 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
           {pmp.tools.map((t, idx) => (
             <div key={t.knowledgeArea} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
               <div className="w-32 font-bold text-slate-900 text-xs">{t.knowledgeArea}</div>
-              <input 
-                type="text"
-                value={t.tools}
-                onChange={(e) => {
-                  const newTools = [...pmp.tools];
-                  newTools[idx].tools = e.target.value;
-                  setPmp({ ...pmp, tools: newTools });
-                }}
-                className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm outline-none"
-                placeholder="Tools & Techniques..."
-              />
+              {isEditing ? (
+                <input 
+                  type="text"
+                  value={t.tools}
+                  onChange={(e) => {
+                    const newTools = [...pmp.tools];
+                    newTools[idx].tools = e.target.value;
+                    setPmp({ ...pmp, tools: newTools });
+                  }}
+                  className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm outline-none"
+                  placeholder="Tools & Techniques..."
+                />
+              ) : (
+                <div className="flex-1 text-sm text-slate-600">{t.tools || '---'}</div>
+              )}
             </div>
           ))}
         </div>
@@ -481,60 +540,84 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Variance</label>
-              <textarea 
-                value={pmp.baselines.scopeVariance}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeVariance: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.scopeVariance}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeVariance: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.scopeVariance || '---'}</div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Variance</label>
-              <textarea 
-                value={pmp.baselines.scheduleVariance}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleVariance: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.scheduleVariance}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleVariance: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.scheduleVariance || '---'}</div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Variance</label>
-              <textarea 
-                value={pmp.baselines.costVariance}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costVariance: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-                placeholder="Instruction: Define the percentage of cost overrun allowed before a Change Request is mandatory (e.g., 5%)"
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.costVariance}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costVariance: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                  placeholder="Instruction: Define the percentage of cost overrun allowed before a Change Request is mandatory (e.g., 5%)"
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.costVariance || '---'}</div>
+              )}
             </div>
           </div>
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Management</label>
-              <textarea 
-                value={pmp.baselines.scopeManagement}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeManagement: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.scopeManagement}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scopeManagement: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.scopeManagement || '---'}</div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline Management</label>
-              <textarea 
-                value={pmp.baselines.scheduleManagement}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleManagement: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.scheduleManagement}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, scheduleManagement: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.scheduleManagement || '---'}</div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Baseline Management</label>
-              <textarea 
-                value={pmp.baselines.costManagement}
-                onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costManagement: e.target.value } })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
-                rows={2}
-              />
+              {isEditing ? (
+                <textarea 
+                  value={pmp.baselines.costManagement}
+                  onChange={(e) => setPmp({ ...pmp, baselines: { ...pmp.baselines, costManagement: e.target.value } })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none resize-none"
+                  rows={2}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.baselines.costManagement || '---'}</div>
+              )}
             </div>
           </div>
         </div>
@@ -543,12 +626,16 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       {/* Project Reviews */}
       <section className="space-y-6">
         <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Project Reviews</h3>
-        <textarea 
-          value={pmp.projectReviews}
-          onChange={(e) => setPmp({ ...pmp, projectReviews: e.target.value })}
-          rows={6}
-          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm font-medium outline-none resize-none leading-relaxed"
-        />
+        {isEditing ? (
+          <textarea 
+            value={pmp.projectReviews}
+            onChange={(e) => setPmp({ ...pmp, projectReviews: e.target.value })}
+            rows={6}
+            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm font-medium outline-none resize-none leading-relaxed"
+          />
+        ) : (
+          <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{pmp.projectReviews || '---'}</div>
+        )}
       </section>
 
       {/* Restricted Data Linking Prompt */}

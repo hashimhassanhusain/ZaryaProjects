@@ -7,11 +7,14 @@ import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, 
 import { useProject } from '../context/ProjectContext';
 import { motion } from 'motion/react';
 import { Breadcrumbs } from './Breadcrumbs';
+import { useLanguage } from '../context/LanguageContext';
+import { cn } from '../lib/utils';
 
 export const ProjectFormView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setSelectedProject } = useProject();
+  const { t, language, isRtl } = useLanguage();
   const [loading, setLoading] = useState(!!id && id !== 'new');
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<Project>>({
@@ -50,7 +53,7 @@ export const ProjectFormView: React.FC = () => {
 
   const handleSave = async () => {
     if (!formData.name || !formData.code) {
-      alert('Project Name and Code are required.');
+      alert(t('project_name_code_required'));
       return;
     }
 
@@ -96,7 +99,7 @@ export const ProjectFormView: React.FC = () => {
         const newProject = { id: docRef.id, ...projectData } as Project;
         setSelectedProject(newProject);
         
-        alert('Project created successfully with Google Drive workspace!');
+        alert(t('project_created_success'));
         navigate(`/project/${docRef.id}`);
       } else {
         // Update existing project
@@ -119,12 +122,12 @@ export const ProjectFormView: React.FC = () => {
         };
 
         await setDoc(projectRef, finalData, { merge: true });
-        alert('Project information updated successfully!');
+        alert(t('project_updated_success'));
         navigate(-1);
       }
     } catch (error: any) {
       console.error('Error saving project:', error);
-      alert(`Failed to save project: ${error.message || 'Unknown error'}`);
+      alert(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -147,7 +150,7 @@ export const ProjectFormView: React.FC = () => {
           onClick={() => navigate(-1)}
           className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-all"
         >
-          Cancel
+          {t('cancel')}
         </button>
         <button 
           onClick={handleSave}
@@ -155,7 +158,7 @@ export const ProjectFormView: React.FC = () => {
           className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {isNew ? 'Initialize Project' : 'Save Changes'}
+          {isNew ? t('initialize_project') : t('save_changes')}
         </button>
       </div>
 
@@ -163,11 +166,11 @@ export const ProjectFormView: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           {/* Basic Info */}
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Identity & Identification</h3>
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">{t('identity_identification')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Globe className="w-3 h-3" /> Project Name
+                  <Globe className="w-3 h-3" /> {t('project_name')}
                 </label>
                 <input 
                   type="text" 
@@ -180,7 +183,7 @@ export const ProjectFormView: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Layout className="w-3 h-3" /> Project Code
+                  <Layout className="w-3 h-3" /> {t('project_code')}
                 </label>
                 <input 
                   type="text" 
@@ -193,46 +196,46 @@ export const ProjectFormView: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <UserIcon className="w-3 h-3" /> Project Manager
+                  <UserIcon className="w-3 h-3" /> {t('project_manager')}
                 </label>
                 <input 
                   type="text" 
                   value={formData.manager}
                   onChange={(e) => setFormData({...formData, manager: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
-                  placeholder="Enter manager name"
+                  placeholder={t('name')}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Shield className="w-3 h-3" /> Project Sponsor
+                  <Shield className="w-3 h-3" /> {t('project_sponsor')}
                 </label>
                 <input 
                   type="text" 
                   value={formData.sponsor}
                   onChange={(e) => setFormData({...formData, sponsor: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
-                  placeholder="Enter sponsor name"
+                  placeholder={t('name')}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Building className="w-3 h-3" /> Project Customer
+                  <Building className="w-3 h-3" /> {t('project_customer')}
                 </label>
                 <input 
                   type="text" 
                   value={formData.customer}
                   onChange={(e) => setFormData({...formData, customer: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
-                  placeholder="Enter customer/client name"
+                  placeholder={t('name')}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <MapPin className="w-3 h-3" /> Project Location
+                  <MapPin className="w-3 h-3" /> {t('project_location')}
                 </label>
                 <input 
                   type="text" 
@@ -244,7 +247,7 @@ export const ProjectFormView: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Shield className="w-3 h-3" /> Admin PIN
+                  <Shield className="w-3 h-3" /> {t('admin_pin')}
                 </label>
                 <input 
                   type="text" 
@@ -254,18 +257,18 @@ export const ProjectFormView: React.FC = () => {
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. 1234"
                 />
-                <p className="text-[10px] text-slate-400 italic">Used for authorizing critical plan overwrites.</p>
+                <p className="text-[10px] text-slate-400 italic">{t('admin_pin_hint')}</p>
               </div>
             </div>
           </section>
 
           {/* Timeline & Status */}
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Timeline & Status</h3>
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">{t('timeline_status')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Calendar className="w-3 h-3" /> Start Date
+                  <Calendar className="w-3 h-3" /> {t('start_date')}
                 </label>
                 <input 
                   type="date" 
@@ -277,7 +280,7 @@ export const ProjectFormView: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Calendar className="w-3 h-3" /> End Date (Est.)
+                  <Calendar className="w-3 h-3" /> {t('end_date_est')}
                 </label>
                 <input 
                   type="date" 
@@ -289,15 +292,15 @@ export const ProjectFormView: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Shield className="w-3 h-3" /> Status
+                  <Shield className="w-3 h-3" /> {t('status')}
                 </label>
                 <select 
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value as any})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                 >
-                  <option value="active">Active</option>
-                  <option value="archived">Archived</option>
+                  <option value="active">{t('active')}</option>
+                  <option value="archived">{t('archived')}</option>
                 </select>
               </div>
             </div>
@@ -305,17 +308,17 @@ export const ProjectFormView: React.FC = () => {
 
           {/* Description */}
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Project Description</h3>
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">{t('project_description')}</h3>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <FileText className="w-3 h-3" /> Overview
+                <FileText className="w-3 h-3" /> {t('overview')}
               </label>
               <textarea 
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 rows={4}
                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium resize-none"
-                placeholder="Provide a high-level summary of the project scope and objectives..."
+                placeholder={t('project_description_placeholder')}
               />
             </div>
           </section>
@@ -329,21 +332,21 @@ export const ProjectFormView: React.FC = () => {
               <div className="w-24 h-24 rounded-3xl bg-white shadow-xl flex items-center justify-center text-blue-600 font-bold text-3xl mx-auto border border-slate-100">
                 {formData.name?.charAt(0) || 'P'}
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mt-4">{formData.name || 'New Project'}</h2>
+              <h2 className="text-xl font-bold text-slate-900 mt-4">{formData.name || (isNew ? t('new_project') : '')}</h2>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-wider mt-2 border border-blue-100">
                 {formData.code || 'NO-CODE'}
               </div>
             </div>
             
-            <div className="mt-8 pt-8 border-t border-slate-50 space-y-4 text-left">
+            <div className="mt-8 pt-8 border-t border-slate-50 space-y-4 text-start">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Manager</span>
-                <span className="font-bold text-slate-700">{formData.manager || 'Not set'}</span>
+                <span className="text-slate-400">{t('manager')}</span>
+                <span className="font-bold text-slate-700">{formData.manager || t('not_set')}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Status</span>
+                <span className="text-slate-400">{t('status')}</span>
                 <span className={`font-bold ${formData.status === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                  {formData.status?.toUpperCase()}
+                  {t(formData.status || 'active').toUpperCase()}
                 </span>
               </div>
             </div>
@@ -353,9 +356,9 @@ export const ProjectFormView: React.FC = () => {
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
               <Globe className="w-6 h-6 text-blue-400" />
             </div>
-            <h3 className="font-bold text-lg">Drive Integration</h3>
+            <h3 className="font-bold text-lg">{t('drive_integration')}</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              When you initialize this project, Zarya will automatically create a secure folder structure in Google Drive and generate the initial Project Charter PDF based on these details.
+              {t('drive_integration_hint')}
             </p>
           </div>
         </div>

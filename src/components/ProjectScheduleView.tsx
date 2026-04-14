@@ -10,7 +10,7 @@ import {
   Calendar, Clock, Database, ChevronRight, ChevronDown,
   Loader2, Edit2, Search, Filter, Download, Printer,
   BarChart3, DollarSign, CheckCircle2, AlertCircle,
-  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2,
+  ArrowRight, Link2, Plus, MoreHorizontal, Maximize2, Minimize2,
   ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target
 } from 'lucide-react';
 import { 
@@ -35,6 +35,9 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn, formatCurrency, stripNumericPrefix } from '../lib/utils';
 import { rollupToParent } from '../services/rollupService';
+
+import { useLanguage } from '../context/LanguageContext';
+import { loadArabicFont } from '../lib/pdfUtils';
 
 interface ProjectScheduleViewProps {
   page: Page;
@@ -149,6 +152,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab || 'gantt');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const { t, isRtl, language } = useLanguage();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showColumnsMenu, setShowColumnsMenu] = useState(false);
 
@@ -543,6 +547,12 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       const pdf = new jsPDF('l', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
 
+      // Load Arabic font if needed
+      if (language === 'ar') {
+        await loadArabicFont(pdf);
+        pdf.setFont('Amiri');
+      }
+
       // Logo centered
       try {
         pdf.addImage(
@@ -554,12 +564,12 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       // Title
       pdf.setFontSize(16);
       pdf.setTextColor(15, 23, 42);
-      pdf.text('Project Schedule', 14, 28);
+      pdf.text(t('project_schedule'), 14, 28);
       pdf.setFontSize(10);
       pdf.setTextColor(100, 116, 139);
       pdf.text(`${selectedProject.name} [${selectedProject.code}]`, 14, 35);
       pdf.setFontSize(8);
-      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pdfWidth - 14, 10, { align: 'right' });
+      pdf.text(`${t('generated')}: ${new Date().toLocaleDateString()}`, pdfWidth - 14, 10, { align: 'right' });
 
       // KPI Cards
       const totalPlanned = activities.reduce((sum, a) => sum + (a.amount || 0), 0);
@@ -569,10 +579,10 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         : 0;
 
       const kpis = [
-        { label: 'Overall Progress', value: `${avgProgress}%`, color: [59, 130, 246], icon: '%' },
-        { label: 'Planned Cost', value: formatAmount(totalPlanned, baseCurrency), color: [30, 64, 175], icon: '$' },
-        { label: 'Actual Cost', value: formatAmount(totalActual, baseCurrency), color: [16, 185, 129], icon: 'A' },
-        { label: 'Activities', value: `${activities.length}`, color: [100, 116, 139], icon: '#' }
+        { label: t('overall_progress'), value: `${avgProgress}%`, color: [59, 130, 246], icon: '%' },
+        { label: t('planned_cost'), value: formatAmount(totalPlanned, baseCurrency), color: [30, 64, 175], icon: '$' },
+        { label: t('actual_cost'), value: formatAmount(totalActual, baseCurrency), color: [16, 185, 129], icon: 'A' },
+        { label: t('activities'), value: `${activities.length}`, color: [100, 116, 139], icon: '#' }
       ];
 
       const cardWidth = (pdfWidth - 28 - 9) / 4;
@@ -638,22 +648,26 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       
       pdf.setFillColor(219, 234, 254);
       pdf.rect(14, legendY, 5, 3, 'F');
-      pdf.text('Planned', 21, legendY + 2.5);
+      pdf.text(t('planned'), 21, legendY + 2.5);
       
       pdf.setFillColor(16, 185, 129);
       pdf.rect(40, legendY, 5, 3, 'F');
-      pdf.text('Actual (On Time)', 47, legendY + 2.5);
+      pdf.text(t('actual_on_time'), 47, legendY + 2.5);
       
       pdf.setFillColor(245, 158, 11);
       pdf.rect(75, legendY, 5, 3, 'F');
-      pdf.text('Actual (Delayed)', 82, legendY + 2.5);
+      pdf.text(t('actual_delayed'), 82, legendY + 2.5);
 
       autoTable(pdf, {
         startY: cardY + cardHeight + 10,
-        head: [['Activity', 'P. Start', 'A. Start', 'P. Dur', 'A. Dur', 'P. Finish', 'A. Finish', '%', 'P. Cost', 'A. Cost', 'Timeline']],
+        head: [[t('activities'), t('start'), 'A. Start', 'P. Dur', 'A. Dur', t('finish'), 'A. Finish', '%', 'P. Cost', 'A. Cost', 'Timeline']],
         body: tableData,
         theme: 'grid',
-        styles: { fontSize: 5, cellPadding: 1 },
+        styles: { 
+          fontSize: 5, 
+          cellPadding: 1,
+          font: language === 'ar' ? 'Amiri' : 'helvetica'
+        },
         headStyles: { 
           fillColor: [30, 64, 175], 
           textColor: 255,
@@ -1003,14 +1017,14 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+      <div className="bg-white px-6 py-3 border-b border-slate-200 flex flex-wrap items-center gap-4 shrink-0">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search activities or WBS..." 
+            placeholder={t('search_activities')} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -1021,22 +1035,72 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           <button 
             onClick={() => setZoomLevel('day')}
             className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'day' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-          >Day</button>
+          >
+            {t('day')}
+          </button>
           <button 
             onClick={() => setZoomLevel('week')}
             className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'week' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-          >Week</button>
+          >
+            {t('week')}
+          </button>
           <button 
             onClick={() => setZoomLevel('month')}
             className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'month' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-          >Month</button>
+          >
+            {t('month')}
+          </button>
           <button 
             onClick={() => setZoomLevel('quarter')}
             className={cn("px-3 py-1.5 rounded-md text-[10px] font-bold transition-all", zoomLevel === 'quarter' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
-          >Quarter</button>
+          >
+            {t('quarter')}
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+          <button 
+            onClick={() => {
+              const today = new Date();
+              const container = rightPanelRef.current;
+              if (container) {
+                const diff = Math.floor((today.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
+                container.scrollLeft = diff * dayWidth - container.clientWidth / 2;
+              }
+            }}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-bold text-[10px] hover:bg-slate-200 transition-all flex items-center gap-1.5"
+          >
+            <Target className="w-3.5 h-3.5" />
+            {t('today')}
+          </button>
+          
+          <button 
+            onClick={() => {
+              const allIds = new Set<string>();
+              const addIds = (items: any[]) => {
+                items.forEach(item => {
+                  allIds.add(item.id);
+                });
+              };
+              addIds(wbsLevels);
+              setExpandedWbs(allIds);
+            }}
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            title={t('expand_all')}
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          
+          <button 
+            onClick={() => setExpandedWbs(new Set())}
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            title={t('collapse_all')}
+          >
+            <Minimize2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
           <button 
             onClick={() => setEditingActivity({
               id: crypto.randomUUID(),
@@ -1055,7 +1119,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-md"
           >
             <Plus className="w-4 h-4" />
-            Add Activity
+            {t('add_activity')}
           </button>
 
           <div className="relative">
@@ -1067,7 +1131,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
               )}
             >
               <Filter className="w-4 h-4" />
-              <span className="text-[10px] font-bold">Columns</span>
+              <span className="text-[10px] font-bold">{t('columns')}</span>
             </button>
             
             {showColumnsMenu && (
@@ -1105,7 +1169,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
       <div 
         ref={containerRef}
-        className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex h-[75vh] relative"
+        className="bg-white border-b border-slate-200 overflow-hidden flex-1 flex relative"
       >
         {/* Left Panel: WBS & Activity List */}
         <div 

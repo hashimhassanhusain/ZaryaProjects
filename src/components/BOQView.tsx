@@ -14,12 +14,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../context/LanguageContext';
+import { loadArabicFont } from '../lib/pdfUtils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GoogleGenAI, Type } from "@google/genai";
 import { DollarSign, Coins } from 'lucide-react';
 
 export const BOQView: React.FC = () => {
+  const { t, language } = useLanguage();
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -29,12 +32,14 @@ export const BOQView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'boq' | 'export'>('boq');
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [isAddingWorkPackage, setIsAddingWorkPackage] = useState(false);
   const [newWorkPackage, setNewWorkPackage] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddPackageModal, setShowAddPackageModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string; type: 'item' | 'wbs' } | null>(null);
   const [newPackageData, setNewPackageData] = useState<Partial<WorkPackage>>({
     title: '',
     description: '',
@@ -173,11 +178,48 @@ export const BOQView: React.FC = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    const item = boqItems.find(i => i.id === id);
+    if (!item) return;
+    setDeleteConfirmation({ id, title: item.description, type: 'item' });
+  };
+
+  const executeDeleteItem = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'boq', id));
+      setDeleteConfirmation(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'boq');
+    }
+  };
+
+  const executeDeleteWbs = async (id: string) => {
+    try {
+      // Find all children recursively
+      const findChildren = (parentId: string): string[] => {
+        const children = wbsLevels.filter(l => l.parentId === parentId);
+        let ids = children.map(c => c.id);
+        children.forEach(c => {
+          ids = [...ids, ...findChildren(c.id)];
+        });
+        return ids;
+      };
+
+      const idsToDelete = [id, ...findChildren(id)];
+      
+      // Delete all WBS levels
+      await Promise.all(idsToDelete.map(wbsId => deleteDoc(doc(db, 'wbs', wbsId))));
+      
+      // Delete associated BOQ items
+      const boqToDelete = boqItems.filter(item => idsToDelete.includes(item.wbsId));
+      await Promise.all(boqToDelete.map(item => deleteDoc(doc(db, 'boq', item.id))));
+
+      // Delete associated work packages
+      const wpToDelete = workPackages.filter(wp => idsToDelete.includes(wp.wbsId));
+      await Promise.all(wpToDelete.map(wp => deleteDoc(doc(db, 'work_packages', wp.id))));
+
+      setDeleteConfirmation(null);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'wbs');
     }
   };
 
@@ -329,6 +371,13 @@ export const BOQView: React.FC = () => {
     setIsExporting(true);
     
     const doc = new jsPDF();
+
+    // Load Arabic font if needed
+    if (language === 'ar') {
+      await loadArabicFont(doc);
+      doc.setFont('Amiri');
+    }
+
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
     const dateStr = new Date().toISOString().split('T')[0];
@@ -354,12 +403,13 @@ export const BOQView: React.FC = () => {
 
     const grandTotal = currentItems.reduce((sum, item) => sum + item.amount, 0);
 
-    autoTable(doc, {
-      startY: 60,
-      head: [['Cost Account', 'Description', 'Total']],
-      body: [...summaryData, ['', 'GRAND TOTAL', formatAmount(grandTotal, baseCurrency)]],
-      theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      autoTable(doc, {
+        startY: 60,
+        head: [[t('cost_account'), t('description'), t('total')]],
+        body: [...summaryData, ['', t('grand_total'), formatAmount(grandTotal, baseCurrency)]],
+        theme: 'grid',
+        styles: { font: language === 'ar' ? 'Amiri' : 'helvetica' },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: { 
         0: { cellWidth: 20 },
         2: { halign: 'right', fontStyle: 'bold' }
@@ -446,7 +496,11 @@ export const BOQView: React.FC = () => {
                 </div>
               </div>
               <button 
-                onClick={(e) => { e.stopPropagation(); deleteDoc(doc(db, 'wbs', level.id)); }}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  const level = wbsLevels.find(l => l.id === level.id);
+                  if (level) setDeleteConfirmation({ id: level.id, title: level.title, type: 'wbs' });
+                }}
                 className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
               >
                 <Trash2 className="w-4 h-4" />
@@ -535,19 +589,19 @@ export const BOQView: React.FC = () => {
             <div className="space-y-8">
               {!selectedWbsId ? (
                 <div className="space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text"
+                        placeholder="Search WBS levels..."
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
+                      />
+                    </div>
                     <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input 
-                          type="text"
-                          placeholder="Search WBS levels..."
-                          className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
-                        />
-                      </div>
                       <button 
                         onClick={() => setSelectedWbsId('master')}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all"
+                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all shadow-sm"
                       >
                         View Master BOQ
                       </button>
@@ -622,7 +676,7 @@ export const BOQView: React.FC = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1">
                       <button 
                         onClick={() => setSelectedWbsId(null)}
                         className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all"
@@ -645,6 +699,17 @@ export const BOQView: React.FC = () => {
                         </div>
                         <p className="text-xs text-slate-500 font-medium">Managing specific BOQ items for this project component.</p>
                       </div>
+                    </div>
+
+                    <div className="relative flex-1 max-w-md mx-4">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Search items..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                      />
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -690,7 +755,8 @@ export const BOQView: React.FC = () => {
                         ) : (
                           sortedDivisions.map(divId => {
                             const items = (selectedWbsId === 'master' ? boqItems : boqItems.filter(i => i.wbsId === selectedWbsId))
-                              .filter(i => i.division === divId);
+                              .filter(i => i.division === divId)
+                              .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()) || i.workPackage.toLowerCase().includes(searchQuery.toLowerCase()));
                             
                             if (items.length === 0) return null;
 
@@ -1298,6 +1364,49 @@ export const BOQView: React.FC = () => {
                   className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
                 >
                   Create Package
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmation && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
+              <p className="text-slate-500 text-center mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    if (deleteConfirmation.type === 'item') {
+                      executeDeleteItem(deleteConfirmation.id);
+                    } else {
+                      executeDeleteWbs(deleteConfirmation.id);
+                    }
+                  }}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+                >
+                  Delete
                 </button>
               </div>
             </motion.div>

@@ -24,7 +24,6 @@ import { AdminUsersView } from './components/AdminUsersView';
 import { AdminProjectsView } from './components/AdminProjectsView';
 import { ProjectFormView } from './components/ProjectFormView';
 import { TasksView } from './components/TasksView';
-import { MeetingsView } from './components/MeetingsView';
 import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
@@ -57,27 +56,29 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProjectProvider, useProject } from './context/ProjectContext';
 import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 
 const PageRenderer = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { selectedProject } = useProject();
   
-  // Handle virtual domain IDs
-  if (id?.startsWith('dom_')) {
-    const CANONICAL_DOMAINS = [
-      { id: 'dom_gov', title: 'Governance Domain', searchKey: 'governance' },
-      { id: 'dom_scope', title: 'Scope Domain', searchKey: 'scope' },
-      { id: 'dom_sched', title: 'Schedule Domain', searchKey: 'schedule' },
-      { id: 'dom_fin', title: 'Finance Domain', searchKey: 'finance' },
-      { id: 'dom_stake', title: 'Stakeholders Domain', searchKey: 'stakeholders' },
-      { id: 'dom_res', title: 'Resources Domain', searchKey: 'resources' },
-      { id: 'dom_risk', title: 'Risk Domain', searchKey: 'risk' },
-    ];
-    const domain = CANONICAL_DOMAINS.find(d => d.id === id);
-    if (domain) {
+  // Handle domain and focus area IDs
+  const hubIds = [
+    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk',
+    'start', 'plan', 'exec', 'mon', 'close',
+    'start_gov', 'start_stak',
+    'plan_gov', 'plan_scope', 'plan_sched', 'plan_fin', 'plan_stak', 'plan_res', 'plan_risk',
+    'exec_res', 'exec_gov',
+    'mon_gov', 'mon_fin', 'mon_stak', 'mon_risk', 'mon_res',
+    'close_gov', 'close_fin'
+  ];
+  if (id && hubIds.includes(id)) {
+    const hubPage = pages.find(p => p.id === id);
+    if (hubPage) {
       // Special case for Schedule Domain to show Gantt directly as requested
-      if (domain.id === 'dom_sched') {
+      if (id === 'sched') {
         const schedulePage = pages.find(p => p.id === '2.3');
         if (schedulePage) {
           return (
@@ -95,8 +96,8 @@ const PageRenderer = () => {
       }
 
       // Special case for Resources Domain to show Hub directly
-      if (domain.id === 'dom_res') {
-        const resPage = pages.find(p => p.id === '2.6');
+      if (id === 'res') {
+        const resPage = pages.find(p => p.id === 'res');
         if (resPage) {
           return (
             <motion.div
@@ -112,42 +113,19 @@ const PageRenderer = () => {
         }
       }
 
-      // Find all pages that belong to this domain to list them below the dashboard
-      const domainHubs = pages.filter(p => 
-        p.type === 'hub' && 
-        p.domain === domain.searchKey
-      );
-      const hubIds = domainHubs.map(h => h.id);
-      const children = sortDomainPages(pages.filter(p => p.parentId && hubIds.includes(p.parentId)), domain.searchKey);
-
-      // Aggregate KPIs and alerts from all hubs in this domain
-      const aggregatedKpis = domainHubs.flatMap(h => h.kpis || []);
-      const aggregatedAlerts = domainHubs.flatMap(h => h.alerts || []);
-
-      const virtualPage = {
-        id: domain.id,
-        title: domain.title,
-        type: 'hub' as const,
-        domain: domain.searchKey as any,
-        kpis: aggregatedKpis,
-        alerts: aggregatedAlerts
-      };
+      const children = sortDomainPages(pages.filter(p => p.parentId === id), hubPage.domain || '');
 
       return (
-        <div className="max-w-6xl mx-auto">
-          <DomainDashboard page={virtualPage} />
-          <div className="mt-12">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6">Domain Documentation & Forms</h3>
-            <DashboardView page={{ id: domain.id, title: domain.title, type: 'hub', summary: '' }} overrideChildren={children} />
-          </div>
+        <div className="max-w-7xl mx-auto">
+          <DomainDashboard page={hubPage} childrenPages={children} />
         </div>
       );
     }
   }
 
-  const page = id === 'logs' ? { id: 'logs', title: 'Project Logs', type: 'hub' as const } : pages.find(p => p.id === id);
+  const page = id === 'logs' ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } : pages.find(p => p.id === id);
 
-  if (!page) return <Navigate to="/page/planning" />;
+  if (!page) return <Navigate to="/page/gov" />;
 
   const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(page.id);
   const isTasksPage = page.id === '2.6.21';
@@ -158,7 +136,7 @@ const PageRenderer = () => {
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isSchedulePage = page.id === '2.3';
-  const isAssumptionLogPage = ['2.1.5', '2.2.1'].includes(page.id);
+  const isAssumptionLogPage = page.id === '2.1.5';
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
   const isRiskRegisterPage = page.id === '2.7.5';
@@ -166,11 +144,11 @@ const PageRenderer = () => {
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
   const isResourceOptimizationPage = [
-    '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
-    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6', '2.4.7'
+    'res', '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
+    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6'
   ].includes(page.id);
   const isGovernanceHubPage = [
-    '1.1.1', '1.1.2', // Charter, Policies
+    'gov', '1.1.1', '1.1.2', // Charter, Policies
     '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
     '2.1.5', '1.2.1', '3.1.3', '5.1.1' // Logs
   ].includes(page.id);
@@ -188,13 +166,13 @@ const PageRenderer = () => {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -10 }}
         transition={{ duration: 0.2 }}
-        className={cn("mx-auto", !isSchedulePage && "max-w-6xl")}
+        className={cn((isSchedulePage || page.id === '2.1.2') ? "w-full" : "mx-auto max-w-6xl")}
       >
-        <Breadcrumbs currentPageId={page.id} />
+        <div className={cn(isSchedulePage || page.id === '2.1.2' ? "px-6 pt-6" : "")}>
+          <Breadcrumbs currentPageId={page.id} />
+        </div>
         {isTasksPage ? (
           <TasksView />
-        ) : isMeetingsPage ? (
-          <MeetingsView />
         ) : isFilesPage ? (
           <FileExplorer projectId={selectedProject?.id || ''} />
         ) : isZaryaPage ? (
@@ -248,11 +226,12 @@ const PageRenderer = () => {
 };
 
 const AppLayout = () => {
+  const { isRtl } = useLanguage();
   const { isSidebarOpen, closeSidebar, sidebarWidth } = useUI();
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir="ltr">
       {/* Mobile Sidebar Overlay - Only on mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -285,11 +264,14 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
-        <main className={cn(
-          "flex-1 overflow-y-auto",
-          // Remove padding for schedule page to allow full width as requested
-          location.pathname.includes('/page/2.3') ? "p-0" : "p-4 md:p-8 lg:p-12"
-        )}>
+        <main 
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className={cn(
+            "flex-1 overflow-y-auto",
+            // Remove padding for schedule and governance hub to allow full width as requested
+            (location.pathname.includes('/page/2.3') || location.pathname.includes('/page/2.1.2')) ? "p-0" : "p-4 md:p-8 lg:p-12"
+          )}
+        >
           <Routes>
             <Route path="/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
@@ -363,15 +345,17 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ProjectProvider>
-        <UIProvider>
-          <CurrencyProvider>
-            <Router>
-              <AppLayout />
-            </Router>
-          </CurrencyProvider>
-        </UIProvider>
-      </ProjectProvider>
+      <LanguageProvider>
+        <ProjectProvider>
+          <UIProvider>
+            <CurrencyProvider>
+              <Router>
+                <AppLayout />
+              </Router>
+            </CurrencyProvider>
+          </UIProvider>
+        </ProjectProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

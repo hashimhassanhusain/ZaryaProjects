@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   ChevronRight, 
   ArrowRight, 
@@ -58,6 +59,7 @@ const getDomainIcon = (domain?: string, title?: string) => {
 };
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChildren }) => {
+  const { t } = useLanguage();
   const { selectedProject } = useProject();
   const { formatAmount, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -68,7 +70,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
   const hasDashboard = (page.kpis && page.kpis.length > 0) || (page.alerts && page.alerts.length > 0);
 
   useEffect(() => {
-    if (!selectedProject || page.id !== '2.0') return;
+    if (!selectedProject || !['plan', 'mon'].includes(page.id)) return;
 
     const boqUnsubscribe = onSnapshot(
       query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)),
@@ -111,147 +113,151 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
 
   return (
     <div className="space-y-8">
-      {hasDashboard && <DomainDashboard page={page} />}
-
-      {/* BOQ Summary by Location - Only on main dashboard */}
-      {page.id === '2.0' && locationTotals.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">BOQ Value by Location</h3>
-            </div>
-            <Link to="/page/2.4.0" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-              View All BOQ <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {locationTotals.map((loc, idx) => (
-              <motion.div
-                key={loc.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm group hover:border-emerald-200 transition-all"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className={cn(
-                    "p-2 rounded-xl text-xs font-bold",
-                    loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
-                    loc.type === 'Building' ? "bg-blue-50 text-blue-600" :
-                    "bg-amber-50 text-amber-600"
-                  )}>
-                    {loc.type}
+      {hasDashboard ? (
+        <DomainDashboard page={page} childrenPages={children} />
+      ) : (
+        <>
+          {/* BOQ Summary by Location - Only on planning/monitoring dashboards */}
+          {['plan', 'mon'].includes(page.id) && locationTotals.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
+                    <TrendingUp className="w-4 h-4" />
                   </div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
                 </div>
-                <div className="text-xl font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
-                <div className="text-sm font-bold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Schedule Summary - Only on main dashboard */}
-      {page.id === '2.0' && activities.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
-                <Calendar className="w-4 h-4" />
+                <Link to="/page/2.4.0" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
+                </Link>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Project Schedule Summary</h3>
-            </div>
-            <Link to="/page/2.3.7" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-              View Full Schedule <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm overflow-hidden">
-            <div className="space-y-6">
-              {activities.filter(a => a.startDate && a.finishDate).slice(0, 5).map((act, idx) => {
-                const start = new Date(act.startDate!);
-                const finish = new Date(act.finishDate!);
-                const today = new Date();
-                const total = finish.getTime() - start.getTime();
-                const current = today.getTime() - start.getTime();
-                const progress = Math.min(100, Math.max(0, (current / total) * 100));
-
-                return (
-                  <div key={act.id} className="space-y-2">
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900">{act.description}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{act.startDate} — {act.finishDate}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-blue-600">{Math.round(progress)}%</div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-widest">{act.status}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {locationTotals.map((loc, idx) => (
+                  <motion.div
+                    key={loc.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm group hover:border-emerald-200 transition-all"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className={cn(
+                        "p-2 rounded-xl text-xs font-bold",
+                        loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
+                        loc.type === 'Building' ? "bg-blue-50 text-blue-600" :
+                        "bg-amber-50 text-amber-600"
+                      )}>
+                        {t(loc.type.toLowerCase())}
                       </div>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 1, delay: idx * 0.1 }}
-                        className={cn(
-                          "h-full rounded-full",
-                          progress === 100 ? "bg-emerald-500" : "bg-blue-500"
-                        )}
-                      />
+                    <div className="text-xl font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
+                    <div className="text-sm font-bold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Schedule Summary - Only on planning/monitoring dashboards */}
+          {['plan', 'mon'].includes(page.id) && activities.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
+                </div>
+                <Link to="/page/2.3" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm overflow-hidden">
+                <div className="space-y-6">
+                  {activities.filter(a => a.startDate && a.finishDate).slice(0, 5).map((act, idx) => {
+                    const start = new Date(act.startDate!);
+                    const finish = new Date(act.finishDate!);
+                    const today = new Date();
+                    const total = finish.getTime() - start.getTime();
+                    const current = today.getTime() - start.getTime();
+                    const progress = Math.min(100, Math.max(0, (current / total) * 100));
+
+                    return (
+                      <div key={act.id} className="space-y-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <div className="text-sm font-bold text-slate-900">{act.description}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{act.startDate} — {act.finishDate}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs font-bold text-blue-600">{Math.round(progress)}%</div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-widest">{act.status}</div>
+                          </div>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress}%` }}
+                            transition={{ duration: 1, delay: idx * 0.1 }}
+                            className={cn(
+                              "h-full rounded-full",
+                              progress === 100 ? "bg-emerald-500" : "bg-blue-500"
+                            )}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {children.map((child, idx) => {
+              const Icon = getDomainIcon(child.domain, child.title);
+              return (
+                <motion.div
+                  key={child.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <Link
+                    to={`/page/${child.id}`}
+                    className="group block p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
+                        <Icon className="w-5 h-5 text-slate-400 group-hover:text-blue-500" />
+                      </div>
+                      <StatusIcon status={child.status} />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
+                      {stripNumericPrefix(t(child.id) || child.title)}
+                    </h3>
+                    <div className="text-[10px] text-slate-400 font-medium mb-3 uppercase tracking-wider">
+                      {stripNumericPrefix(t(getFocusArea(child.id)?.id || '') || getFocusArea(child.id)?.title || '')}
+                    </div>
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">
+                      {child.summary || child.content}
+                    </p>
+                    <div className="flex items-center text-sm font-medium text-blue-600">
+                      {t('view_details')}
+                      <ArrowRight className="w-4 h-4 ms-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
-        </section>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {children.map((child, idx) => {
-          const Icon = getDomainIcon(child.domain, child.title);
-          return (
-            <motion.div
-              key={child.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <Link
-                to={`/page/${child.id}`}
-                className="group block p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                    <Icon className="w-5 h-5 text-slate-400 group-hover:text-blue-500" />
-                  </div>
-                  <StatusIcon status={child.status} />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                  {stripNumericPrefix(child.title)}
-                </h3>
-                <div className="text-[10px] text-slate-400 font-medium mb-3 uppercase tracking-wider">
-                  {stripNumericPrefix(getFocusArea(child.id)?.title || '')}
-                </div>
-                <p className="text-sm text-slate-500 mb-4 line-clamp-2">
-                  {child.summary || child.content}
-                </p>
-                <div className="flex items-center text-sm font-medium text-blue-600">
-                  View Details
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {children.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-          <p className="text-slate-400">No sub-domains found for this area.</p>
-        </div>
+          {children.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+              <p className="text-slate-400">{t('no_sub_domains_found')}</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -149,8 +149,8 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -404,20 +404,18 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            {[1, 2, 3, 4, 5].map((p) => (
-              <button 
-                key={p}
-                onClick={() => setActivePage(p as any)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  activePage === p ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                )}
-              >
-                P{p}
-              </button>
-            ))}
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -455,39 +453,51 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={riskPlan.projectTitle}
-            onChange={(e) => setRiskPlan({ ...riskPlan, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
-          <input 
-            type="date"
-            value={riskPlan.datePrepared}
-            onChange={(e) => setRiskPlan({ ...riskPlan, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
-        </div>
-      </div>
+      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="p-10 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+              {isEditing ? (
+                <input 
+                  type="text"
+                  value={riskPlan.projectTitle}
+                  onChange={(e) => setRiskPlan({ ...riskPlan, projectTitle: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  placeholder="Enter Project Title..."
+                />
+              ) : (
+                <div className="px-1 py-1 text-lg font-bold text-slate-900">
+                  {riskPlan.projectTitle || '---'}
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+              {isEditing ? (
+                <input 
+                  type="date"
+                  value={riskPlan.datePrepared}
+                  onChange={(e) => setRiskPlan({ ...riskPlan, datePrepared: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                />
+              ) : (
+                <div className="px-1 py-1 text-sm font-medium text-slate-600">
+                  {riskPlan.datePrepared || '---'}
+                </div>
+              )}
+            </div>
+          </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 && (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Methodology</label>
+      <div className="space-y-12">
+        {/* Section 1: Methodology & Roles */}
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Target className="w-4 h-4 text-blue-600" />
+              Methodology
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.methodology}
                 onChange={(e) => setRiskPlan({ ...riskPlan, methodology: e.target.value })}
@@ -495,9 +505,18 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Qualitative and Quantitative Risk Analysis using PI Matrix..."
               />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roles and Responsibilities</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.methodology || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              Roles and Responsibilities
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.roles}
                 onChange={(e) => setRiskPlan({ ...riskPlan, roles: e.target.value })}
@@ -505,9 +524,18 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define risk management roles..."
               />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Categories</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.roles || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Layers className="w-4 h-4 text-blue-600" />
+              Risk Categories
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.categories}
                 onChange={(e) => setRiskPlan({ ...riskPlan, categories: e.target.value })}
@@ -515,51 +543,64 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Technical, External, Organizational, Project Management..."
               />
-            </section>
-          </motion.div>
-        )}
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.categories || '---'}
+              </div>
+            )}
+          </section>
+        </div>
 
-        {activePage === 2 && (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Management Funding</label>
+        {/* Section 2: Funding & Contingency */}
+        <div className="pt-8 border-t border-slate-100 space-y-8">
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <DollarSign className="w-4 h-4 text-blue-600" />
+              Risk Management Funding
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.funding}
                 onChange={(e) => setRiskPlan({ ...riskPlan, funding: e.target.value })}
-                rows={6}
+                rows={4}
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define how risk management activities are funded..."
               />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contingency Protocols</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.funding || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              Contingency Protocols
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.contingencyProtocols}
                 onChange={(e) => setRiskPlan({ ...riskPlan, contingencyProtocols: e.target.value })}
-                rows={6}
+                rows={4}
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Example: 5% of total budget reserved for unforeseen technical risks..."
               />
-            </section>
-          </motion.div>
-        )}
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.contingencyProtocols || '---'}
+              </div>
+            )}
+          </section>
+        </div>
 
-        {activePage === 3 && (
-          <motion.div 
-            key="page3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frequency and Timing</label>
+        {/* Section 3: Timing & Tolerances */}
+        <div className="pt-8 border-t border-slate-100 space-y-8">
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              Frequency and Timing
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.timing}
                 onChange={(e) => setRiskPlan({ ...riskPlan, timing: e.target.value })}
@@ -567,10 +608,19 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define frequency of risk reviews..."
               />
-            </section>
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stakeholder Risk Tolerances</label>
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.timing || '---'}
+              </div>
+            )}
+          </section>
+          <section className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3">
+                <TargetIcon className="w-4 h-4 text-blue-600" />
+                Stakeholder Risk Tolerances
+              </h3>
+              {isEditing && (
                 <button 
                   onClick={() => setRiskPlan({ ...riskPlan, tolerances: [...riskPlan.tolerances, { stakeholderId: '', tolerance: '' }] })}
                   className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
@@ -578,48 +628,75 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                   <Plus className="w-3 h-3" />
                   Add Tolerance
                 </button>
-              </div>
-              <div className="space-y-3">
-                {riskPlan.tolerances.map((t, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 group">
-                    <select 
-                      value={t.stakeholderId}
-                      onChange={(e) => {
-                        const newT = [...riskPlan.tolerances];
-                        newT[i].stakeholderId = e.target.value;
-                        setRiskPlan({ ...riskPlan, tolerances: newT });
-                      }}
-                      className="bg-white px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 outline-none"
-                    >
-                      <option value="">Select Stakeholder...</option>
-                      {stakeholders.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                    <input 
-                      type="text"
-                      value={t.tolerance}
-                      onChange={(e) => {
-                        const newT = [...riskPlan.tolerances];
-                        newT[i].tolerance = e.target.value;
-                        setRiskPlan({ ...riskPlan, tolerances: newT });
-                      }}
-                      className="flex-1 bg-transparent border-none text-sm font-medium outline-none"
-                      placeholder="Define tolerance level..."
-                    />
-                    <button 
-                      onClick={() => {
-                        const newT = riskPlan.tolerances.filter((_, idx) => idx !== i);
-                        setRiskPlan({ ...riskPlan, tolerances: newT });
-                      }}
-                      className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tracking and Audit</label>
+              )}
+            </div>
+            <div className="space-y-3">
+              {riskPlan.tolerances.map((t, i) => (
+                <div key={i} className={cn(
+                  "flex items-center gap-4 p-4 rounded-2xl transition-all group",
+                  isEditing ? "bg-slate-50 border border-slate-100" : "bg-white border border-transparent"
+                )}>
+                  {isEditing ? (
+                    <>
+                      <select 
+                        value={t.stakeholderId}
+                        onChange={(e) => {
+                          const newT = [...riskPlan.tolerances];
+                          newT[i].stakeholderId = e.target.value;
+                          setRiskPlan({ ...riskPlan, tolerances: newT });
+                        }}
+                        className="bg-white px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 outline-none"
+                      >
+                        <option value="">Select Stakeholder...</option>
+                        {stakeholders.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                      <input 
+                        type="text"
+                        value={t.tolerance}
+                        onChange={(e) => {
+                          const newT = [...riskPlan.tolerances];
+                          newT[i].tolerance = e.target.value;
+                          setRiskPlan({ ...riskPlan, tolerances: newT });
+                        }}
+                        className="flex-1 bg-transparent border-none text-sm font-medium outline-none"
+                        placeholder="Define tolerance level..."
+                      />
+                      <button 
+                        onClick={() => {
+                          const newT = riskPlan.tolerances.filter((_, idx) => idx !== i);
+                          setRiskPlan({ ...riskPlan, tolerances: newT });
+                        }}
+                        className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-bold text-slate-900">
+                          {stakeholders.find(s => s.id === t.stakeholderId)?.name || 'Unknown Stakeholder'}
+                        </span>
+                        <p className="text-sm text-slate-600 mt-0.5">{t.tolerance || 'No tolerance defined'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {!isEditing && riskPlan.tolerances.length === 0 && (
+                <p className="text-sm text-slate-400 italic px-1">No stakeholder tolerances defined.</p>
+              )}
+            </div>
+          </section>
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <ClipboardList className="w-4 h-4 text-blue-600" />
+              Tracking and Audit
+            </h3>
+            {isEditing ? (
               <textarea 
                 value={riskPlan.audit}
                 onChange={(e) => setRiskPlan({ ...riskPlan, audit: e.target.value })}
@@ -627,33 +704,35 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
                 placeholder="Define tracking and audit procedures..."
               />
-            </section>
-          </motion.div>
-        )}
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {riskPlan.audit || '---'}
+              </div>
+            )}
+          </section>
+        </div>
 
-        {activePage === 4 && (
-          <motion.div 
-            key="page4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-6">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Definitions of Probability</label>
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Level</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {riskPlan.probDefinitions.map((d, i) => (
-                      <tr key={i}>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900">{d.level}</td>
-                        <td className="px-6 py-4">
+        {/* Section 4: Definitions */}
+        <div className="pt-8 border-t border-slate-100 space-y-12">
+          <section className="space-y-6">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <BarChart3 className="w-4 h-4 text-blue-600" />
+              Definitions of Probability
+            </h3>
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Level</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {riskPlan.probDefinitions.map((d, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">{d.level}</td>
+                      <td className="px-6 py-4">
+                        {isEditing ? (
                           <input 
                             type="text"
                             value={d.description}
@@ -664,33 +743,40 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                             }}
                             className="w-full bg-transparent border-none text-sm text-slate-600 outline-none"
                           />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Definitions of Impact by Objective</label>
-              <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Level</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Scope</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost</th>
+                        ) : (
+                          <span className="text-sm text-slate-600">{d.description}</span>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {riskPlan.impactDefinitions.map((d, i) => (
-                      <tr key={i}>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900">{d.level}</td>
-                        {['scope', 'quality', 'time', 'cost'].map((field) => (
-                          <td key={field} className="px-6 py-4">
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Activity className="w-4 h-4 text-blue-600" />
+              Definitions of Impact by Objective
+            </h3>
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Level</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Scope</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {riskPlan.impactDefinitions.map((d, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">{d.level}</td>
+                      {['scope', 'quality', 'time', 'cost'].map((field) => (
+                        <td key={field} className="px-6 py-4">
+                          {isEditing ? (
                             <textarea 
                               value={(d as any)[field]}
                               onChange={(e) => {
@@ -701,98 +787,118 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                               className="w-full bg-transparent border-none text-[11px] text-slate-600 outline-none resize-none"
                               rows={2}
                             />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </motion.div>
-        )}
+                          ) : (
+                            <span className="text-[11px] text-slate-600 leading-relaxed block">{(d as any)[field]}</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
 
-        {activePage === 5 && (
-          <motion.div 
-            key="page5"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-12"
-          >
-            <section className="space-y-8">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Probability and Impact Matrix</label>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Low</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Medium</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">High</span>
-                  </div>
+        {/* Section 5: Matrix */}
+        <div className="pt-8 border-t border-slate-100 space-y-12">
+          <section className="space-y-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3">
+                <PieChart className="w-4 h-4 text-blue-600" />
+                Probability and Impact Matrix
+              </h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Low</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Medium</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">High</span>
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-8">
-                  <div className="flex flex-col items-center gap-2 -rotate-90 origin-center w-0">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Probability</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {['V. High', 'High', 'Medium', 'Low', 'V. Low'].map((label) => (
-                      <div key={label} className="h-16 flex items-center justify-end pr-4 text-[10px] font-black text-slate-400 uppercase w-16">
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-5 gap-2">
-                    {riskPlan.piMatrix.map((cell, i) => (
-                      <button 
-                        key={i}
-                        onClick={() => toggleMatrixCell(i)}
-                        className={cn(
-                          "w-16 h-16 rounded-xl transition-all shadow-sm hover:scale-105 active:scale-95",
-                          cell.level === 'high' ? "bg-red-500 shadow-red-100" : 
-                          cell.level === 'medium' ? "bg-amber-500 shadow-amber-100" : 
-                          "bg-green-500 shadow-green-100"
-                        )}
-                      />
-                    ))}
-                  </div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-8">
+                <div className="flex flex-col items-center gap-2 -rotate-90 origin-center w-0">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Probability</span>
                 </div>
-                <div className="flex items-center gap-2 mt-4 ml-32">
-                  {['V. Low', 'Low', 'Medium', 'High', 'V. High'].map((label) => (
-                    <div key={label} className="w-16 text-center text-[10px] font-black text-slate-400 uppercase">
+                <div className="flex flex-col gap-2">
+                  {['V. High', 'High', 'Medium', 'Low', 'V. Low'].map((label) => (
+                    <div key={label} className="h-16 flex items-center justify-end pr-4 text-[10px] font-black text-slate-400 uppercase w-16">
                       {label}
                     </div>
                   ))}
                 </div>
-                <div className="mt-8 ml-32">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Impact</span>
+                <div className="grid grid-cols-5 gap-2">
+                  {riskPlan.piMatrix.map((cell, i) => (
+                    <button 
+                      key={i}
+                      disabled={!isEditing}
+                      onClick={() => toggleMatrixCell(i)}
+                      className={cn(
+                        "w-16 h-16 rounded-xl transition-all shadow-sm",
+                        isEditing && "hover:scale-105 active:scale-95",
+                        cell.level === 'high' ? "bg-red-500 shadow-red-100" : 
+                        cell.level === 'medium' ? "bg-amber-500 shadow-amber-100" : 
+                        "bg-green-500 shadow-green-100"
+                      )}
+                    />
+                  ))}
                 </div>
               </div>
-            </section>
-
-            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <TargetIcon className="w-4 h-4 text-blue-600" />
-                Risk Score Calculation
-              </h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                The Risk Score is calculated as <strong>Probability Score (1-5) × Impact Score (1-5)</strong>. 
-                This helps prioritize which threats require immediate mitigation plans. 
-                Scores above 15 are typically classified as <strong>High Risk</strong>, while scores below 5 are <strong>Low Risk</strong>.
-              </p>
+              <div className="flex items-center gap-2 mt-4 ml-32">
+                {['V. Low', 'Low', 'Medium', 'High', 'V. High'].map((label) => (
+                  <div key={label} className="w-16 text-center text-[10px] font-black text-slate-400 uppercase">
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 ml-32">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Impact</span>
+              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </section>
+
+          <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+            <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <TargetIcon className="w-4 h-4 text-blue-600" />
+              Risk Score Calculation
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              The Risk Score is calculated as <strong>Probability Score (1-5) × Impact Score (1-5)</strong>. 
+              This helps prioritize which threats require immediate mitigation plans. 
+              Scores above 15 are typically classified as <strong>High Risk</strong>, while scores below 5 are <strong>Low Risk</strong>.
+            </p>
+          </div>
+
+          {/* Project Reviews */}
+          <section className="space-y-6">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-2">
+              <Search className="w-4 h-4 text-blue-600" />
+              Project Reviews
+            </h3>
+            {isEditing ? (
+              <textarea 
+                value={riskPlan.projectReviews}
+                onChange={(e) => setRiskPlan({ ...riskPlan, projectReviews: e.target.value })}
+                rows={6}
+                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm font-medium outline-none resize-none leading-relaxed"
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{riskPlan.projectReviews || '---'}</div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

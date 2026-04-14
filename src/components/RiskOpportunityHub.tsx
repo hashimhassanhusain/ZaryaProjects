@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   Filter,
+  Plus as PlusIcon,
   Download,
   Printer,
   Save,
@@ -41,6 +42,7 @@ import {
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -61,6 +63,7 @@ type RiskSubTab = 'register' | 'assessment' | 'sheets' | 'issues' | 'audit';
 
 export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { t, isRtl } = useLanguage();
   const [activeTab, setActiveTab] = useState<RiskSubTab>('register');
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
@@ -102,18 +105,18 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
   }, [selectedProject?.id]);
 
   const tabs = [
-    { id: 'register', title: 'Risk Register', icon: ShieldAlert },
-    { id: 'assessment', title: 'Risk Assessment', icon: Grid },
-    { id: 'sheets', title: 'Detailed Risk Sheets', icon: FileText },
-    { id: 'issues', title: 'Issue Log', icon: AlertTriangle },
-    { id: 'audit', title: 'Risk Audit', icon: ClipboardList }
+    { id: 'register', title: t('risk_register'), icon: ShieldAlert },
+    { id: 'assessment', title: t('risk_assessment'), icon: Grid },
+    { id: 'sheets', title: t('detailed_risk_sheets'), icon: FileText },
+    { id: 'issues', title: t('issue_log'), icon: AlertTriangle },
+    { id: 'audit', title: t('risk_audit'), icon: ClipboardList }
   ];
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Loading Risk Hub...</p>
+        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">{t('loading_risk_hub')}</p>
       </div>
     );
   }

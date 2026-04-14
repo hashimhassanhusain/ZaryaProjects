@@ -87,8 +87,8 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activePage, setActivePage] = useState<1 | 2>(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -248,26 +248,18 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
-            <button 
-              onClick={() => setActivePage(1)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 1 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 1
-            </button>
-            <button 
-              onClick={() => setActivePage(2)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                activePage === 2 ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              Page 2
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
@@ -296,182 +288,159 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={rmp.projectTitle}
-            onChange={(e) => setRmp({ ...rmp, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={rmp.projectTitle}
+              onChange={(e) => setRmp({ ...rmp, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {rmp.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-          <input 
-            type="date"
-            value={rmp.datePrepared}
-            onChange={(e) => setRmp({ ...rmp, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={rmp.datePrepared}
+              onChange={(e) => setRmp({ ...rmp, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {rmp.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activePage === 1 ? (
-          <motion.div 
-            key="page1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Collection</label>
-              <textarea 
-                value={rmp.collection}
-                onChange={(e) => setRmp({ ...rmp, collection: e.target.value })}
-                rows={4}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Example: Interviews with Owner, On-site surveys"
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Analysis</label>
-              <textarea 
-                value={rmp.analysis}
-                onChange={(e) => setRmp({ ...rmp, analysis: e.target.value })}
-                rows={4}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements analysis process..."
-              />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categories</label>
-                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
-                  <Layers className="w-3 h-3" />
-                  Synced with MasterFormat
-                </div>
-              </div>
-              <textarea 
-                value={rmp.categories}
-                onChange={(e) => setRmp({ ...rmp, categories: e.target.value })}
-                rows={4}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements categories..."
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Documentation</label>
-              <textarea 
-                value={rmp.documentation}
-                onChange={(e) => setRmp({ ...rmp, documentation: e.target.value })}
-                rows={4}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define how requirements will be documented..."
-              />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 ml-1">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Prioritization</label>
-                <div className="group relative">
-                  <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    Prioritization determines which requirements are critical during budget constraints.
+      <div className="space-y-12">
+        {[
+          { label: 'Collection', key: 'collection', placeholder: 'Example: Interviews with Owner, On-site surveys' },
+          { label: 'Analysis', key: 'analysis', placeholder: 'Define requirements analysis process...' },
+          { 
+            label: 'Categories', 
+            key: 'categories', 
+            placeholder: 'Define requirements categories...',
+            icon: <Layers className="w-3 h-3" />,
+            badge: 'Synced with MasterFormat'
+          },
+          { label: 'Documentation', key: 'documentation', placeholder: 'Define how requirements will be documented...' },
+          { 
+            label: 'Prioritization', 
+            key: 'prioritization', 
+            placeholder: 'Example: MoSCoW Method (Must-have, Should-have, etc.)',
+            help: 'Prioritization determines which requirements are critical during budget constraints.'
+          }
+        ].map((section) => (
+          <section key={section.key} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+                {section.help && (
+                  <div className="group relative">
+                    <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
+                      {section.help}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
+              {section.badge && (
+                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
+                  {section.icon}
+                  {section.badge}
+                </div>
+              )}
+            </div>
+            {isEditing ? (
               <textarea 
-                value={rmp.prioritization}
-                onChange={(e) => setRmp({ ...rmp, prioritization: e.target.value })}
+                value={(rmp as any)[section.key]}
+                onChange={(e) => setRmp({ ...rmp, [section.key]: e.target.value })}
                 rows={4}
                 className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Example: MoSCoW Method (Must-have, Should-have, etc.)"
+                placeholder={section.placeholder}
               />
-            </section>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="page2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {(rmp as any)[section.key] || '---'}
+              </div>
+            )}
+          </section>
+        ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {[
+            { 
+              label: 'Metrics', 
+              key: 'metrics', 
+              placeholder: 'Example: 95% compliance with local building codes',
+              icon: <BarChart3 className="w-3 h-3" />,
+              badge: 'Linked to Quality Metrics'
+            },
+            { 
+              label: 'Traceability Structure', 
+              key: 'traceabilityStructure', 
+              placeholder: 'Define the traceability matrix structure...',
+              icon: <GitBranch className="w-3 h-3" />,
+              badge: 'Defines RTM Schema',
+              badgeColor: 'text-amber-600 bg-amber-50'
+            }
+          ].map((section) => (
+            <section key={section.key} className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Metrics</label>
-                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
-                  <BarChart3 className="w-3 h-3" />
-                  Linked to Quality Metrics
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+                <div className={cn("flex items-center gap-2 text-[10px] font-bold px-2 py-1 rounded", section.badgeColor || "text-blue-600 bg-blue-50")}>
+                  {section.icon}
+                  {section.badge}
                 </div>
               </div>
-              <textarea 
-                value={rmp.metrics}
-                onChange={(e) => setRmp({ ...rmp, metrics: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Example: 95% compliance with local building codes"
-              />
-            </section>
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Traceability Structure</label>
-                <div className="flex items-center gap-2 text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded">
-                  <GitBranch className="w-3 h-3" />
-                  Defines RTM Schema
+              {isEditing ? (
+                <textarea 
+                  value={(rmp as any)[section.key]}
+                  onChange={(e) => setRmp({ ...rmp, [section.key]: e.target.value })}
+                  rows={3}
+                  className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+                  placeholder={section.placeholder}
+                />
+              ) : (
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {(rmp as any)[section.key] || '---'}
                 </div>
+              )}
+            </section>
+          ))}
+        </div>
+
+        {[
+          { label: 'Tracking', key: 'tracking', placeholder: 'Define requirements tracking process...' },
+          { label: 'Reporting', key: 'reporting', placeholder: 'Define requirements reporting frequency and format...' },
+          { label: 'Validation', key: 'validation', placeholder: 'Define requirements validation process...' },
+          { label: 'Configuration Management', key: 'configurationManagement', placeholder: 'Define requirements change control process...' }
+        ].map((section) => (
+          <section key={section.key} className="space-y-4">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+            {isEditing ? (
+              <textarea 
+                value={(rmp as any)[section.key]}
+                onChange={(e) => setRmp({ ...rmp, [section.key]: e.target.value })}
+                rows={3}
+                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+                placeholder={section.placeholder}
+              />
+            ) : (
+              <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {(rmp as any)[section.key] || '---'}
               </div>
-              <textarea 
-                value={rmp.traceabilityStructure}
-                onChange={(e) => setRmp({ ...rmp, traceabilityStructure: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define the traceability matrix structure..."
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tracking</label>
-              <textarea 
-                value={rmp.tracking}
-                onChange={(e) => setRmp({ ...rmp, tracking: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements tracking process..."
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reporting</label>
-              <textarea 
-                value={rmp.reporting}
-                onChange={(e) => setRmp({ ...rmp, reporting: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements reporting frequency and format..."
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Validation</label>
-              <textarea 
-                value={rmp.validation}
-                onChange={(e) => setRmp({ ...rmp, validation: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements validation process..."
-              />
-            </section>
-            <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Configuration Management</label>
-              <textarea 
-                value={rmp.configurationManagement}
-                onChange={(e) => setRmp({ ...rmp, configurationManagement: e.target.value })}
-                rows={3}
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-                placeholder="Define requirements change control process..."
-              />
-            </section>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            )}
+          </section>
+        ))}
+      </div>
 
       {/* Restricted Data Linking Prompt */}
       <AnimatePresence>

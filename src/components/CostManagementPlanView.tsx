@@ -97,6 +97,7 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
@@ -271,6 +272,18 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
+              isEditing 
+                ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+            )}
+          >
+            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+            {isEditing ? 'Finish Editing' : 'Edit Plan'}
+          </button>
+          <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 transition-all"
           >
@@ -310,45 +323,69 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
-          <input 
-            type="text"
-            value={costPlan.projectTitle}
-            onChange={(e) => setCostPlan({ ...costPlan, projectTitle: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-            placeholder="Enter Project Title..."
-          />
+          {isEditing ? (
+            <input 
+              type="text"
+              value={costPlan.projectTitle}
+              onChange={(e) => setCostPlan({ ...costPlan, projectTitle: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+              placeholder="Enter Project Title..."
+            />
+          ) : (
+            <div className="px-1 py-1 text-lg font-bold text-slate-900">
+              {costPlan.projectTitle || '---'}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-          <input 
-            type="date"
-            value={costPlan.datePrepared}
-            onChange={(e) => setCostPlan({ ...costPlan, datePrepared: e.target.value })}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+          {isEditing ? (
+            <input 
+              type="date"
+              value={costPlan.datePrepared}
+              onChange={(e) => setCostPlan({ ...costPlan, datePrepared: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+            />
+          ) : (
+            <div className="px-1 py-1 text-sm font-medium text-slate-600">
+              {costPlan.datePrepared || '---'}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <section className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Level of Accuracy</label>
-          <textarea 
-            value={costPlan.accuracy}
-            onChange={(e) => setCostPlan({ ...costPlan, accuracy: e.target.value })}
-            rows={3}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-            placeholder="+/- 5%"
-          />
+          {isEditing ? (
+            <textarea 
+              value={costPlan.accuracy}
+              onChange={(e) => setCostPlan({ ...costPlan, accuracy: e.target.value })}
+              rows={3}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="+/- 5%"
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {costPlan.accuracy || '---'}
+            </div>
+          )}
         </section>
         <section className="space-y-4">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Units of Measure</label>
-          <textarea 
-            value={costPlan.units}
-            onChange={(e) => setCostPlan({ ...costPlan, units: e.target.value })}
-            rows={3}
-            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-            placeholder="Iraqi Dinar (IQD) / Man-Hours"
-          />
+          {isEditing ? (
+            <textarea 
+              value={costPlan.units}
+              onChange={(e) => setCostPlan({ ...costPlan, units: e.target.value })}
+              rows={3}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+              placeholder="Iraqi Dinar (IQD) / Man-Hours"
+            />
+          ) : (
+            <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {costPlan.units || '---'}
+            </div>
+          )}
         </section>
         <section className="space-y-4">
           <div className="flex items-center gap-2 ml-1">
@@ -361,54 +398,80 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
             </div>
           </div>
           <div className="space-y-3">
-            <textarea 
-              value={costPlan.controlThresholds}
-              onChange={(e) => setCostPlan({ ...costPlan, controlThresholds: e.target.value })}
-              rows={3}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
-              placeholder="Example: 5% Variance (Yellow Alert)..."
-            />
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <div className="flex-1">
-                <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Threshold %</label>
-                <input 
-                  type="number"
-                  value={costPlan.thresholdPercentage}
-                  onChange={(e) => setCostPlan({ ...costPlan, thresholdPercentage: parseFloat(e.target.value) })}
-                  className="w-full bg-transparent border-none text-xs font-bold outline-none"
+            {isEditing ? (
+              <>
+                <textarea 
+                  value={costPlan.controlThresholds}
+                  onChange={(e) => setCostPlan({ ...costPlan, controlThresholds: e.target.value })}
+                  rows={3}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none leading-relaxed"
+                  placeholder="Example: 5% Variance (Yellow Alert)..."
                 />
-              </div>
-              {thresholdValue && (
-                <div className="flex-1 border-l border-slate-200 pl-3">
-                  <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Calculated Value</label>
-                  <div className="text-xs font-bold text-blue-600">≈ {thresholdValue}</div>
+                <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex-1">
+                    <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Threshold %</label>
+                    <input 
+                      type="number"
+                      value={costPlan.thresholdPercentage}
+                      onChange={(e) => setCostPlan({ ...costPlan, thresholdPercentage: parseFloat(e.target.value) })}
+                      className="w-full bg-transparent border-none text-xs font-bold outline-none"
+                    />
+                  </div>
+                  {thresholdValue && (
+                    <div className="flex-1 border-l border-slate-200 pl-3">
+                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Calculated Value</label>
+                      <div className="text-xs font-bold text-blue-600">≈ {thresholdValue}</div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {costPlan.controlThresholds || '---'}
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500 bg-slate-50 px-3 py-2 rounded-lg">
+                  <span>Threshold: {costPlan.thresholdPercentage}%</span>
+                  {thresholdValue && <span className="text-blue-600">≈ {thresholdValue}</span>}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>
 
       <section className="space-y-4">
         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rules for Performance Measurement</label>
-        <textarea 
-          value={costPlan.performanceRules}
-          onChange={(e) => setCostPlan({ ...costPlan, performanceRules: e.target.value })}
-          rows={4}
-          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-          placeholder="Earned Value Management (EVM) using Zarya Cost Domain..."
-        />
+        {isEditing ? (
+          <textarea 
+            value={costPlan.performanceRules}
+            onChange={(e) => setCostPlan({ ...costPlan, performanceRules: e.target.value })}
+            rows={4}
+            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+            placeholder="Earned Value Management (EVM) using Zarya Cost Domain..."
+          />
+        ) : (
+          <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {costPlan.performanceRules || '---'}
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Reporting and Format</label>
-        <textarea 
-          value={costPlan.reportingFormat}
-          onChange={(e) => setCostPlan({ ...costPlan, reportingFormat: e.target.value })}
-          rows={4}
-          className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
-          placeholder="Monthly Cost Performance Reports..."
-        />
+        {isEditing ? (
+          <textarea 
+            value={costPlan.reportingFormat}
+            onChange={(e) => setCostPlan({ ...costPlan, reportingFormat: e.target.value })}
+            rows={4}
+            className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed"
+            placeholder="Monthly Cost Performance Reports..."
+          />
+        ) : (
+          <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {costPlan.reportingFormat || '---'}
+          </div>
+        )}
       </section>
 
       <section className="space-y-6">
@@ -430,16 +493,20 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
                 <tr key={row.key} className="group hover:bg-slate-50/30 transition-all">
                   <td className="px-8 py-6 text-sm font-bold text-slate-900 w-1/3 bg-slate-50/50">{row.label}</td>
                   <td className="px-8 py-6">
-                    <textarea 
-                      value={(costPlan.processManagement as any)[row.key]}
-                      onChange={(e) => setCostPlan({
-                        ...costPlan,
-                        processManagement: { ...costPlan.processManagement, [row.key]: e.target.value }
-                      })}
-                      className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
-                      rows={2}
-                      placeholder={`Define ${row.label.toLowerCase()} process...`}
-                    />
+                    {isEditing ? (
+                      <textarea 
+                        value={(costPlan.processManagement as any)[row.key]}
+                        onChange={(e) => setCostPlan({
+                          ...costPlan,
+                          processManagement: { ...costPlan.processManagement, [row.key]: e.target.value }
+                        })}
+                        className="w-full bg-transparent border-none text-sm text-slate-600 outline-none placeholder:text-slate-300 resize-none"
+                        rows={2}
+                        placeholder={`Define ${row.label.toLowerCase()} process...`}
+                      />
+                    ) : (
+                      <span className="text-sm text-slate-600 leading-relaxed block">{(costPlan.processManagement as any)[row.key] || '---'}</span>
+                    )}
                   </td>
                 </tr>
               ))}

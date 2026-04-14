@@ -29,6 +29,7 @@ export const WorkPackagesView: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string>('All');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string } | null>(null);
 
   const [formData, setFormData] = useState<Partial<WorkPackage>>({
     title: '',
@@ -79,9 +80,15 @@ export const WorkPackagesView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this work package?')) return;
+    const wp = workPackages.find(p => p.id === id);
+    if (!wp) return;
+    setDeleteConfirmation({ id, title: wp.title });
+  };
+
+  const executeDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'work_packages', id));
+      setDeleteConfirmation(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'work_packages');
     }
@@ -362,6 +369,43 @@ export const WorkPackagesView: React.FC = () => {
                   className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                 >
                   Save Work Package
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmation && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
+              <p className="text-slate-500 text-center mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => executeDelete(deleteConfirmation.id)}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+                >
+                  Delete
                 </button>
               </div>
             </motion.div>
