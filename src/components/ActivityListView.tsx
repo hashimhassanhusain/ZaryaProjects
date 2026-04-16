@@ -36,6 +36,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [showAddActivity, setShowAddActivity] = useState(false);
+  const [selectedActivityIds, setSelectedActivityIds] = useState<string[]>([]);
 
   // Cascading Filter State
   const [selectedWbsId, setSelectedWbsId] = useState<string>('');
@@ -70,9 +71,9 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     );
 
     const wpUnsubscribe = onSnapshot(
-      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id), where('type', '==', 'Work Package')),
       (snapshot) => {
-        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any)));
         setLoading(false);
       }
     );
@@ -105,22 +106,25 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     if (!selectedProject || !selectedWbsId || !selectedDivisionId || !newWPTitle.trim() || !newWPCode.trim()) return;
     
     try {
-      const wp: Partial<WorkPackage> = {
+      const parentWbs = wbsLevels.find(l => l.id === selectedWbsId);
+      const wp: WBSLevel = {
+        id: crypto.randomUUID(),
         projectId: selectedProject.id,
-        wbsId: selectedWbsId,
-        divisionId: selectedDivisionId,
+        parentId: selectedWbsId,
+        divisionCode: selectedDivisionId,
         code: newWPCode.trim(),
         title: newWPTitle.trim(),
-        status: 'Active',
-        updatedAt: new Date().toISOString()
+        type: 'Work Package',
+        level: (parentWbs?.level || 0) + 1,
+        status: 'Not Started'
       };
-      const docRef = await addDoc(collection(db, 'work_packages'), wp);
-      setSelectedWorkPackageId(docRef.id);
+      await setDoc(doc(db, 'wbs', wp.id), wp);
+      setSelectedWorkPackageId(wp.id);
       setNewWPTitle('');
       setNewWPCode('');
       setIsAddingWP(false);
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'work_packages');
+      handleFirestoreError(err, OperationType.WRITE, 'wbs');
     }
   };
 
@@ -244,6 +248,60 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     }
   };
 
+  const toggleSelectAll = (wpActivities: Activity[]) => {
+    const wpIds = wpActivities.map(a => a.id);
+    const allSelected = wpIds.every(id => selectedActivityIds.includes(id));
+    
+    if (allSelected) {
+      setSelectedActivityIds(prev => prev.filter(id => !wpIds.includes(id)));
+    } else {
+      setSelectedActivityIds(prev => [...new Set([...prev, ...wpIds])]);
+    }
+  };
+
+  const toggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedActivityIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedActivityIds.length === 0) return;
+
+    toast((tObj) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">
+          {t('confirm_delete_selected_activities', { count: selectedActivityIds.length })}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(tObj.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(tObj.id);
+              try {
+                const promises = selectedActivityIds.map(id => deleteDoc(doc(db, 'activities', id)));
+                await Promise.all(promises);
+                setSelectedActivityIds([]);
+                toast.success(t('activities_deleted_success'));
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'activities');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            {t('delete_all')}
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
+
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   // Filtered Data
@@ -285,6 +343,15 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           <h3 className="text-xl font-bold text-slate-900">{t('project_activities')}</h3>
         </div>
         <div className="flex items-center gap-3">
+          {selectedActivityIds.length > 0 && (
+            <button 
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-sm hover:bg-red-100 transition-all shadow-sm"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t('delete_selected')} ({selectedActivityIds.length})
+            </button>
+          )}
           <button 
             onClick={generateFromBOQ}
             disabled={isGenerating || boqItems.length === 0}
@@ -405,35 +472,65 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('work_package')}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => convertToPO(groupedActivities[wp].filter(a => a.status === 'Planned').map(a => a.id))}
-                  disabled={groupedActivities[wp].every(a => a.status !== 'Planned')}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all disabled:opacity-50"
-                >
-                  <ShoppingCart className="w-3 h-3" />
-                  {t('convert_to_po')}
-                </button>
+                <div className="flex items-center gap-3">
+                  {selectedActivityIds.filter(id => groupedActivities[wp].some(a => a.id === id)).length > 0 && (
+                    <button 
+                      onClick={() => convertToPO(selectedActivityIds.filter(id => groupedActivities[wp].some(a => a.id === id)))}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all"
+                    >
+                      <ShoppingCart className="w-3 h-3" />
+                      {t('convert_selected_to_po')} ({selectedActivityIds.filter(id => groupedActivities[wp].some(a => a.id === id)).length})
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => convertToPO(groupedActivities[wp].filter(a => a.status === 'Planned').map(a => a.id))}
+                    disabled={groupedActivities[wp].every(a => a.status !== 'Planned')}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all disabled:opacity-50"
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    {t('convert_all_planned_to_po')}
+                  </button>
+                </div>
               </div>
               <table className="w-full text-left">
                 <thead>
                   <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                    <th className="px-6 py-3 w-10">
+                      <input 
+                        type="checkbox" 
+                        checked={groupedActivities[wp].every(a => selectedActivityIds.includes(a.id))}
+                        onChange={() => toggleSelectAll(groupedActivities[wp])}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
                     <th className="px-6 py-3">{t('description')}</th>
                     <th className="px-6 py-3">{t('assignee')}</th>
                     <th className="px-6 py-3">{t('planned_dates')}</th>
                     <th className="px-6 py-3 text-right">{t('planned_cost')}</th>
                     <th className="px-6 py-3">{t('status')}</th>
-                    <th className="px-6 py-3 text-center">{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {groupedActivities[wp].map(act => {
                     const assignee = users.find(u => u.uid === act.assigneeId) || stakeholders.find(s => s.id === act.assigneeId);
+                    const isSelected = selectedActivityIds.includes(act.id);
                     return (
                       <tr 
                         key={act.id} 
                         onClick={() => setEditingActivity(act)}
-                        className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
+                        className={cn(
+                          "hover:bg-blue-50/50 transition-colors group cursor-pointer",
+                          isSelected && "bg-blue-50/50"
+                        )}
                       >
+                        <td className="px-6 py-4" onClick={(e) => toggleSelect(act.id, e)}>
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            readOnly
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-bold text-slate-900">{act.description}</div>
                           <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
@@ -478,22 +575,6 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
                           )}>
                             {act.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-center gap-2">
-                            <button 
-                              onClick={() => setEditingActivity(act)}
-                              className="p-2 text-slate-300 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteActivity(act.id)}
-                              className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     );

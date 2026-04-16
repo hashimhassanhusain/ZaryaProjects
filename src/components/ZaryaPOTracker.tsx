@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem, ProjectManagementPlan } from '../types';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs } from 'firebase/firestore';
-import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2 } from 'lucide-react';
+import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity } from '../types';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
+import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
 import { DollarSign, Coins, RefreshCw } from 'lucide-react';
+import { GoogleGenAI, Type } from "@google/genai";
 import toast from 'react-hot-toast';
 
 interface ZaryaPOTrackerProps {
@@ -29,6 +30,10 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPOId, setEditingPOId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [previewPOs, setPreviewPOs] = useState<PurchaseOrder[] | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [selectedPOIds, setSelectedPOIds] = useState<string[]>([]);
 
   // New PO State
   const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
@@ -69,7 +74,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     );
 
     const vendorsUnsubscribe = onSnapshot(
-      query(collection(db, 'vendors'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'companies'), where('type', '==', 'Vendor')),
       (snapshot) => {
         setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vendor)));
       }
@@ -207,6 +212,37 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       }, 0);
       const poCompletion = totalAmount > 0 ? Math.round(totalWeightedCompletion / totalAmount) : 0;
 
+      // History tracking
+      const history: POActivity[] = [...(newPO.history || [])];
+      if (editingPOId) {
+        const oldPO = pos.find(p => p.id === editingPOId);
+        if (oldPO) {
+          const changes: { field: string; old: any; new: any }[] = [];
+          if (oldPO.amount !== totalAmount) changes.push({ field: 'amount', old: oldPO.amount, new: totalAmount });
+          if (oldPO.supplier !== newPO.supplier) changes.push({ field: 'supplier', old: oldPO.supplier, new: newPO.supplier });
+          if (oldPO.status !== newPO.status) changes.push({ field: 'status', old: oldPO.status, new: newPO.status });
+          
+          if (changes.length > 0) {
+            history.push({
+              id: crypto.randomUUID(),
+              userId: auth.currentUser?.uid || 'unknown',
+              userName: auth.currentUser?.displayName || 'User',
+              action: 'Updated Purchase Order',
+              timestamp: new Date().toISOString(),
+              changes
+            });
+          }
+        }
+      } else {
+        history.push({
+          id: crypto.randomUUID(),
+          userId: auth.currentUser?.uid || 'unknown',
+          userName: auth.currentUser?.displayName || 'User',
+          action: 'Created Purchase Order',
+          timestamp: new Date().toISOString()
+        });
+      }
+
       const poData: PurchaseOrder = {
         ...newPO as PurchaseOrder,
         projectId: selectedProject.id,
@@ -217,7 +253,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         workflowStatus: 'Approved',
         completion: poCompletion,
         projectName: selectedProject.name,
-        purchaseOffice: selectedProject.code
+        purchaseOffice: selectedProject.code,
+        history
       };
 
       await setDoc(doc(db, 'purchaseOrders', poData.id), poData);
@@ -259,6 +296,220 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     setNewPO(po);
     setEditingPOId(po.id);
     setView('form');
+  };
+
+  const handlePOFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProject) return;
+
+    setIsAnalyzing(true);
+    
+    try {
+      // Read file as base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const base64Data = await base64Promise;
+
+      // Initialize Gemini
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const model = "gemini-3-flash-preview"; 
+
+      const prompt = `Extract all Purchase Orders (PO) from the provided document.
+      For each PO, identify:
+      - PO Number/ID
+      - Date (YYYY-MM-DD)
+      - Supplier/Vendor Name
+      - Cost Account (also known as Masterformat or Division). Map these to the project's specific names if possible (e.g., 'Div. 01' -> 'General Requirements').
+      - Work Package name
+      - % Completion (if mentioned, otherwise 0)
+      - Line Items:
+        - Description
+        - Quantity (number)
+        - Unit (e.g., 'pcs', 'm3', 'ton')
+        - Unit Rate (number)
+        - Total Amount for the line item (number)
+      
+      Return the result as a JSON array of objects.
+      The document may have multiple pages, please extract everything.`;
+
+      const response = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: file.type || 'application/pdf'
+                }
+              }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                poId: { type: Type.STRING, description: "Purchase Order Number/ID" },
+                date: { type: Type.STRING, description: "Order Date (YYYY-MM-DD)" },
+                supplier: { type: Type.STRING, description: "Supplier/Vendor Name" },
+                costAccount: { type: Type.STRING, description: "Cost Account / Masterformat / Division" },
+                workPackage: { type: Type.STRING, description: "Work Package Name" },
+                completion: { type: Type.NUMBER, description: "Percentage completion (0-100)" },
+                lineItems: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      description: { type: Type.STRING },
+                      quantity: { type: Type.NUMBER },
+                      unit: { type: Type.STRING },
+                      rate: { type: Type.NUMBER },
+                      amount: { type: Type.NUMBER }
+                    },
+                    required: ["description", "quantity", "unit", "rate", "amount"]
+                  }
+                }
+              },
+              required: ["poId", "date", "supplier", "lineItems"]
+            }
+          }
+        }
+      });
+
+      const extractedPOs = JSON.parse(response.text || "[]");
+      
+      if (extractedPOs.length === 0) {
+        toast.error("No Purchase Orders could be extracted from the document.");
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const mappedPOs: PurchaseOrder[] = extractedPOs.map((extractedPO: any) => {
+        const poId = extractedPO.poId || `PO-${crypto.randomUUID().slice(0, 8)}`;
+        
+        const lineItems: POLineItem[] = extractedPO.lineItems.map((li: any) => ({
+          id: crypto.randomUUID(),
+          description: li.description,
+          quantity: li.quantity,
+          unit: li.unit,
+          rate: li.rate,
+          inputRate: li.rate,
+          amount: li.amount,
+          status: 'Pending',
+          completion: extractedPO.completion || 0,
+          inputCurrency: baseCurrency,
+          exchangeRateUsed: globalExchangeRate
+        }));
+
+        const totalAmount = lineItems.reduce((sum, li) => sum + li.amount, 0);
+
+        return {
+          id: poId,
+          projectId: selectedProject.id,
+          supplier: extractedPO.supplier,
+          date: extractedPO.date || new Date().toISOString().split('T')[0],
+          status: 'Approved',
+          workflowStatus: 'Approved',
+          amount: totalAmount,
+          inputCurrency: baseCurrency,
+          exchangeRateUsed: globalExchangeRate,
+          completion: extractedPO.completion || 0,
+          projectName: selectedProject.name,
+          purchaseOffice: selectedProject.code,
+          lineItems: lineItems,
+          wbsId: '',
+          masterFormat: extractedPO.costAccount || extractedPO.workPackage || '',
+          activityId: '',
+          workPackageId: ''
+        };
+      });
+
+      setPreviewPOs(mappedPOs);
+      setShowPreviewModal(true);
+      setIsAnalyzing(false);
+    } catch (err) {
+      console.error("AI Analysis failed:", err);
+      setIsAnalyzing(false);
+      toast.error("AI Analysis failed. Please try again.");
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!previewPOs) return;
+    try {
+      for (const po of previewPOs) {
+        await setDoc(doc(db, 'purchaseOrders', po.id), po);
+      }
+      toast.success(`Successfully imported ${previewPOs.length} Purchase Orders.`);
+      setShowPreviewModal(false);
+      setPreviewPOs(null);
+    } catch (err) {
+      console.error("Import failed:", err);
+      toast.error("Failed to import POs.");
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedPOIds(pos.map(po => po.id));
+    } else {
+      setSelectedPOIds([]);
+    }
+  };
+
+  const handleSelectRow = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedPOIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPOIds.length === 0) return;
+    
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Delete {selectedPOIds.length} purchase orders?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                for (const id of selectedPOIds) {
+                  await deleteDoc(doc(db, 'purchaseOrders', id));
+                }
+                toast.success(`Deleted ${selectedPOIds.length} items`);
+                setSelectedPOIds([]);
+              } catch (err) {
+                console.error("Bulk delete failed:", err);
+                toast.error("Failed to delete some items");
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete All
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const addLineItem = () => {
@@ -309,17 +560,89 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   };
 
   // Filter options for the modal
-  const availableWBS = useMemo(() => wbsLevels.filter(w => w.level <= 2), [wbsLevels]);
+  const availableWBS = useMemo(() => wbsLevels.filter(w => w.level <= 3), [wbsLevels]);
+  
   const availableMasterFormat = useMemo(() => {
     if (!newPO.wbsId) return [];
-    const filteredActivities = activities.filter(a => a.wbsId === newPO.wbsId);
-    return Array.from(new Set(filteredActivities.map(a => a.division).filter(Boolean)));
-  }, [activities, newPO.wbsId]);
+    
+    // Find all Cost Account levels that are descendants of the selected WBS level
+    const findDescendants = (parentId: string): WBSLevel[] => {
+      const children = wbsLevels.filter(l => l.parentId === parentId);
+      let descendants = [...children];
+      children.forEach(c => {
+        descendants = [...descendants, ...findDescendants(c.id)];
+      });
+      return descendants;
+    };
+    
+    const descendants = findDescendants(newPO.wbsId);
+    const costAccounts = descendants.filter(l => l.type === 'Cost Account');
+    
+    // Also check if the selected level itself is a Cost Account
+    const selectedWBS = wbsLevels.find(l => l.id === newPO.wbsId);
+    const result = costAccounts.map(ca => ca.title);
+    if (selectedWBS?.type === 'Cost Account') {
+      result.push(selectedWBS.title);
+    }
+    
+    // Fallback to activities if no WBS Cost Accounts found (for backward compatibility)
+    if (result.length === 0) {
+      const filteredActivities = activities.filter(a => a.wbsId === newPO.wbsId);
+      return Array.from(new Set(filteredActivities.map(a => a.division).filter(Boolean)));
+    }
+    
+    return Array.from(new Set(result));
+  }, [wbsLevels, activities, newPO.wbsId]);
 
   const availableActivities = useMemo(() => {
     if (!newPO.wbsId || !newPO.masterFormat) return [];
-    return activities.filter(a => a.wbsId === newPO.wbsId && a.division === newPO.masterFormat);
-  }, [activities, newPO.wbsId, newPO.masterFormat]);
+    
+    // Find the Cost Account WBS level ID for the selected masterFormat title
+    const costAccountLevel = wbsLevels.find(l => l.title === newPO.masterFormat && l.type === 'Cost Account');
+    
+    let combined: { id: string; description: string; type: 'Activity' | 'Work Package' }[] = [];
+
+    if (costAccountLevel) {
+      // Find all descendant IDs (including the cost account itself)
+      const findDescendantIds = (parentId: string): string[] => {
+        const children = wbsLevels.filter(l => l.parentId === parentId);
+        let ids = children.map(c => c.id);
+        children.forEach(c => {
+          ids = [...ids, ...findDescendantIds(c.id)];
+        });
+        return ids;
+      };
+      
+      const descendantIds = [costAccountLevel.id, ...findDescendantIds(costAccountLevel.id)];
+      
+      // Add Work Packages from WBS
+      const wbsPackages = wbsLevels
+        .filter(l => l.type === 'Work Package' && descendantIds.includes(l.id))
+        .map(l => ({ id: l.id, description: l.title, type: 'Work Package' as const }));
+      
+      combined = [...wbsPackages];
+
+      // Add Activities linked to these levels
+      const linkedActivities = activities
+        .filter(a => descendantIds.includes(a.wbsId))
+        .map(a => ({ id: a.id, description: a.description, type: 'Activity' as const }));
+      
+      combined = [...combined, ...linkedActivities];
+    } else {
+      // Fallback
+      const wbsPackages = wbsLevels
+        .filter(l => l.type === 'Work Package' && l.parentId === newPO.wbsId)
+        .map(l => ({ id: l.id, description: l.title, type: 'Work Package' as const }));
+      
+      const linkedActivities = activities
+        .filter(a => a.wbsId === newPO.wbsId && a.division === newPO.masterFormat)
+        .map(a => ({ id: a.id, description: a.description, type: 'Activity' as const }));
+      
+      combined = [...wbsPackages, ...linkedActivities];
+    }
+    
+    return combined;
+  }, [activities, wbsLevels, newPO.wbsId, newPO.masterFormat]);
 
   const renderPOForm = () => (
     <motion.div
@@ -362,7 +685,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. MasterFormat 16 Divisions</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. Cost Account</label>
             <select
               value={newPO.masterFormat}
               disabled={!newPO.wbsId}
@@ -375,7 +698,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               }}
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
-              <option value="">Select Division...</option>
+              <option value="">Select Cost Account...</option>
               {availableMasterFormat.map(mf => (
                 <option key={mf} value={mf}>{mf}</option>
               ))}
@@ -396,9 +719,11 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               }}
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
             >
-              <option value="">Select Activity...</option>
+              <option value="">Select Activity / Work Package...</option>
               {availableActivities.map(a => (
-                <option key={a.id} value={a.id}>{a.description}</option>
+                <option key={a.id} value={a.id}>
+                  {a.type === 'Work Package' ? '📦 ' : '⚡ '}{a.description}
+                </option>
               ))}
               <option value="new" className="text-blue-600 font-bold">+ Add New Activity...</option>
             </select>
@@ -484,23 +809,23 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Vendor / Supplier</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Supplier</label>
             <select
               value={newPO.supplier}
               onChange={(e) => {
                 if (e.target.value === 'new') {
-                  navigate('/page/4.2.1'); // Vendor Master Register
+                  navigate('/page/companies');
                   return;
                 }
                 setNewPO(prev => ({ ...prev, supplier: e.target.value }));
               }}
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
-              <option value="">Select Vendor...</option>
+              <option value="">Select Supplier...</option>
               {vendors.map(v => (
-                <option key={v.id} value={v.name}>{v.vendorCode} - {v.name}</option>
+                <option key={v.id} value={v.name}>{v.name}</option>
               ))}
-              <option value="new" className="text-blue-600 font-medium">+ Add New Vendor...</option>
+              <option value="new" className="text-blue-600 font-medium">+ Add New Supplier...</option>
             </select>
           </div>
         </div>
@@ -593,6 +918,48 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             )}
           </div>
         </div>
+
+        {/* History Section */}
+        {newPO.history && newPO.history.length > 0 && (
+          <div className="space-y-4 pt-6 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-slate-400" />
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Change History</label>
+            </div>
+            <div className="space-y-3">
+              {newPO.history.slice().reverse().map((activity) => (
+                <div key={activity.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-[10px] font-bold text-blue-600 uppercase">
+                        {activity.userName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">{activity.userName}</div>
+                        <div className="text-[10px] text-slate-500">{activity.action}</div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                  {activity.changes && activity.changes.length > 0 && (
+                    <div className="mt-2 space-y-1 pl-8">
+                      {activity.changes.map((change, cidx) => (
+                        <div key={cidx} className="text-[10px] text-slate-600 flex items-center gap-2">
+                          <span className="font-bold uppercase text-slate-400">{change.field}:</span>
+                          <span className="line-through text-slate-300">{typeof change.old === 'number' ? formatAmount(change.old, baseCurrency) : change.old}</span>
+                          <ChevronRight className="w-2 h-2 text-slate-300" />
+                          <span className="font-bold text-blue-600">{typeof change.new === 'number' ? formatAmount(change.new, baseCurrency) : change.new}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
@@ -733,8 +1100,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 <th className="px-4 py-2 text-right">Total PO Amount</th>
                 <th className="px-4 py-2 text-right">Received Qty</th>
                 <th className="px-4 py-2 text-right">Received Amount</th>
-                <th className="px-4 py-2 text-right">MasterFormat 16 Divisions Qty</th>
-                <th className="px-4 py-2 text-right">MasterFormat 16 Divisions Amount</th>
+                <th className="px-4 py-2 text-right">Cost Account Qty</th>
+                <th className="px-4 py-2 text-right">Cost Account Amount</th>
                 <th className="px-4 py-2">Status</th>
               </tr>
             </thead>
@@ -911,8 +1278,31 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     return (
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-slate-900">PO Log - Detailed Tracking</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-bold text-slate-900">PO Log - Detailed Tracking</h3>
+            {selectedPOIds.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-lg"
+              >
+                <span className="text-[10px] font-bold text-red-600">{selectedPOIds.length} selected</span>
+                <button 
+                  onClick={handleBulkDelete}
+                  className="p-1 hover:bg-red-100 rounded text-red-600 transition-colors"
+                  title="Delete Selected"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
+            )}
+          </div>
           <div className="flex gap-2">
+            <label className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100">
+              {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
+              <input type="file" className="hidden" onChange={handlePOFileUpload} disabled={isAnalyzing} />
+            </label>
             <button
               onClick={() => {
                 setNewPO({
@@ -937,36 +1327,65 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <table className="w-full text-left text-[10px] border-collapse">
             <thead className="bg-slate-100 text-slate-500 font-bold uppercase tracking-wider">
               <tr className="divide-x divide-slate-200">
+                <th className="px-3 py-3 w-10">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    checked={selectedPOIds.length === pos.length && pos.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="px-3 py-3 whitespace-nowrap">WBS</th>
-                <th className="px-3 py-3 whitespace-nowrap">MasterFormat</th>
+                <th className="px-3 py-3 whitespace-nowrap">Cost Account</th>
                 <th className="px-3 py-3 whitespace-nowrap">Activity</th>
                 <th className="px-3 py-3 whitespace-nowrap">Order</th>
                 <th className="px-3 py-3 whitespace-nowrap">Order Date</th>
                 <th className="px-3 py-3 whitespace-nowrap">Suppliers</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right">Amount ({baseCurrency})</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Qty</th>
+                <th className="px-3 py-3 whitespace-nowrap">Unit</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Rate</th>
+                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Total ({baseCurrency})</th>
                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
                 <th className="px-3 py-3 whitespace-nowrap text-center">% Completion</th>
                 <th className="px-3 py-3 whitespace-nowrap">Actual Start</th>
                 <th className="px-3 py-3 whitespace-nowrap">Actual Finish</th>
-                <th className="px-3 py-3 whitespace-nowrap text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pos.map((po, idx) => {
                 const wbs = wbsLevels.find(w => w.id === po.wbsId);
                 const activity = activities.find(a => a.id === po.activityId);
+                const totalQty = po.lineItems.reduce((sum, li) => sum + li.quantity, 0);
+                const avgRate = po.amount / (totalQty || 1);
+                const unit = po.lineItems[0]?.unit || '-';
+                const isSelected = selectedPOIds.includes(po.id);
+
                 return (
                   <tr 
                     key={idx} 
                     onClick={() => handleEditPO(po)}
-                    className="hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer"
+                    className={cn(
+                      "hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer",
+                      isSelected && "bg-blue-50/50"
+                    )}
                   >
+                    <td className="px-3 py-3 text-center" onClick={(e) => handleSelectRow(e, po.id)}>
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        checked={isSelected}
+                        readOnly
+                      />
+                    </td>
                     <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-500">{po.masterFormat || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>
                     <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
                     <td className="px-3 py-3 text-slate-500">{po.date}</td>
                     <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
+                    <td className="px-3 py-3 text-right font-mono text-slate-600">{totalQty.toLocaleString()}</td>
+                    <td className="px-3 py-3 text-slate-500">{unit}</td>
+                    <td className="px-3 py-3 text-right font-mono text-slate-600">{formatAmount(avgRate, baseCurrency)}</td>
                     <td className="px-3 py-3 text-right font-bold text-slate-900 font-mono">{formatAmount(po.amount, baseCurrency)}</td>
                     <td className="px-3 py-3">
                       <span className={cn(
@@ -989,14 +1408,6 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                     </td>
                     <td className="px-3 py-3 text-slate-500">{po.actualStartDate || '-'}</td>
                     <td className="px-3 py-3 text-slate-500">{po.actualFinishDate || '-'}</td>
-                    <td className="px-3 py-3 text-center">
-                      <button 
-                        onClick={() => handleEditPO(po)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
                   </tr>
                 );
               })}
@@ -1038,6 +1449,104 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           </p>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showPreviewModal && previewPOs && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">AI Analysis Preview</h3>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted Purchase Orders before importing</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-6">
+                <div className="space-y-6">
+                  {previewPOs.map((po, idx) => (
+                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                        <div className="flex gap-4">
+                          <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PO Number</div>
+                            <div className="text-sm font-bold text-blue-600">{po.id}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</div>
+                            <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost Account</div>
+                            <div className="text-sm font-bold text-slate-700">{po.masterFormat}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</div>
+                          <div className="text-lg font-black text-slate-900">{formatAmount(po.amount, baseCurrency)}</div>
+                        </div>
+                      </div>
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="bg-white border-b border-slate-100 text-slate-400 font-black uppercase tracking-widest">
+                          <tr>
+                            <th className="px-4 py-3">Description</th>
+                            <th className="px-4 py-3 text-right">Qty</th>
+                            <th className="px-4 py-3">Unit</th>
+                            <th className="px-4 py-3 text-right">Rate</th>
+                            <th className="px-4 py-3 text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {po.lineItems.map((li, lidx) => (
+                            <tr key={lidx}>
+                              <td className="px-4 py-3 font-medium text-slate-700">{li.description}</td>
+                              <td className="px-4 py-3 text-right font-bold">{li.quantity.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-slate-500 uppercase font-bold">{li.unit}</td>
+                              <td className="px-4 py-3 text-right font-bold">{formatAmount(li.rate, baseCurrency)}</td>
+                              <td className="px-4 py-3 text-right font-black text-blue-600">{formatAmount(li.amount, baseCurrency)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmImport}
+                  className="px-8 py-2.5 bg-blue-600 text-white rounded-2xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Confirm & Import Data
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

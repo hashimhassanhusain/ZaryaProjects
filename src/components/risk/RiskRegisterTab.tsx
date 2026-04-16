@@ -14,7 +14,7 @@ import {
   Clock,
   X
 } from 'lucide-react';
-import { RiskEntry, Stakeholder } from '../../types';
+import { RiskEntry, Stakeholder, User as UserType } from '../../types';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { 
   collection, 
@@ -22,7 +22,8 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -33,14 +34,16 @@ import autoTable from 'jspdf-autotable';
 interface RiskRegisterTabProps {
   risks: RiskEntry[];
   stakeholders: Stakeholder[];
+  users: UserType[];
   projectId: string;
 }
 
-export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeholders, projectId }) => {
+export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeholders, users, projectId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingRisk, setEditingRisk] = useState<RiskEntry | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<Partial<RiskEntry>>({
     riskId: '',
@@ -51,8 +54,56 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
     score: 9,
     strategy: 'Mitigate',
     ownerId: '',
-    status: 'Draft'
+    status: 'Draft',
+    impacts: { scope: 3, quality: 3, schedule: 3, cost: 3 },
+    contingencyPlan: '',
+    fallbackPlans: '',
+    residualRisk: ''
   });
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} risks?</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">Cancel</button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const batch = writeBatch(db);
+                selectedIds.forEach(id => {
+                  batch.delete(doc(db, 'risks', id));
+                });
+                await batch.commit();
+                setSelectedIds([]);
+                toast.success('Risks deleted successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'risks');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredRisks.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredRisks.map(r => r.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 15) return 'bg-red-100 text-red-700 border-red-200';
@@ -72,7 +123,11 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
       score: 9,
       strategy: 'Mitigate',
       ownerId: '',
-      status: 'Draft'
+      status: 'Draft',
+      impacts: { scope: 3, quality: 3, schedule: 3, cost: 3 },
+      contingencyPlan: '',
+      fallbackPlans: '',
+      residualRisk: ''
     });
     setView('form');
   };
@@ -170,7 +225,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
         r.impact,
         r.score,
         r.strategy,
-        stakeholders.find(s => s.id === r.ownerId)?.name || 'N/A',
+        users.find(u => u.uid === r.ownerId)?.name || stakeholders.find(s => s.id === r.ownerId)?.name || 'N/A',
         r.status
       ]),
       theme: 'grid',
@@ -205,7 +260,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
           </button>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk ID</label>
@@ -290,51 +345,106 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Response Strategy</label>
-              <select 
-                value={formData.strategy}
-                onChange={(e) => setFormData({ ...formData, strategy: e.target.value as any })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-              >
-                <option value="Avoid">Avoid</option>
-                <option value="Mitigate">Mitigate</option>
-                <option value="Transfer">Transfer</option>
-                <option value="Accept">Accept</option>
-                <option value="Escalate">Escalate</option>
-              </select>
+          {/* Detailed Assessment Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
+            <div className="space-y-6">
+              <h4 className="text-sm font-bold text-slate-900">Response & Contingency</h4>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Response Strategy</label>
+                <select 
+                  value={formData.strategy}
+                  onChange={(e) => setFormData({ ...formData, strategy: e.target.value as any })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                >
+                  <option value="Avoid">Avoid</option>
+                  <option value="Mitigate">Mitigate</option>
+                  <option value="Transfer">Transfer</option>
+                  <option value="Accept">Accept</option>
+                  <option value="Escalate">Escalate</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Owner (Employee or Stakeholder)</label>
+                <select 
+                  value={formData.ownerId}
+                  onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                >
+                  <option value="">Select Owner...</option>
+                  <optgroup label="Zarya Employees">
+                    {users.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Stakeholders">
+                    {stakeholders.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contingency Plan</label>
+                <textarea 
+                  value={formData.contingencyPlan}
+                  onChange={(e) => setFormData({ ...formData, contingencyPlan: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Owner</label>
-              <select 
-                value={formData.ownerId}
-                onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-              >
-                <option value="">Select Owner...</option>
-                {stakeholders.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
-                ))}
-              </select>
+
+            <div className="space-y-6">
+              <h4 className="text-sm font-bold text-slate-900">Residual & Secondary</h4>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Residual Risk</label>
+                <textarea 
+                  value={formData.residualRisk}
+                  onChange={(e) => setFormData({ ...formData, residualRisk: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none"
+                  placeholder="Risk remaining after response implementation..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fallback Plans</label>
+                <textarea 
+                  value={formData.fallbackPlans}
+                  onChange={(e) => setFormData({ ...formData, fallbackPlans: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none"
+                  placeholder="Plan B if primary response fails..."
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6">
-            <button 
-              onClick={() => setView('list')}
-              className="px-6 py-2.5 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl transition-all"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={isSaving}
-              className="px-8 py-2.5 bg-red-600 text-white font-bold text-sm rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 flex items-center gap-2"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Risk
-            </button>
+          <div className="flex justify-between items-center pt-6">
+            {formData.id && (
+              <button 
+                onClick={() => handleDelete(formData.id!)}
+                className="px-6 py-2.5 text-rose-600 font-bold text-sm hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Risk
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <button 
+                onClick={() => setView('list')}
+                className="px-6 py-2.5 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-8 py-2.5 bg-red-600 text-white font-bold text-sm rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 flex items-center gap-2"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {formData.id ? 'Update Risk' : 'Save Risk'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -355,6 +465,15 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
           />
         </div>
         <div className="flex items-center gap-2">
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold text-sm hover:bg-red-100 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedIds.length})
+            </button>
+          )}
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
@@ -377,6 +496,14 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 w-10">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.length === filteredRisks.length && filteredRisks.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Statement</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Score</th>
@@ -389,13 +516,32 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
             <tbody className="divide-y divide-slate-50">
               {filteredRisks.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-slate-400 font-medium italic">
-                    No risks identified.
+                  <td colSpan={8} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <AlertTriangle className="w-12 h-12 text-slate-200 mb-4" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No risks identified yet</p>
+                      <p className="text-xs text-slate-400 mt-2">Click "New Risk" to start identifying project risks</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredRisks.map((risk) => (
-                  <tr key={risk.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr 
+                    key={risk.id} 
+                    className={cn(
+                      "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                      selectedIds.includes(risk.id) && "bg-slate-50"
+                    )}
+                    onClick={() => handleEdit(risk)}
+                  >
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(risk.id)}
+                        onChange={() => toggleSelect(risk.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-black text-red-600 bg-red-50 px-2 py-1 rounded-md">{risk.riskId}</span>
                     </td>
@@ -416,7 +562,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-600">
-                        {stakeholders.find(s => s.id === risk.ownerId)?.name || 'Unassigned'}
+                        {users.find(u => u.uid === risk.ownerId)?.name || stakeholders.find(s => s.id === risk.ownerId)?.name || 'Unassigned'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -433,13 +579,13 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => handleEdit(risk)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(risk); }}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => handleDelete(risk.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(risk.id); }}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                           <Trash2 className="w-4 h-4" />

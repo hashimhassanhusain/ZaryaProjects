@@ -24,9 +24,12 @@ import {
   User,
   Calendar,
   Database,
-  Grid
+  Grid,
+  LayoutDashboard,
+  ListChecks,
+  ShieldCheck
 } from 'lucide-react';
-import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, PurchaseOrder, Activity as ProjectActivity } from '../types';
+import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType, PurchaseOrder, Activity as ProjectActivity } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -54,21 +57,26 @@ import { RiskAssessmentTab } from './risk/RiskAssessmentTab';
 import { RiskDataSheetTab } from './risk/RiskDataSheetTab';
 import { IssueLogTab } from './risk/IssueLogTab';
 import { RiskAuditTab } from './risk/RiskAuditTab';
+import { RiskDashboardTab } from './risk/RiskDashboardTab';
+import { RiskPlanTab } from './risk/RiskPlanTab';
+import { RiskMatrixTab } from './risk/RiskMatrixTab';
+import { AssumptionConstraintView } from './AssumptionConstraintView';
 
 interface RiskOpportunityHubProps {
   page: Page;
 }
 
-type RiskSubTab = 'register' | 'assessment' | 'sheets' | 'issues' | 'audit';
+type RiskSubTab = 'dashboard' | 'plan' | 'register' | 'assumptions' | 'assessment' | 'matrix' | 'issues' | 'audit';
 
 export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<RiskSubTab>('register');
+  const [activeTab, setActiveTab] = useState<RiskSubTab>('dashboard');
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
   const [audits, setAudits] = useState<RiskAuditEntry[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +102,11 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
       (snap) => setStakeholders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder)))
     );
 
+    const usersUnsub = onSnapshot(
+      collection(db, 'users'),
+      (snap) => setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserType)))
+    );
+
     setLoading(false);
 
     return () => {
@@ -101,15 +114,19 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
       issuesUnsub();
       auditsUnsub();
       stakeholdersUnsub();
+      usersUnsub();
     };
   }, [selectedProject?.id]);
 
   const tabs = [
-    { id: 'register', title: t('risk_register'), icon: ShieldAlert },
-    { id: 'assessment', title: t('risk_assessment'), icon: Grid },
-    { id: 'sheets', title: t('detailed_risk_sheets'), icon: FileText },
-    { id: 'issues', title: t('issue_log'), icon: AlertTriangle },
-    { id: 'audit', title: t('risk_audit'), icon: ClipboardList }
+    { id: 'dashboard', title: 'Risk Dashboard', icon: LayoutDashboard },
+    { id: 'plan', title: 'Risk Plan', icon: ShieldAlert },
+    { id: 'register', title: 'Risk Register', icon: ListChecks },
+    { id: 'assumptions', title: 'Assumptions', icon: ClipboardList },
+    { id: 'assessment', title: 'Assessment', icon: Activity },
+    { id: 'matrix', title: 'Risk Matrix', icon: Grid },
+    { id: 'issues', title: 'Issue Log', icon: AlertTriangle },
+    { id: 'audit', title: 'Risk Audit', icon: ShieldCheck }
   ];
 
   if (loading) {
@@ -151,12 +168,22 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
+          {activeTab === 'dashboard' && (
+            <RiskDashboardTab risks={risks} issues={issues} audits={audits} />
+          )}
+          {activeTab === 'plan' && (
+            <RiskPlanTab projectId={selectedProject?.id || ''} />
+          )}
           {activeTab === 'register' && (
             <RiskRegisterTab 
               risks={risks} 
               stakeholders={stakeholders} 
+              users={users}
               projectId={selectedProject?.id || ''} 
             />
+          )}
+          {activeTab === 'assumptions' && (
+            <AssumptionConstraintView page={{ id: '2.1.5', title: 'Assumption Log', type: 'terminal' }} />
           )}
           {activeTab === 'assessment' && (
             <RiskAssessmentTab 
@@ -164,16 +191,13 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
               projectId={selectedProject?.id || ''} 
             />
           )}
-          {activeTab === 'sheets' && (
-            <RiskDataSheetTab 
-              risks={risks} 
-              stakeholders={stakeholders}
-              projectId={selectedProject?.id || ''} 
-            />
+          {activeTab === 'matrix' && (
+            <RiskMatrixTab risks={risks} />
           )}
           {activeTab === 'issues' && (
             <IssueLogTab 
               issues={issues} 
+              users={users}
               projectId={selectedProject?.id || ''} 
             />
           )}

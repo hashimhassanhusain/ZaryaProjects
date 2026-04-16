@@ -35,6 +35,9 @@ export const BOQView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'boq' | 'export'>('boq');
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>('master');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [previewItems, setPreviewItems] = useState<BOQItem[] | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
@@ -93,9 +96,9 @@ export const BOQView: React.FC = () => {
     );
 
     const wpUnsubscribe = onSnapshot(
-      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id), where('type', '==', 'Work Package')),
       (snapshot) => {
-        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any)));
       }
     );
 
@@ -223,7 +226,7 @@ export const BOQView: React.FC = () => {
 
       // Delete associated work packages
       const wpToDelete = workPackages.filter(wp => idsToDelete.includes(wp.wbsId));
-      await Promise.all(wpToDelete.map(wp => deleteDoc(doc(db, 'work_packages', wp.id))));
+      await Promise.all(wpToDelete.map(wp => deleteDoc(doc(db, 'wbs', wp.id))));
 
       setDeleteConfirmation(null);
     } catch (err) {
@@ -236,26 +239,26 @@ export const BOQView: React.FC = () => {
     try {
       const id = crypto.randomUUID();
       const division = masterFormatDivisions.find(d => d.id === newPackageData.divisionId);
-      const wbs = wbsLevels.find(l => l.id === newPackageData.wbsId);
+      const parentWbs = wbsLevels.find(l => l.id === newPackageData.wbsId);
       
-      const wp: WorkPackage = {
+      const wp: WBSLevel = {
         id,
         projectId: selectedProject.id,
-        wbsId: newPackageData.wbsId || '',
-        divisionId: newPackageData.divisionId || '01',
+        parentId: newPackageData.wbsId || '',
+        divisionCode: newPackageData.divisionId || '01',
         title: newPackageData.title,
-        description: newPackageData.description || '',
-        status: 'Active',
-        code: `${division?.id || '00'}-${wbs?.code || 'GEN'}-${workPackages.length + 1}`,
-        updatedAt: new Date().toISOString()
+        type: 'Work Package',
+        level: (parentWbs?.level || 0) + 1,
+        status: 'Not Started',
+        code: `${division?.id || '00'}-${parentWbs?.code || 'GEN'}-${workPackages.length + 1}`,
       };
 
-      await setDoc(doc(db, 'work_packages', id), wp);
+      await setDoc(doc(db, 'wbs', id), wp);
       setShowAddPackageModal(false);
       setNewItem(prev => ({ ...prev, workPackage: wp.title }));
       setNewPackageData({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'work_packages');
+      handleFirestoreError(err, OperationType.WRITE, 'wbs');
     }
   };
 
@@ -342,15 +345,14 @@ export const BOQView: React.FC = () => {
         return;
       }
 
-      // Save extracted items to Firestore
-      for (const item of extractedItems) {
+      const mappedItems: BOQItem[] = extractedItems.map((item: any) => {
         const inputCurrency = item.inputCurrency || item.currency || baseCurrency;
         const exchangeRateUsed = globalExchangeRate;
         const inputRate = item.rate || 0;
         const quantity = item.quantity || 0;
         const baseRate = convertToBase(inputRate, inputCurrency, exchangeRateUsed);
 
-        const fullItem: BOQItem = {
+        return {
           ...item,
           id: crypto.randomUUID(),
           projectId: selectedProject.id,
@@ -362,15 +364,61 @@ export const BOQView: React.FC = () => {
           completion: 0,
           location: selectedWbsId ? wbsLevels.find(l => l.id === selectedWbsId)?.title || 'General' : 'General'
         };
-        await setDoc(doc(db, 'boq', fullItem.id), fullItem);
-      }
+      });
 
+      setPreviewItems(mappedItems);
+      setShowPreviewModal(true);
       setIsAnalyzing(false);
-      toast.success(`AI Analysis complete: ${extractedItems.length} items identified and categorized by MasterFormat 16 Cost Accounts.`);
     } catch (err) {
       console.error("AI Analysis failed:", err);
       setIsAnalyzing(false);
       toast.error("AI Analysis failed. Please try again or check your API key.");
+    }
+  };
+
+  const handleConfirmBoqImport = async () => {
+    if (!previewItems) return;
+    try {
+      for (const item of previewItems) {
+        await setDoc(doc(db, 'boq', item.id), item);
+      }
+      toast.success(`Successfully imported ${previewItems.length} BOQ items.`);
+      setShowPreviewModal(false);
+      setPreviewItems(null);
+    } catch (err) {
+      console.error("Import failed:", err);
+      toast.error("Failed to import BOQ items.");
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedItemIds(boqItems.map(item => item.id));
+    } else {
+      setSelectedItemIds([]);
+    }
+  };
+
+  const handleSelectRow = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedItemIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItemIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedItemIds.length} items?`)) return;
+
+    try {
+      for (const id of selectedItemIds) {
+        await deleteDoc(doc(db, 'boq', id));
+      }
+      toast.success(`Deleted ${selectedItemIds.length} items`);
+      setSelectedItemIds([]);
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      toast.error("Failed to delete some items");
     }
   };
 
@@ -609,6 +657,22 @@ export const BOQView: React.FC = () => {
                       </div>
                       <p className="text-xs text-slate-500 font-medium">Managing all BOQ items for the entire project.</p>
                     </div>
+                    {selectedItemIds.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl"
+                      >
+                        <span className="text-[10px] font-bold text-red-600">{selectedItemIds.length} selected</span>
+                        <button 
+                          onClick={handleBulkDelete}
+                          className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
+                          title="Delete Selected"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </motion.div>
+                    )}
                   </div>
 
                   <div className="relative flex-1 max-w-md mx-4">
@@ -643,6 +707,14 @@ export const BOQView: React.FC = () => {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100">
+                        <th className="px-6 py-4 w-10">
+                          <input 
+                            type="checkbox" 
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            checked={selectedItemIds.length === boqItems.length && boqItems.length > 0}
+                            onChange={handleSelectAll}
+                          />
+                        </th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cost Account</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</th>
@@ -651,7 +723,6 @@ export const BOQView: React.FC = () => {
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Rate</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Total</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Completion %</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -690,25 +761,39 @@ export const BOQView: React.FC = () => {
                                   </div>
                                 </td>
                               </tr>
-                              {items.map((item, idx) => (
-                                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                  <td className="px-6 py-4">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-widest">
-                                      {item.division}.{(idx + 1).toString().padStart(2, '0')}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div 
-                                      onClick={() => {
-                                        setEditingItem(item);
-                                        setShowEditModal(true);
-                                      }}
-                                      className="cursor-pointer group/title"
-                                    >
-                                      <div className="text-sm font-semibold text-slate-900 group-hover/title:text-blue-600 transition-colors">{item.description}</div>
-                                      <div className="text-[9px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{item.workPackage}</div>
-                                    </div>
-                                  </td>
+                              {items.map((item, idx) => {
+                                const isSelected = selectedItemIds.includes(item.id);
+                                return (
+                                  <tr 
+                                    key={item.id} 
+                                    onClick={() => {
+                                      setEditingItem(item);
+                                      setShowEditModal(true);
+                                    }}
+                                    className={cn(
+                                      "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                                      isSelected && "bg-blue-50/50"
+                                    )}
+                                  >
+                                    <td className="px-6 py-4 text-center" onClick={(e) => handleSelectRow(e, item.id)}>
+                                      <input 
+                                        type="checkbox" 
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        checked={isSelected}
+                                        readOnly
+                                      />
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-widest">
+                                        {item.division}.{(idx + 1).toString().padStart(2, '0')}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="group/title">
+                                        <div className="text-sm font-semibold text-slate-900 group-hover/title:text-blue-600 transition-colors">{item.description}</div>
+                                        <div className="text-[9px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{item.workPackage}</div>
+                                      </div>
+                                    </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                       <div className={cn(
@@ -784,29 +869,12 @@ export const BOQView: React.FC = () => {
                                         className="w-16 text-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
                                       />
                                     </td>
-                                    <td className="px-6 py-4">
-                                      <div className="flex justify-center gap-1">
-                                        <button 
-                                          onClick={() => {
-                                            setEditingItem(item);
-                                            setShowEditModal(true);
-                                          }}
-                                          className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                        >
-                                          <FileText className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                          onClick={() => handleDeleteItem(item.id)}
-                                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    </td>
                                   </tr>
-                                ))}
+                                );
+                              })}
                                 {/* Direct Entry Row */}
                                 <tr className="bg-blue-50/30 border-t border-blue-100">
+                                  <td className="px-6 py-4"></td>
                                   <td className="px-6 py-4">
                                     <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-[10px] font-bold">
                                       New Item
@@ -831,7 +899,7 @@ export const BOQView: React.FC = () => {
                                       className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 p-0 placeholder:text-slate-400"
                                     />
                                   </td>
-                                  <td colSpan={7} className="px-6 py-4 text-right">
+                                  <td colSpan={6} className="px-6 py-4 text-right">
                                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Press Enter to Add</span>
                                   </td>
                                 </tr>
@@ -1329,6 +1397,82 @@ export const BOQView: React.FC = () => {
                   className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
                 >
                   Create Package
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {showPreviewModal && previewItems && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">AI BOQ Analysis Preview</h3>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted BOQ items before importing</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-6">
+                <table className="w-full text-left text-[11px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-black uppercase tracking-widest">
+                    <tr>
+                      <th className="px-4 py-3">Cost Account</th>
+                      <th className="px-4 py-3">Work Package</th>
+                      <th className="px-4 py-3">Description</th>
+                      <th className="px-4 py-3 text-right">Qty</th>
+                      <th className="px-4 py-3">Unit</th>
+                      <th className="px-4 py-3 text-right">Rate</th>
+                      <th className="px-4 py-3 text-right text-blue-600">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {previewItems.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-bold text-slate-900">{item.division}</td>
+                        <td className="px-4 py-3 text-slate-500">{item.workPackage}</td>
+                        <td className="px-4 py-3 font-medium text-slate-700">{item.description}</td>
+                        <td className="px-4 py-3 text-right font-bold">{item.quantity.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-slate-500 uppercase font-bold">{item.unit}</td>
+                        <td className="px-4 py-3 text-right font-bold">{formatAmount(item.inputRate, item.inputCurrency || baseCurrency)}</td>
+                        <td className="px-4 py-3 text-right font-black text-blue-600">{formatAmount(item.amount, baseCurrency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmBoqImport}
+                  className="px-8 py-2.5 bg-blue-600 text-white rounded-2xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Confirm & Import BOQ
                 </button>
               </div>
             </motion.div>

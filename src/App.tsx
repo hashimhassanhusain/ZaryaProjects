@@ -40,7 +40,7 @@ import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { ScheduleHubView } from './components/ScheduleHubView';
@@ -67,8 +67,35 @@ const PageRenderer = () => {
   
   // Handle domain and focus area IDs
   const hubIds = [
-    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk'
+    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk', '2.1.2'
   ];
+
+  const page = id === 'logs' 
+    ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } 
+    : id === 'files'
+      ? { id: 'files', title: t('project_files'), type: 'terminal' as const }
+      : pages.find(p => p.id === id);
+
+  if (!page) return <Navigate to="/page/gov" />;
+
+  // If it's a risk domain page, always render DomainDashboard with the correct tab
+  const isRiskDomain = 'domain' in page && page.domain === 'risk';
+  if (isRiskDomain || page.id === 'risk') {
+    const hubPage = pages.find(p => p.id === 'risk');
+    if (hubPage) {
+      const children = sortDomainPages(pages.filter(p => p.parentId === 'risk'), 'risk');
+      return (
+        <div className="w-full">
+          <DomainDashboard 
+            page={hubPage} 
+            childrenPages={children} 
+            initialTab={page.id === 'risk' ? 'overview' : page.id} 
+          />
+        </div>
+      );
+    }
+  }
+
   if (id && hubIds.includes(id)) {
     const hubPage = pages.find(p => p.id === id);
     if (hubPage) {
@@ -81,14 +108,6 @@ const PageRenderer = () => {
       );
     }
   }
-
-  const page = id === 'logs' 
-    ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } 
-    : id === 'files'
-      ? { id: 'files', title: t('project_files'), type: 'terminal' as const }
-      : pages.find(p => p.id === id);
-
-  if (!page) return <Navigate to="/page/gov" />;
 
   const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(page.id);
   const isTasksPage = page.id === '2.6.21';
@@ -104,7 +123,7 @@ const PageRenderer = () => {
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
   const isRiskRegisterPage = page.id === '2.7.5';
-  const isRiskHubPage = page.id === '2.7';
+  const isRiskHubPage = page.id === 'risk';
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
   const isResourceOptimizationPage = [
@@ -113,9 +132,9 @@ const PageRenderer = () => {
   ].includes(page.id);
   const isGovernanceHubPage = [
     'gov', '1.1.1', '1.1.2', // Charter, Policies
-    '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
+    '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
     '2.1.5', '1.2.1', '3.1.3', '5.1.1' // Logs
-  ].includes(page.id);
+  ].includes(page.id) && page.id !== '2.1.2';
   const isChangeRequestPage = page.id === '3.1.1';
   const isDecisionLogPage = page.id === '3.1.3';
   const isChangeManagementHubPage = page.id === '3.4';
@@ -260,6 +279,23 @@ const AppLayout = () => {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const seedUsers = async () => {
+      try {
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+        if (snapshot.empty) {
+          const { users: mockUsers } = await import('./data');
+          await Promise.all(mockUsers.map(u => setDoc(doc(db, 'users', u.uid), u)));
+          console.log('Mock users seeded successfully');
+        }
+      } catch (err) {
+        console.error('Failed to seed mock users:', err);
+      }
+    };
+    seedUsers();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

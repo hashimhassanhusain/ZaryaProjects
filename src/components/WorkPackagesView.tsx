@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { WorkPackage } from '../types';
+import { WBSLevel } from '../types';
 import { masterFormatData } from '../data/masterFormat';
+import { masterFormatSections } from '../constants/masterFormat';
 import { 
   Plus, 
   Search, 
@@ -14,7 +15,8 @@ import {
   ChevronRight,
   Layers,
   Grid3X3,
-  Building2
+  Building2,
+  List
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,37 +26,43 @@ import { toast } from 'react-hot-toast';
 export const WorkPackagesView: React.FC = () => {
   const { selectedProject } = useProject();
   const projectId = selectedProject?.id || '';
-  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
+  const [workPackages, setWorkPackages] = useState<WBSLevel[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string>('All');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string } | null>(null);
+  const [isManualTitle, setIsManualTitle] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<WorkPackage>>({
+  const [formData, setFormData] = useState<Partial<WBSLevel>>({
     title: '',
     code: '',
-    divisionId: '',
+    divisionCode: '',
     projectId: projectId,
-    status: 'Active'
+    status: 'Not Started',
+    type: 'Work Package'
   });
 
   useEffect(() => {
     if (!projectId) return;
 
-    const q = query(collection(db, 'work_packages'), where('projectId', '==', projectId));
+    const q = query(
+      collection(db, 'wbs'), 
+      where('projectId', '==', projectId),
+      where('type', '==', 'Work Package')
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkPackage));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel));
       setWorkPackages(data);
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'work_packages'));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'wbs'));
 
     return () => unsubscribe();
   }, [projectId]);
 
   const handleSave = async () => {
-    if (!formData.title || !formData.divisionId || !formData.code) {
+    if (!formData.title || !formData.divisionCode || !formData.code) {
       toast.error('Please fill in all required fields (Cost Account, Code, and Title)');
       return;
     }
@@ -63,20 +71,22 @@ export const WorkPackagesView: React.FC = () => {
       const data = {
         ...formData,
         projectId,
+        type: 'Work Package',
         updatedAt: new Date().toISOString()
       };
 
       if (editingId) {
-        await updateDoc(doc(db, 'work_packages', editingId), data);
+        await updateDoc(doc(db, 'wbs', editingId), data);
       } else {
-        await addDoc(collection(db, 'work_packages'), data);
+        await addDoc(collection(db, 'wbs'), data);
       }
 
       setIsAdding(false);
       setEditingId(null);
-      setFormData({ title: '', code: '', divisionId: '', projectId, status: 'Active' });
+      setIsManualTitle(false);
+      setFormData({ title: '', code: '', divisionCode: '', projectId, status: 'Not Started', type: 'Work Package' });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'work_packages');
+      handleFirestoreError(error, OperationType.WRITE, 'wbs');
     }
   };
 
@@ -88,16 +98,16 @@ export const WorkPackagesView: React.FC = () => {
 
   const executeDelete = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'work_packages', id));
+      await deleteDoc(doc(db, 'wbs', id));
       setDeleteConfirmation(null);
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'work_packages');
+      handleFirestoreError(error, OperationType.DELETE, 'wbs');
     }
   };
 
   const filteredPackages = workPackages.filter(wp => {
     const matchesSearch = wp.title.toLowerCase().includes(searchTerm.toLowerCase()) || wp.code.includes(searchTerm);
-    const matchesDivision = selectedDivision === 'All' || wp.divisionId === selectedDivision;
+    const matchesDivision = selectedDivision === 'All' || wp.divisionCode === selectedDivision;
     return matchesSearch && matchesDivision;
   });
 
@@ -107,6 +117,7 @@ export const WorkPackagesView: React.FC = () => {
       code: item.code,
       title: item.title
     });
+    setIsManualTitle(false);
   };
 
   return (
@@ -135,7 +146,7 @@ export const WorkPackagesView: React.FC = () => {
           <button
             onClick={() => {
               setEditingId(null);
-              setFormData({ title: '', code: '', divisionId: '', projectId, status: 'Active' });
+              setFormData({ title: '', code: '', divisionCode: '', projectId, status: 'Not Started', type: 'Work Package' });
               setIsAdding(true);
             }}
             className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
@@ -146,7 +157,7 @@ export const WorkPackagesView: React.FC = () => {
         </header>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -188,7 +199,7 @@ export const WorkPackagesView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredPackages.map((wp) => {
-                const division = masterFormatData.find(d => d.number === wp.divisionId);
+                const division = masterFormatData.find(d => d.number === wp.divisionCode);
                 return (
                   <tr key={wp.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-5">
@@ -210,7 +221,7 @@ export const WorkPackagesView: React.FC = () => {
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                          {wp.divisionId}
+                          {wp.divisionCode}
                         </span>
                         <span className="text-sm font-medium text-slate-500">{division?.title}</span>
                       </div>
@@ -218,9 +229,9 @@ export const WorkPackagesView: React.FC = () => {
                     <td className="px-8 py-5">
                       <span className={cn(
                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                        wp.status === 'Active' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                        wp.status === 'Completed' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
                       )}>
-                        {wp.status || 'Active'}
+                        {wp.status || 'Not Started'}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
@@ -230,6 +241,8 @@ export const WorkPackagesView: React.FC = () => {
                             setEditingId(wp.id);
                             setFormData(wp);
                             setIsAdding(true);
+                            const isStandard = masterFormatSections.some(s => s.title === wp.title);
+                            setIsManualTitle(!isStandard);
                           }}
                           className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm"
                         >
@@ -275,8 +288,8 @@ export const WorkPackagesView: React.FC = () => {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Account (Level 1)</label>
                     <select
-                      value={formData.divisionId}
-                      onChange={(e) => setFormData({ ...formData, divisionId: e.target.value, code: '', title: '' })}
+                      value={formData.divisionCode}
+                      onChange={(e) => setFormData({ ...formData, divisionCode: e.target.value, code: '', title: '' })}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
                     >
                       <option value="">Select Cost Account</option>
@@ -292,8 +305,9 @@ export const WorkPackagesView: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
                     >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
+                      <option value="Not Started">Not Started</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
                     </select>
                   </div>
                 </div>
@@ -301,8 +315,8 @@ export const WorkPackagesView: React.FC = () => {
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Cost Accounts Suggestions</label>
                   <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    {formData.divisionId ? (
-                      masterFormatData.find(d => d.number === formData.divisionId)?.items.map(item => (
+                    {formData.divisionCode ? (
+                      masterFormatData.find(d => d.number === formData.divisionCode)?.items.map(item => (
                         <button
                           key={item.code}
                           onClick={() => handleMFSelect(item)}
@@ -336,13 +350,46 @@ export const WorkPackagesView: React.FC = () => {
                   </div>
                   <div className="col-span-2 space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Work Package Title"
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
-                    />
+                    {!isManualTitle ? (
+                      <select
+                        value={masterFormatSections.some(s => s.title === formData.title) ? formData.title : ''}
+                        onChange={(e) => {
+                          if (e.target.value === 'manual') {
+                            setIsManualTitle(true);
+                          } else {
+                            setFormData({ ...formData, title: e.target.value });
+                          }
+                        }}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                      >
+                        <option value="">Select Title...</option>
+                        {masterFormatSections
+                          .filter(s => s.divisionId === formData.divisionCode)
+                          .map(section => (
+                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                          ))
+                        }
+                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                      </select>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.title}
+                          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                          placeholder="Work Package Title"
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all pr-12"
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => setIsManualTitle(false)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                          title="Back to list"
+                        >
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -360,7 +407,10 @@ export const WorkPackagesView: React.FC = () => {
 
               <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
                 <button
-                  onClick={() => setIsAdding(false)}
+                  onClick={() => {
+                    setIsAdding(false);
+                    setIsManualTitle(false);
+                  }}
                   className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
                 >
                   Cancel

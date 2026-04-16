@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { WBSLevel, BOQItem, WorkPackage } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
@@ -12,6 +13,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
 import { GoogleGenAI, Type } from "@google/genai";
+import { toast } from 'react-hot-toast';
 import { masterFormatDivisions } from '../data';
 import { masterFormatSections } from '../constants/masterFormat';
 import { ActivityListView } from './ActivityListView';
@@ -21,9 +23,9 @@ import { Page, Activity } from '../types';
 
 export const WBSView: React.FC = () => {
   const { selectedProject } = useProject();
+  const location = useLocation();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
-  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,6 +33,121 @@ export const WBSView: React.FC = () => {
   const [newWbs, setNewWbs] = useState({ title: '', type: 'Zone' as any, parentId: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
+  const [selectedWbsIds, setSelectedWbsIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'packages') setActiveTab('packages');
+    if (tab === 'hierarchy') setActiveTab('hierarchy');
+    if (tab === 'costaccount') setActiveTab('costaccount');
+    if (tab === 'milestones') setActiveTab('milestones');
+    if (tab === 'activities') setActiveTab('activities');
+  }, [location.search]);
+
+  const toggleSelectAllWbs = (type: string) => {
+    const filtered = wbsLevels.filter(l => l.type === type);
+    if (selectedWbsIds.filter(id => filtered.some(f => f.id === id)).length === filtered.length && filtered.length > 0) {
+      setSelectedWbsIds(prev => prev.filter(id => !filtered.some(f => f.id === id)));
+    } else {
+      setSelectedWbsIds(prev => [...new Set([...prev, ...filtered.map(l => l.id)])]);
+    }
+  };
+
+  const toggleSelectAllPackages = () => {
+    const wbsPks = wbsLevels.filter(l => l.type === 'Work Package');
+    const isAllSelected = selectedWbsIds.filter(id => wbsPks.some(p => p.id === id)).length === wbsPks.length && 
+                          (wbsPks.length > 0);
+
+    if (isAllSelected) {
+      setSelectedWbsIds(prev => prev.filter(id => !wbsPks.some(p => p.id === id)));
+    } else {
+      setSelectedWbsIds(prev => [...new Set([...prev, ...wbsPks.map(p => p.id)])]);
+    }
+  };
+
+  const toggleSelectWbs = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedWbsIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteWbs = async () => {
+    const selectedInType = selectedWbsIds.filter(id => {
+      const level = wbsLevels.find(l => l.id === id);
+      return level?.type === (activeTab === 'costaccount' ? 'Cost Account' : 'Work Package');
+    });
+
+    if (selectedInType.length === 0) return;
+    
+    toast((t: any) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Delete {selectedInType.length} selected items?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const deletePromises = selectedInType.map(id => deleteDoc(doc(db, 'wbs', id)));
+                await Promise.all(deletePromises);
+                setSelectedWbsIds(prev => prev.filter(id => !selectedInType.includes(id)));
+                toast.success(`${selectedInType.length} items deleted successfully`);
+              } catch (error) {
+                handleFirestoreError(error, OperationType.DELETE, 'wbs');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete All
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
+
+  const handleBulkDeletePackages = async () => {
+    const wbsPksToDelete = selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package');
+
+    if (wbsPksToDelete.length === 0) return;
+    
+    toast((t: any) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Delete {wbsPksToDelete.length} selected work packages?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const wbsPromises = wbsPksToDelete.map(id => deleteDoc(doc(db, 'wbs', id)));
+                await Promise.all(wbsPromises);
+                
+                setSelectedWbsIds(prev => prev.filter(id => !wbsPksToDelete.includes(id)));
+                toast.success(`${wbsPksToDelete.length} work packages deleted successfully`);
+              } catch (error) {
+                handleFirestoreError(error, OperationType.DELETE, 'wbs');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete All
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
   const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -40,6 +157,7 @@ export const WBSView: React.FC = () => {
   } | null>(null);
   
   const [isManualTitle, setIsManualTitle] = useState(false);
+  const [isManualWbsTitle, setIsManualWbsTitle] = useState(false);
   const [manualTitle, setManualTitle] = useState('');
   
   // Work Package states
@@ -182,13 +300,6 @@ export const WBSView: React.FC = () => {
       }
     );
 
-    const wpUnsubscribe = onSnapshot(
-      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
-      (snapshot) => {
-        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
-      }
-    );
-
     const actUnsubscribe = onSnapshot(
       query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
@@ -199,7 +310,6 @@ export const WBSView: React.FC = () => {
     return () => {
       wbsUnsubscribe();
       boqUnsubscribe();
-      wpUnsubscribe();
       actUnsubscribe();
     };
   }, [selectedProject]);
@@ -209,52 +319,72 @@ export const WBSView: React.FC = () => {
     try {
       const id = crypto.randomUUID();
       const division = masterFormatDivisions.find(d => d.id === newPackage.divisionId);
-      const wbs = wbsLevels.find(l => l.id === newPackage.wbsId);
+      const parentWbs = wbsLevels.find(l => l.id === newPackage.wbsId);
       
-      const wp: WorkPackage = {
+      const wp: WBSLevel = {
         id,
         projectId: selectedProject.id,
-        wbsId: newPackage.wbsId || '',
-        divisionId: newPackage.divisionId || '01',
+        parentId: newPackage.wbsId || '',
+        divisionCode: newPackage.divisionId || '01',
         title: newPackage.title,
-        description: newPackage.description || '',
-        status: 'Active',
-        code: `${division?.id || '00'}-${wbs?.code || 'GEN'}-${workPackages.length + 1}`,
-        updatedAt: new Date().toISOString()
+        type: 'Work Package',
+        level: (parentWbs?.level || 0) + 1,
+        status: 'Not Started',
+        code: `${division?.id || '00'}-${parentWbs?.code || 'GEN'}-${wbsLevels.filter(l => l.type === 'Work Package').length + 1}`,
       };
 
-      await setDoc(doc(db, 'work_packages', id), wp);
+      await setDoc(doc(db, 'wbs', id), wp);
       setShowAddPackage(false);
+      setIsManualTitle(false);
       setNewPackage({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'work_packages');
+      handleFirestoreError(err, OperationType.WRITE, 'wbs');
     }
   };
 
-  const handleUpdateWorkPackage = async (id: string, updates: Partial<WorkPackage>) => {
+  const handleUpdateWorkPackage = async (id: string, updates: Partial<WBSLevel>) => {
     try {
-      const wp = workPackages.find(p => p.id === id);
+      const wp = wbsLevels.find(p => p.id === id);
       if (!wp) return;
-      await setDoc(doc(db, 'work_packages', id), { ...wp, ...updates, updatedAt: new Date().toISOString() });
+      await setDoc(doc(db, 'wbs', id), { ...wp, ...updates });
       setEditingPackage(null);
+      setIsManualTitle(false);
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'work_packages');
+      handleFirestoreError(err, OperationType.WRITE, 'wbs');
     }
   };
 
   const handleDeleteWorkPackage = async (id: string) => {
-    const wp = workPackages.find(p => p.id === id);
+    const wp = wbsLevels.find(p => p.id === id);
     if (!wp) return;
     setDeleteConfirmation({ id, type: 'package', title: wp.title });
   };
 
   const executeDeleteWorkPackage = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'work_packages', id));
+      await deleteDoc(doc(db, 'wbs', id));
       setDeleteConfirmation(null);
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'work_packages');
+      handleFirestoreError(err, OperationType.DELETE, 'wbs');
     }
+  };
+
+  const handleEditWbs = (level: WBSLevel) => {
+    setEditingWbs(level);
+    // Determine if it's a manual title
+    if (level.type === 'Cost Account') {
+      setIsManualWbsTitle(!masterFormatDivisions.some(d => `${d.id} - ${d.title}` === level.title));
+    } else if (level.type === 'Work Package') {
+      setIsManualWbsTitle(!masterFormatSections.some(s => s.title === level.title));
+    } else {
+      setIsManualWbsTitle(false);
+    }
+  };
+
+  const handleEditPackage = (wp: WBSLevel) => {
+    setEditingPackage(wp as any);
+    const isStandard = masterFormatSections.some(s => s.title === wp.title);
+    setIsManualTitle(!isStandard);
   };
 
   const handleAddWbs = async () => {
@@ -268,6 +398,8 @@ export const WBSView: React.FC = () => {
       if (newWbs.type === 'Cost Account') {
         const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === newWbs.title || d.title === newWbs.title);
         divisionCode = div ? div.id : (newWbs.title.match(/\d+/)?.[0] || '01');
+      } else if (newWbs.type === 'Work Package' && parent && parent.divisionCode) {
+        divisionCode = parent.divisionCode;
       }
 
       const level: any = {
@@ -290,6 +422,7 @@ export const WBSView: React.FC = () => {
 
       await setDoc(doc(db, 'wbs', level.id), level);
       setShowAddWbs(false);
+      setIsManualWbsTitle(false);
       setNewWbs({ title: '', type: 'Zone', parentId: '' });
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'wbs');
@@ -319,10 +452,7 @@ export const WBSView: React.FC = () => {
       // Delete all WBS levels
       await Promise.all(idsToDelete.map(wbsId => deleteDoc(doc(db, 'wbs', wbsId))));
       
-      // Also delete associated work packages and activities linked to these WBS IDs
-      const wpToDelete = workPackages.filter(wp => idsToDelete.includes(wp.wbsId));
-      await Promise.all(wpToDelete.map(wp => deleteDoc(doc(db, 'work_packages', wp.id))));
-      
+      // Also delete associated activities linked to these WBS IDs
       const actToDelete = activities.filter(act => idsToDelete.includes(act.wbsId));
       await Promise.all(actToDelete.map(act => deleteDoc(doc(db, 'activities', act.id))));
 
@@ -346,7 +476,7 @@ export const WBSView: React.FC = () => {
           return (
             <div key={level.id} className="space-y-3">
               <div 
-                onClick={() => setEditingWbs(level)}
+                onClick={() => handleEditWbs(level)}
                 className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-4">
@@ -489,43 +619,129 @@ export const WBSView: React.FC = () => {
         </div>
       ) : activeTab === 'costaccount' ? (
         <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900">Cost Accounts</h3>
+              <p className="text-slate-500">Manage project-specific cost accounts and budget divisions.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length > 0 && (
+                <button 
+                  onClick={handleBulkDeleteWbs}
+                  className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length})
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  setNewWbs({ title: '', type: 'Cost Account', parentId: '' });
+                  setShowAddWbs(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                Add Cost Account
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Account</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Title</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sections</th>
+                  <th className="px-6 py-4 w-10">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedWbsIds.length === wbsLevels.filter(l => l.type === 'Cost Account').length && wbsLevels.filter(l => l.type === 'Cost Account').length > 0}
+                      onChange={() => toggleSelectAllWbs('Cost Account')}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Code</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Account Title</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Level</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {masterFormatDivisions.map(div => {
-                  const details = masterFormatData.find(d => d.number === div.id);
-                  return (
-                    <tr key={div.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{div.id}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-slate-900">{div.title}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {details?.items.slice(0, 5).map(item => (
-                            <span key={item.code} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                              {item.code}
-                            </span>
-                          ))}
-                          {(details?.items.length || 0) > 5 && (
-                            <span className="text-[10px] text-slate-400">+{details!.items.length - 5} more</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {wbsLevels.filter(l => l.type === 'Cost Account').length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Database className="w-8 h-8 text-slate-200" />
+                        <p className="text-slate-400 text-sm">No cost accounts defined for this project.</p>
+                        <button 
+                          onClick={() => setShowAddWbs(true)}
+                          className="text-blue-600 text-xs font-bold hover:underline"
+                        >
+                          Add your first cost account
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  wbsLevels.filter(l => l.type === 'Cost Account').map(ca => {
+                    const parent = wbsLevels.find(l => l.id === ca.parentId);
+                    const isSelected = selectedWbsIds.includes(ca.id);
+                    return (
+                      <tr 
+                        key={ca.id} 
+                        onClick={() => handleEditWbs(ca)}
+                        className={cn(
+                          "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                          isSelected && "bg-blue-50/50"
+                        )}
+                      >
+                        <td className="px-6 py-4" onClick={(e) => toggleSelectWbs(ca.id, e)}>
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            readOnly
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            {ca.divisionCode || ca.code}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-bold text-slate-900">{ca.title}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-xs text-slate-500 font-medium">
+                            {parent ? `${parent.code} - ${parent.title}` : 'Root'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
+                            ca.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
+                            ca.status === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
+                          )}>
+                            {ca.status || 'Not Started'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
+          </div>
+
+          {/* Master Format Reference (Optional/Helpful) */}
+          <div className="pt-8 border-t border-slate-100">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Master Format Reference (01-16)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {masterFormatDivisions.slice(0, 8).map(div => (
+                <div key={div.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="text-[10px] font-bold text-blue-600 mb-1">{div.id}</div>
+                  <div className="text-xs font-bold text-slate-900">{div.title}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : activeTab === 'packages' ? (
@@ -535,29 +751,50 @@ export const WBSView: React.FC = () => {
               <h3 className="text-2xl font-bold text-slate-900">Work Packages</h3>
               <p className="text-slate-500">Manage detailed work packages linked to WBS levels and Cost Accounts.</p>
             </div>
-            <button 
-              onClick={() => setShowAddPackage(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-            >
-              <Plus className="w-4 h-4" />
-              Add Work Package
-            </button>
+            <div className="flex items-center gap-3">
+              {(selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length) > 0 && (
+                <button 
+                  onClick={handleBulkDeletePackages}
+                  className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length})
+                </button>
+              )}
+              <button 
+                onClick={() => setShowAddPackage(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                Add Work Package
+              </button>
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 w-10">
+                    <input 
+                      type="checkbox" 
+                      checked={
+                        (wbsLevels.filter(l => l.type === 'Work Package').length > 0) &&
+                        (selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length === 
+                         wbsLevels.filter(l => l.type === 'Work Package').length)
+                      }
+                      onChange={toggleSelectAllPackages}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Code</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Title</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Account</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">WBS Level</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(wbsLevels.filter(l => l.type === 'Work Package').length === 0 && workPackages.length === 0) ? (
+                {(wbsLevels.filter(l => l.type === 'Work Package').length === 0) ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center gap-2">
@@ -572,9 +809,25 @@ export const WBSView: React.FC = () => {
                     {wbsLevels.filter(l => l.type === 'Work Package').map(wp => {
                       const parent = wbsLevels.find(l => l.id === wp.parentId);
                       const grandParent = parent ? wbsLevels.find(l => l.id === parent.parentId) : null;
+                      const isSelected = selectedWbsIds.includes(wp.id);
                       
                       return (
-                        <tr key={wp.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <tr 
+                          key={wp.id} 
+                          onClick={() => handleEditWbs(wp)}
+                          className={cn(
+                            "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                            isSelected && "bg-blue-50/50"
+                          )}
+                        >
+                          <td className="px-6 py-4" onClick={(e) => toggleSelectWbs(wp.id, e)}>
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected}
+                              readOnly
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </td>
                           <td className="px-6 py-4">
                             <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{wp.code}</span>
                           </td>
@@ -599,72 +852,6 @@ export const WBSView: React.FC = () => {
                             )}>
                               {wp.status || 'Not Started'}
                             </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex justify-center gap-2">
-                              <button 
-                                onClick={() => setEditingWbs(wp)}
-                                className="p-2 text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteWbs(wp.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {/* Collection-based Work Packages */}
-                    {workPackages.map(wp => {
-                      const wbs = wbsLevels.find(l => l.id === wp.wbsId);
-                      const division = masterFormatDivisions.find(d => d.id === wp.divisionId);
-                      
-                      return (
-                        <tr key={wp.id} className="hover:bg-slate-50/50 transition-colors group border-l-4 border-blue-500/20">
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{wp.code}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-bold text-slate-900">{wp.title}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs font-medium text-slate-600">
-                              {division ? `${division.id} - ${division.title}` : wp.divisionId}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs font-medium text-slate-600">
-                              {wbs?.title || 'N/A'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={cn(
-                              "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                              wp.status === 'Active' ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
-                            )}>
-                              {wp.status || 'Active'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex justify-center gap-2">
-                              <button 
-                                onClick={() => setEditingPackage(wp)}
-                                className="p-2 text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteWorkPackage(wp.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
                           </td>
                         </tr>
                       );
@@ -855,31 +1042,41 @@ export const WBSView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account Title</label>
                     <div className="space-y-2">
-                      <select 
-                        value={masterFormatDivisions.some(d => `${d.id} - ${d.title}` === editingWbs.title) ? editingWbs.title : 'manual'}
-                        onChange={e => {
-                          if (e.target.value === 'manual') {
-                            setEditingWbs({...editingWbs, title: ''});
-                          } else {
-                            setEditingWbs({...editingWbs, title: e.target.value});
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Cost Account...</option>
-                        {masterFormatDivisions.map(div => (
-                          <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
-                        ))}
-                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                      </select>
-                      {(!masterFormatDivisions.some(d => `${d.id} - ${d.title}` === editingWbs.title) || editingWbs.title === '') && (
-                        <input 
-                          type="text" 
+                      {!isManualWbsTitle && masterFormatDivisions.some(d => `${d.id} - ${d.title}` === editingWbs.title) ? (
+                        <select 
                           value={editingWbs.title}
-                          onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                          onChange={e => {
+                            if (e.target.value === 'manual') {
+                              setIsManualWbsTitle(true);
+                            } else {
+                              setEditingWbs({...editingWbs, title: e.target.value});
+                            }
+                          }}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Enter custom cost account title..."
-                        />
+                        >
+                          <option value="">Select Cost Account...</option>
+                          {masterFormatDivisions.map(div => (
+                            <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
+                          ))}
+                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={editingWbs.title}
+                            onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                            placeholder="Enter custom cost account title..."
+                            autoFocus={isManualWbsTitle}
+                          />
+                          <button 
+                            onClick={() => setIsManualWbsTitle(!isManualWbsTitle)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                          >
+                            <List className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -887,40 +1084,50 @@ export const WBSView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package Title</label>
                     <div className="space-y-2">
-                      <select 
-                        value={masterFormatSections.some(s => s.title === editingWbs.title) ? editingWbs.title : (editingWbs.title ? 'manual' : '')}
-                        onChange={e => {
-                          if (e.target.value === 'manual') {
-                            setEditingWbs({...editingWbs, title: ''});
-                          } else {
-                            setEditingWbs({...editingWbs, title: e.target.value});
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Work Package...</option>
-                        {masterFormatSections
-                          .filter(s => {
-                            const parent = wbsLevels.find(l => l.id === editingWbs.parentId);
-                            if (parent && parent.divisionCode) {
-                              return s.divisionId === parent.divisionCode;
-                            }
-                            return true;
-                          })
-                          .map(section => (
-                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                          ))
-                        }
-                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                      </select>
-                      {(!masterFormatSections.some(s => s.title === editingWbs.title) && editingWbs.title !== '') && (
-                        <input 
-                          type="text" 
+                      {!isManualWbsTitle && masterFormatSections.some(s => s.title === editingWbs.title) ? (
+                        <select 
                           value={editingWbs.title}
-                          onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                          onChange={e => {
+                            if (e.target.value === 'manual') {
+                              setIsManualWbsTitle(true);
+                            } else {
+                              setEditingWbs({...editingWbs, title: e.target.value});
+                            }
+                          }}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Enter custom work package title..."
-                        />
+                        >
+                          <option value="">Select Work Package...</option>
+                          {masterFormatSections
+                            .filter(s => {
+                              const parent = wbsLevels.find(l => l.id === editingWbs.parentId);
+                              if (parent && parent.divisionCode) {
+                                return s.divisionId === parent.divisionCode;
+                              }
+                              return true;
+                            })
+                            .map(section => (
+                              <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                            ))
+                          }
+                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={editingWbs.title}
+                            onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                            placeholder="Enter custom work package title..."
+                            autoFocus={isManualWbsTitle}
+                          />
+                          <button 
+                            onClick={() => setIsManualWbsTitle(!isManualWbsTitle)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                          >
+                            <List className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -948,7 +1155,7 @@ export const WBSView: React.FC = () => {
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button 
-                    onClick={() => setEditingWbs(null)}
+                    onClick={() => { setEditingWbs(null); setIsManualWbsTitle(false); }}
                     className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
                   >
                     Cancel
@@ -958,13 +1165,21 @@ export const WBSView: React.FC = () => {
                       try {
                         let updatedWbs = { ...editingWbs };
                         if (updatedWbs.type === 'Cost Account') {
-                          const div = masterFormatDivisions.find(d => d.title === updatedWbs.title);
+                          const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === updatedWbs.title || d.title === updatedWbs.title);
                           updatedWbs.divisionCode = div ? div.id : (updatedWbs.title.match(/\d+/)?.[0] || '01');
+                        } else if (updatedWbs.type === 'Work Package') {
+                          const parent = wbsLevels.find(l => l.id === updatedWbs.parentId);
+                          if (parent && parent.divisionCode) {
+                            updatedWbs.divisionCode = parent.divisionCode;
+                          } else {
+                            delete updatedWbs.divisionCode;
+                          }
                         } else {
                           delete updatedWbs.divisionCode;
                         }
                         await setDoc(doc(db, 'wbs', editingWbs.id), updatedWbs);
                         setEditingWbs(null);
+                        setIsManualWbsTitle(false);
                       } catch (err) {
                         handleFirestoreError(err, OperationType.WRITE, 'wbs');
                       }
@@ -1102,7 +1317,7 @@ export const WBSView: React.FC = () => {
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button 
-                    onClick={() => { setShowAddPackage(false); setEditingPackage(null); }}
+                    onClick={() => { setShowAddPackage(false); setEditingPackage(null); setIsManualTitle(false); }}
                     className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
                   >
                     Cancel
@@ -1176,31 +1391,42 @@ export const WBSView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account Title</label>
                     <div className="space-y-2">
-                      <select 
-                        value={masterFormatDivisions.some(d => `${d.id} - ${d.title}` === newWbs.title) ? newWbs.title : (newWbs.title ? 'manual' : '')}
-                        onChange={e => {
-                          if (e.target.value === 'manual') {
-                            setNewWbs({...newWbs, title: ''});
-                          } else {
-                            setNewWbs({...newWbs, title: e.target.value});
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Cost Account...</option>
-                        {masterFormatDivisions.map(div => (
-                          <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
-                        ))}
-                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                      </select>
-                      {(!masterFormatDivisions.some(d => `${d.id} - ${d.title}` === newWbs.title) && newWbs.title !== '') && (
-                        <input 
-                          type="text" 
-                          value={newWbs.title}
-                          onChange={e => setNewWbs({...newWbs, title: e.target.value})}
+                      {!isManualWbsTitle ? (
+                        <select 
+                          value={masterFormatDivisions.some(d => `${d.id} - ${d.title}` === newWbs.title) ? newWbs.title : ''}
+                          onChange={e => {
+                            if (e.target.value === 'manual') {
+                              setIsManualWbsTitle(true);
+                              setNewWbs({...newWbs, title: ''});
+                            } else {
+                              setNewWbs({...newWbs, title: e.target.value});
+                            }
+                          }}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Enter custom cost account title..."
-                        />
+                        >
+                          <option value="">Select Cost Account...</option>
+                          {masterFormatDivisions.map(div => (
+                            <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
+                          ))}
+                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={newWbs.title}
+                            onChange={e => setNewWbs({...newWbs, title: e.target.value})}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                            placeholder="Enter custom cost account title..."
+                            autoFocus
+                          />
+                          <button 
+                            onClick={() => setIsManualWbsTitle(false)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                          >
+                            <List className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1208,40 +1434,51 @@ export const WBSView: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package Title</label>
                     <div className="space-y-2">
-                      <select 
-                        value={masterFormatSections.some(s => s.title === newWbs.title) ? newWbs.title : (newWbs.title ? 'manual' : '')}
-                        onChange={e => {
-                          if (e.target.value === 'manual') {
-                            setNewWbs({...newWbs, title: ''});
-                          } else {
-                            setNewWbs({...newWbs, title: e.target.value});
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">Select Work Package...</option>
-                        {masterFormatSections
-                          .filter(s => {
-                            const parent = wbsLevels.find(l => l.id === newWbs.parentId);
-                            if (parent && parent.divisionCode) {
-                              return s.divisionId === parent.divisionCode;
+                      {!isManualWbsTitle ? (
+                        <select 
+                          value={masterFormatSections.some(s => s.title === newWbs.title) ? newWbs.title : ''}
+                          onChange={e => {
+                            if (e.target.value === 'manual') {
+                              setIsManualWbsTitle(true);
+                              setNewWbs({...newWbs, title: ''});
+                            } else {
+                              setNewWbs({...newWbs, title: e.target.value});
                             }
-                            return true;
-                          })
-                          .map(section => (
-                            <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                          ))
-                        }
-                        <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                      </select>
-                      {(!masterFormatSections.some(s => s.title === newWbs.title) && newWbs.title !== '') && (
-                        <input 
-                          type="text" 
-                          value={newWbs.title}
-                          onChange={e => setNewWbs({...newWbs, title: e.target.value})}
+                          }}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Enter custom work package title..."
-                        />
+                        >
+                          <option value="">Select Work Package...</option>
+                          {masterFormatSections
+                            .filter(s => {
+                              const parent = wbsLevels.find(l => l.id === newWbs.parentId);
+                              if (parent && parent.divisionCode) {
+                                return s.divisionId === parent.divisionCode;
+                              }
+                              return true;
+                            })
+                            .map(section => (
+                              <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                            ))
+                          }
+                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={newWbs.title}
+                            onChange={e => setNewWbs({...newWbs, title: e.target.value})}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                            placeholder="Enter custom work package title..."
+                            autoFocus
+                          />
+                          <button 
+                            onClick={() => setIsManualWbsTitle(false)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                          >
+                            <List className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1250,18 +1487,26 @@ export const WBSView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Parent Level</label>
                   <select 
                     value={newWbs.parentId}
-                    onChange={e => setNewWbs({...newWbs, parentId: e.target.value})}
+                    onChange={e => {
+                      if (e.target.value === 'new') {
+                        setNewWbs({ title: '', type: 'Zone', parentId: '' });
+                        setIsManualWbsTitle(false);
+                        return;
+                      }
+                      setNewWbs({...newWbs, parentId: e.target.value});
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">None (Root Level)</option>
                     {wbsLevels.map(l => (
                       <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
                     ))}
+                    <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
                   </select>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button 
-                    onClick={() => setShowAddWbs(false)}
+                    onClick={() => { setShowAddWbs(false); setIsManualWbsTitle(false); }}
                     className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
                   >
                     Cancel

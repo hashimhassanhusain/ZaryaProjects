@@ -15,6 +15,7 @@ import {
   Zap,
   Activity
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { RiskAuditEntry } from '../../types';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { 
@@ -88,6 +89,36 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this audit entry?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'risk_audits', id));
+                toast.success('Audit entry deleted successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'risk_audits');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const generatePDF = () => {
@@ -364,7 +395,13 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">No event audits.</div>
             ) : (
               audits.filter(a => a.type === 'Event').map(a => (
-                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm group relative">
+                  <button 
+                    onClick={() => handleDelete(a.id)}
+                    className="absolute top-2 right-2 p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                   <div className="text-xs font-bold text-slate-900 mb-1">{a.event}</div>
                   <div className="text-[10px] text-slate-400 font-medium mb-2 line-clamp-2">{a.comment}</div>
                   <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -388,7 +425,13 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">No response audits.</div>
             ) : (
               audits.filter(a => a.type === 'Response').map(a => (
-                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm group relative">
+                  <button 
+                    onClick={() => handleDelete(a.id)}
+                    className="absolute top-2 right-2 p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs font-bold text-slate-900">{a.event}</div>
                     <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase", a.successful ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
@@ -417,7 +460,13 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">No process audits.</div>
             ) : (
               audits.filter(a => a.type === 'Process').map(a => (
-                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div key={a.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm group relative">
+                  <button 
+                    onClick={() => handleDelete(a.id)}
+                    className="absolute top-2 right-2 p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs font-bold text-slate-900">{a.process}</div>
                     <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase", a.followed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>

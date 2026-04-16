@@ -149,7 +149,7 @@ export const pages: Page[] = [
   // --- GOVERNANCE DOMAIN PAGES ---
   { id: '1.1.1', title: 'Project Charter', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Initiating', icon: 'FileText', content: 'Formal authorization of the project.' },
   { id: '1.1.2', title: 'Project Policies & Procedures', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'BookOpen', content: 'Project constitution and standards.' },
-  { id: '2.1.2', title: 'Project Management Plan', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'ClipboardList', content: 'Master integration plan.' },
+  { id: '2.1.2', title: 'Project Management Plan', parentId: 'gov', type: 'hub', domain: 'governance', focusArea: 'Planning', icon: 'ClipboardList', content: 'Master integration plan.' },
   { id: '2.1.4', title: 'Quality Metrics', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'BarChart3', content: 'Specific attributes to be measured.' },
   { id: '3.1.3', title: 'Decision Log', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Executing', icon: 'CheckCircle2', content: 'Tracking all project decisions.' },
   { id: '4.1.2', title: 'Deliverable Acceptance', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Monitoring & Controlling', icon: 'CheckCircle2', content: 'Official sign-off for project deliverables.' },
@@ -158,8 +158,6 @@ export const pages: Page[] = [
   { id: '5.1.2', title: 'Project Close Out', parentId: 'gov', type: 'terminal', domain: 'governance', focusArea: 'Closing', icon: 'Flag', content: 'Finalizing all project activities.' },
 
   // --- SCOPE DOMAIN PAGES ---
-  { id: '2.1.8', title: 'Requirements Management Plan', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'ListChecks', content: 'Planning and controlling requirements.' },
-  { id: '2.1.9', title: 'Scope Management Plan', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'Target', content: 'Defining and maintaining project scope.' },
   { id: '2.2.3', title: 'Project Scope Statement', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'FileText', content: 'Detailed description of project scope.' },
   { id: '2.2.4', title: 'Requirements Documentation', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'FileText', content: 'Collection of all project requirements.' },
   { id: '2.2.6', title: 'Requirements Traceability Matrix', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'Table', content: 'Tracing requirements to deliverables.' },
@@ -167,11 +165,9 @@ export const pages: Page[] = [
   { id: '2.2.10', title: 'Work Packages', parentId: 'scope', type: 'terminal', domain: 'scope', focusArea: 'Planning', icon: 'Layers', content: 'Detailed work packages for project execution.' },
 
   // --- SCHEDULE DOMAIN PAGES ---
-  { id: '2.1.11', title: 'Schedule Management Plan', parentId: 'sched', type: 'terminal', domain: 'schedule', focusArea: 'Planning', icon: 'Clock', content: 'Governance for timeline management.' },
   { id: '2.3', title: 'Project Schedule', parentId: 'sched', type: 'terminal', domain: 'schedule', focusArea: 'Planning + Executing', icon: 'Clock', content: 'Project timeline and milestones.' },
 
   // --- FINANCE DOMAIN PAGES ---
-  { id: '2.1.12', title: 'Cost Management Plan', parentId: 'fin', type: 'terminal', domain: 'finance', focusArea: 'Planning', icon: 'DollarSign', content: 'Financial governance rules.' },
   { id: '2.4.0', title: 'BOQ', parentId: 'fin', type: 'terminal', domain: 'finance', focusArea: 'Planning', icon: 'FileText', content: 'Bill of Quantities and cost tracking.' },
   { id: '4.2.1', title: 'Contractor Status Report', parentId: 'fin', type: 'terminal', domain: 'finance', focusArea: 'Monitoring & Controlling', icon: 'FileText', content: 'Contractor performance updates.' },
   { id: '4.2.2', title: 'Earned Value Status Report', parentId: 'fin', type: 'terminal', domain: 'finance', focusArea: 'Monitoring & Controlling', icon: 'TrendingUp', content: 'EVM metrics analysis.' },
@@ -185,13 +181,10 @@ export const pages: Page[] = [
   // --- STAKEHOLDERS DOMAIN PAGES ---
   { id: '1.2.1', title: 'Stakeholder Register', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Initiating', icon: 'Users', content: 'Identification and assessment of stakeholders.' },
   { id: '1.2.2', title: 'Stakeholder Analysis Matrix', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Initiating', icon: 'Grid', content: 'Evaluating stakeholder power and interest.' },
-  { id: '2.1.6', title: 'Communications Management Plan', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Planning', icon: 'MessageSquare', content: 'Information distribution strategy.' },
-  { id: '2.1.7', title: 'Stakeholder Management Plan', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Planning', icon: 'Users', content: 'Engagement strategy.' },
   { id: '4.3.1', title: 'Project Performance Report', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Monitoring & Controlling', icon: 'FileText', content: 'Status reports and updates.' },
   { id: '4.3.2', title: 'Variance Analysis', parentId: 'stak', type: 'terminal', domain: 'stakeholders', focusArea: 'Monitoring & Controlling', icon: 'Activity', content: 'Analysis of performance differences.' },
 
   // --- RESOURCES DOMAIN PAGES ---
-  { id: '2.1.10', title: 'Human Resource Management Plan', parentId: 'res', type: 'terminal', domain: 'resources', focusArea: 'Planning', icon: 'Users2', content: 'Managing roles and staffing.' },
   { id: '2.6.1', title: 'Activity Resource Requirements', parentId: 'res', type: 'terminal', domain: 'resources', focusArea: 'Planning', icon: 'Users2', content: 'Resources required for activities.' },
   { id: '2.6.4', title: 'Resource Breakdown Structure', parentId: 'res', type: 'terminal', domain: 'resources', focusArea: 'Planning', icon: 'Layers', content: 'Hierarchical resource representation.' },
   { id: '2.6.5', title: 'Responsibility Assignment Matrix', parentId: 'res', type: 'terminal', icon: 'Grid', domain: 'resources', focusArea: 'Planning', content: 'Mapping work to team members.' },
@@ -210,12 +203,25 @@ export const pages: Page[] = [
   { id: '3.3.6', title: 'Team Performance Assessment', parentId: 'res', type: 'terminal', icon: 'Users2', domain: 'resources', focusArea: 'Monitoring & Controlling', content: 'Team effectiveness evaluation.' },
 
   // --- RISK DOMAIN PAGES ---
-  { id: '2.1.14', title: 'Risk Management Plan', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Planning', icon: 'ShieldAlert', content: 'Governance for risk management.' },
   { id: '2.7.5', title: 'Risk Register', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Planning + Executing', icon: 'ShieldAlert', content: 'Repository for all identified risks.' },
   { id: '2.7.1', title: 'Probability and Impact Assessment', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Planning', icon: 'Activity', content: 'Evaluating likelihood and impact.' },
   { id: '2.7.2', title: 'Probability and Impact Matrix', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Planning', icon: 'Grid', content: 'Mapping risks.' },
+  { id: '2.7.3', title: 'Project Issues', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Executing', icon: 'AlertTriangle', content: 'Tracking and resolving project issues.' },
   { id: '2.1.5', title: 'Assumption and Constraint Log', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Planning', icon: 'List', content: 'Tracking project assumptions.' },
   { id: '4.4.1', title: 'Risk Audit', parentId: 'risk', type: 'terminal', domain: 'risk', focusArea: 'Monitoring & Controlling', icon: 'ShieldCheck', content: 'Review of risk management effectiveness.' },
+
+  // --- CONSOLIDATED MANAGEMENT PLANS (under Project Management Plan 2.1.2) ---
+  { id: '2.1.8', title: 'Requirements Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'ListChecks', content: 'Planning and controlling requirements.' },
+  { id: '2.1.9', title: 'Scope Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'Target', content: 'Defining and maintaining project scope.' },
+  { id: '2.1.11', title: 'Schedule Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'Clock', content: 'Governance for timeline management.' },
+  { id: '2.1.12', title: 'Cost Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'DollarSign', content: 'Financial governance rules.' },
+  { id: '2.1.6', title: 'Communications Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'MessageSquare', content: 'Information distribution strategy.' },
+  { id: '2.1.7', title: 'Stakeholder Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'Users', content: 'Engagement strategy.' },
+  { id: '2.1.10', title: 'Human Resource Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'Users2', content: 'Managing roles and staffing.' },
+  { id: '2.1.14', title: 'Risk Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'ShieldAlert', content: 'Governance for risk management.' },
+  { id: '2.1.13', title: 'Procurement Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'ShoppingCart', content: 'Governance for procurement activities.' },
+  { id: '2.1.1', title: 'Change Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'GitBranch', content: 'Governance for change control.' },
+  { id: '2.1.3', title: 'Quality Management Plan', parentId: '2.1.2', type: 'terminal', domain: 'governance', focusArea: 'Planning', icon: 'ShieldCheck', content: 'Governance for quality management.' },
 ];
 
 export const getChildren = (parentId: string) => {

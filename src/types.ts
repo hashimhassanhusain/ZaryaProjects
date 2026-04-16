@@ -65,6 +65,15 @@ export interface POLineItem {
   exchangeRateUsed?: number;
 }
 
+export interface POActivity {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  timestamp: string;
+  changes?: { field: string; old: any; new: any }[];
+}
+
 export interface PurchaseOrder {
   id: string;
   projectId: string;
@@ -80,6 +89,7 @@ export interface PurchaseOrder {
   lineItems: POLineItem[];
   inputCurrency?: 'USD' | 'IQD';
   exchangeRateUsed?: number;
+  history?: POActivity[];
   // Extra fields for PO Log
   company?: string;
   buyFromPartner?: string;

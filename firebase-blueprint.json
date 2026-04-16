@@ -368,18 +368,22 @@
       },
       "required": ["projectId", "workflowName", "currentProcess", "improvedProcess"]
     },
-    "WorkPackage": {
-      "title": "Work Package",
-      "description": "A group of activities within a WBS and Division.",
+    "WBSLevel": {
+      "title": "WBS Level",
+      "description": "A node in the Work Breakdown Structure.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "projectId": { "type": "string" },
-        "wbsId": { "type": "string" },
-        "divisionId": { "type": "string" },
-        "title": { "type": "string" }
+        "parentId": { "type": "string" },
+        "divisionCode": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["Zone", "Area", "Building", "Floor", "Cost Account", "Work Package"] },
+        "level": { "type": "number" },
+        "status": { "type": "string" },
+        "code": { "type": "string" }
       },
-      "required": ["projectId", "wbsId", "divisionId", "title"]
+      "required": ["projectId", "title", "type"]
     },
     "Activity": {
       "title": "Activity",
@@ -401,9 +405,9 @@
     }
   },
   "firestore": {
-    "/work_packages/{id}": {
-      "schema": "WorkPackage",
-      "description": "Project work packages."
+    "/wbs/{id}": {
+      "schema": "WBSLevel",
+      "description": "Work Breakdown Structure levels."
     },
     "/activities/{id}": {
       "schema": "Activity",

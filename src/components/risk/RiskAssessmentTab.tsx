@@ -128,39 +128,46 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
             </h3>
             
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {filteredRisks.map(risk => (
-              <button
-                key={risk.id}
-                onClick={() => setSelectedRiskId(risk.id)}
-                className={cn(
-                  "w-full text-left p-4 rounded-2xl border transition-all group",
-                  selectedRiskId === risk.id 
-                    ? "bg-slate-900 border-slate-900 shadow-lg shadow-slate-200" 
-                    : "bg-white border-slate-100 hover:border-slate-300"
-                )}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className={cn(
-                    "text-[10px] font-black px-2 py-0.5 rounded-md",
-                    selectedRiskId === risk.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+            {filteredRisks.length === 0 ? (
+              <div className="py-10 text-center">
+                <AlertTriangle className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No risks found</p>
+              </div>
+            ) : (
+              filteredRisks.map(risk => (
+                <button
+                  key={risk.id}
+                  onClick={() => setSelectedRiskId(risk.id)}
+                  className={cn(
+                    "w-full text-left p-4 rounded-2xl border transition-all group",
+                    selectedRiskId === risk.id 
+                      ? "bg-slate-900 border-slate-900 shadow-lg shadow-slate-200" 
+                      : "bg-white border-slate-100 hover:border-slate-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={cn(
+                      "text-[10px] font-black px-2 py-0.5 rounded-md",
+                      selectedRiskId === risk.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                    )}>
+                      {risk.riskId}
+                    </span>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      selectedRiskId === risk.id ? "text-white/60" : "text-slate-400"
+                    )}>
+                      Score: {risk.score}
+                    </span>
+                  </div>
+                  <p className={cn(
+                    "text-xs font-bold line-clamp-2",
+                    selectedRiskId === risk.id ? "text-white" : "text-slate-700"
                   )}>
-                    {risk.riskId}
-                  </span>
-                  <span className={cn(
-                    "text-[10px] font-black uppercase tracking-widest",
-                    selectedRiskId === risk.id ? "text-white/60" : "text-slate-400"
-                  )}>
-                    Score: {risk.score}
-                  </span>
-                </div>
-                <p className={cn(
-                  "text-xs font-bold line-clamp-2",
-                  selectedRiskId === risk.id ? "text-white" : "text-slate-700"
-                )}>
-                  {risk.description}
-                </p>
-              </button>
-            ))}
+                    {risk.description}
+                  </p>
+                </button>
+              ))
+            )}
           </div>
         </div>
 

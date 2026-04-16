@@ -11,11 +11,32 @@ import {
   LayoutDashboard, FileText, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Page } from '../types';
-import { pages } from '../data';
+import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType } from '../types';
+import { pages, getChildren } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { 
+  collection, 
+  onSnapshot, 
+  query, 
+  where,
+  getDocs,
+  setDoc,
+  doc
+} from 'firebase/firestore';
 import { DashboardView } from './DashboardView';
 import { DetailView } from './DetailView';
+import { ProjectManagementPlanView } from './ProjectManagementPlanView';
+import { ChangeManagementPlanView } from './ChangeManagementPlanView';
+import { QualityManagementPlanView } from './QualityManagementPlanView';
+import { CommunicationsManagementPlanView } from './CommunicationsManagementPlanView';
+import { StakeholderManagementPlanView } from './StakeholderManagementPlanView';
+import { RequirementsManagementPlanView } from './RequirementsManagementPlanView';
+import { ScopeManagementPlanView } from './ScopeManagementPlanView';
+import { ScheduleManagementPlanView } from './ScheduleManagementPlanView';
+import { CostManagementPlanView } from './CostManagementPlanView';
+import { ProcurementManagementPlanView } from './ProcurementManagementPlanView';
+import { RiskManagementPlanView } from './RiskManagementPlanView';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { ResourceOptimizationHub } from './ResourceOptimizationHub';
 import { ResourceRequirementsTab } from './resource/ResourceRequirementsTab';
@@ -51,12 +72,22 @@ import { VendorMasterRegister } from './VendorMasterRegister';
 import { LogManagementView } from './LogManagementView';
 import { FormalAcceptanceView } from './FormalAcceptanceView';
 
+// Risk Components
+import { RiskRegisterTab } from './risk/RiskRegisterTab';
+import { RiskAssessmentTab } from './risk/RiskAssessmentTab';
+import { RiskAuditTab } from './risk/RiskAuditTab';
+import { RiskDashboardTab } from './risk/RiskDashboardTab';
+import { RiskPlanTab } from './risk/RiskPlanTab';
+import { RiskMatrixTab } from './risk/RiskMatrixTab';
+import { IssueLogTab } from './risk/IssueLogTab';
+
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 
 interface DomainDashboardProps {
   page: Page;
   childrenPages?: Page[];
+  initialTab?: string;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -67,18 +98,88 @@ const ICON_MAP: Record<string, any> = {
   Shield, DraftingCompass, Calendar, Banknote, Package
 };
 
-export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [] }) => {
+export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const projectId = selectedProject?.id || '';
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
   const domainKey = page.domain || 'governance';
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
+  // Risk Data State
+  const [risks, setRisks] = useState<RiskEntry[]>([]);
+  const [issues, setIssues] = useState<ProjectIssue[]>([]);
+  const [audits, setAudits] = useState<RiskAuditEntry[]>([]);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+
   // Reset tab when page changes to avoid "Cannot read properties of undefined" errors
   React.useEffect(() => {
-    setActiveTab('overview');
-  }, [page.id]);
+    if (initialTab) {
+      setActiveTab(initialTab);
+    } else {
+      setActiveTab('overview');
+    }
+  }, [page.id, initialTab]);
+
+  // Fetch Risk Data if in Risk or Governance Domain (since plans are consolidated there)
+  React.useEffect(() => {
+    if (!['risk', 'governance'].includes(domainKey) || !projectId) return;
+
+    // Seed mock users if empty
+    const seedUsers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        if (snap.empty) {
+          const mockUsers = [
+            { name: 'Hashim Husain', email: 'hashim.h.husain@gmail.com', role: 'admin', uid: 'u1' },
+            { name: 'Ahmed Hassan', email: 'ahmed@zarya.com', role: 'engineer', uid: 'u2' },
+            { name: 'Sarah Jones', email: 'sarah@zarya.com', role: 'engineer', uid: 'u3' },
+            { name: 'Michael Chen', email: 'michael@zarya.com', role: 'engineer', uid: 'u4' }
+          ];
+          for (const u of mockUsers) {
+            await setDoc(doc(db, 'users', u.uid), u);
+          }
+        }
+      } catch (error) {
+        console.error("Error seeding users:", error);
+      }
+    };
+    seedUsers();
+
+    const risksUnsub = onSnapshot(
+      query(collection(db, 'risks'), where('projectId', '==', projectId)),
+      (snap) => setRisks(snap.docs.map(d => ({ id: d.id, ...d.data() } as RiskEntry)))
+    );
+
+    const issuesUnsub = onSnapshot(
+      query(collection(db, 'issues'), where('projectId', '==', projectId)),
+      (snap) => setIssues(snap.docs.map(d => ({ id: d.id, ...d.data() } as ProjectIssue)))
+    );
+
+    const auditsUnsub = onSnapshot(
+      query(collection(db, 'risk_audits'), where('projectId', '==', projectId)),
+      (snap) => setAudits(snap.docs.map(d => ({ id: d.id, ...d.data() } as RiskAuditEntry)))
+    );
+
+    const stakeholdersUnsub = onSnapshot(
+      query(collection(db, 'stakeholders'), where('projectId', '==', projectId)),
+      (snap) => setStakeholders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder)))
+    );
+
+    const usersUnsub = onSnapshot(
+      collection(db, 'users'),
+      (snap) => setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserType)))
+    );
+
+    return () => {
+      risksUnsub();
+      issuesUnsub();
+      auditsUnsub();
+      stakeholdersUnsub();
+      usersUnsub();
+    };
+  }, [domainKey, projectId]);
   
   // Mock chart data based on domain since we don't have real historical data yet
   const getChartData = () => {
@@ -204,16 +305,17 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isVendorRegisterPage = p.id === '3.3.4';
     const isQualityMetricsPage = p.id === '2.1.4';
     const isRiskRegisterPage = p.id === '2.7.5';
-    const isRiskHubPage = p.id === '2.7';
+    const isRiskHubPage = p.id === '2.7' || p.id === 'risk';
+    const isRiskPlanPage = p.id === '2.1.14';
+    const isRiskAssessmentPage = p.id === '2.7.1';
+    const isRiskMatrixPage = p.id === '2.7.2';
+    const isRiskAuditPage = p.id === '4.4.1';
+    const isIssueLogPage = p.id === '2.7.3';
     const isStakeholderRegisterPage = p.id === '1.2.1';
     const isLessonsLearnedPage = p.id === '5.1.1';
-    const isResourceOptimizationPage = [
-      '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
-      '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6', '2.4.7'
-    ].includes(p.id);
     const isGovernanceHubPage = [
       '1.1.1', '1.1.2',
-      '2.1.1', '2.1.2', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14',
+      '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14',
       '2.1.5', '1.2.1', '3.1.3', '5.1.1'
     ].includes(p.id);
     const isChangeRequestPage = p.id === '3.1.1';
@@ -233,7 +335,39 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isSchedulePage) return <ProjectScheduleView page={p} />;
     if (isAssumptionLogPage) return <AssumptionConstraintView page={p} />;
     if (isQualityMetricsPage) return <QualityMetricsRegisterView page={p} />;
-    if (isRiskRegisterPage) return <RiskRegisterView page={p} />;
+    
+    // New Risk Components Mapping
+    if (isRiskPlanPage) return <RiskManagementPlanView page={p} />;
+    if (isRiskRegisterPage) return (
+      <RiskRegisterTab 
+        risks={risks} 
+        stakeholders={stakeholders} 
+        users={users} 
+        projectId={projectId} 
+      />
+    );
+    if (isRiskAssessmentPage) return <RiskAssessmentTab risks={risks} projectId={projectId} />;
+    if (isRiskMatrixPage) return <RiskMatrixTab risks={risks} />;
+    if (isRiskAuditPage) return <RiskAuditTab audits={audits} projectId={projectId} />;
+    if (isIssueLogPage) return (
+      <IssueLogTab 
+        issues={issues} 
+        users={users} 
+        projectId={projectId} 
+      />
+    );
+    
+    if (p.id === '2.1.2') return <ProjectManagementPlanView page={p} />;
+    if (p.id === '2.1.1') return <ChangeManagementPlanView page={p} />;
+    if (p.id === '2.1.3') return <QualityManagementPlanView page={p} />;
+    if (p.id === '2.1.6') return <CommunicationsManagementPlanView page={p} />;
+    if (p.id === '2.1.7') return <StakeholderManagementPlanView page={p} />;
+    if (p.id === '2.1.8') return <RequirementsManagementPlanView page={p} />;
+    if (p.id === '2.1.9') return <ScopeManagementPlanView page={p} />;
+    if (p.id === '2.1.11') return <ScheduleManagementPlanView page={p} />;
+    if (p.id === '2.1.12') return <CostManagementPlanView page={p} />;
+    if (p.id === '2.1.13') return <ProcurementManagementPlanView page={p} />;
+
     if (isRiskHubPage) return <RiskOpportunityHub page={p} />;
     if (isGovernanceHubPage) return <GovernanceHubView page={p} />;
     if (isStakeholderRegisterPage) return <StakeholderRegisterView page={p} />;
@@ -262,6 +396,15 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (p.type === 'hub') return <DashboardView page={p} />;
     return <DetailView page={p} />;
   };
+
+  const currentPage = pages.find(p => p.id === activeTab);
+  const parentPage = currentPage ? pages.find(p => p.id === currentPage.parentId) : null;
+  
+  // If the current page is a sub-page of a hub in this domain, 
+  // we want to show the hub's children as sub-tabs
+  const isSubHubPage = parentPage && parentPage.domain === domainKey && parentPage.type === 'hub';
+  const subPages = isSubHubPage ? getChildren(parentPage.id) : (currentPage?.type === 'hub' ? getChildren(currentPage.id) : []);
+  const activeHubId = isSubHubPage ? parentPage.id : (currentPage?.type === 'hub' ? currentPage.id : null);
 
   return (
     <div className="flex flex-col">
@@ -295,6 +438,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         </button>
 
         {childrenPages.map((child) => {
+          const isActive = activeTab === child.id || activeHubId === child.id;
           const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
           const focusAreaColor = 
             child.focusArea?.includes('Initiating') ? 'bg-blue-500' :
@@ -310,14 +454,14 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
               onClick={() => setActiveTab(child.id)}
               className={cn(
                 "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative overflow-hidden group whitespace-nowrap min-w-max",
-                activeTab === child.id 
+                isActive 
                   ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
                   : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
               )}
             >
               <div className={cn(
                 "p-1.5 rounded-lg transition-all duration-300 relative",
-                activeTab === child.id ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
+                isActive ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
               )}>
                 <ChildIcon className="w-4 h-4" />
                 {child.focusArea && (
@@ -330,7 +474,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
               <span className="leading-tight font-semibold uppercase tracking-tight">
                 {stripNumericPrefix(t(child.id) || child.title)}
               </span>
-              {activeTab === child.id && (
+              {isActive && (
                 <motion.div 
                   layoutId="activeDomainTab"
                   className="absolute inset-0 bg-white -z-10"
@@ -341,6 +485,26 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           );
         })}
       </div>
+
+      {/* Secondary Hub Tabs (Sub-navigation) */}
+      {subPages.length > 0 && (
+        <div className="flex items-center gap-1 bg-white px-4 py-2 border-x border-slate-200 overflow-x-auto no-scrollbar border-b border-slate-100">
+          {subPages.map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => setActiveTab(sub.id)}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                activeTab === sub.id 
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              {stripNumericPrefix(t(sub.id) || sub.title)}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-b-3xl p-4 shadow-sm -mt-px">
         <AnimatePresence mode="wait">
@@ -353,97 +517,105 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           >
             {activeTab === 'overview' ? (
               <div className="space-y-6">
-                {kpis.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {kpis.map((kpi, idx) => {
-                      const Icon = ICON_MAP[kpi.icon || 'Info'] || Info;
-                      const colorClass = 
-                        kpi.status === 'success' ? 'text-emerald-600' :
-                        kpi.status === 'warning' ? 'text-amber-600' :
-                        kpi.status === 'danger' ? 'text-rose-600' :
-                        'text-blue-600';
+                {page.id === '2.1.2' ? (
+                  <ProjectManagementPlanView page={page} />
+                ) : domainKey === 'risk' ? (
+                  <RiskDashboardTab risks={risks} issues={issues} audits={audits} />
+                ) : (
+                  <>
+                    {kpis.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {kpis.map((kpi, idx) => {
+                          const Icon = ICON_MAP[kpi.icon || 'Info'] || Info;
+                          const colorClass = 
+                            kpi.status === 'success' ? 'text-emerald-600' :
+                            kpi.status === 'warning' ? 'text-amber-600' :
+                            kpi.status === 'danger' ? 'text-rose-600' :
+                            'text-blue-600';
 
-                      return (
-                        <motion.div
-                          key={kpi.label}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="bg-slate-50/50 p-5 rounded-xl border border-slate-100"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div className={`p-2 rounded-lg bg-white shadow-sm ${colorClass}`}>
-                              <Icon className="w-5 h-5" />
+                          return (
+                            <motion.div
+                              key={kpi.label}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className="bg-slate-50/50 p-5 rounded-xl border border-slate-100"
+                            >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className={`p-2 rounded-lg bg-white shadow-sm ${colorClass}`}>
+                                  <Icon className="w-5 h-5" />
+                                </div>
+                                {kpi.trend && (
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-white px-2 py-1 rounded-full shadow-sm">
+                                    {kpi.trend}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-2xl font-semibold text-slate-900">{kpi.value}</div>
+                              <div className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 bg-slate-50/30 p-6 rounded-xl border border-slate-100">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('domain_performance')}</h3>
+                          <div className="flex gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2 h-2 rounded-full bg-blue-500" />
+                              <span className="text-[10px] font-medium text-slate-500">{t('planned')}</span>
                             </div>
-                            {kpi.trend && (
-                              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-white px-2 py-1 rounded-full shadow-sm">
-                                {kpi.trend}
-                              </span>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="text-[10px] font-medium text-slate-500">{t('actual')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="h-64 w-full">
+                          {getChartData() || (
+                            <div className="h-full flex items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
+                              <p className="text-slate-400 text-sm">{t('no_chart_data')}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="bg-slate-50/30 p-6 rounded-xl border border-slate-100 h-full">
+                          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">{t('domain_alerts')}</h3>
+                          <div className="space-y-3">
+                            {alerts.length > 0 ? alerts.map((alert, idx) => (
+                              <div 
+                                key={idx}
+                                className={cn(
+                                  "p-3 rounded-lg text-xs flex gap-3 items-start bg-white shadow-sm",
+                                  alert.type === 'danger' ? "text-rose-700 border border-rose-100" :
+                                  alert.type === 'warning' ? "text-amber-700 border border-amber-100" :
+                                  "text-blue-700 border border-blue-100"
+                                )}
+                              >
+                                {alert.type === 'danger' || alert.type === 'warning' ? (
+                                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                                ) : (
+                                  <Info className="w-4 h-4 shrink-0" />
+                                )}
+                                <p className="leading-relaxed">{alert.msg}</p>
+                              </div>
+                            )) : (
+                              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                                <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
+                                <p className="text-xs">{t('no_active_alerts')}</p>
+                              </div>
                             )}
                           </div>
-                          <div className="text-2xl font-semibold text-slate-900">{kpi.value}</div>
-                          <div className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-slate-50/30 p-6 rounded-xl border border-slate-100">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('domain_performance')}</h3>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          <span className="text-[10px] font-medium text-slate-500">{t('planned')}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          <span className="text-[10px] font-medium text-slate-500">{t('actual')}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-64 w-full">
-                      {getChartData() || (
-                        <div className="h-full flex items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
-                          <p className="text-slate-400 text-sm">{t('no_chart_data')}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="bg-slate-50/30 p-6 rounded-xl border border-slate-100 h-full">
-                      <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">{t('domain_alerts')}</h3>
-                      <div className="space-y-3">
-                        {alerts.length > 0 ? alerts.map((alert, idx) => (
-                          <div 
-                            key={idx}
-                            className={cn(
-                              "p-3 rounded-lg text-xs flex gap-3 items-start bg-white shadow-sm",
-                              alert.type === 'danger' ? "text-rose-700 border border-rose-100" :
-                              alert.type === 'warning' ? "text-amber-700 border border-amber-100" :
-                              "text-blue-700 border border-blue-100"
-                            )}
-                          >
-                            {alert.type === 'danger' || alert.type === 'warning' ? (
-                              <AlertTriangle className="w-4 h-4 shrink-0" />
-                            ) : (
-                              <Info className="w-4 h-4 shrink-0" />
-                            )}
-                            <p className="leading-relaxed">{alert.msg}</p>
-                          </div>
-                        )) : (
-                          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                            <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
-                            <p className="text-xs">{t('no_active_alerts')}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="overflow-hidden">

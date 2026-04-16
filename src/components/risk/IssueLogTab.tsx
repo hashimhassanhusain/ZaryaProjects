@@ -16,7 +16,7 @@ import {
   ArrowRight,
   MessageSquare
 } from 'lucide-react';
-import { ProjectIssue } from '../../types';
+import { ProjectIssue, User as UserType, Stakeholder } from '../../types';
 import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { 
@@ -24,7 +24,8 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  doc 
+  doc,
+  writeBatch
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -33,14 +34,16 @@ import autoTable from 'jspdf-autotable';
 
 interface IssueLogTabProps {
   issues: ProjectIssue[];
+  users: UserType[];
   projectId: string;
 }
 
-export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) => {
+export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, projectId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingIssue, setEditingIssue] = useState<ProjectIssue | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<Partial<ProjectIssue>>({
     category: '',
@@ -53,6 +56,50 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
     dueDate: '',
     comments: ''
   });
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} issues?</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">Cancel</button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const batch = writeBatch(db);
+                selectedIds.forEach(id => {
+                  batch.delete(doc(db, 'issues', id));
+                });
+                await batch.commit();
+                setSelectedIds([]);
+                toast.success('Issues deleted successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'issues');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredIssues.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredIssues.map(i => i.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
 
   const handleAdd = () => {
     setEditingIssue(null);
@@ -152,7 +199,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
         i.issue,
         i.impact,
         i.urgency,
-        i.responsibleParty,
+        users.find(u => u.uid === i.responsibleParty)?.name || i.responsibleParty,
         i.status,
         i.dueDate
       ]),
@@ -263,12 +310,16 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsible Party</label>
-              <input 
-                type="text"
+              <select 
                 value={formData.responsibleParty}
                 onChange={(e) => setFormData({ ...formData, responsibleParty: e.target.value })}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-              />
+              >
+                <option value="">Select Responsible Party...</option>
+                {users.map(u => (
+                  <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
@@ -336,6 +387,15 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
           />
         </div>
         <div className="flex items-center gap-2">
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold text-sm hover:bg-red-100 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedIds.length})
+            </button>
+          )}
           <button 
             onClick={generatePDF}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
@@ -358,6 +418,14 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 w-10">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.length === filteredIssues.length && filteredIssues.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Issue</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Urgency</th>
@@ -370,13 +438,28 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
             <tbody className="divide-y divide-slate-50">
               {filteredIssues.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-slate-400 font-medium italic">
+                  <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-medium italic">
                     No issues logged.
                   </td>
                 </tr>
               ) : (
                 filteredIssues.map((issue, idx) => (
-                  <tr key={issue.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr 
+                    key={issue.id} 
+                    className={cn(
+                      "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                      selectedIds.includes(issue.id) && "bg-slate-50"
+                    )}
+                    onClick={() => handleEdit(issue)}
+                  >
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(issue.id)}
+                        onChange={() => toggleSelect(issue.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
                         ISS-{(idx + 1).toString().padStart(3, '0')}
@@ -398,7 +481,9 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-slate-600">{issue.responsibleParty || (issue as any).ownerId}</span>
+                      <span className="text-sm font-medium text-slate-600">
+                        {users.find(u => u.uid === issue.responsibleParty)?.name || issue.responsibleParty || 'Unassigned'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
@@ -417,7 +502,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => handleEdit(issue)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(issue); }}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         >
                           <Edit2 className="w-4 h-4" />

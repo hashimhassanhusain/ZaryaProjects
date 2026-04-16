@@ -258,9 +258,9 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     );
 
     const wpUnsubscribe = onSnapshot(
-      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id), where('type', '==', 'Work Package')),
       (snapshot) => {
-        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any)));
       }
     );
 

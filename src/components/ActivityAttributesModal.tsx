@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor, WorkPackage, User, Stakeholder } from '../types';
 import { masterFormatDivisions } from '../data';
-import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { motion } from 'motion/react';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, query, where, onSnapshot, setDoc, doc } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart, Layers, Box } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { useProject } from '../context/ProjectContext';
+import { toast } from 'react-hot-toast';
 
 interface ActivityAttributesModalProps {
   activity: Activity;
@@ -37,9 +38,11 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     inputRate: activity.inputRate || marketRate
   });
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
+  const [workPackages, setWorkPackages] = useState<WBSLevel[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [isAddingWP, setIsAddingWP] = useState(false);
+  const [newWPData, setNewWPData] = useState({ title: '', divisionCode: '01', wbsId: '', code: '' });
   const [displayAmount, setDisplayAmount] = useState<number>(activity.amount || 0);
   const [displayActualAmount, setDisplayActualAmount] = useState<number>(activity.actualAmount || 0);
 
@@ -63,9 +66,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       }
     );
     const wpUnsubscribe = onSnapshot(
-      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id), where('type', '==', 'Work Package')),
       (snapshot) => {
-        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkPackage)));
+        setWorkPackages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WBSLevel)));
       }
     );
     const uUnsubscribe = onSnapshot(
@@ -87,6 +90,36 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       sUnsubscribe();
     };
   }, [selectedProject]);
+
+  const handleAddWorkPackage = async () => {
+    if (!selectedProject || !newWPData.title || !newWPData.divisionCode || !newWPData.code) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const parentWbs = wbsLevels.find(l => l.id === newWPData.wbsId);
+      const wp: WBSLevel = {
+        id: crypto.randomUUID(),
+        projectId: selectedProject.id,
+        parentId: newWPData.wbsId || '',
+        divisionCode: newWPData.divisionCode,
+        code: newWPData.code,
+        title: newWPData.title,
+        type: 'Work Package',
+        level: (parentWbs?.level || 0) + 1,
+        status: 'Not Started'
+      };
+
+      await setDoc(doc(db, 'wbs', wp.id), wp);
+      setFormData(prev => ({ ...prev, workPackage: wp.title }));
+      setIsAddingWP(false);
+      setNewWPData({ title: '', divisionCode: '01', wbsId: '', code: '' });
+      toast.success('Work package added successfully');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'wbs');
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -356,7 +389,12 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.workPackage || ''}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      navigate('/page/2.2.9?tab=packages');
+                      setNewWPData(prev => ({ 
+                        ...prev, 
+                        divisionCode: formData.division || '01', 
+                        wbsId: formData.wbsId || '' 
+                      }));
+                      setIsAddingWP(true);
                       return;
                     }
                     handleInputChange(e);
@@ -365,8 +403,8 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 >
                   <option value="">Select Work Package...</option>
                   {workPackages.filter(wp => 
-                    (!formData.wbsId || wp.wbsId === formData.wbsId) && 
-                    (!formData.division || wp.divisionId === formData.division)
+                    (!formData.wbsId || wp.parentId === formData.wbsId) && 
+                    (!formData.division || wp.divisionCode === formData.division)
                   ).map(wp => (
                     <option key={wp.id} value={wp.title}>{wp.title}</option>
                   ))}
@@ -731,6 +769,100 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
             </div>
           </section>
         </div>
+
+        {/* Add Work Package Modal */}
+        <AnimatePresence>
+          {isAddingWP && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+              >
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                  <h3 className="text-lg font-bold text-slate-900 text-right w-full pr-12">اضافة حزمة عمل جديدة</h3>
+                  <button onClick={() => setIsAddingWP(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors order-first">
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Parent WBS</label>
+                      <select 
+                        value={newWPData.wbsId}
+                        onChange={e => setNewWPData({ ...newWPData, wbsId: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                      >
+                        <option value="">Root / Select Level...</option>
+                        {wbsLevels.sort((a, b) => a.level - b.level).map(l => (
+                          <option key={l.id} value={l.id}>{l.code} - {l.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cost Account (Division)</label>
+                      <select 
+                        value={newWPData.divisionCode}
+                        onChange={e => setNewWPData({ ...newWPData, divisionCode: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                      >
+                        {masterFormatDivisions.map(div => (
+                          <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Code</label>
+                      <input 
+                        type="text"
+                        value={newWPData.code}
+                        onChange={e => setNewWPData({ ...newWPData, code: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-mono"
+                        placeholder="e.g. 01-A-01"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Package Title</label>
+                      <input 
+                        type="text"
+                        value={newWPData.title}
+                        onChange={e => setNewWPData({ ...newWPData, title: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-bold"
+                        placeholder="Enter package name..."
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                  <button 
+                    onClick={() => navigate('/page/2.2.9?tab=packages')}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Go to Manage Work Packages
+                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setIsAddingWP(false)}
+                      className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-xl transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleAddWorkPackage}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                    >
+                      Add Package
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         <div className="p-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
           <button 
