@@ -20,7 +20,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Page, BOQItem, WBSLevel, Activity } from '../types';
-import { getChildren, getParent, getFocusArea } from '../data';
+import { getChildren, getParent } from '../data';
 import { motion } from 'motion/react';
 import { DomainDashboard } from './DomainDashboard';
 import { useProject } from '../context/ProjectContext';
@@ -125,9 +125,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
                     <TrendingUp className="w-4 h-4" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
+                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
                 </div>
-                <Link to="/page/2.4.0" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                <Link to="/page/2.4.0" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
@@ -142,7 +142,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className={cn(
-                        "p-2 rounded-xl text-xs font-bold",
+                        "p-2 rounded-xl text-xs font-semibold",
                         loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
                         loc.type === 'Building' ? "bg-blue-50 text-blue-600" :
                         "bg-amber-50 text-amber-600"
@@ -150,8 +150,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                         {t(loc.type.toLowerCase())}
                       </div>
                     </div>
-                    <div className="text-xl font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
-                    <div className="text-sm font-bold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
+                    <div className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
+                    <div className="text-sm font-semibold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
                   </motion.div>
                 ))}
               </div>
@@ -166,14 +166,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
                     <Calendar className="w-4 h-4" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
+                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
                 </div>
-                <Link to="/page/2.3" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                <Link to="/page/2.3" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm overflow-hidden">
-                <div className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
+                <div className="space-y-4">
                   {activities.filter(a => a.startDate && a.finishDate).slice(0, 5).map((act, idx) => {
                     const start = new Date(act.startDate!);
                     const finish = new Date(act.finishDate!);
@@ -186,11 +186,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                       <div key={act.id} className="space-y-2">
                         <div className="flex justify-between items-end">
                           <div>
-                            <div className="text-sm font-bold text-slate-900">{act.description}</div>
+                            <div className="text-sm font-semibold text-slate-900">{act.description}</div>
                             <div className="text-[10px] text-slate-400 font-mono">{act.startDate} — {act.finishDate}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-bold text-blue-600">{Math.round(progress)}%</div>
+                            <div className="text-xs font-semibold text-blue-600">{Math.round(progress)}%</div>
                             <div className="text-[10px] text-slate-400 uppercase tracking-widest">{act.status}</div>
                           </div>
                         </div>
@@ -213,7 +213,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
             </section>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {children.map((child, idx) => {
               const Icon = getDomainIcon(child.domain, child.title);
               return (
@@ -225,26 +225,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                 >
                   <Link
                     to={`/page/${child.id}`}
-                    className="group block p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
+                    className="group block p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                        <Icon className="w-5 h-5 text-slate-400 group-hover:text-blue-500" />
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
+                        <Icon className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
                       </div>
                       <StatusIcon status={child.status} />
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-base font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
                       {stripNumericPrefix(t(child.id) || child.title)}
                     </h3>
-                    <div className="text-[10px] text-slate-400 font-medium mb-3 uppercase tracking-wider">
-                      {stripNumericPrefix(t(getFocusArea(child.id)?.id || '') || getFocusArea(child.id)?.title || '')}
+                    <div className="text-[10px] text-slate-400 font-normal mb-2 uppercase tracking-wider">
+                      {child.focusArea || ''}
                     </div>
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">
+                    <p className="text-xs text-slate-500 mb-3 line-clamp-2">
                       {child.summary || child.content}
                     </p>
-                    <div className="flex items-center text-sm font-medium text-blue-600">
+                    <div className="flex items-center text-xs font-semibold text-blue-600">
                       {t('view_details')}
-                      <ArrowRight className="w-4 h-4 ms-1 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-3 h-3 ms-1 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </Link>
                 </motion.div>
@@ -253,8 +253,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
           </div>
 
           {children.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-              <p className="text-slate-400">{t('no_sub_domains_found')}</p>
+            <div className="flex flex-col items-center justify-center py-10 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+              <p className="text-slate-400 text-sm">{t('no_sub_domains_found')}</p>
             </div>
           )}
         </>

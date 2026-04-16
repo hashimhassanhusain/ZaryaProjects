@@ -189,7 +189,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
   const handleAddCriteria = () => {
     const newCriteria: SelectionCriteria = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       weight: 0,
       criteria: ''
     };
@@ -209,7 +209,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
   const handleAddMetric = () => {
     const newMetric: PerformanceMetric = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       domain: '',
       metric: ''
     };

@@ -13,15 +13,28 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Page } from '../types';
 import { pages } from '../data';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 import { DashboardView } from './DashboardView';
 import { DetailView } from './DetailView';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { ResourceOptimizationHub } from './ResourceOptimizationHub';
+import { ResourceRequirementsTab } from './resource/ResourceRequirementsTab';
+import { RBSTab } from './resource/RBSTab';
+import { RAMTab } from './resource/RAMTab';
+import { RolesResponsibilitiesTab } from './resource/RolesResponsibilitiesTab';
+import { SelectionCriteriaTab } from './resource/SelectionCriteriaTab';
+import { TeamGovernanceTab } from './resource/TeamGovernanceTab';
+import { ProcessImprovementTab } from './resource/ProcessImprovementTab';
+import { PerformanceStatusTab } from './resource/PerformanceStatusTab';
+import { TeamDirectoryTab } from './resource/TeamDirectoryTab';
+import { ContactsView } from './ContactsView';
+import { CompaniesView } from './CompaniesView';
+import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanView';
 import { TasksView } from './TasksView';
 import { ZaryaPOTracker } from './ZaryaPOTracker';
 import { BOQView } from './BOQView';
 import { WBSView } from './WBSView';
+import { WorkPackagesView } from './WorkPackagesView';
 import { EVMReportView } from './EVMReportView';
 import { ProgressReportView } from './ProgressReportView';
 import { AssumptionConstraintView } from './AssumptionConstraintView';
@@ -38,6 +51,9 @@ import { VendorMasterRegister } from './VendorMasterRegister';
 import { LogManagementView } from './LogManagementView';
 import { FormalAcceptanceView } from './FormalAcceptanceView';
 
+import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
+
 interface DomainDashboardProps {
   page: Page;
   childrenPages?: Page[];
@@ -53,8 +69,11 @@ const ICON_MAP: Record<string, any> = {
 
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [] }) => {
   const { t, isRtl } = useLanguage();
+  const { selectedProject } = useProject();
+  const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>('overview');
   const domainKey = page.domain || 'governance';
+  const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
   // Reset tab when page changes to avoid "Cannot read properties of undefined" errors
   React.useEffect(() => {
@@ -145,6 +164,23 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             </PieChart>
           </ResponsiveContainer>
         );
+      case 'resources':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={[
+              { name: 'Labor', val: 85 },
+              { name: 'Material', val: 65 },
+              { name: 'Equipment', val: 45 },
+              { name: 'Subcon', val: 75 },
+            ]}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} reversed={isRtl} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} orientation={isRtl ? 'right' : 'left'} />
+              <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Bar dataKey="val" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
       default:
         return null;
     }
@@ -160,6 +196,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isMeetingsPage = p.id === '2.6.22';
     const isBOQPage = p.id === '2.4.0';
     const isWBSPage = p.id === '2.2.9';
+    const isWorkPackagesPage = p.id === '2.2.10';
     const isEVMPage = p.id === '4.2.2';
     const isProgressReportPage = p.id === '3.3.3';
     const isSchedulePage = p.id === '2.3';
@@ -190,6 +227,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isZaryaPage) return <ZaryaPOTracker page={p} />;
     if (isBOQPage) return <BOQView />;
     if (isWBSPage) return <WBSView />;
+    if (isWorkPackagesPage) return <WorkPackagesView />;
     if (isEVMPage) return <EVMReportView page={p} />;
     if (isProgressReportPage) return <ProgressReportView page={p} />;
     if (isSchedulePage) return <ProjectScheduleView page={p} />;
@@ -200,13 +238,27 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isGovernanceHubPage) return <GovernanceHubView page={p} />;
     if (isStakeholderRegisterPage) return <StakeholderRegisterView page={p} />;
     if (isLessonsLearnedPage) return <LessonsLearnedView page={p} />;
-    if (isResourceOptimizationPage) return <ResourceOptimizationHub page={p} />;
     if (isDecisionLogPage) return <DecisionLogView page={p} />;
     if (isChangeManagementHubPage) return <ChangeManagementHubView page={p} />;
     if (isChangeRequestPage) return <ChangeRequestView page={p} />;
     if (isVendorRegisterPage) return <VendorMasterRegister page={p} />;
     if (isLogManagementPage) return <LogManagementView page={p} />;
     if (isFormalAcceptancePage) return <FormalAcceptanceView page={p} />;
+    
+    // Resource specific terminal views
+    if (p.id === 'contacts') return <ContactsView />;
+    if (p.id === 'companies') return <CompaniesView />;
+    if (p.id === '2.1.10') return <HumanResourceManagementPlanView page={p} />;
+    if (p.id === '2.6.1') return <ResourceRequirementsTab projectId={projectId} />;
+    if (p.id === '2.6.4') return <RBSTab projectId={projectId} />;
+    if (p.id === '2.6.5') return <RAMTab projectId={projectId} />;
+    if (p.id === '2.6.6') return <RolesResponsibilitiesTab projectId={projectId} />;
+    if (p.id === '2.6.7') return <SelectionCriteriaTab projectId={projectId} />;
+    if (p.id === '3.3.1') return <TeamDirectoryTab projectId={projectId} />;
+    if (p.id === '3.3.5') return <TeamGovernanceTab projectId={projectId} />;
+    if (p.id === '3.3.2') return <PerformanceStatusTab projectId={projectId} />;
+    if (p.id === '3.3.6') return <PerformanceStatusTab projectId={projectId} />;
+    
     if (p.type === 'hub') return <DashboardView page={p} />;
     return <DetailView page={p} />;
   };
@@ -214,21 +266,25 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   return (
     <div className="flex flex-col">
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-center gap-1 bg-slate-50/50 p-1.5 rounded-t-xl border-t border-x border-slate-200 w-full overflow-x-auto no-scrollbar">
+      <div className="flex flex-wrap items-stretch gap-2 bg-slate-50/50 p-1 rounded-t-3xl border-t border-x border-slate-200 w-full overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('overview')}
           className={cn(
-            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all relative overflow-hidden group whitespace-nowrap",
+            "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative overflow-hidden group whitespace-nowrap min-w-max",
             activeTab === 'overview' 
               ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
-              : "text-slate-500 hover:text-slate-900"
+              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
           )}
         >
-          <LayoutDashboard className={cn(
-            "w-3.5 h-3.5 transition-colors",
-            activeTab === 'overview' ? "text-blue-600" : "text-slate-400"
-          )} />
-          {t('overview')}
+          <div className={cn(
+            "p-1.5 rounded-lg transition-all duration-300",
+            activeTab === 'overview' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
+          )}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <span className="leading-tight font-semibold uppercase tracking-tight">
+            {stripNumericPrefix(t(page.id) || page.title).replace(/\s*DOMAIN$/i, '')}
+          </span>
           {activeTab === 'overview' && (
             <motion.div 
               layoutId="activeDomainTab"
@@ -238,34 +294,55 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           )}
         </button>
 
-        {childrenPages.map((child) => (
-          <button
-            key={child.id}
-            onClick={() => setActiveTab(child.id)}
-            className={cn(
-              "flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-xs font-bold transition-all relative overflow-hidden group whitespace-nowrap",
-              activeTab === child.id 
-                ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
-                : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            <FileText className={cn(
-              "w-3.5 h-3.5 transition-colors",
-              activeTab === child.id ? "text-blue-600" : "text-slate-400"
-            )} />
-            {t(child.id) || child.title}
-            {activeTab === child.id && (
-              <motion.div 
-                layoutId="activeDomainTab"
-                className="absolute inset-0 bg-white -z-10"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-          </button>
-        ))}
+        {childrenPages.map((child) => {
+          const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
+          const focusAreaColor = 
+            child.focusArea?.includes('Initiating') ? 'bg-blue-500' :
+            child.focusArea?.includes('Planning') ? 'bg-indigo-500' :
+            child.focusArea?.includes('Executing') ? 'bg-emerald-500' :
+            child.focusArea?.includes('Monitoring') ? 'bg-amber-500' :
+            child.focusArea?.includes('Closing') ? 'bg-rose-500' :
+            'bg-slate-300';
+
+          return (
+            <button
+              key={child.id}
+              onClick={() => setActiveTab(child.id)}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative overflow-hidden group whitespace-nowrap min-w-max",
+                activeTab === child.id 
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
+                  : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+              )}
+            >
+              <div className={cn(
+                "p-1.5 rounded-lg transition-all duration-300 relative",
+                activeTab === child.id ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
+              )}>
+                <ChildIcon className="w-4 h-4" />
+                {child.focusArea && (
+                  <div className={cn(
+                    "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white shadow-sm",
+                    focusAreaColor
+                  )} title={child.focusArea} />
+                )}
+              </div>
+              <span className="leading-tight font-semibold uppercase tracking-tight">
+                {stripNumericPrefix(t(child.id) || child.title)}
+              </span>
+              {activeTab === child.id && (
+                <motion.div 
+                  layoutId="activeDomainTab"
+                  className="absolute inset-0 bg-white -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-b-xl p-6 shadow-sm -mt-px">
+      <div className="bg-white border border-slate-200 rounded-b-3xl p-4 shadow-sm -mt-px">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -304,7 +381,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                               </span>
                             )}
                           </div>
-                          <div className="text-2xl font-bold text-slate-900">{kpi.value}</div>
+                          <div className="text-2xl font-semibold text-slate-900">{kpi.value}</div>
                           <div className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</div>
                         </motion.div>
                       );
@@ -327,7 +404,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                         </div>
                       </div>
                     </div>
-                    <div className="h-64 w-full" style={{ minHeight: 256, minWidth: 0 }}>
+                    <div className="h-64 w-full">
                       {getChartData() || (
                         <div className="h-full flex items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
                           <p className="text-slate-400 text-sm">{t('no_chart_data')}</p>

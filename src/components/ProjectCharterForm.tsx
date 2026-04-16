@@ -55,7 +55,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
       <div className="relative">
         <button 
           onClick={() => setShowAiSuggestion(showAiSuggestion === field ? null : field)}
-          className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition-all animate-pulse"
+          className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-semibold hover:bg-blue-100 transition-all animate-pulse"
         >
           <Sparkles className="w-3 h-3" /> AI Suggestion
         </button>
@@ -70,7 +70,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
             >
               <div className="flex items-center gap-2 mb-2 text-blue-400">
                 <Sparkles className="w-3 h-3" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Zarya AI Suggests</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Zarya AI Suggests</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
                 "{suggestion}"
@@ -78,13 +78,13 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               <div className="flex gap-2">
                 <button 
                   onClick={() => applyAiSuggestion(field)}
-                  className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-semibold transition-all flex items-center justify-center gap-1"
                 >
                   <Check className="w-3 h-3" /> Accept
                 </button>
                 <button 
                   onClick={() => setShowAiSuggestion(null)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-semibold transition-all"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -120,7 +120,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
     return (
       <div className={cn("space-y-1", fullWidth ? "col-span-full" : "")}>
         <div className="flex items-center justify-between">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{label}</label>
           {isEditing && AISuggestionBox({ field: fieldName })}
         </div>
         {isEditing ? (
@@ -128,7 +128,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
             <textarea
               value={value}
               onChange={(e) => updateField(fieldName, e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] resize-none"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px] resize-none"
               placeholder={`Enter ${label.toLowerCase()}...`}
             />
           ) : (
@@ -136,12 +136,12 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               type={type}
               value={value}
               onChange={(e) => updateField(fieldName, e.target.value)}
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder={`Enter ${label.toLowerCase()}...`}
             />
           )
         ) : (
-          <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 min-h-[40px]">
+          <div className="p-3 bg-white border border-slate-100 rounded-xl text-xs text-slate-700 min-h-[32px]">
             {value || <span className="text-slate-300 italic">Not specified</span>}
           </div>
         )}
@@ -150,17 +150,17 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       {/* PAGE 1: BASIC INFO & JUSTIFICATION */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
           <Target className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-bold text-slate-900">1. Project Initiation & Justification</h3>
+          <h3 className="text-lg font-semibold text-slate-900">1. Project Initiation & Justification</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {renderField('Project Title', 'Project Title', 'text', true)}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Project Base Currency</label>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Project Base Currency</label>
             {isEditing ? (
               <select
                 value={formData['Base Currency'] || 'IQD'}
@@ -171,7 +171,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                 <option value="USD">USD (US Dollar)</option>
               </select>
             ) : (
-              <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-bold">
+              <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-semibold">
                 {formData['Base Currency'] || 'IQD'}
               </div>
             )}
@@ -188,19 +188,19 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
       </section>
 
       {/* PAGE 2: OBJECTIVES & MILESTONES */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
           <Shield className="w-5 h-5 text-emerald-600" />
-          <h3 className="text-lg font-bold text-slate-900">2. Project Objectives & Milestones</h3>
+          <h3 className="text-lg font-semibold text-slate-900">2. Project Objectives & Milestones</h3>
         </div>
         
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Project Objectives</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Success Criteria</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Person Approving</th>
+                <th className="px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Project Objectives</th>
+                <th className="px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Success Criteria</th>
+                <th className="px-4 py-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Person Approving</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -208,7 +208,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                 <tr key={obj}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-slate-900">{obj}</span>
+                      <span className="text-xs font-semibold text-slate-900">{obj}</span>
                     </div>
                     {isEditing ? (
                       <textarea 
@@ -262,16 +262,16 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
       </section>
 
       {/* PAGE 3: BUDGET & STAKEHOLDERS */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
           <DollarSign className="w-5 h-5 text-amber-600" />
-          <h3 className="text-lg font-bold text-slate-900">3. Budget & Stakeholders</h3>
+          <h3 className="text-lg font-semibold text-slate-900">3. Budget & Stakeholders</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estimated Budget</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Estimated Budget</label>
               {isEditing ? (
                 <input
                   type="text"
@@ -281,7 +281,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                   placeholder="Enter estimated budget..."
                 />
               ) : (
-                <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-bold">
+                <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-semibold">
                   {formData['Estimated Budget'] ? (
                     isNaN(Number(formData['Estimated Budget'])) ? 
                       formData['Estimated Budget'] : 
@@ -303,7 +303,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stakeholders & Roles</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholders & Roles</label>
               {isEditing && (
                 <button 
                   onClick={addStakeholder}
@@ -336,7 +336,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                       </>
                     ) : (
                       <div className="col-span-2 p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-900">{s.name || 'N/A'}</span>
+                        <span className="text-xs font-semibold text-slate-900">{s.name || 'N/A'}</span>
                         <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{s.role || 'N/A'}</span>
                       </div>
                     )}
@@ -360,55 +360,59 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
       </section>
 
       {/* PAGE 4: GOVERNANCE & APPROVALS */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
           <Scale className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-lg font-bold text-slate-900">4. Governance & Approvals</h3>
+          <h3 className="text-lg font-semibold text-slate-900">4. Governance & Approvals</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {renderField('Technical Decisions', 'Technical Decisions', 'textarea')}
           {renderField('Conflict Resolution', 'Conflict Resolution', 'textarea')}
         </div>
 
-        <div className="mt-12 p-8 bg-slate-900 rounded-xl text-white space-y-8">
+        <div className="mt-6 p-6 bg-slate-900 rounded-xl text-white space-y-6">
           <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-blue-400" />
-            <h4 className="text-xl font-bold">Approvals</h4>
+            <Shield className="w-5 h-5 text-blue-400" />
+            <h4 className="text-lg font-semibold">Approvals</h4>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
               <div className="border-b border-slate-700 pb-2">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Project Manager Signature</p>
-                <div className="h-12 flex items-end">
-                  <span className="text-slate-400 italic text-sm">Digital Signature Pending</span>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">Project Manager Signature</p>
+                <div className="h-10 flex items-end">
+                  <span className="text-slate-400 italic text-xs">Digital Signature Pending</span>
                 </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Name</p>
-                <p className="text-sm font-medium">{formData['Project Manager'] || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Date</p>
-                <p className="text-sm font-medium">{new Date().toLocaleDateString('en-US')}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Name</p>
+                  <p className="text-xs font-medium">{formData['Project Manager'] || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Date</p>
+                  <p className="text-xs font-medium">{new Date().toLocaleDateString('en-US')}</p>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="border-b border-slate-700 pb-2">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Sponsor or Originator Signature</p>
-                <div className="h-12 flex items-end">
-                  <span className="text-slate-400 italic text-sm">Digital Signature Pending</span>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">Sponsor or Originator Signature</p>
+                <div className="h-10 flex items-end">
+                  <span className="text-slate-400 italic text-xs">Digital Signature Pending</span>
                 </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Name</p>
-                <p className="text-sm font-medium">{formData['Project Sponsor'] || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Date</p>
-                <p className="text-sm font-medium">{new Date().toLocaleDateString('en-US')}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Name</p>
+                  <p className="text-xs font-medium">{formData['Project Sponsor'] || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Date</p>
+                  <p className="text-xs font-medium">{new Date().toLocaleDateString('en-US')}</p>
+                </div>
               </div>
             </div>
           </div>

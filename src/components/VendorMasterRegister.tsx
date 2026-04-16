@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Vendor, PurchaseOrder, Page, Stakeholder } from '../types';
@@ -9,6 +10,7 @@ import {
   TrendingUp, DollarSign, Briefcase
 } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { masterFormatDivisions } from '../data';
 
@@ -17,6 +19,7 @@ interface VendorMasterRegisterProps {
 }
 
 export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page }) => {
+  const navigate = useNavigate();
   const { selectedProject } = useProject();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
@@ -142,7 +145,7 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
           }
         } catch (err: any) {
           console.error('Failed to mirror to Drive:', err);
-          alert(`Vendor saved to database, but Google Drive backup failed: ${err.message}. Please check your Drive connection.`);
+          toast.error(`Vendor saved to database, but Google Drive backup failed: ${err.message}. Please check your Drive connection.`);
         }
       }
 
@@ -466,7 +469,7 @@ export const VendorMasterRegister: React.FC<VendorMasterRegisterProps> = ({ page
                       defaultValue={editingVendor?.discipline || '01'}
                       onChange={e => {
                         if (e.target.value === 'new') {
-                          window.location.href = '/page/2.2.1';
+                          navigate('/page/2.2.1');
                           return;
                         }
                       }}

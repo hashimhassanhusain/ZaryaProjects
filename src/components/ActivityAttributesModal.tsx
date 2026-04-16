@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor, WorkPackage, User, Stakeholder } from '../types';
 import { masterFormatDivisions } from '../data';
 import { db } from '../firebase';
@@ -26,6 +27,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
   onClose, 
   onSave 
 }) => {
+  const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { formatAmount, convertToBase, currency: baseCurrency, exchangeRate: marketRate } = useCurrency();
   const [formData, setFormData] = useState<Activity>({ 
@@ -308,7 +310,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.wbsId || ''}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      window.location.href = '/page/2.2.9';
+                      navigate('/page/2.2.9');
                       return;
                     }
                     handleInputChange(e);
@@ -332,7 +334,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.division || '01'}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      window.location.href = '/page/2.2.1';
+                      navigate('/page/2.2.1');
                       return;
                     }
                     handleInputChange(e);
@@ -354,7 +356,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.workPackage || ''}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      window.location.href = '/page/2.2.9?tab=packages';
+                      navigate('/page/2.2.9?tab=packages');
                       return;
                     }
                     handleInputChange(e);
@@ -408,7 +410,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.assigneeId || ''}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      window.location.href = '/page/2.2.11';
+                      navigate('/page/2.2.11');
                       return;
                     }
                     handleInputChange(e);
@@ -453,7 +455,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     value={formData.supplierId || ''}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        window.location.href = '/page/4.2.1';
+                        navigate('/page/4.2.1');
                         return;
                       }
                       handleInputChange(e);

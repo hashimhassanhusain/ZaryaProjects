@@ -17,6 +17,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { ProjectIssue } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { 
   collection, 
@@ -80,7 +81,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, projectId }) =
     
     // Knowledge Loop: Mandatory Lesson Learned if Closing
     if (formData.status === 'Closed' && !formData.finalLessonLearned) {
-      alert('Please provide a Final Lesson Learned before closing this issue.');
+      toast.error('Please provide a Final Lesson Learned before closing this issue.');
       return;
     }
 

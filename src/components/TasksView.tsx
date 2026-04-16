@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2 } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, Share2 } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -55,6 +55,62 @@ export const TasksView: React.FC = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  const handleConnectGoogle = async () => {
+    try {
+      const response = await fetch(`/api/auth/google/url?uid=${auth.currentUser?.uid}`);
+      const { url } = await response.json();
+      const authWindow = window.open(url, 'google_auth', 'width=600,height=700');
+      
+      if (!authWindow) {
+        alert('Please allow popups to connect your Google account.');
+      }
+    } catch (error) {
+      console.error('Failed to connect Google:', error);
+    }
+  };
+
+  const handleSyncKeep = async () => {
+    if (!selectedProject || !auth.currentUser) return;
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/sync/keep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: auth.currentUser.uid,
+          projectId: selectedProject.id
+        })
+      });
+
+      if (response.status === 401) {
+        setIsGoogleConnected(false);
+        handleConnectGoogle();
+      } else if (!response.ok) {
+        throw new Error('Sync failed');
+      } else {
+        setIsGoogleConnected(true);
+      }
+    } catch (error) {
+      console.error('Keep sync error:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.provider === 'google') {
+        setIsGoogleConnected(true);
+        handleSyncKeep();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [selectedProject?.id]);
 
   const getAssignee = (uid: string) => {
     return dbUsers.find(u => u.uid === uid) || { name: 'Unassigned', photoURL: 'https://picsum.photos/seed/user/200/200' };
@@ -181,6 +237,8 @@ export const TasksView: React.FC = () => {
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
       });
+      // Trigger sync
+      handleSyncKeep();
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'tasks');
     }
@@ -209,6 +267,8 @@ export const TasksView: React.FC = () => {
       } else {
         await updateDoc(doc(db, 'tasks', taskId), updates);
       }
+      // Trigger sync
+      handleSyncKeep();
     } catch (error) {
       const task = tasks.find(t => t.id === taskId);
       handleFirestoreError(error, OperationType.UPDATE, task?.sourceType === 'issue' ? 'issues' : 'tasks');
@@ -563,6 +623,21 @@ export const TasksView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
+          <button 
+            onClick={handleSyncKeep}
+            disabled={isSyncing}
+            className={cn(
+              "px-4 py-2 rounded-xl text-sm font-bold transition-all border flex items-center gap-2",
+              isSyncing ? "bg-slate-100 text-slate-400 border-slate-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+            )}
+          >
+            {isSyncing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            {isSyncing ? "Syncing..." : "Sync Keep"}
+          </button>
           <button 
             onClick={() => setIsManagingStatuses(true)}
             className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
@@ -1018,7 +1093,7 @@ export const TasksView: React.FC = () => {
                       <div className="space-y-6">
                         {selectedTask.history?.map((item, idx) => (
                           <div key={item.id} className="flex gap-4 relative">
-                            {idx !== selectedTask.history!.length - 1 && (
+                            {idx !== (selectedTask.history?.length || 0) - 1 && (
                               <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-slate-100"></div>
                             )}
                             {getAssignee(item.userId)?.photoURL ? (

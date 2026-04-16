@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { Project } from '../types';
 import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
+import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useLanguage } from '../context/LanguageContext';
@@ -53,7 +54,7 @@ export const ProjectFormView: React.FC = () => {
 
   const handleSave = async () => {
     if (!formData.name || !formData.code) {
-      alert(t('project_name_code_required'));
+      toast.error(t('project_name_code_required'));
       return;
     }
 
@@ -99,7 +100,7 @@ export const ProjectFormView: React.FC = () => {
         const newProject = { id: docRef.id, ...projectData } as Project;
         setSelectedProject(newProject);
         
-        alert(t('project_created_success'));
+        toast.success(t('project_created_success'));
         navigate(`/project/${docRef.id}`);
       } else {
         // Update existing project
@@ -122,12 +123,12 @@ export const ProjectFormView: React.FC = () => {
         };
 
         await setDoc(projectRef, finalData, { merge: true });
-        alert(t('project_updated_success'));
+        toast.success(t('project_updated_success'));
         navigate(-1);
       }
     } catch (error: any) {
       console.error('Error saving project:', error);
-      alert(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -142,7 +143,7 @@ export const ProjectFormView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-6">
+    <div className="w-full py-6 px-6">
       <Breadcrumbs currentPageId="admin-projects" />
 
       <div className="flex justify-end gap-3 mb-12">

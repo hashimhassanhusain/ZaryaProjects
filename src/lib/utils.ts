@@ -7,32 +7,25 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Zarya File Naming Convention (FNC)
- * 1. Contracts & Drawings: [P16314]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]
- * 2. General & Management: [P16314]-[Dept]-[Type]-[Desc]-[Ver]-[Date]
+ * [ProjectCode]-ZRY-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version].pdf
  */
 export function generateZaryaFileName(params: {
   projectCode: string;
-  category: 'technical' | 'management';
-  division?: string; // e.g. Div 03
-  dept?: string; // e.g. MGT, PROC
-  type: string; // e.g. SD, Cont, REP, LET
-  refNo?: string;
+  category: string; // Management, Engineering, Procurement, Finance, Legal
+  dept: string; // INIT, PLAN, EXEC, MON, CLS
+  type: string; // FRM, PLN, RPT, LOG, DRW, SPC, MS
   description: string;
-  version: string; // e.g. V01
+  version: string; // e.g. 1
   date?: string; // YYYYMMDD
 }) {
   const date = params.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
   const desc = params.description.replace(/\s+/g, '_').toUpperCase();
-  const ver = params.version.startsWith('V') ? params.version : `V${params.version.padStart(2, '0')}`;
+  const ver = params.version.startsWith('V') ? params.version : `V${params.version}`;
+  const cat = params.category.toUpperCase();
+  const dept = params.dept.toUpperCase();
+  const type = params.type.toUpperCase();
   
-  if (params.category === 'technical') {
-    const div = params.division || 'DIV00';
-    const ref = params.refNo || '000';
-    return `${params.projectCode}-${div}-${params.type}-${ref}-${desc}-${ver}-${date}`;
-  } else {
-    const dept = params.dept || 'MGT';
-    return `${params.projectCode}-${dept}-${params.type}-${desc}-${ver}-${date}`;
-  }
+  return `${params.projectCode}-ZRY-${cat}-${dept}-${type}-${desc}-${date}-${ver}`;
 }
 
 export function formatCurrency(amount: number, currency: string = 'IQD') {
@@ -52,14 +45,27 @@ export function stripNumericPrefix(title: string): string {
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {
+  const phaseOrder = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
+
   return [...items].sort((a, b) => {
     const getWeight = (p: any) => {
       const title = p.title.toLowerCase();
       const idParts = p.id.split('.');
-      const focusArea = parseInt(idParts[0]) || 0;
-      let weight = focusArea * 10000;
+      
+      // Determine phase weight from focusArea string
+      let phaseWeight = 99;
+      if (p.focusArea) {
+        const foundPhase = phaseOrder.findIndex(phase => p.focusArea.includes(phase));
+        if (foundPhase !== -1) phaseWeight = foundPhase;
+      } else {
+        // Fallback to ID-based phase if focusArea is missing
+        const firstDigit = parseInt(idParts[0]);
+        if (!isNaN(firstDigit)) phaseWeight = firstDigit - 1;
+      }
 
-      // Global Priorities
+      let weight = phaseWeight * 10000;
+
+      // Global Priorities within the same phase
       if (title === 'project charter') return weight - 5000;
       
       // 1. Management Plans first
@@ -72,8 +78,8 @@ export function sortDomainPages(items: any[], domainKey: string) {
         return weight - 3000;
       }
 
-      // Specific Schedule Domain Order (Focus Area 2)
-      if (focusArea === 2 && domainKey === 'schedule') {
+      // Specific Schedule Domain Order
+      if (domainKey === 'schedule') {
         const scheduleOrder = [
           'schedule management plan',
           'activity list',
@@ -88,8 +94,8 @@ export function sortDomainPages(items: any[], domainKey: string) {
         if (idx !== -1) return weight + idx;
       }
 
-      // Specific Scope Domain Order (Focus Area 2)
-      if (focusArea === 2 && domainKey === 'scope') {
+      // Specific Scope Domain Order
+      if (domainKey === 'scope') {
         const scopeOrder = [
           'scope management plan',
           'requirements management plan',
@@ -97,6 +103,7 @@ export function sortDomainPages(items: any[], domainKey: string) {
           'project scope statement',
           'work breakdown structure',
           'wbs dictionary',
+          'work packages',
           'requirements traceability matrix',
           'inter requirements traceability matrix',
           'assumption and constraint log'
@@ -105,8 +112,12 @@ export function sortDomainPages(items: any[], domainKey: string) {
         if (idx !== -1) return weight + idx;
       }
 
-      // Default to ID-based order
+      // Default to ID-based order within phase
       const subId = parseFloat(idParts.slice(1).join('.')) || 0;
+      // For non-numeric IDs, use a small increment based on title to keep it stable
+      if (isNaN(subId)) {
+        return weight + 500 + (title.charCodeAt(0) / 100);
+      }
       return weight + subId;
     };
 

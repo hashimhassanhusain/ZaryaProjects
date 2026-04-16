@@ -7,6 +7,7 @@ import { Project } from '../types';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 
 import { useProject } from '../context/ProjectContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -45,10 +46,10 @@ export const AdminProjectsView: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t('backup_failed'));
-      alert(`${t('backup_success')}\nFile: ${data.fileName}`);
+      toast.success(`${t('backup_success')}\nFile: ${data.fileName}`);
     } catch (error: any) {
       console.error('Backup error:', error);
-      alert(`${t('backup_failed')}: ${error.message}`);
+      toast.error(`${t('backup_failed')}: ${error.message}`);
     } finally {
       setIsBackingUp(false);
     }
@@ -77,10 +78,10 @@ export const AdminProjectsView: React.FC = () => {
       }
 
       const data = await res.json();
-      alert(`✅ ${t('drive_connected_success')}\n\nFolder Name: ${data.folderName}\nService Account: ${data.clientEmail}`);
+      toast.success(`✅ ${t('drive_connected_success')}\n\nFolder Name: ${data.folderName}\nService Account: ${data.clientEmail}`);
     } catch (error: any) {
       console.error('Test Drive Error:', error);
-      alert(`❌ ${t('connection_failed')}\n\nReason: ${error.message}\n\nCheck the server logs for more details.`);
+      toast.error(`❌ ${t('connection_failed')}\n\nReason: ${error.message}\n\nCheck the server logs for more details.`);
     } finally {
       setIsTestingDrive(false);
     }
@@ -116,9 +117,9 @@ export const AdminProjectsView: React.FC = () => {
         driveFolderId: rootFolderId
       };
       await addDoc(collection(db, 'projects'), demoProject);
-      alert(`✅ ${t('demo_project_added_success')}`);
+      toast.success(`✅ ${t('demo_project_added_success')}`);
     } catch (error: any) {
-      alert(`❌ ${t('failed_to_add_demo_project')}: ${error.message}`);
+      toast.error(`❌ ${t('failed_to_add_demo_project')}: ${error.message}`);
     } finally {
       setIsSeeding(false);
     }
@@ -157,13 +158,13 @@ export const AdminProjectsView: React.FC = () => {
       
       setIsAdding(false);
       setNewProject({ name: '', code: '', manager: '', status: 'active' });
-      alert(t('project_created_success'));
+      toast.success(t('project_created_success'));
       
       // Navigate to the new project's dashboard
       navigate(`/project/${docRef.id}`);
     } catch (error: any) {
       console.error('Error creating project:', error);
-      alert(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('failed_to_save_project')}: ${error.message || 'Unknown error'}`);
     } finally {
       setIsInitializingDrive(false);
     }
@@ -216,10 +217,8 @@ export const AdminProjectsView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-6">
-      <Breadcrumbs currentPageId="admin-projects" />
-
-      <div className="flex flex-wrap items-center justify-end gap-4 mb-12">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-end gap-4 mb-8">
         <button 
           onClick={handleSeedData}
           disabled={isSeeding}

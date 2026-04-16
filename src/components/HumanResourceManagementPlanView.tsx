@@ -134,7 +134,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
 
   const handleAddRole = () => {
     const newRole: HRRole = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       role: '',
       responsibility: '',
       authority: '',

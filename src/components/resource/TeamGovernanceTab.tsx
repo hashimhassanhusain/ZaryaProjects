@@ -13,6 +13,7 @@ import {
   Gavel
 } from 'lucide-react';
 import { TeamOperatingAgreement, TeamMember, WBSLevel } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { 
   collection, 
@@ -94,7 +95,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
         const docRef = await addDoc(collection(db, 'team_agreements'), data);
         setAgreement({ ...data, id: docRef.id });
       }
-      alert('Team Operating Agreement saved successfully.');
+      toast.success('Team Operating Agreement saved successfully.');
     } catch (err) {
       handleFirestoreError(err, agreement?.id ? OperationType.UPDATE : OperationType.CREATE, 'team_agreements');
     } finally {

@@ -6,6 +6,7 @@ import { User, Page, Project, Company, Contact } from '../types';
 import { ArrowLeft, Save, Shield, Mail, Camera, User as UserIcon, CheckCircle2, Globe, Layout, Send, Building2, Search } from 'lucide-react';
 import { pages as allPages } from '../data';
 import { useProject } from '../context/ProjectContext';
+import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { Breadcrumbs } from './Breadcrumbs';
 
@@ -92,9 +93,9 @@ export const UserFormView: React.FC = () => {
       if (isNew) {
         // Simulate sending email
         console.log(`Sending welcome email to ${formData.email}...`);
-        alert(`User created and welcome email sent to ${formData.email}!`);
+        toast.success(`User created and welcome email sent to ${formData.email}!`);
       } else {
-        alert('User profile updated successfully!');
+        toast.success('User profile updated successfully!');
       }
       
       navigate('/admin/users');
@@ -169,7 +170,7 @@ export const UserFormView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-6">
+    <div className="w-full py-6 px-6">
       <Breadcrumbs currentPageId={pageId} />
 
       <div className="flex justify-end gap-3 mb-12">

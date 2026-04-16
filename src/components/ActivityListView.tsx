@@ -11,6 +11,7 @@ import {
   Edit2, Calendar, Link2, X, Filter, Layers, Box
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
@@ -149,7 +150,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         };
         await setDoc(doc(db, 'activities', activity.id), activity);
       }
-      alert(t('activities_generated_success'));
+      toast.success(t('activities_generated_success'));
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'activities');
     } finally {
@@ -165,7 +166,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
 
     // Group by work package
     const wp = selectedActivities[0].workPackage;
-    const poId = `PO-${Math.floor(1000 + Math.random() * 9000)}`;
+    const poId = `PO-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
     
     const newPO: PurchaseOrder = {
       id: poId,
@@ -198,19 +199,40 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
         });
       }
       
-      alert(`${t('po_created_success')} ${poId}`);
+      toast.success(`${t('po_created_success')} ${poId}`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'purchaseOrders');
     }
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (!confirm(t('confirm_delete_activity'))) return;
-    try {
-      await deleteDoc(doc(db, 'activities', id));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'activities');
-    }
+    toast((toastObj) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">{t('confirm_delete_activity')}</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(toastObj.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(toastObj.id);
+              try {
+                await deleteDoc(doc(db, 'activities', id));
+                toast.success(t('activity_deleted_success'));
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'activities');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            {t('delete')}
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const handleSaveAttributes = async (updatedActivity: Activity) => {

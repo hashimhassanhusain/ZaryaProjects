@@ -409,7 +409,7 @@ export const WBSView: React.FC = () => {
   const milestones = activities.filter(a => a.activityType === 'Milestone');
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 md:p-8">
+    <div className="w-full p-4 md:p-8">
       {/* Tabs Navigation */}
       <div className="flex justify-between items-center gap-4 mb-6">
         <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto max-w-full no-scrollbar">
@@ -557,66 +557,119 @@ export const WBSView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {wbsLevels.filter(l => l.type === 'Work Package').length === 0 ? (
+                {(wbsLevels.filter(l => l.type === 'Work Package').length === 0 && workPackages.length === 0) ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Package className="w-8 h-8 text-slate-200" />
-                        <p className="text-slate-400 text-sm">No work packages defined in the WBS Hierarchy yet.</p>
+                        <p className="text-slate-400 text-sm">No work packages defined yet.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  wbsLevels.filter(l => l.type === 'Work Package').map(wp => {
-                    const parent = wbsLevels.find(l => l.id === wp.parentId);
-                    const grandParent = parent ? wbsLevels.find(l => l.id === parent.parentId) : null;
-                    
-                    return (
-                      <tr key={wp.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{wp.code}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-bold text-slate-900">{wp.title}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs font-medium text-slate-600">
-                            {parent?.type === 'Cost Account' ? parent.title : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs font-medium text-slate-600">
-                            {grandParent ? grandParent.title : (parent?.type !== 'Cost Account' ? parent?.title : 'N/A')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={cn(
-                            "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                            wp.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
-                            wp.status === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                          )}>
-                            {wp.status || 'Not Started'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button 
-                              onClick={() => setEditingWbs(wp)}
-                              className="p-2 text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteWbs(wp.id)}
-                              className="p-2 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
+                  <>
+                    {/* WBS-based Work Packages */}
+                    {wbsLevels.filter(l => l.type === 'Work Package').map(wp => {
+                      const parent = wbsLevels.find(l => l.id === wp.parentId);
+                      const grandParent = parent ? wbsLevels.find(l => l.id === parent.parentId) : null;
+                      
+                      return (
+                        <tr key={wp.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-6 py-4">
+                            <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{wp.code}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-slate-900">{wp.title}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-medium text-slate-600">
+                              {parent?.type === 'Cost Account' ? parent.title : (wp.divisionCode || 'N/A')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-medium text-slate-600">
+                              {grandParent ? grandParent.title : (parent?.type !== 'Cost Account' ? parent?.title : 'N/A')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
+                              wp.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
+                              wp.status === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
+                            )}>
+                              {wp.status || 'Not Started'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-center gap-2">
+                              <button 
+                                onClick={() => setEditingWbs(wp)}
+                                className="p-2 text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteWbs(wp.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Collection-based Work Packages */}
+                    {workPackages.map(wp => {
+                      const wbs = wbsLevels.find(l => l.id === wp.wbsId);
+                      const division = masterFormatDivisions.find(d => d.id === wp.divisionId);
+                      
+                      return (
+                        <tr key={wp.id} className="hover:bg-slate-50/50 transition-colors group border-l-4 border-blue-500/20">
+                          <td className="px-6 py-4">
+                            <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{wp.code}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-slate-900">{wp.title}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-medium text-slate-600">
+                              {division ? `${division.id} - ${division.title}` : wp.divisionId}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-medium text-slate-600">
+                              {wbs?.title || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
+                              wp.status === 'Active' ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+                            )}>
+                              {wp.status || 'Active'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-center gap-2">
+                              <button 
+                                onClick={() => setEditingPackage(wp)}
+                                className="p-2 text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteWorkPackage(wp.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
                 )}
               </tbody>
             </table>

@@ -16,6 +16,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { ProcessImprovement } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError } from '../../firebase';
 import { 
   collection, 
@@ -79,7 +80,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
       await updateDoc(doc(db, 'process_improvements', improvement.id), { status: 'Approved' });
       
       // PMO TRIGGER: Update suggestion for Policies & Procedures
-      alert(`PMO TRIGGER: Approved improvement for "${improvement.workflowName}" has been flagged for integration into the Policies & Procedures governance hub. A draft update has been suggested to the Project Manager.`);
+      toast.success(`PMO TRIGGER: Approved improvement for "${improvement.workflowName}" has been flagged for integration into the Policies & Procedures governance hub. A draft update has been suggested to the Project Manager.`);
       
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'process_improvements');
