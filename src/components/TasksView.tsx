@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, Share2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -66,7 +67,7 @@ export const TasksView: React.FC = () => {
       const authWindow = window.open(url, 'google_auth', 'width=600,height=700');
       
       if (!authWindow) {
-        alert('Please allow popups to connect your Google account.');
+        toast.error('Please allow popups to connect your Google account.');
       }
     } catch (error) {
       console.error('Failed to connect Google:', error);

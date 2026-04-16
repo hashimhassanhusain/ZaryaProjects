@@ -36,7 +36,7 @@ try {
 const db = admin.apps.length ? admin.firestore() : null as any;
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
@@ -838,7 +838,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://0.0.0.0:${PORT}`);
     
     // Test Drive Connection asynchronously after server is up
     (async () => {
