@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { WBSLevel, BOQItem, WorkPackage } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
@@ -21,7 +20,6 @@ import { masterFormatData } from '../data/masterFormat';
 import { Page, Activity } from '../types';
 
 export const WBSView: React.FC = () => {
-  const navigate = useNavigate();
   const { selectedProject } = useProject();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -1059,7 +1057,7 @@ export const WBSView: React.FC = () => {
                       value={editingPackage ? editingPackage.divisionId : newPackage.divisionId}
                       onChange={e => {
                         if (e.target.value === 'new') {
-                          navigate('/page/2.2.1');
+                          window.location.href = '/page/2.2.1';
                           return;
                         }
                         editingPackage ? setEditingPackage({...editingPackage, divisionId: e.target.value}) : setNewPackage({...newPackage, divisionId: e.target.value})

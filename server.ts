@@ -9,188 +9,14 @@ import cors from 'cors';
 import AdmZip from 'adm-zip';
 import { jsPDF } from 'jspdf';
 import { Readable } from 'stream';
-import * as admin from 'firebase-admin';
-
-// Initialize Firebase Admin
-try {
-  if (!admin.apps.length) {
-    const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
-    if (envCreds) {
-      try {
-        const credentials = JSON.parse(envCreds);
-        admin.initializeApp({
-          credential: admin.credential.cert(credentials),
-        });
-      } catch (e) {
-        console.error('Failed to parse GOOGLE_DRIVE_CREDENTIALS for Firebase Admin:', e);
-        admin.initializeApp();
-      }
-    } else {
-      admin.initializeApp();
-    }
-  }
-} catch (error) {
-  console.error('Firebase Admin initialization failed:', error);
-}
-
-const db = admin.apps.length ? admin.firestore() : null as any;
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = 3000;
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-
-// Google OAuth Setup
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-
-const oauth2Client = new google.auth.OAuth2(
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-  `${process.env.APP_URL || 'http://localhost:3000'}/auth/google/callback`
-);
-
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-  console.warn('⚠️ GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing. Google Keep sync will not work.');
-}
-
-// Google Auth Routes
-app.get('/api/auth/google/url', (req, res) => {
-  const { uid } = req.query;
-  if (!uid) return res.status(400).json({ error: 'User ID is required' });
-
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/keep', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-    state: uid as string,
-    prompt: 'consent'
-  });
-  res.json({ url });
-});
-
-app.get('/auth/google/callback', async (req, res) => {
-  const { code, state: uid } = req.query;
-  if (!code || !uid) return res.status(400).send('Missing code or uid');
-
-  try {
-    const { tokens } = await oauth2Client.getToken(code as string);
-    
-    // Store tokens in Firestore
-    await db.collection('users').doc(uid as string).collection('tokens').doc('google').set({
-      ...tokens,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    res.send(`
-      <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', provider: 'google' }, '*');
-              window.close();
-            } else {
-              window.location.href = '/';
-            }
-          </script>
-          <p>Authentication successful. This window should close automatically.</p>
-        </body>
-      </html>
-    `);
-  } catch (error) {
-    console.error('Google OAuth callback error:', error);
-    res.status(500).send('Authentication failed');
-  }
-});
-
-// Google Keep Sync Route
-app.post('/api/sync/keep', async (req, res) => {
-  const { uid, projectId } = req.body;
-  if (!uid || !projectId) return res.status(400).json({ error: 'Missing uid or projectId' });
-
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return res.status(500).json({ error: 'Google OAuth is not configured on the server.' });
-  }
-
-  try {
-    // 1. Get user tokens
-    const tokenDoc = await db.collection('users').doc(uid).collection('tokens').doc('google').get();
-    if (!tokenDoc.exists) return res.status(401).json({ error: 'Google account not connected' });
-    
-    const tokens = tokenDoc.data();
-    const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
-    auth.setCredentials(tokens!);
-
-    // Refresh token if expired
-    auth.on('tokens', async (newTokens) => {
-      await db.collection('users').doc(uid).collection('tokens').doc('google').update({
-        ...newTokens,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-    });
-
-    const keep = google.keep({ version: 'v1', auth });
-
-    // 2. Get tasks for the project
-    const tasksSnapshot = await db.collection('tasks').where('projectId', '==', projectId).get();
-    const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // 3. Group tasks by status
-    const tasksByStatus: Record<string, any[]> = {};
-    tasks.forEach((task: any) => {
-      if (!tasksByStatus[task.status]) tasksByStatus[task.status] = [];
-      tasksByStatus[task.status].push(task);
-    });
-
-    // 4. Sync with Keep
-    // Since Keep API doesn't support labels, we'll create one note per status
-    // and put the status in the title.
-    
-    // First, list existing notes to avoid duplicates or to update them
-    const existingNotesRes = await keep.notes.list({
-      filter: `trashed = false`
-    });
-    const existingNotes = existingNotesRes.data.notes || [];
-
-    for (const [status, statusTasks] of Object.entries(tasksByStatus)) {
-      const title = `[ZARYA] ${status}`;
-      const content = statusTasks.map((t: any) => `- ${t.title}${t.assigneeId ? ` (@${t.assigneeId})` : ''}`).join('\n');
-      
-      const existingNote = existingNotes.find(n => n.title === title);
-
-      if (existingNote) {
-        // Update existing note
-        // Note: Keep API v1 update is limited. We might need to delete and recreate if update is not enough.
-        // Actually, the Keep API v1 doesn't have a direct "update body" method that is simple.
-        // It uses "notes.patch" but the body is a Section.
-        
-        await keep.notes.delete({ name: existingNote.name! });
-      }
-
-      // Create new note
-      await keep.notes.create({
-        requestBody: {
-          title,
-          body: {
-            text: {
-              text: content
-            }
-          }
-        }
-      });
-    }
-
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error('Keep sync error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // Google Drive Auth
 const getDriveClient = () => {
@@ -838,7 +664,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://0.0.0.0:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
     
     // Test Drive Connection asynchronously after server is up
     (async () => {
