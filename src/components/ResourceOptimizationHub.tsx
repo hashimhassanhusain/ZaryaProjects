@@ -36,59 +36,65 @@ import { TasksView } from './TasksView';
 import { ProgressReportView } from './ProgressReportView';
 import { VendorMasterRegister } from './VendorMasterRegister';
 import { DetailView } from './DetailView';
-import { pages, getFocusArea } from '../data';
+import { ContactsView } from './ContactsView';
+import { CompaniesView } from './CompaniesView';
+import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanView';
+import { pages } from '../data';
 
 interface ResourceOptimizationHubProps {
   page: Page;
 }
 
 type TabType = 
+  | 'contacts'
+  | 'companies'
+  | 'team-directory'
+  | 'hrmp'
   | 'resource-plan' 
   | 'resource-structure' 
   | 'responsibility-matrix' 
   | 'job-descriptions' 
   | 'vendor-evaluation' 
-  | 'inventory-3m'
-  | 'optimization'
-  | 'team-directory'
-  | 'operating-agreement'
-  | 'performance'
   | 'tasks'
   | 'meetings'
+  | 'operating-agreement'
+  | 'inventory-3m'
+  | 'optimization'
+  | 'performance'
   | 'progress';
 
 export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
   const projectId = selectedProject?.id || '';
-  const [activeTab, setActiveTab] = useState<TabType>('resource-plan');
+  const [activeTab, setActiveTab] = useState<TabType>('hrmp');
 
   const tabs = [
-    { id: 'resource-plan', label: t('resource_plan'), icon: Users, color: 'blue' },
+    // PLAN
+    { id: 'hrmp', label: t('hrmp'), icon: Briefcase, color: 'slate' },
+    { id: 'resource-plan', label: t('resource_plan'), icon: Layers, color: 'blue' },
     { id: 'resource-structure', label: t('resource_structure'), icon: Layers, color: 'purple' },
     { id: 'responsibility-matrix', label: t('responsibility_matrix'), icon: Grid3X3, color: 'amber' },
     { id: 'job-descriptions', label: t('job_descriptions'), icon: Briefcase, color: 'slate' },
     { id: 'vendor-evaluation', label: t('vendor_evaluation'), icon: Target, color: 'emerald' },
-    { id: 'inventory-3m', label: t('inventory_3m'), icon: Package, color: 'orange' },
-    { id: 'optimization', label: t('optimization'), icon: Zap, color: 'rose' },
-    { id: 'team-directory', label: t('team_directory'), icon: Users2, color: 'indigo' },
     { id: 'operating-agreement', label: t('operating_agreement'), icon: FileText, color: 'cyan' },
-    { id: 'performance', label: t('performance_assessment'), icon: BarChart3, color: 'violet' },
+    
+    // EXECUTE
+    { id: 'contacts', label: t('contacts'), icon: Users, color: 'blue' },
+    { id: 'companies', label: t('companies'), icon: Users2, color: 'indigo' },
+    { id: 'team-directory', label: t('team_directory'), icon: Users2, color: 'indigo' },
     { id: 'tasks', label: t('task_management'), icon: LayoutDashboard, color: 'sky' },
     { id: 'meetings', label: t('meeting_management'), icon: Calendar, color: 'pink' },
+    { id: 'inventory-3m', label: t('inventory_3m'), icon: Package, color: 'orange' },
+    { id: 'optimization', label: t('optimization'), icon: Zap, color: 'rose' },
+    
+    // MONITOR
+    { id: 'performance', label: t('performance_assessment'), icon: BarChart3, color: 'violet' },
     { id: 'progress', label: t('progress_reports'), icon: FileText, color: 'teal' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-          <span className="hover:text-slate-600 cursor-pointer transition-colors">{t('finance')}</span>
-          <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
-          <span className="text-slate-900">{t('resource_optimization_hub')}</span>
-        </nav>
-
+    <div className="w-full space-y-8">
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-[2rem] border border-slate-200 shadow-sm w-full overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
@@ -126,21 +132,23 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           transition={{ duration: 0.3 }}
           className="min-h-[600px]"
         >
+          {activeTab === 'contacts' && <ContactsView />}
+          {activeTab === 'companies' && <CompaniesView />}
+          {activeTab === 'team-directory' && <TeamDirectoryTab projectId={projectId} />}
+          {activeTab === 'hrmp' && <HumanResourceManagementPlanView page={pages.find(p => p.id === '2.1.10')!} />}
           {activeTab === 'resource-plan' && <ResourceRequirementsTab projectId={projectId} />}
           {activeTab === 'resource-structure' && <RBSTab projectId={projectId} />}
           {activeTab === 'responsibility-matrix' && <RAMTab projectId={projectId} />}
           {activeTab === 'job-descriptions' && <RolesResponsibilitiesTab projectId={projectId} />}
           {activeTab === 'vendor-evaluation' && <SelectionCriteriaTab projectId={projectId} />}
-          {activeTab === 'inventory-3m' && <VendorMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
-          {activeTab === 'optimization' && <ProcessImprovementTab projectId={projectId} />}
-          {activeTab === 'team-directory' && <TeamDirectoryTab projectId={projectId} />}
-          {activeTab === 'operating-agreement' && <TeamGovernanceTab projectId={projectId} />}
-          {activeTab === 'performance' && <PerformanceStatusTab projectId={projectId} />}
           {activeTab === 'tasks' && <TasksView page={pages.find(p => p.id === '2.6.21')!} />}
           {activeTab === 'meetings' && <DetailView page={pages.find(p => p.id === '2.6.22')!} />}
+          {activeTab === 'operating-agreement' && <TeamGovernanceTab projectId={projectId} />}
+          {activeTab === 'inventory-3m' && <VendorMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
+          {activeTab === 'optimization' && <ProcessImprovementTab projectId={projectId} />}
+          {activeTab === 'performance' && <PerformanceStatusTab projectId={projectId} />}
           {activeTab === 'progress' && <ProgressReportView page={pages.find(p => p.id === '3.3.3')!} />}
         </motion.div>
       </div>
-    </div>
   );
 };

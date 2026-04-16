@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Page, Project, PageVersion } from '../types';
-import { getParent, pages, getFocusArea, users } from '../data';
+import { getParent, pages, users } from '../data';
 import { 
   Table, 
   FileText, 
@@ -29,6 +29,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import { cn, generateZaryaFileName, stripNumericPrefix } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
@@ -1306,16 +1307,38 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
 
   const handleDeleteAnalysis = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this analysis record?')) return;
-    try {
-      await deleteDoc(doc(db, 'stakeholder_analysis', id));
-      // Refresh list
-      const q = query(collection(db, 'stakeholder_analysis'), where('projectId', '==', selectedProject.id));
-      const snap = await getDocs(q);
-      setStakeholderAnalysis(snap.docs.map(d => ({ id: d.id, ...d.data() } as StakeholderAnalysis)));
-    } catch (err) {
-      console.error('Error deleting analysis:', err);
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this analysis record?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'stakeholder_analysis', id));
+                // Refresh list
+                const q = query(collection(db, 'stakeholder_analysis'), where('projectId', '==', selectedProject.id));
+                const snap = await getDocs(q);
+                setStakeholderAnalysis(snap.docs.map(d => ({ id: d.id, ...d.data() } as StakeholderAnalysis)));
+                toast.success('Analysis record deleted successfully');
+              } catch (err) {
+                console.error('Error deleting analysis:', err);
+                toast.error('Failed to delete analysis record');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const fetchAnalysisVersions = async (analysisId: string) => {
@@ -1493,7 +1516,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
       await updateDoc(projectRef, updates);
 
-      alert(asNewVersion ? 'New version saved and uploaded to Drive successfully!' : 'Document updated and uploaded to Drive successfully!');
+      toast.success(asNewVersion ? 'New version saved and uploaded to Drive successfully!' : 'Document updated and uploaded to Drive successfully!');
       setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving document:', error);
@@ -1552,10 +1575,30 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => {
-                        if (confirm('Restore this version? Current unsaved changes will be lost.')) {
-                          setFormData(v.data);
-                          setIsEditing(true);
-                        }
+                        toast((t) => (
+                          <div className="flex flex-col gap-4">
+                            <p className="text-sm font-bold text-slate-900">Restore this version? Current unsaved changes will be lost.</p>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => toast.dismiss(t.id)}
+                                className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => {
+                                  toast.dismiss(t.id);
+                                  setFormData(v.data);
+                                  setIsEditing(true);
+                                  toast.success('Version restored');
+                                }}
+                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                              >
+                                Restore
+                              </button>
+                            </div>
+                          </div>
+                        ), { duration: 5000 });
                       }}
                       className="px-3 py-1.5 bg-white border border-slate-200 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-50 transition-all shadow-sm"
                     >
@@ -2282,10 +2325,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       const snapv = await getDocs(qv);
       setChangeVersions(snapv.docs.map(d => ({ id: d.id, ...d.data() } as ChangeManagementVersion)).sort((a, b) => b.version - a.version));
 
-      alert('Change Management Plan saved successfully.');
+      toast.success('Change Management Plan saved successfully.');
     } catch (e) {
       console.error('Error saving change plan:', e);
-      alert('Failed to save Change Management Plan.');
+      toast.error('Failed to save Change Management Plan.');
     }
   };
 
@@ -2409,7 +2452,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       const snapv = await getDocs(qv);
       setQualityVersions(snapv.docs.map(d => ({ id: d.id, ...d.data() } as QualityManagementVersion)).sort((a, b) => b.version - a.version));
 
-      alert(`Quality Management Plan ${isNewVersion ? 'versioned' : 'updated'} successfully!`);
+      toast.success(`Quality Management Plan ${isNewVersion ? 'versioned' : 'updated'} successfully!`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'qualityManagementPlans');
     }
@@ -2458,10 +2501,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       const snapv = await getDocs(qv);
       setPmVersions(snapv.docs.map(d => ({ id: d.id, ...d.data() } as ProjectManagementVersion)).sort((a, b) => b.version - a.version));
 
-      alert('Project Management Plan saved successfully.');
+      toast.success('Project Management Plan saved successfully.');
     } catch (e) {
       console.error('Error saving PM plan:', e);
-      alert('Failed to save Project Management Plan.');
+      toast.error('Failed to save Project Management Plan.');
     }
   };
 
@@ -2480,9 +2523,31 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
 
   const handleDeletePhase = (id: string) => {
-    if (!pmPlan || !window.confirm('Are you sure you want to delete this phase?')) return;
-    const updatedPhases = pmPlan.phases.filter(p => p.id !== id);
-    setPmPlan({ ...pmPlan, phases: updatedPhases });
+    if (!pmPlan) return;
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this phase?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              const updatedPhases = pmPlan.phases.filter(p => p.id !== id);
+              setPmPlan({ ...pmPlan, phases: updatedPhases });
+              toast.success('Phase removed');
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const handleTailoringSave = (decision: TailoringDecision) => {
@@ -2536,15 +2601,37 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
 
   const handleDeleteCCBMember = async (id: string) => {
-    if (!changePlan || !window.confirm('Are you sure you want to remove this CCB member?')) return;
-
-    try {
-      const updatedMembers = changePlan.ccbMembers.filter(m => m.id !== id);
-      await updateDoc(doc(db, 'changeManagementPlans', changePlan.id), { ccbMembers: updatedMembers });
-      setChangePlan({ ...changePlan, ccbMembers: updatedMembers });
-    } catch (e) {
-      console.error('Error deleting CCB member:', e);
-    }
+    if (!changePlan) return;
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to remove this CCB member?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const updatedMembers = changePlan.ccbMembers.filter(m => m.id !== id);
+                await updateDoc(doc(db, 'changeManagementPlans', changePlan.id), { ccbMembers: updatedMembers });
+                setChangePlan({ ...changePlan, ccbMembers: updatedMembers });
+                toast.success('CCB member removed');
+              } catch (e) {
+                console.error('Error deleting CCB member:', e);
+                toast.error('Failed to remove CCB member');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const renderChangeManagementPlan = () => {
@@ -3912,7 +3999,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   setShowPinModal(false);
                   setAdminPin('');
                 } else {
-                  alert('Invalid Admin PIN');
+                  toast.error('Invalid Admin PIN');
                 }
               }}
               className="py-4 bg-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all"
@@ -3945,7 +4032,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <button 
                 onClick={() => setStakeholderView('list')}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                  "px-4 py-2 rounded-xl text-xs font-semibold transition-all",
                   stakeholderView === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 )}
               >
@@ -3954,7 +4041,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <button 
                 onClick={() => setStakeholderView('matrix')}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                  "px-4 py-2 rounded-xl text-xs font-semibold transition-all",
                   stakeholderView === 'matrix' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 )}
               >
@@ -3982,31 +4069,31 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Name</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Position/Org</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Role</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Influence</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Engagement</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">ID</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Name</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Position/Org</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Role</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Influence</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Engagement</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredStakeholders.map((s, idx) => (
                       <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 whitespace-nowrap">SR-{String(idx + 1).padStart(3, '0')}</td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900 whitespace-nowrap">{s.name}</td>
+                        <td className="px-6 py-4 text-[10px] font-mono font-semibold text-slate-400 whitespace-nowrap">SR-{String(idx + 1).padStart(3, '0')}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">{s.name}</td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{s.position}</td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{s.role}</td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span className={cn(
-                              "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                              "px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
                               s.influence === 'High' ? "bg-rose-50 text-rose-600" : s.influence === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-slate-50 text-slate-600"
                             )}>
                               {s.influence}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-300">({s.influenceScore})</span>
+                            <span className="text-[10px] font-semibold text-slate-300">({s.influenceScore})</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
@@ -4274,9 +4361,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     <div className="space-y-8 pb-20">
       {/* Form Actions Header */}
       <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex justify-between items-center gap-4">
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 flex items-center gap-4">
+          {page.focusArea && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap">
+              {page.focusArea}
+            </span>
+          )}
           {isLogPage && (
-            <div className="relative">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
@@ -4346,9 +4438,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       {isLogPage ? (
         renderTable()
       ) : (
-        <div className="max-w-5xl mx-auto space-y-12">
+        <div className="max-w-5xl mx-auto space-y-6">
           {isCharterPage ? (
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
               <ProjectCharterForm 
                 formData={formData}
                 setFormData={setFormData}
@@ -4435,13 +4527,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden"
             >
               <div className="p-8 bg-slate-50 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-900">Editing Plan Information</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Editing Plan Information</h3>
                 <p className="text-sm text-slate-500">Update the fields below to modify the {page.title}.</p>
               </div>
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {page.formFields?.map((field, index) => (
                   <div key={index} className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{field}</label>
+                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{field}</label>
                     <textarea 
                       value={formData[field] || ''}
                       onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
@@ -4454,13 +4546,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-4">
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="px-6 py-2 text-slate-500 font-bold"
+                  className="px-6 py-2 text-slate-500 font-semibold"
                 >
                   Discard Changes
                 </button>
                 <button 
                   onClick={() => handleSaveDocument(false)}
-                  className="px-8 py-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200"
+                  className="px-8 py-2 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200"
                 >
                   Save Changes
                 </button>
@@ -4485,7 +4577,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 >
                   <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900">{editingStakeholder.id ? 'Edit Stakeholder' : 'Add New Stakeholder'}</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">{editingStakeholder.id ? 'Edit Stakeholder' : 'Add New Stakeholder'}</h3>
                       <p className="text-xs text-slate-500">Stakeholder Register Entry v{editingStakeholder.version || 1}</p>
                     </div>
                     <button onClick={() => setIsStakeholderModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
@@ -4496,7 +4588,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <div className="p-8 space-y-8">
                     <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Full Name</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Full Name</label>
                         <input 
                           type="text" 
                           value={editingStakeholder.name}
@@ -4508,7 +4600,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       
                       <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Position / Organization</label>
+                          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Position / Organization</label>
                           <input 
                             type="text" 
                             value={editingStakeholder.position}
@@ -4518,7 +4610,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Project Role</label>
+                          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Project Role</label>
                           <input 
                             type="text" 
                             value={editingStakeholder.role}
@@ -4530,7 +4622,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact Information</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Contact Information</label>
                         <input 
                           type="text" 
                           value={editingStakeholder.contactInfo}
@@ -4542,7 +4634,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
                       <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Classification</label>
+                          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Classification</label>
                           <select 
                             value={editingStakeholder.classification}
                             onChange={e => setEditingStakeholder({...editingStakeholder, classification: e.target.value as any})}
@@ -4553,7 +4645,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Influence Level</label>
+                          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Influence Level</label>
                           <select 
                             value={editingStakeholder.influence}
                             onChange={e => setEditingStakeholder({...editingStakeholder, influence: e.target.value as any})}
@@ -4567,7 +4659,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Major Requirements</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Major Requirements</label>
                         <textarea 
                           value={editingStakeholder.requirements}
                           onChange={e => setEditingStakeholder({...editingStakeholder, requirements: e.target.value})}
@@ -4577,7 +4669,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expectations</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Expectations</label>
                         <textarea 
                           value={editingStakeholder.expectations}
                           onChange={e => setEditingStakeholder({...editingStakeholder, expectations: e.target.value})}
@@ -4597,7 +4689,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                               className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all"
                             />
                           </div>
-                          <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Is this stakeholder a System User?</span>
+                          <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition-colors">Is this stakeholder a System User?</span>
                         </label>
 
                         <AnimatePresence>
@@ -4610,7 +4702,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                             >
                               <div className="grid grid-cols-2 gap-6 pt-6">
                                 <div className="space-y-2">
-                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Access Level</label>
+                                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Access Level</label>
                                   <select 
                                     value={editingStakeholder.systemAccessLevel}
                                     onChange={e => setEditingStakeholder({...editingStakeholder, systemAccessLevel: e.target.value})}
@@ -4622,7 +4714,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                                   </select>
                                 </div>
                                 <div className="space-y-2">
-                                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Login Credentials (ID)</label>
+                                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Login Credentials (ID)</label>
                                   <input 
                                     type="text" 
                                     value={editingStakeholder.loginCredentials}
@@ -4638,7 +4730,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                                     setIsStakeholderModalOpen(false);
                                     navigate(`/project/${selectedProject?.id}/page/3.3.1`);
                                   }}
-                                  className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-blue-200 text-blue-600 rounded-2xl text-xs font-bold hover:bg-blue-50 transition-all shadow-sm"
+                                  className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-blue-200 text-blue-600 rounded-2xl text-xs font-semibold hover:bg-blue-50 transition-all shadow-sm"
                                 >
                                   <BarChart3 className="w-4 h-4" />
                                   Manage System Access & Permissions (Finance/HR)
@@ -4656,14 +4748,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                           <button 
                             type="button"
                             onClick={() => handleSaveStakeholder(false)}
-                            className="px-6 py-3 bg-white border border-blue-200 text-blue-600 text-sm font-bold rounded-2xl hover:bg-blue-50 transition-all shadow-sm"
+                            className="px-6 py-3 bg-white border border-blue-200 text-blue-600 text-sm font-semibold rounded-2xl hover:bg-blue-50 transition-all shadow-sm"
                           >
                             Overwrite Current
                           </button>
                           <button 
                             type="button"
                             onClick={() => handleSaveStakeholder(true)}
-                            className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                            className="px-6 py-3 bg-blue-600 text-white text-sm font-semibold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                           >
                             Save as New Version
                           </button>
@@ -4672,7 +4764,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                         <button 
                           type="button"
                           onClick={() => handleSaveStakeholder(false)}
-                          className="w-full px-6 py-4 bg-blue-600 text-white text-sm font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                          className="w-full px-6 py-4 bg-blue-600 text-white text-sm font-semibold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
                         >
                           <Save className="w-5 h-5" />
                           Create Stakeholder Entry
@@ -4681,7 +4773,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       <button 
                         type="button"
                         onClick={() => setIsStakeholderModalOpen(false)}
-                        className="w-full px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                        className="w-full px-6 py-3 text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors"
                       >
                         Cancel
                       </button>

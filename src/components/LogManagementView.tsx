@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Page } from '../types';
 import { 
   Plus, 
@@ -78,12 +79,33 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this record?')) return;
-    try {
-      await deleteDoc(doc(db, 'project_records', id));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `project_records/${id}`);
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this record?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'project_records', id));
+                toast.success('Record deleted successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, `project_records/${id}`);
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const filteredEntries = entries.filter(entry => {

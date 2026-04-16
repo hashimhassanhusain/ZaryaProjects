@@ -46,6 +46,7 @@ import {
 import { useProject } from '../context/ProjectContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -147,12 +148,33 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to remove this stakeholder?')) return;
-    try {
-      await deleteDoc(doc(db, 'stakeholders', id));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'stakeholders');
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Remove this stakeholder?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'stakeholders', id));
+                toast.success('Stakeholder removed successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'stakeholders');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const handleSave = async (isNewVersion: boolean = false) => {
@@ -181,7 +203,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
             updatedBy: user
           });
         }
-        alert(`Stakeholder Register version v${nextVersion.toFixed(1)} archived.`);
+        toast.success(`Stakeholder Register version v${nextVersion.toFixed(1)} archived.`);
       } else {
         const entryData = {
           ...formData,

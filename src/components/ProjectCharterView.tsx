@@ -47,6 +47,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -280,7 +281,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       }
 
       if (!isNewVersion) {
-        alert(t('charter_updated_success'));
+        toast.success(t('charter_updated_success'));
       }
 
     } catch (err) {

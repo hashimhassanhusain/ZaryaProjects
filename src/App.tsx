@@ -20,8 +20,7 @@ import { LessonsLearnedView } from './components/LessonsLearnedView';
 import { ChangeRequestView } from './components/ChangeRequestView';
 import { ProjectCharterView } from './components/ProjectCharterView';
 import { GovernanceHubView } from './components/GovernanceHubView';
-import { AdminUsersView } from './components/AdminUsersView';
-import { AdminProjectsView } from './components/AdminProjectsView';
+import { AdminSettings } from './components/AdminSettings';
 import { ProjectFormView } from './components/ProjectFormView';
 import { TasksView } from './components/TasksView';
 import { FileExplorer } from './components/FileExplorer';
@@ -44,6 +43,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
+import { ScheduleHubView } from './components/ScheduleHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
 import { Loader2 } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
@@ -58,6 +58,7 @@ import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { Toaster } from 'react-hot-toast';
 
 const PageRenderer = () => {
   const { t } = useLanguage();
@@ -66,64 +67,26 @@ const PageRenderer = () => {
   
   // Handle domain and focus area IDs
   const hubIds = [
-    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk',
-    'start', 'plan', 'exec', 'mon', 'close',
-    'start_gov', 'start_stak',
-    'plan_gov', 'plan_scope', 'plan_sched', 'plan_fin', 'plan_stak', 'plan_res', 'plan_risk',
-    'exec_res', 'exec_gov',
-    'mon_gov', 'mon_fin', 'mon_stak', 'mon_risk', 'mon_res',
-    'close_gov', 'close_fin'
+    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk'
   ];
   if (id && hubIds.includes(id)) {
     const hubPage = pages.find(p => p.id === id);
     if (hubPage) {
-      // Special case for Schedule Domain to show Gantt directly as requested
-      if (id === 'sched') {
-        const schedulePage = pages.find(p => p.id === '2.3');
-        if (schedulePage) {
-          return (
-            <motion.div
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className="mx-auto"
-            >
-              <ProjectScheduleView page={schedulePage} initialTab="milestones" />
-            </motion.div>
-          );
-        }
-      }
-
-      // Special case for Resources Domain to show Hub directly
-      if (id === 'res') {
-        const resPage = pages.find(p => p.id === 'res');
-        if (resPage) {
-          return (
-            <motion.div
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className="mx-auto max-w-none"
-            >
-              <ResourceOptimizationHub page={resPage} />
-            </motion.div>
-          );
-        }
-      }
-
       const children = sortDomainPages(pages.filter(p => p.parentId === id), hubPage.domain || '');
 
       return (
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <DomainDashboard page={hubPage} childrenPages={children} />
         </div>
       );
     }
   }
 
-  const page = id === 'logs' ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } : pages.find(p => p.id === id);
+  const page = id === 'logs' 
+    ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } 
+    : id === 'files'
+      ? { id: 'files', title: t('project_files'), type: 'terminal' as const }
+      : pages.find(p => p.id === id);
 
   if (!page) return <Navigate to="/page/gov" />;
 
@@ -133,6 +96,7 @@ const PageRenderer = () => {
   const isFilesPage = page.id === 'files';
   const isBOQPage = page.id === '2.4.0';
   const isWBSPage = page.id === '2.2.9';
+  const isWorkPackagesPage = page.id === '2.2.10';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isSchedulePage = page.id === '2.3';
@@ -144,7 +108,7 @@ const PageRenderer = () => {
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
   const isResourceOptimizationPage = [
-    'res', '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
+    '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
     '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6'
   ].includes(page.id);
   const isGovernanceHubPage = [
@@ -166,9 +130,9 @@ const PageRenderer = () => {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -10 }}
         transition={{ duration: 0.2 }}
-        className={cn((isSchedulePage || page.id === '2.1.2') ? "w-full" : "mx-auto max-w-6xl")}
+        className="w-full"
       >
-        <div className={cn(isSchedulePage || page.id === '2.1.2' ? "px-6 pt-6" : "")}>
+        <div className={cn(isSchedulePage || isResourceOptimizationPage || page.id === '2.1.2' ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12")}>
           <Breadcrumbs currentPageId={page.id} />
         </div>
         {isTasksPage ? (
@@ -181,12 +145,14 @@ const PageRenderer = () => {
           <BOQView />
         ) : isWBSPage ? (
           <WBSView />
+        ) : isWorkPackagesPage ? (
+          <WorkPackagesView />
         ) : isEVMPage ? (
           <EVMReportView page={page} />
         ) : isProgressReportPage ? (
           <ProgressReportView page={page} />
         ) : isSchedulePage ? (
-          <ProjectScheduleView page={page} />
+          <ScheduleHubView page={page} />
         ) : isAssumptionLogPage ? (
           <AssumptionConstraintView page={page} />
         ) : isQualityMetricsPage ? (
@@ -269,20 +235,18 @@ const AppLayout = () => {
           className={cn(
             "flex-1 overflow-y-auto",
             // Remove padding for schedule and governance hub to allow full width as requested
-            (location.pathname.includes('/page/2.3') || location.pathname.includes('/page/2.1.2')) ? "p-0" : "p-4 md:p-8 lg:p-12"
+            (location.pathname.includes('/page/2.3') || 
+             location.pathname.includes('/page/2.1.2') || 
+             location.pathname.includes('/page/2.6') || 
+             location.pathname.includes('/page/3.3')) ? "p-0" : "pt-1 pb-6 px-4 md:px-8 lg:px-12"
           )}
         >
           <Routes>
             <Route path="/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
             <Route path="/profile" element={<UserFormView />} />
-            <Route path="/admin/users" element={<AdminUsersView />} />
-            <Route path="/admin/users/:uid" element={<UserFormView />} />
-            <Route path="/admin/contacts" element={<ContactsView />} />
-            <Route path="/admin/companies" element={<CompaniesView />} />
-            <Route path="/admin/resources" element={<ResourcesView />} />
-            <Route path="/admin/work-packages" element={<WorkPackagesView />} />
-            <Route path="/admin/projects" element={<AdminProjectsView />} />
+            <Route path="/admin/users" element={<AdminSettings />} />
+            <Route path="/admin/projects" element={<AdminSettings />} />
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={<ProjectDashboard />} />
@@ -331,7 +295,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-6">
         <img src="https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7" alt="Zarya Logo" className="h-32 mb-8 mx-auto" referrerPolicy="no-referrer" />
-        <div className="flex items-center gap-3 text-white/50 font-bold text-sm uppercase tracking-widest">
+        <div className="flex items-center gap-3 text-white/50 font-semibold text-sm uppercase tracking-widest">
           <Loader2 className="w-4 h-4 animate-spin" />
           Initializing Zarya...
         </div>
@@ -351,6 +315,7 @@ export default function App() {
             <CurrencyProvider>
               <Router>
                 <AppLayout />
+                <Toaster position="top-right" />
               </Router>
             </CurrencyProvider>
           </UIProvider>

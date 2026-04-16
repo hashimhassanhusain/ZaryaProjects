@@ -32,6 +32,7 @@ import {
   Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 
 interface ProgressReportViewProps {
   page: Page;
@@ -280,7 +281,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   const handleAddActivity = () => {
     const newActivity: DailyReportActivity = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       poLineItemId: '',
       description: '',
       progressUpdate: 0
@@ -294,7 +295,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   const handleAddIssue = () => {
     const newIssue: SiteIssue = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       title: '',
       description: '',
       assignedToId: '',
@@ -328,12 +329,33 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
   };
 
   const handleDeleteReport = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this report?')) return;
-    try {
-      await deleteDoc(doc(db, 'progressReports', id));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'progressReports');
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this report?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'progressReports', id));
+                toast.success('Report deleted successfully');
+              } catch (error) {
+                handleFirestoreError(error, OperationType.DELETE, 'progressReports');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -361,9 +383,10 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
       // In a real app, we'd store the Drive file ID or a webViewLink.
       // For now, we'll use a placeholder or the file ID if we can resolve it to a viewable URL.
       setPhotos([...photos, data.fileId]);
+      toast.success("Photo uploaded successfully to Google Drive!");
     } catch (error: any) {
       console.error('Photo upload failed:', error);
-      alert(`Photo upload failed: ${error.message}. Please ensure the Google Drive Service Account has "Editor" access to your project folder.`);
+      toast.error(`Photo upload failed: ${error.message}. Please ensure the Google Drive Service Account has "Editor" access to your project folder.`);
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -371,7 +394,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   const handleSave = async () => {
     if (!auth.currentUser || !selectedProject) {
-      alert('You must be signed in to submit a report.');
+      toast.error('You must be signed in to submit a report.');
       return;
     }
 

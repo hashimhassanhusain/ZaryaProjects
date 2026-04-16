@@ -62,7 +62,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
   const IconComponent = currentPage?.icon ? iconMap[currentPage.icon] : null;
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-2 mb-4">
       <nav className={cn("flex items-center text-xs text-slate-400", isRtl ? "space-x-reverse space-x-2" : "space-x-2")}>
         <Link to="/" className="hover:text-slate-600 transition-colors flex items-center">
           <Home className="w-3.5 h-3.5 me-1" />

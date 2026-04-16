@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem, ProjectManagementPlan } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
 import { DollarSign, Coins, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface ZaryaPOTrackerProps {
   page: Page;
@@ -19,6 +20,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const location = useLocation();
+  const navigate = useNavigate();
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -178,7 +180,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       for (const po of samplePOs) {
         await setDoc(doc(db, 'purchaseOrders', po.id), po);
       }
-      alert('PO Data Seeded Successfully');
+      toast.success('PO Data Seeded Successfully');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'purchaseOrders');
     }
@@ -261,7 +263,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
   const addLineItem = () => {
     const newItem: POLineItem = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       description: '',
       quantity: 0,
       unit: '',
@@ -345,7 +347,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               value={newPO.wbsId}
               onChange={(e) => {
                 if (e.target.value === 'new') {
-                  window.location.href = '/page/2.2.9';
+                  navigate('/page/2.2.9');
                   return;
                 }
                 setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }));
@@ -366,7 +368,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               disabled={!newPO.wbsId}
               onChange={(e) => {
                 if (e.target.value === 'new') {
-                  window.location.href = '/page/2.2.1';
+                  navigate('/page/2.2.1');
                   return;
                 }
                 setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }));
@@ -386,7 +388,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               disabled={!newPO.masterFormat}
               onChange={(e) => {
                 if (e.target.value === 'new') {
-                  window.location.href = '/page/2.2.10'; // Schedule / Activities
+                  navigate('/page/2.2.10'); // Schedule / Activities
                   return;
                 }
                 const act = activities.find(a => a.id === e.target.value);
@@ -487,7 +489,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               value={newPO.supplier}
               onChange={(e) => {
                 if (e.target.value === 'new') {
-                  window.location.href = '/page/4.2.1'; // Vendor Master Register
+                  navigate('/page/4.2.1'); // Vendor Master Register
                   return;
                 }
                 setNewPO(prev => ({ ...prev, supplier: e.target.value }));
@@ -1015,15 +1017,6 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   return (
     <div className="space-y-8">
       <div className="flex justify-end gap-2 mb-8">
-         {items.length === 0 && (
-           <button 
-             onClick={seedData}
-             className="px-4 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2"
-           >
-             <Database className="w-3 h-3" />
-             Seed PO Data
-           </button>
-         )}
          <div className="px-4 py-2 bg-slate-100 rounded-lg text-xs font-bold text-slate-500">SYSTEM: ACTIVE</div>
          <div className="px-4 py-2 bg-blue-600 rounded-lg text-xs font-bold text-white shadow-lg shadow-blue-500/20">LIVE SYNC</div>
       </div>

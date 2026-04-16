@@ -20,6 +20,7 @@ import {
   VendorEvaluation, 
   Vendor 
 } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError } from '../../firebase';
 import { 
   collection, 
@@ -96,7 +97,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
 
   const handleSaveCriterion = async () => {
     if (totalWeight + (criterionForm.weight || 0) - (editingId ? (criteria.find(c => c.id === editingId)?.weight || 0) : 0) > 100) {
-      alert('Total weight cannot exceed 100%');
+      toast.error('Total weight cannot exceed 100%');
       return;
     }
     try {

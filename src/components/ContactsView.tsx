@@ -109,8 +109,8 @@ export const ContactsView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full">
+      <div className="space-y-8">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
           <span className="hover:text-slate-600 cursor-pointer transition-colors">Admin Settings</span>

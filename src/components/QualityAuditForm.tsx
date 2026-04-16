@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import { 
   ShieldCheck, 
   Calendar, 
@@ -129,7 +130,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         impact: 'Positive',
         createdAt: serverTimestamp()
       });
-      alert('Successfully transferred to Lessons Learned!');
+      toast.success('Successfully transferred to Lessons Learned!');
     } catch (error) {
       console.error('Error transferring to lessons learned:', error);
     }
@@ -155,7 +156,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         updateDeficiency(index, 'status', 'Converted to CR');
       }
       
-      alert('Change Request generated successfully!');
+      toast.success('Change Request generated successfully!');
     } catch (error) {
       console.error('Error generating CR:', error);
     }

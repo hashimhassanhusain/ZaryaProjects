@@ -104,7 +104,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+    <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
       {/* Left: Hamburger (Mobile) & Project Selector */}
       <div className="flex-1 flex justify-start items-center gap-2">
         <button 
@@ -200,8 +200,8 @@ export const Header: React.FC = () => {
             <Languages className="w-4 h-4" />
           </div>
           <div className="text-left hidden sm:block">
-            <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('language')}</div>
-            <div className="text-xs font-bold text-slate-800">
+            <div className="text-[8px] font-semibold text-slate-400 uppercase tracking-widest leading-none">{t('language')}</div>
+            <div className="text-xs font-semibold text-slate-800">
               {language === 'en' ? 'EN' : 'AR'}
             </div>
           </div>
@@ -217,8 +217,8 @@ export const Header: React.FC = () => {
               {currency === 'USD' ? <DollarSign className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('currency')}</div>
-              <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
+              <div className="text-[8px] font-semibold text-slate-400 uppercase tracking-widest leading-none">{t('currency')}</div>
+              <div className="text-xs font-semibold text-slate-800 flex items-center gap-1">
                 {currency}
                 <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isCurrencyMenuOpen ? "rotate-180" : "")} />
               </div>
@@ -237,7 +237,7 @@ export const Header: React.FC = () => {
                 )}
               >
                 <div className="space-y-2">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('select_display_currency')}</div>
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('select_display_currency')}</div>
                   <div className="grid grid-cols-2 gap-2">
                     <button 
                       onClick={() => {
@@ -245,7 +245,7 @@ export const Header: React.FC = () => {
                         setIsCurrencyMenuOpen(false);
                       }}
                       className={cn(
-                        "px-3 py-2 rounded-xl text-xs font-bold transition-all border",
+                        "px-3 py-2 rounded-xl text-xs font-semibold transition-all border",
                         currency === 'USD' ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20" : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                       )}
                     >
@@ -257,7 +257,7 @@ export const Header: React.FC = () => {
                         setIsCurrencyMenuOpen(false);
                       }}
                       className={cn(
-                        "px-3 py-2 rounded-xl text-xs font-bold transition-all border",
+                        "px-3 py-2 rounded-xl text-xs font-semibold transition-all border",
                         currency === 'IQD' ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20" : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                       )}
                     >
@@ -270,7 +270,7 @@ export const Header: React.FC = () => {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('exchange_rate')}</div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('exchange_rate')}</div>
                     <button 
                       onClick={handleRefreshRate}
                       disabled={isRefreshing}
@@ -281,15 +281,15 @@ export const Header: React.FC = () => {
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-xs font-bold text-slate-400">1 USD =</div>
+                    <div className="text-xs font-semibold text-slate-400">1 USD =</div>
                     <div className="flex-1 flex items-center gap-2">
                       <input 
                         type="number"
                         value={editingRate}
                         onChange={(e) => setEditingRate(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none"
                       />
-                      <div className="text-xs font-bold text-slate-400">IQD</div>
+                      <div className="text-xs font-semibold text-slate-400">IQD</div>
                     </div>
                   </div>
                   <button 
@@ -297,7 +297,7 @@ export const Header: React.FC = () => {
                       setExchangeRate(parseFloat(editingRate) || 1500);
                       setIsCurrencyMenuOpen(false);
                     }}
-                    className="w-full py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
+                    className="w-full py-2 bg-slate-900 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-800 transition-all"
                   >
                     {t('update_rate')}
                   </button>
@@ -313,7 +313,7 @@ export const Header: React.FC = () => {
         >
           <Bell className="w-5 h-5" />
           {taskCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-semibold rounded-full border-2 border-white flex items-center justify-center">
               {taskCount}
             </span>
           )}

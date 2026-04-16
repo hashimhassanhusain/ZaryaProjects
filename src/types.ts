@@ -7,6 +7,7 @@ export interface KPI {
 }
 
 export interface Alert {
+  id?: string;
   type: 'info' | 'warning' | 'danger';
   msg: string;
 }
@@ -542,6 +543,7 @@ export interface Page {
   title: string;
   parentId?: string;
   domain?: 'governance' | 'scope' | 'schedule' | 'finance' | 'stakeholders' | 'resources' | 'risk';
+  focusArea?: string;
   type: 'hub' | 'terminal';
   content?: string;
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';

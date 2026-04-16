@@ -14,6 +14,7 @@ import {
   Stakeholder, 
   RoleResponsibility 
 } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError } from '../../firebase';
 import { 
   collection, 
@@ -86,7 +87,7 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
       const stakeholder = stakeholders.find(s => s.id === stakeholderId);
       const roleExists = roles.some(r => r.position.toLowerCase() === stakeholder?.position.toLowerCase());
       if (!roleExists) {
-        alert(`Validation Error: ${stakeholder?.name} cannot be assigned as Accountable (A) because their position "${stakeholder?.position}" is not defined in the approved Roles & Responsibilities log.`);
+        toast.error(`Validation Error: ${stakeholder?.name} cannot be assigned as Accountable (A) because their position "${stakeholder?.position}" is not defined in the approved Roles & Responsibilities log.`);
         return;
       }
     }

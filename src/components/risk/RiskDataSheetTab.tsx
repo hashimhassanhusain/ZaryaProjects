@@ -15,6 +15,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { RiskEntry, Stakeholder } from '../../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../../firebase';
 import { updateDoc, doc, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
@@ -86,7 +87,7 @@ export const RiskDataSheetTab: React.FC<RiskDataSheetTabProps> = ({ risks, stake
       // Update global project contingency
       await updateProjectContingency(projectId);
 
-      alert('Risk Data Sheet updated successfully.');
+      toast.success('Risk Data Sheet updated successfully.');
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, 'risks');
     } finally {

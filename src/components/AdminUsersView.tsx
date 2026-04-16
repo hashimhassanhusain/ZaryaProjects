@@ -5,6 +5,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { User as UserType } from '../types';
 import { Breadcrumbs } from './Breadcrumbs';
+import { toast } from 'react-hot-toast';
 
 export const AdminUsersView: React.FC = () => {
   const navigate = useNavigate();
@@ -36,12 +37,33 @@ export const AdminUsersView: React.FC = () => {
 
   const handleDeleteUser = async (uid: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    try {
-      await deleteDoc(doc(db, 'users', uid));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'users');
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this user?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'users', uid));
+                toast.success('User deleted successfully');
+              } catch (error) {
+                handleFirestoreError(error, OperationType.DELETE, 'users');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const filteredUsers = users.filter(u => 
@@ -59,10 +81,8 @@ export const AdminUsersView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-6">
-      <Breadcrumbs currentPageId="admin-users" />
-
-      <div className="flex justify-end items-center mb-12">
+    <div className="space-y-6">
+      <div className="flex justify-end items-center mb-6">
         <button 
           onClick={handleAddUser}
           className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"

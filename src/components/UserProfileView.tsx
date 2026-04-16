@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Camera, Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from '../firebase';
@@ -49,7 +50,7 @@ export const UserProfileView: React.FC = () => {
         photoURL: formData.photoURL,
         updatedAt: new Date().toISOString()
       });
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       navigate(-1);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);

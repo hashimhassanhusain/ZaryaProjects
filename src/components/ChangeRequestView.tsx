@@ -27,6 +27,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Page, Stakeholder, Project } from '../types';
+import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -230,12 +231,33 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this change request?')) return;
-    try {
-      await deleteDoc(doc(db, 'change_requests', id));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'change_requests');
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this change request?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, 'change_requests', id));
+                toast.success('Change request deleted successfully');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'change_requests');
+              }
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
   };
 
   const calculateTotal = (summary: any) => {
