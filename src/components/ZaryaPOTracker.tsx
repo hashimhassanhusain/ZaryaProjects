@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem } from '../types';
+import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem, WorkPackage } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download } from 'lucide-react';
@@ -30,6 +30,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
+  const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -134,6 +135,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       }
     );
 
+    const wpUnsubscribe = onSnapshot(
+      query(collection(db, 'work_packages'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setWorkPackages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkPackage)));
+      }
+    );
+
     const fetchPmPlan = async () => {
       try {
         const q = query(
@@ -156,6 +164,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       vendorsUnsubscribe();
       activitiesUnsubscribe();
       wbsUnsubscribe();
+      boqUnsubscribe();
+      wpUnsubscribe();
     };
   }, [selectedProject]);
 
@@ -233,6 +243,10 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
   const handleSavePO = async () => {
     if (!selectedProject || !newPO.id || !newPO.supplier) return;
+    if (!newPO.workPackageId) {
+      toast.error('Please select a Work Package before saving.');
+      return;
+    }
 
     try {
       const inputCurrency = newPO.inputCurrency || baseCurrency;
@@ -740,14 +754,12 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   }, [wbsLevels, activities, newPO.wbsId]);
 
   const availableWorkPackages = useMemo(() => {
-    return wbsLevels
-      .filter(l => l.type === 'Work Package')
-      .map(l => ({ 
-        id: l.id, 
-        description: l.title, 
-        code: getFullWBSCode(l.id, wbsLevels) || l.code 
-      }));
-  }, [wbsLevels]);
+    return workPackages.map(wp => ({
+      id: wp.id,
+      description: wp.title,
+      code: wp.code
+    }));
+  }, [workPackages]);
 
   const filteredActivities = useMemo(() => {
     if (!newPO.workPackageId) return [];

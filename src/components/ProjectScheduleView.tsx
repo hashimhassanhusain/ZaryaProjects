@@ -2137,7 +2137,27 @@ const ActivityRow: React.FC<{
     </React.Fragment>
   );
 };
-const WbsRow: React.FC<WbsRowProps> = ({ 
+
+function collectAllDescendantActivities(wbsId: string, allWbs: WBSLevel[], activities: Activity[]): Activity[] {
+  const direct = activities.filter(a => a.wbsId === wbsId || a.divisionId === wbsId);
+  const childWbs = allWbs.filter(w => w.parentId === wbsId);
+  return [...direct, ...childWbs.flatMap(c => collectAllDescendantActivities(c.id, allWbs, activities))];
+}
+
+function calcDateSpan(acts: Activity[]) {
+  let start = '', finish = '', actualStart = '', actualFinish = '';
+  acts.forEach(a => {
+    if (a.startDate && (!start || a.startDate < start)) start = a.startDate;
+    if (a.finishDate && (!finish || a.finishDate > finish)) finish = a.finishDate;
+    if (a.actualStartDate && (!actualStart || a.actualStartDate < actualStart)) actualStart = a.actualStartDate;
+    if (a.actualFinishDate && (!actualFinish || a.actualFinishDate > actualFinish)) actualFinish = a.actualFinishDate;
+  });
+  const duration = start && finish ? Math.ceil((new Date(finish).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const actualDuration = actualStart && actualFinish ? Math.ceil((new Date(actualFinish).getTime() - new Date(actualStart).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  return { start, finish, duration, actualStart, actualFinish, actualDuration };
+}
+
+const WbsRow: React.FC<WbsRowProps> = ({
   wbs, allWbs, activities, boqItems, workPackages, expanded, expandedActivities, onToggle, 
   onToggleActivity, getProgress, searchQuery, activeTab, purchaseOrders, vendors, 
   calculateWbsProgress, calculateDivisionProgress, renderActivitiesByHierarchy, navigate, setEditingActivity, 
@@ -2192,12 +2212,14 @@ const WbsRow: React.FC<WbsRowProps> = ({
   const wbsPoAmount = wbsCosts.po;
   const wbsActualCost = wbsCosts.actual;
 
-  const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');
-  const wbsPlannedFinish = wbs.plannedFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '');
-  const wbsActualStart = wbs.actualStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.actualStartDate && a.actualStartDate < min) ? a.actualStartDate : min, '') : '');
-  const wbsActualFinish = wbs.actualFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.actualFinishDate && a.actualFinishDate > max) ? a.actualFinishDate : max, '') : '');
-  const wbsPlannedDuration = wbs.plannedDuration || (wbsPlannedStart && wbsPlannedFinish ? Math.ceil((new Date(wbsPlannedFinish).getTime() - new Date(wbsPlannedStart).getTime()) / (1000 * 60 * 60 * 24)) : 0);
-  const wbsActualDuration = wbs.actualDuration || (wbsActualStart && wbsActualFinish ? Math.ceil((new Date(wbsActualFinish).getTime() - new Date(wbsActualStart).getTime()) / (1000 * 60 * 60 * 24)) : 0);
+  const allDescendantActs = collectAllDescendantActivities(wbs.id, allWbs, activities);
+  const wbsSpan = calcDateSpan(allDescendantActs);
+  const wbsPlannedStart = wbs.plannedStart || wbsSpan.start;
+  const wbsPlannedFinish = wbs.plannedFinish || wbsSpan.finish;
+  const wbsActualStart = wbs.actualStart || wbsSpan.actualStart;
+  const wbsActualFinish = wbs.actualFinish || wbsSpan.actualFinish;
+  const wbsPlannedDuration = wbs.plannedDuration || wbsSpan.duration;
+  const wbsActualDuration = wbs.actualDuration || wbsSpan.actualDuration;
 
   const directWbsPOs = purchaseOrders.filter(p => p.wbsId === wbs.id && !p.activityId && !p.workPackageId);
 
@@ -2481,8 +2503,10 @@ const GanttRow: React.FC<GanttRowProps> = ({
   });
   const isExpanded = expanded[wbs.id];
 
-  const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');
-  const wbsPlannedFinish = wbs.plannedFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '');
+  const ganttDescendantActs = collectAllDescendantActivities(wbs.id, allWbs, activities);
+  const ganttSpan = calcDateSpan(ganttDescendantActs);
+  const wbsPlannedStart = wbs.plannedStart || ganttSpan.start;
+  const wbsPlannedFinish = wbs.plannedFinish || ganttSpan.finish;
   const wbsProgress = wbs.progress ?? calculateWbsProgress(wbs.id);
 
   const activitiesByDivisionAndWP = useMemo(() => {

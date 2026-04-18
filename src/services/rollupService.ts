@@ -63,22 +63,30 @@ export async function rollupToParent(
       }
     } 
     else if (level === 'po') {
-      // Parent is a Work Package (Activity)
-      const parentRef = doc(db, 'activities', parentId);
-      const parentDoc = await getDoc(parentRef);
-      
-      if (!parentDoc.exists()) {
-        console.warn(`Activity ${parentId} not found for rollup. This might happen if workPackageId is a string label instead of a document ID.`);
-        return;
+      // Try work_packages collection first (new), fall back to activities (legacy)
+      const wpRef = doc(db, 'work_packages', parentId);
+      const wpDoc = await getDoc(wpRef);
+      const isWorkPackage = wpDoc.exists();
+
+      let parentRef: any;
+      let parentData: any;
+      if (isWorkPackage) {
+        parentRef = wpRef;
+        parentData = wpDoc.data();
+      } else {
+        const actRef = doc(db, 'activities', parentId);
+        const actDoc = await getDoc(actRef);
+        if (!actDoc.exists()) {
+          console.warn(`Work Package or Activity ${parentId} not found for rollup.`);
+          return;
+        }
+        parentRef = actRef;
+        parentData = actDoc.data() as Activity;
       }
 
       const q = query(collection(db, 'purchaseOrders'), where('workPackageId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as PurchaseOrder);
-
-      const parentData = parentDoc.data() as Activity;
-      const manualPlannedCost = parentData?.amount || 0;
-      const manualActualCost = parentData?.actualAmount || 0;
 
       children.forEach(child => {
         if (child.date) {
@@ -91,7 +99,6 @@ export async function rollupToParent(
         if (child.actualFinishDate) {
           if (!actualFinish || child.actualFinishDate > actualFinish) actualFinish = child.actualFinishDate;
         }
-
         plannedCost += child.amount || 0;
         actualCost += child.actualCost || 0;
         totalWeightedProgress += (child.amount || 0) * (child.completion || 0);
@@ -99,36 +106,36 @@ export async function rollupToParent(
       });
 
       const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
-      
-      // Rule: plannedCost = max(manualCost, sum(children.plannedCost))
-      const finalPlannedCost = Math.max(manualPlannedCost, plannedCost);
-      // Rule: actualCost = sum(children.actualCost)
-      const finalActualCost = actualCost;
 
-      const updateData: any = {
-        plannedCost: finalPlannedCost,
-        actualAmount: finalActualCost,
-        percentComplete: Math.round(progress)
-      };
-
-      if (plannedStart) updateData.startDate = plannedStart;
-      if (plannedFinish) updateData.finishDate = plannedFinish;
-      if (actualStart) updateData.actualStartDate = actualStart;
-      if (actualFinish) updateData.actualFinishDate = actualFinish;
-
-      if (plannedStart && plannedFinish) {
-        const start = new Date(plannedStart);
-        const finish = new Date(plannedFinish);
-        updateData.duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      }
-
-      await updateDoc(parentRef, updateData);
-
-      // Continue rollup to Division
-      if (parentData?.division && parentData?.wbsId) {
-        // Division is identified by (floorId + divisionCode)
-        const divisionId = `${parentData.wbsId}-${parentData.division}`;
-        await rollupToParent('workPackage', divisionId);
+      if (isWorkPackage) {
+        const updateData: any = { actualCost, completion: Math.round(progress) };
+        if (actualStart) updateData.actualStart = actualStart;
+        if (actualFinish) updateData.actualFinish = actualFinish;
+        await updateDoc(parentRef, updateData);
+        if (parentData?.wbsId) {
+          await rollupToParent('floor', parentData.wbsId);
+        }
+      } else {
+        const finalPlannedCost = Math.max(parentData?.amount || 0, plannedCost);
+        const updateData: any = {
+          plannedCost: finalPlannedCost,
+          actualAmount: actualCost,
+          percentComplete: Math.round(progress)
+        };
+        if (plannedStart) updateData.startDate = plannedStart;
+        if (plannedFinish) updateData.finishDate = plannedFinish;
+        if (actualStart) updateData.actualStartDate = actualStart;
+        if (actualFinish) updateData.actualFinishDate = actualFinish;
+        if (plannedStart && plannedFinish) {
+          const start = new Date(plannedStart);
+          const finish = new Date(plannedFinish);
+          updateData.duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        }
+        await updateDoc(parentRef, updateData);
+        if (parentData?.division && parentData?.wbsId) {
+          const divisionId = `${parentData.wbsId}-${parentData.division}`;
+          await rollupToParent('workPackage', divisionId);
+        }
       }
     }
     else if (level === 'workPackage') {
