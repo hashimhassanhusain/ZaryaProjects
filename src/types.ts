@@ -623,6 +623,16 @@ export interface User {
   };
   assignedTasksCount?: number;
   favoritePages?: string[];
+  groupIds?: string[];
+}
+
+export interface UserGroup {
+  id: string;
+  name: string;
+  description: string;
+  accessiblePages: string[];
+  memberIds: string[];
+  emailList?: string[]; // For notifications
 }
 
 export type TaskStatus = string;

@@ -126,6 +126,26 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
+    const meetingId = searchParams.get('meetingId');
+    if (meetingId && isMeetingsPage) {
+      const fetchMeeting = async () => {
+        try {
+          const { getDoc } = await import('firebase/firestore');
+          const docRef = doc(db, 'meetings', meetingId);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            setSelectedMeeting({ id: snap.id, ...snap.data() } as Meeting);
+            setMeetingViewMode('form');
+          }
+        } catch (error) {
+          console.error("Error fetching meeting for deep link:", error);
+        }
+      };
+      fetchMeeting();
+    }
+  }, [searchParams, isMeetingsPage]);
+
+  useEffect(() => {
     setIsStakeholderRegister(page.id === '1.2.1');
     setIsStakeholderAnalysis(page.id === '1.2.2');
     setIsChangeManagementPlan(page.id === '2.1.1');
@@ -4497,25 +4517,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 project={selectedProject!}
                 meeting={selectedMeeting || undefined}
                 onSave={async (data) => {
-                  if (!selectedProject) return;
-                  try {
-                    if (selectedMeeting?.id) {
-                      await updateDoc(doc(db, 'meetings', selectedMeeting.id), {
-                        ...data,
-                        updatedAt: serverTimestamp()
-                      });
-                    } else {
-                      await addDoc(collection(db, 'meetings'), {
-                        ...data,
-                        projectId: selectedProject.id,
-                        createdAt: serverTimestamp(),
-                        updatedAt: serverTimestamp()
-                      });
-                    }
-                    setMeetingViewMode('archive');
-                  } catch (error) {
-                    console.error("Error saving meeting:", error);
-                  }
+                  setMeetingViewMode('archive');
                 }}
                 onCancel={() => setMeetingViewMode('archive')}
               />
