@@ -46,6 +46,7 @@ import {
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/UserContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -70,8 +71,36 @@ type RiskSubTab = 'dashboard' | 'plan' | 'register' | 'assumptions' | 'assessmen
 
 export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { userProfile, isAdmin } = useAuth();
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<RiskSubTab>('dashboard');
+  
+  const allTabs = [
+    { id: 'dashboard', pageId: 'risk', title: 'Risk Dashboard', icon: LayoutDashboard },
+    { id: 'plan', pageId: '2.1.14', title: 'Risk Plan', icon: ShieldAlert },
+    { id: 'register', pageId: '2.7.5', title: 'Risk Register', icon: ListChecks },
+    { id: 'assumptions', pageId: '2.1.5', title: 'Assumptions', icon: ClipboardList },
+    { id: 'assessment', pageId: '2.7.1', title: 'Assessment', icon: Activity },
+    { id: 'matrix', pageId: '2.7.2', title: 'Risk Matrix', icon: Grid },
+    { id: 'issues', pageId: '2.7.3', title: 'Issue Log', icon: AlertTriangle },
+    { id: 'audit', pageId: '4.4.1', title: 'Risk Audit', icon: ShieldCheck }
+  ];
+
+  const tabs = allTabs.filter(tab => {
+    if (isAdmin) return true;
+    if (!userProfile) return false;
+    return userProfile.accessiblePages?.includes(tab.pageId);
+  });
+
+  const [activeTab, setActiveTab] = useState<RiskSubTab>(
+    (tabs.length > 0 ? tabs[0].id : 'dashboard') as RiskSubTab
+  );
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
+      setActiveTab(tabs[0].id as RiskSubTab);
+    }
+  }, [tabs, activeTab]);
+
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
   const [audits, setAudits] = useState<RiskAuditEntry[]>([]);
@@ -117,17 +146,6 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
       usersUnsub();
     };
   }, [selectedProject?.id]);
-
-  const tabs = [
-    { id: 'dashboard', title: 'Risk Dashboard', icon: LayoutDashboard },
-    { id: 'plan', title: 'Risk Plan', icon: ShieldAlert },
-    { id: 'register', title: 'Risk Register', icon: ListChecks },
-    { id: 'assumptions', title: 'Assumptions', icon: ClipboardList },
-    { id: 'assessment', title: 'Assessment', icon: Activity },
-    { id: 'matrix', title: 'Risk Matrix', icon: Grid },
-    { id: 'issues', title: 'Issue Log', icon: AlertTriangle },
-    { id: 'audit', title: 'Risk Audit', icon: ShieldCheck }
-  ];
 
   if (loading) {
     return (

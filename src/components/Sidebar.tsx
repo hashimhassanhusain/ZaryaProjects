@@ -18,34 +18,16 @@ import { cn } from '../lib/utils';
 import { auth, db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { selectedProject } = useProject();
-  const [user, setUser] = useState<any>(auth.currentUser);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const { userProfile, isAdmin } = useAuth();
   const { isSidebarOpen } = useUI();
   const { t } = useLanguage();
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (u) => {
-      setUser(u);
-      if (u) {
-        const { doc, getDoc } = await import('firebase/firestore');
-        const snap = await getDoc(doc(db, 'users', u.uid));
-        if (snap.exists()) {
-          setUserProfile(snap.data());
-        }
-      } else {
-        setUserProfile(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const isAdmin = userProfile?.role === 'admin' || user?.email === 'hashim.h.husain@gmail.com';
 
   const mainNavItems = [
     { id: 'dashboard', title: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -70,7 +52,27 @@ export const Sidebar: React.FC = () => {
     const isActive = location.pathname === item.path || (item.id !== 'dashboard' && item.id !== 'admin' && location.pathname.includes(`/page/${item.id}`));
     const Icon = item.icon;
 
+    // Admin check
     if (item.id === 'admin' && !isAdmin) return null;
+
+    // Granular permission check for non-admins
+    if (!isAdmin && userProfile) {
+      if (item.id === 'dashboard') {
+        const isAccessible = userProfile.accessiblePages?.includes('dashboard');
+        if (!isAccessible) return null;
+      }
+      
+      if (domainNavItems.some(di => di.id === item.id)) {
+        const isAccessible = userProfile.accessiblePages?.includes(item.id);
+        const hasAccessibleChild = pages.filter(p => p.parentId === item.id).some(p => userProfile.accessiblePages?.includes(p.id));
+        if (!isAccessible && !hasAccessibleChild) return null;
+      }
+
+      if (item.id === 'drive') {
+        const isAccessible = userProfile.accessiblePages?.includes('files');
+        if (!isAccessible) return null;
+      }
+    }
 
     return (
       <Link

@@ -217,7 +217,8 @@ export interface WeatherData {
 
 export interface DailyReportActivity {
   id: string;
-  poLineItemId: string;
+  poLineItemId: string; // Can be empty for general activities
+  activityName?: string; // Name for general activities
   description: string;
   progressUpdate: number; // 0-100
 }
@@ -617,6 +618,9 @@ export interface User {
   companyName?: string;
   accessiblePages?: string[];
   accessibleProjects?: string[];
+  folderPermissions?: {
+    [folderId: string]: 'view' | 'edit' | 'none';
+  };
   assignedTasksCount?: number;
   favoritePages?: string[];
 }

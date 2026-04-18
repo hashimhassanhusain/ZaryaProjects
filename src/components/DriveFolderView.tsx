@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FolderOpen, FileText, Download, ExternalLink, ChevronRight, Clock, User, HardDrive } from 'lucide-react';
+import { FolderOpen, FileText, Download, ExternalLink, ChevronRight, Clock, User, HardDrive, ShieldAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/UserContext';
 import { cn } from '../lib/utils';
 
 interface DriveFile {
@@ -24,6 +25,7 @@ interface DriveFile {
 export const DriveFolderView: React.FC = () => {
   const { folderId } = useParams();
   const { selectedProject } = useProject();
+  const { userProfile, isAdmin } = useAuth();
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,21 @@ export const DriveFolderView: React.FC = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       if (!folderId) return;
+
+      // Permission Check
+      if (!isAdmin && userProfile) {
+        const permission = userProfile.folderPermissions?.[folderId];
+        const isRootFolder = selectedProject?.driveFolderId === folderId;
+        
+        if (!permission || permission === 'none') {
+          if (!isRootFolder) {
+            setError('ACCESS_DENIED');
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -78,6 +95,27 @@ export const DriveFolderView: React.FC = () => {
     );
   }
 
+  if (error === 'ACCESS_DENIED') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white rounded-[2rem] border border-slate-200">
+        <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-rose-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Unauthorized Access</h2>
+        <p className="text-slate-500 max-w-md">
+          You do not have permission to view the contents of this folder.
+          Please contact your administrator if you believe this is an error.
+        </p>
+        <button 
+          onClick={() => window.history.back()}
+          className="mt-8 px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg"
+        >
+          Return to Explorer
+        </button>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="p-8 text-center bg-red-50 rounded-xl border border-red-100">
@@ -86,7 +124,11 @@ export const DriveFolderView: React.FC = () => {
     );
   }
 
-  const folders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+  const folders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder').filter(folder => {
+    if (isAdmin || !userProfile) return true;
+    const permission = userProfile.folderPermissions?.[folder.id];
+    return permission && permission !== 'none';
+  });
   const dataFiles = files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
 
   return (

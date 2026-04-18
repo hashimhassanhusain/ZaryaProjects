@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, setDoc, collection, onSnapshot, addDoc } from 'firebase/firestore';
 import { User, Page, Project, Company, Contact } from '../types';
-import { ArrowLeft, Save, Shield, Mail, Camera, User as UserIcon, CheckCircle2, Globe, Layout, Send, Building2, Search, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Shield, Mail, Camera, User as UserIcon, CheckCircle2, Globe, Layout, Send, Building2, Search, Plus, X, ChevronRight, ChevronDown, Folder, Key, Eye, Edit2, EyeOff, Loader2 } from 'lucide-react';
 import { pages as allPages } from '../data';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
@@ -35,6 +35,8 @@ export const UserFormView: React.FC = () => {
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [isSelectingContact, setIsSelectingContact] = useState(false);
   const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const [projectFolders, setProjectFolders] = useState<Record<string, any[]>>({});
+  const [fetchingFolders, setFetchingFolders] = useState(false);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
@@ -152,6 +154,33 @@ export const UserFormView: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchFoldersForProjects = async () => {
+      if (!formData.accessibleProjects?.length) return;
+      setFetchingFolders(true);
+      const foldersMap: Record<string, any[]> = {};
+      
+      for (const projectId of formData.accessibleProjects) {
+        const project = allProjects.find(p => p.id === projectId);
+        if (project?.driveFolderId) {
+          try {
+            const res = await fetch(`/api/drive/folders-recursive/${project.driveFolderId}`);
+            if (res.ok) {
+              const data = await res.json();
+              foldersMap[projectId] = data.folders || [];
+            }
+          } catch (error) {
+            console.error(`Failed to fetch folders for project ${projectId}:`, error);
+          }
+        }
+      }
+      setProjectFolders(foldersMap);
+      setFetchingFolders(false);
+    };
+
+    fetchFoldersForProjects();
+  }, [formData.accessibleProjects, allProjects]);
+
   const togglePage = (pageId: string) => {
     const current = formData.accessiblePages || [];
     if (current.includes(pageId)) {
@@ -171,8 +200,8 @@ export const UserFormView: React.FC = () => {
   };
 
   const selectAllPages = () => {
-    const hubPages = allPages.filter(p => p.type === 'hub').map(p => p.id);
-    setFormData({ ...formData, accessiblePages: hubPages });
+    const pageIds = allPages.map(p => p.id);
+    setFormData({ ...formData, accessiblePages: [...pageIds, 'dashboard', 'files'] });
   };
 
   const deselectAllPages = () => {
@@ -182,6 +211,75 @@ export const UserFormView: React.FC = () => {
   const selectAllProjects = () => {
     const projectIds = allProjects.map(p => p.id);
     setFormData({ ...formData, accessibleProjects: projectIds });
+  };
+
+  const setFolderPermission = (folderId: string, permission: 'view' | 'edit' | 'none') => {
+    const current = formData.folderPermissions || {};
+    if (permission === 'none') {
+      const { [folderId]: _, ...rest } = current;
+      setFormData({ ...formData, folderPermissions: rest });
+    } else {
+      setFormData({ ...formData, folderPermissions: { ...current, [folderId]: permission } });
+    }
+  };
+
+  const renderPageTree = (parentId: string | null = null, depth = 0) => {
+    const children = allPages.filter(p => (parentId === null ? !p.parentId : p.parentId === parentId));
+    
+    // Manual additions for items not in the data.ts pages list but in the sidebar
+    if (parentId === null) {
+      if (!children.find(p => p.id === 'dashboard')) {
+        children.unshift({ id: 'dashboard', title: 'Dashboard', type: 'hub' });
+      }
+      if (!children.find(p => p.id === 'files')) {
+        children.push({ id: 'files', title: 'Drive Explorer', type: 'terminal' });
+      }
+    }
+
+    if (children.length === 0) return null;
+
+    return (
+      <div className={cn("space-y-1", depth > 0 && "ml-6 border-l border-slate-100 pl-4 mt-1")}>
+        {children.map(page => {
+          const isSelected = formData.accessiblePages?.includes(page.id);
+          const hasChildren = allPages.some(p => p.parentId === page.id);
+          
+          return (
+            <div key={page.id} className="space-y-1">
+              <label 
+                className={cn(
+                  "flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all border border-transparent hover:border-slate-100",
+                  isSelected ? "bg-white shadow-sm border-slate-100" : "hover:bg-slate-100/50"
+                )}
+              >
+                <div 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    togglePage(page.id);
+                  }}
+                  className={cn(
+                    "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                    isSelected ? "bg-blue-600 border-blue-600" : "border-slate-200"
+                  )}
+                >
+                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                </div>
+                <span className={cn(
+                  "text-sm tracking-tight transition-colors",
+                  isSelected ? "font-bold text-slate-900" : "font-medium text-slate-500"
+                )}>
+                  {page.title}
+                </span>
+                {page.type === 'hub' && (
+                  <span className="text-[9px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded ml-auto">HUB</span>
+                )}
+              </label>
+              {hasChildren && renderPageTree(page.id, depth + 1)}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const deselectAllProjects = () => {
@@ -538,7 +636,7 @@ export const UserFormView: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Layout className="w-3 h-3" /> Accessible Pages
+                      <Layout className="w-3 h-3" /> Hierarchical Page Access
                     </label>
                     <div className="flex gap-2">
                       <button 
@@ -556,18 +654,111 @@ export const UserFormView: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    {allPages.filter(p => p.type === 'hub').map((page) => (
-                      <label key={page.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={formData.accessiblePages?.includes(page.id)}
-                          onChange={() => togglePage(page.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-slate-700">{page.title}</span>
-                      </label>
-                    ))}
+                  <div className="max-h-[500px] overflow-y-auto p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4 custom-scrollbar">
+                    {renderPageTree()}
+                  </div>
+                </div>
+
+                {/* Folder Permissions Section */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Folder className="w-3 h-3" /> Project Folder Permissions
+                    </label>
+                    <p className="text-[10px] text-slate-400 font-medium">Control view/edit access for specific storage folders</p>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-[2.5rem] border border-slate-100 p-8 space-y-6">
+                    {!formData.accessibleProjects?.length ? (
+                      <div className="text-center py-10 italic text-slate-400 text-sm">
+                        Select at least one project to manage folder permissions.
+                      </div>
+                    ) : fetchingFolders ? (
+                      <div className="flex flex-col items-center justify-center py-12 gap-4">
+                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Architecting Folder Tree...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-10">
+                        {formData.accessibleProjects.map(projId => {
+                          const project = allProjects.find(p => p.id === projId);
+                          const folders = projectFolders[projId] || [];
+                          
+                          if (!project) return null;
+
+                          return (
+                            <div key={projId} className="space-y-4">
+                              <div className="flex items-center gap-2 px-2">
+                                <Globe className="w-4 h-4 text-blue-600" />
+                                <h4 className="font-bold text-slate-900 text-sm">{project.name}</h4>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 gap-3">
+                                {folders.length === 0 ? (
+                                  <div className="p-4 bg-white/50 border border-dashed border-slate-200 rounded-2xl text-xs text-slate-400 text-center italic">
+                                    No custom folders found for this project.
+                                  </div>
+                                ) : (
+                                  folders.map(folder => {
+                                    const permission = formData.folderPermissions?.[folder.id] || 'none';
+                                    
+                                    return (
+                                      <div key={folder.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-sm group hover:border-blue-200 transition-all">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                            <Folder className="w-4 h-4" />
+                                          </div>
+                                          <div>
+                                            <div className="text-xs font-bold text-slate-900">{folder.name}</div>
+                                            <div className="text-[9px] text-slate-400 font-mono">{folder.path}</div>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                                          <button
+                                            onClick={() => setFolderPermission(folder.id, 'none')}
+                                            className={cn(
+                                              "p-1.5 rounded-lg transition-all flex items-center gap-1",
+                                              permission === 'none' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                            )}
+                                            title="No Access"
+                                          >
+                                            <EyeOff className="w-3.5 h-3.5" />
+                                            {permission === 'none' && <span className="text-[9px] font-black uppercase tracking-widest px-1">None</span>}
+                                          </button>
+                                          <button
+                                            onClick={() => setFolderPermission(folder.id, 'view')}
+                                            className={cn(
+                                              "p-1.5 rounded-lg transition-all flex items-center gap-1",
+                                              permission === 'view' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                            )}
+                                            title="View Only"
+                                          >
+                                            <Eye className="w-3.5 h-3.5" />
+                                            {permission === 'view' && <span className="text-[9px] font-black uppercase tracking-widest px-1">View</span>}
+                                          </button>
+                                          <button
+                                            onClick={() => setFolderPermission(folder.id, 'edit')}
+                                            className={cn(
+                                              "p-1.5 rounded-lg transition-all flex items-center gap-1",
+                                              permission === 'edit' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                            )}
+                                            title="Edit Access"
+                                          >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                            {permission === 'edit' && <span className="text-[9px] font-black uppercase tracking-widest px-1">Edit</span>}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
 

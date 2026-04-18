@@ -25,6 +25,7 @@ import { motion } from 'motion/react';
 import { DomainDashboard } from './DomainDashboard';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useAuth } from '../context/UserContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { cn, stripNumericPrefix } from '../lib/utils';
@@ -61,11 +62,18 @@ const getDomainIcon = (domain?: string, title?: string) => {
 export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChildren }) => {
   const { t } = useLanguage();
   const { selectedProject } = useProject();
+  const { userProfile, isAdmin } = useAuth();
   const { formatAmount, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const children = overrideChildren || getChildren(page.id);
+  
+  const allChildren = overrideChildren || getChildren(page.id);
+  const children = allChildren.filter(child => {
+    if (isAdmin) return true;
+    if (!userProfile) return false;
+    return userProfile.accessiblePages?.includes(child.id);
+  });
   const parent = getParent(page.id);
   const hasDashboard = (page.kpis && page.kpis.length > 0) || (page.alerts && page.alerts.length > 0);
 
@@ -127,9 +135,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   </div>
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
                 </div>
-                <Link to="/page/2.4.0" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                  {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
-                </Link>
+                {(isAdmin || userProfile?.accessiblePages?.includes('2.4.0')) && (
+                  <Link to="/page/2.4.0" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                    {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
+                  </Link>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {locationTotals.map((loc, idx) => (
@@ -168,9 +178,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   </div>
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
                 </div>
-                <Link to="/page/2.3" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                  {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
-                </Link>
+                {(isAdmin || userProfile?.accessiblePages?.includes('2.3')) && (
+                  <Link to="/page/2.3" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                    {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
+                  </Link>
+                )}
               </div>
               <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
                 <div className="space-y-4">

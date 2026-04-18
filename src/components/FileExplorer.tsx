@@ -5,6 +5,7 @@ import { storage, db } from '../firebase';
 import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Project } from '../types';
+import { useAuth } from '../context/UserContext';
 import { generateZaryaFileName, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 
@@ -16,6 +17,7 @@ interface FileExplorerProps {
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const { t, isRtl } = useLanguage();
+  const { userProfile, isAdmin } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -67,7 +69,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const fetchProjects = async () => {
     const { collection, getDocs } = await import('firebase/firestore');
     const querySnapshot = await getDocs(collection(db, 'projects'));
-    const projectsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+    let projectsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+    
+    // Permission Filter
+    if (!isAdmin && userProfile) {
+      projectsList = projectsList.filter(p => userProfile.accessibleProjects?.includes(p.id));
+    }
+
     setProjects(projectsList);
     if (!selectedProjectId && projectsList.length > 0) {
       setSelectedProjectId(projectsList[0].id);
@@ -126,7 +134,21 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const res = await fetch(`/api/drive/files/${folderId}?details=true`);
       if (res.ok) {
         const data = await res.json();
-        setFiles(data.files || []);
+        let filesList = data.files || [];
+        
+        // Granular Permission Filter for folders
+        if (!isAdmin && userProfile) {
+          filesList = filesList.filter((f: any) => {
+            if (f.mimeType === 'application/vnd.google-apps.folder') {
+              // Check if folder is explicitly allowed or if it's the root project folder
+              const permission = userProfile.folderPermissions?.[f.id];
+              return permission && permission !== 'none';
+            }
+            return true; // Files in an allowed folder are visible
+          });
+        }
+
+        setFiles(filesList);
       }
     } catch (error) {
       console.error('Failed to fetch files:', error);
@@ -215,6 +237,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     version: '1'
   }) : '';
 
+  const isEditAllowed = isAdmin || (() => {
+    if (!userProfile) return false;
+    if (!currentFolderId) return false;
+    const permission = userProfile.folderPermissions?.[currentFolderId];
+    return permission === 'edit' || project?.driveFolderId === currentFolderId; // Root folder usually allowed if project is accessible
+  })();
+
   return (
     <div className="flex flex-col gap-6">
       {/* Main Header with Large Icon */}
@@ -262,10 +291,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
               Browse
             </button>
             <button 
-              onClick={() => setActiveTab('upload')}
+              onClick={() => {
+                if (!isEditAllowed) {
+                  toast.error("You don't have permission to upload to this folder");
+                  return;
+                }
+                setActiveTab('upload');
+              }}
               className={cn(
                 "px-6 py-3 rounded-xl text-sm font-semibold uppercase tracking-wider transition-all",
-                activeTab === 'upload' ? "bg-white text-blue-600 shadow-md" : "text-slate-500 hover:text-slate-700"
+                activeTab === 'upload' ? "bg-white text-blue-600 shadow-md" : "text-slate-500 hover:text-slate-700",
+                !isEditAllowed && "opacity-50 cursor-not-allowed"
               )}
             >
               Upload

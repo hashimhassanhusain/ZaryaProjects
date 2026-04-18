@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/UserContext';
 import { 
   Award, 
   Gavel, 
@@ -62,49 +63,9 @@ type LogSubTab = 'stakeholders' | 'assumptions' | 'decisions' | 'lessons';
 
 export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'schedule' | 'charter' | 'policies' | 'plans'>('schedule');
-  const [activePlan, setActivePlan] = useState<PlanSubTab>('pmp');
-  const [activeLog, setActiveLog] = useState<LogSubTab>('stakeholders');
-  const [viewMode, setViewMode] = useState<'plan' | 'log'>('plan');
-
-  // Sync active tab with page.id if needed
-  useEffect(() => {
-    if (page.id === '1.1.1') setActiveTab('charter');
-    if (page.id === '1.1.2') setActiveTab('policies');
-    if (page.id === '2.3') setActiveTab('schedule');
-    if (['1.2.1', '2.1.5', '3.1.3', '5.1.1'].includes(page.id)) {
-      setActiveTab('plans');
-      setViewMode('log');
-      if (page.id === '1.2.1') setActiveLog('stakeholders');
-      if (page.id === '2.1.5') setActiveLog('assumptions');
-      if (page.id === '3.1.3') setActiveLog('decisions');
-      if (page.id === '5.1.1') setActiveLog('lessons');
-    }
-    if (page.id.startsWith('2.1') && page.id !== '2.1.5') {
-      if (page.id === '2.1.2') {
-        setActiveTab('plans');
-        setViewMode('plan');
-      } else {
-        setActiveTab('plans');
-        setViewMode('plan');
-      }
-      if (page.id === '2.1.2') setActivePlan('pmp');
-      if (page.id === '2.1.1') setActivePlan('cmp');
-      if (page.id === '2.1.3') setActivePlan('qmp');
-      if (page.id === '2.1.6') setActivePlan('comm');
-      if (page.id === '2.1.7') setActivePlan('smp');
-      if (page.id === '2.1.8') setActivePlan('rmp');
-      if (page.id === '2.1.9') setActivePlan('scope');
-      if (page.id === '2.1.10') setActivePlan('hrmp');
-      if (page.id === '2.1.11') setActivePlan('schedule');
-      if (page.id === '2.1.12') setActivePlan('cost');
-      if (page.id === '2.1.13') setActivePlan('procurement');
-      if (page.id === '2.1.14') setActivePlan('risk');
-      if (page.id === '2.1.4') setActivePlan('quality');
-    }
-  }, [page.id]);
-
-  const managementPlans = [
+  const { userProfile, isAdmin } = useAuth();
+  
+  const allManagementPlans = [
     { id: 'pmp', title: t('2.1.2'), icon: FileText, pageId: '2.1.2' },
     { id: 'comm', title: t('2.1.6'), icon: MessageSquare, pageId: '2.1.6' },
     { id: 'smp', title: t('2.1.7'), icon: Users, pageId: '2.1.7' },
@@ -118,12 +79,85 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     { id: 'quality', title: t('2.1.4'), icon: ClipboardCheck, pageId: '2.1.4' }
   ];
 
-  const logTabs = [
+  const allLogTabs = [
     { id: 'stakeholders', title: t('1.2.1'), icon: Users, pageId: '1.2.1' },
     { id: 'assumptions', title: t('2.1.5'), icon: ClipboardList, pageId: '2.1.5' },
     { id: 'decisions', title: t('3.1.3'), icon: Gavel, pageId: '3.1.3' },
     { id: 'lessons', title: t('5.1.1'), icon: Award, pageId: '5.1.1' }
   ];
+
+  const managementPlans = allManagementPlans.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.pageId));
+  const logTabs = allLogTabs.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.pageId));
+
+  const [activeTab, setActiveTab] = useState<'schedule' | 'charter' | 'policies' | 'plans'>('schedule');
+  const [activePlan, setActivePlan] = useState<PlanSubTab>(
+    (managementPlans.length > 0 ? managementPlans[0].id : 'pmp') as PlanSubTab
+  );
+  const [activeLog, setActiveLog] = useState<LogSubTab>(
+    (logTabs.length > 0 ? logTabs[0].id : 'stakeholders') as LogSubTab
+  );
+  const [viewMode, setViewMode] = useState<'plan' | 'log'>('plan');
+
+  // Check which main tabs are accessible
+  const isCharterAccessible = isAdmin || userProfile?.accessiblePages?.includes('1.1.1');
+  const isPoliciesAccessible = isAdmin || userProfile?.accessiblePages?.includes('1.1.2');
+  const isScheduleAccessible = isAdmin || userProfile?.accessiblePages?.includes('2.3');
+  const isPlansAccessible = managementPlans.length > 0 || logTabs.length > 0;
+
+  // Sync active tab with page.id if needed
+  useEffect(() => {
+    if (page.id === '1.1.1' && isCharterAccessible) setActiveTab('charter');
+    if (page.id === '1.1.2' && isPoliciesAccessible) setActiveTab('policies');
+    if (page.id === '2.3' && isScheduleAccessible) setActiveTab('schedule');
+    
+    const isLogPage = ['1.2.1', '2.1.5', '3.1.3', '5.1.1'].includes(page.id);
+    if (isLogPage && isPlansAccessible) {
+      setActiveTab('plans');
+      setViewMode('log');
+      if (page.id === '1.2.1') {
+        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('1.2.1');
+        if (hasAccess) setActiveLog('stakeholders');
+      }
+      if (page.id === '2.1.5') {
+        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('2.1.5');
+        if (hasAccess) setActiveLog('assumptions');
+      }
+      if (page.id === '3.1.3') {
+        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('3.1.3');
+        if (hasAccess) setActiveLog('decisions');
+      }
+      if (page.id === '5.1.1') {
+        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('5.1.1');
+        if (hasAccess) setActiveLog('lessons');
+      }
+    }
+
+    if (page.id.startsWith('2.1') && page.id !== '2.1.5' && isPlansAccessible) {
+      setActiveTab('plans');
+      setViewMode('plan');
+      
+      const planMap: Record<string, PlanSubTab> = {
+        '2.1.2': 'pmp',
+        '2.1.1': 'cmp',
+        '2.1.3': 'qmp',
+        '2.1.6': 'comm',
+        '2.1.7': 'smp',
+        '2.1.8': 'rmp',
+        '2.1.9': 'scope',
+        '2.1.10': 'hrmp',
+        '2.1.11': 'schedule',
+        '2.1.12': 'cost',
+        '2.1.13': 'procurement',
+        '2.1.14': 'risk',
+        '2.1.4': 'quality'
+      };
+
+      if (planMap[page.id]) {
+        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes(page.id);
+        if (hasAccess) setActivePlan(planMap[page.id]);
+      }
+    }
+  }, [page.id, isCharterAccessible, isPoliciesAccessible, isScheduleAccessible, isPlansAccessible, isAdmin, userProfile?.accessiblePages]);
 
   return (
     <div className={cn("pb-20", activeTab === 'schedule' ? "space-y-0" : "space-y-6")}>

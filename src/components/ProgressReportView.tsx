@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User } from '../types';
 import { purchaseOrders, users } from '../data';
 import { cn } from '../lib/utils';
@@ -30,6 +30,9 @@ import {
   Edit2,
   ChevronRight,
   Download,
+  ExternalLink,
+  FileCheck,
+  HardDrive,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -77,6 +80,16 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dbUsers, setDbUsers] = useState<Record<string, any>>({});
+  const [dbPurchaseOrders, setDbPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  
+  // PDF Preview & Save states
+  const [showPdfConfirm, setShowPdfConfirm] = useState(false);
+  const [pdfPreviewBlob, setPdfPreviewBlob] = useState<Blob | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState('');
+  const [isUploadingToDrive, setIsUploadingToDrive] = useState(false);
+  const [pendingReportType, setPendingReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [pendingPath, setPendingPath] = useState('');
 
   // Fetch user profile and all users for display names
   useEffect(() => {
@@ -97,6 +110,28 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
     };
     fetchUsers();
   }, []);
+
+  // Fetch purchase orders for activity selection
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const q = query(
+      collection(db, 'purchaseOrders'),
+      where('projectId', '==', selectedProject.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const poData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PurchaseOrder[];
+      setDbPurchaseOrders(poData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'purchaseOrders');
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject]);
 
   const isStakeholder = userProfile?.role === 'stakeholder';
   const canCreateReport = userProfile?.role === 'admin' || userProfile?.role === 'project-manager' || userProfile?.role === 'engineer' || userProfile?.role === 'technical-office';
@@ -393,7 +428,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (forceNew: boolean = false) => {
     if (!auth.currentUser || !selectedProject) {
       toast.error('You must be signed in to submit a report.');
       return;
@@ -401,10 +436,19 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
     setIsSaving(true);
     try {
+      // Validate activities
+      for (const act of activities) {
+        if (!act.poLineItemId && !act.activityName) {
+          toast.error('Please specify an item or name for all activities.');
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const reportData = {
         type: activeTab,
         discipline,
-        date: editingReport?.date || new Date().toISOString().split('T')[0],
+        date: editingReport && !forceNew ? editingReport.date : new Date().toISOString().split('T')[0],
         weather: activeTab === 'daily' ? weather : null,
         activities,
         generalWorks,
@@ -417,13 +461,15 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         updatedAt: serverTimestamp()
       };
 
-      if (editingReport) {
+      if (editingReport && !forceNew) {
         await updateDoc(doc(db, 'progressReports', editingReport.id), reportData);
+        toast.success('Report updated successfully');
       } else {
         await addDoc(collection(db, 'progressReports'), {
           ...reportData,
           createdAt: serverTimestamp()
         });
+        toast.success('New report created successfully');
       }
 
       // Sync issues to global Issue Log
@@ -453,80 +499,141 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         await setDoc(issueRef, projectIssueData, { merge: true });
       }
 
-      // Generate PDF logic remains similar but uses reportData
-      await generateAndUploadPDF(reportData);
+      // Create PDF for preview
+      const { blob, fileName, previewUrl, path } = generatePDF(reportData);
+      setPdfPreviewBlob(blob);
+      setPdfPreviewUrl(previewUrl);
+      setPdfFileName(fileName);
+      setPendingReportType(reportData.type as any);
+      setPendingPath(path);
+      setShowPdfConfirm(true);
 
       setIsSaving(false);
-      setView('list');
-      setEditingReport(null);
+      // We don't call setView('list') yet, we wait for the user to decide on the PDF
     } catch (error) {
+      console.error('Save failed:', error);
       setIsSaving(false);
       handleFirestoreError(error, editingReport ? OperationType.UPDATE : OperationType.CREATE, 'progressReports');
     }
   };
 
-  const generateAndUploadPDF = async (reportData: any) => {
+  const generatePDF = (reportData: any) => {
+    const doc = new jsPDF();
+    const projectCode = selectedProject?.code || 'ZRY';
+    const dateStr = reportData.date;
+    const typeLabel = reportData.type.toUpperCase();
+    const disciplineLabel = (reportData.discipline || 'GENERAL').toUpperCase();
+    const fileName = `${projectCode}-ZRY-SITE-${disciplineLabel}-${typeLabel}-${dateStr}.pdf`;
+    
+    // Determine exact path as per project structure in screenshot
+    const reportNum = reportData.type === 'daily' ? '1' : reportData.type === 'weekly' ? '2' : '3';
+    const typeUpper = reportData.type.toUpperCase();
+    const path = `SITE_OPERATIONS_04/04.${reportNum}_${typeUpper}_SITE_REPORTS`;
+
+    // PDF Content
+    doc.setFontSize(22);
+    doc.setTextColor(30, 64, 175);
+    doc.text(`${disciplineLabel} ${typeLabel} SITE REPORT`, 105, 20, { align: 'center' });
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 25, 190, 25);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
+    doc.text(`Discipline: ${reportData.discipline || 'General'}`, 20, 42);
+    doc.text(`Date: ${dateStr}`, 20, 49);
+    doc.text(`Submitted By: ${auth.currentUser?.email}`, 20, 56);
+
+    if (reportData.weather) {
+      doc.text(`Weather: ${reportData.weather.condition}, ${reportData.weather.temp}°C`, 20, 63);
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text('Key Activities', 20, 75);
+    
+    const activityRows = reportData.activities.map((a: any) => {
+      const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
+      return [
+        a.poLineItemId === 'general' ? `[GENERAL] ${a.activityName}` : (poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A'),
+        a.description,
+        `${a.progressUpdate}%`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 80,
+      head: [['Activity Link / Item', 'Work Description', 'Progress']],
+      body: activityRows,
+      headStyles: { fillColor: [30, 64, 175] },
+      styles: { fontSize: 9 }
+    });
+
+    const pdfBlob = doc.output('blob');
+    const previewUrl = URL.createObjectURL(pdfBlob);
+    
+    return { blob: pdfBlob, fileName, previewUrl, path };
+  };
+
+  const uploadToDrive = async () => {
+    if (!pdfPreviewBlob || !selectedProject || !pendingPath) {
+      toast.error('Missing required data for upload.');
+      return;
+    }
+
+    setIsUploadingToDrive(true);
     try {
-      const doc = new jsPDF();
-      const projectCode = selectedProject?.code || 'ZRY';
-      const dateStr = reportData.date;
-      const typeLabel = reportData.type.toUpperCase();
-      const disciplineLabel = (reportData.discipline || 'GENERAL').toUpperCase();
-      const fileName = `${projectCode}-ZRY-SITE-${disciplineLabel}-${typeLabel}-${dateStr}.pdf`;
-
-      // PDF Header
-      doc.setFontSize(20);
-      doc.setTextColor(40);
-      doc.text(`${disciplineLabel} ${typeLabel} SITE REPORT`, 105, 20, { align: 'center' });
-      
-      doc.setFontSize(10);
-      doc.text(`Project: ${selectedProject?.name || 'N/A'} (${projectCode})`, 20, 35);
-      doc.text(`Discipline: ${reportData.discipline || 'General'}`, 20, 42);
-      doc.text(`Date: ${dateStr}`, 20, 49);
-      doc.text(`Submitted By: ${auth.currentUser?.email}`, 20, 56);
-
-      if (reportData.weather) {
-        doc.text(`Weather: ${reportData.weather.condition}, ${reportData.weather.temp}°C`, 20, 63);
-      }
-
-      // Activities Table
-      doc.setFontSize(14);
-      doc.text('Key Activities', 20, 75);
-      
-      const activityRows = reportData.activities.map((a: any) => {
-        const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
-        return [
-          poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A',
-          a.description,
-          `${a.progressUpdate}%`
-        ];
-      });
-
-      autoTable(doc, {
-        startY: 80,
-        head: [['PO Item', 'Work Description', 'Progress']],
-        body: activityRows,
-      });
-
-      // Convert PDF to Blob and upload
-      const pdfBlob = doc.output('blob');
       const formData = new FormData();
-      formData.append('file', pdfBlob, fileName);
+      formData.append('file', pdfPreviewBlob, pdfFileName);
       formData.append('projectRootId', selectedProject?.driveFolderId || '');
-      formData.append('path', `SITE_OPERATIONS_04/04.${reportData.type === 'daily' ? '1' : reportData.type === 'weekly' ? '2' : '3'}_Reports`);
+      formData.append('path', pendingPath);
 
-      await fetch('/api/drive/upload-by-path', {
+      const response = await fetch('/api/drive/upload-by-path', {
         method: 'POST',
         body: formData
       });
-    } catch (pdfError) {
-      console.error('Error generating/uploading PDF:', pdfError);
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to upload to Google Drive');
+      }
+
+      toast.success('Report successfully archived to Google Drive!');
+      handleClosePreview();
+    } catch (err: any) {
+      console.error('Error uploading PDF:', err);
+      toast.error(`Upload failed: ${err.message}`);
+    } finally {
+      setIsUploadingToDrive(false);
     }
   };
 
-  const allPOLineItems = purchaseOrders.flatMap(po => 
-    po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
-  );
+  const handleClosePreview = () => {
+    setShowPdfConfirm(false);
+    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    setPdfPreviewUrl(null);
+    setPdfPreviewBlob(null);
+    setView('list');
+    setEditingReport(null);
+  };
+
+  const allPOLineItems = useMemo(() => {
+    // Combine mock data with firestore data for backward compatibility and flexibility
+    const mockPOItems = purchaseOrders.flatMap(po => 
+      po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
+    );
+    const dbPOItems = dbPurchaseOrders.flatMap(po => 
+      po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
+    );
+    
+    // De-duplicate by id if necessary, prioritising Firestore data
+    const itemMap = new Map();
+    mockPOItems.forEach(item => itemMap.set(item.id, item));
+    dbPOItems.forEach(item => itemMap.set(item.id, item));
+    
+    return Array.from(itemMap.values());
+  }, [dbPurchaseOrders]);
 
   const filteredReports = reports.filter(r => r.type === activeTab);
 
@@ -601,7 +708,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="text-lg font-bold text-slate-900">
-                              {report.discipline || 'General'} {report.type.charAt(0).toUpperCase() + report.type.slice(1)} Report
+                              {selectedProject?.code}-ZRY-SITE-{(report.discipline || 'General').toUpperCase()}-{report.type.toUpperCase()}-{report.date}
                             </h4>
                             <span className={cn(
                               "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
@@ -782,23 +889,43 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 {activities.map((activity, index) => (
                   <div key={activity.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
                     <div className="md:col-span-5 space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Select PO Item</label>
-                      <select 
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
-                        value={activity.poLineItemId}
-                        onChange={(e) => {
-                          const newActivities = [...activities];
-                          newActivities[index].poLineItemId = e.target.value;
-                          setActivities(newActivities);
-                        }}
-                      >
-                        <option value="">Select an item...</option>
-                        {allPOLineItems.map(item => (
-                          <option key={item.id} value={item.id}>
-                            {item.poId} - {item.description} ({item.poSupplier})
-                          </option>
-                        ))}
-                      </select>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Activity Link</label>
+                      <div className="flex flex-col gap-2">
+                        <select 
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          value={activity.poLineItemId}
+                          onChange={(e) => {
+                            const newActivities = [...activities];
+                            newActivities[index].poLineItemId = e.target.value;
+                            if (e.target.value !== 'general') {
+                              newActivities[index].activityName = '';
+                            }
+                            setActivities(newActivities);
+                          }}
+                        >
+                          <option value="">Select an item...</option>
+                          <option value="general" className="font-bold text-blue-600">★ General Activity (Non-PO)</option>
+                          {allPOLineItems.map(item => (
+                            <option key={item.id} value={item.id}>
+                              {item.poId} - {item.description} ({item.poSupplier})
+                            </option>
+                          ))}
+                        </select>
+                        
+                        {activity.poLineItemId === 'general' && (
+                          <input 
+                            type="text"
+                            placeholder="Enter general activity name..."
+                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none animate-in fade-in slide-in-from-top-1"
+                            value={activity.activityName || ''}
+                            onChange={(e) => {
+                              const newActivities = [...activities];
+                              newActivities[index].activityName = e.target.value;
+                              setActivities(newActivities);
+                            }}
+                          />
+                        )}
+                      </div>
                     </div>
                     <div className="md:col-span-4 space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-400 uppercase">Work Description</label>
@@ -1001,8 +1128,20 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                   Discard
                 </button>
+
+                {editingReport && (
+                  <button 
+                    onClick={() => handleSave(true)}
+                    disabled={isSaving}
+                    className="px-6 py-4 bg-emerald-50 text-emerald-600 rounded-2xl text-sm font-bold shadow-2xl hover:bg-emerald-100 border border-emerald-100 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Save as New
+                  </button>
+                )}
+
                 <button 
-                  onClick={handleSave}
+                  onClick={() => handleSave(false)}
                   disabled={isSaving}
                   className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
@@ -1016,6 +1155,128 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
               </div>
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PDF Save/Preview Modal */}
+      <AnimatePresence>
+        {showPdfConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleClosePreview}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-blue-600">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <FileCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Report Saved Successfully</h3>
+                    <p className="text-xs text-blue-100 italic">Database updated. Next: Document Archiving.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleClosePreview}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+                {/* Preview Panel */}
+                <div className="flex-1 bg-slate-100 p-4 flex flex-col min-h-[400px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <LayoutGrid className="w-3.5 h-3.5" /> PDF Preview
+                    </span>
+                    <a 
+                      href={pdfPreviewUrl || '#'} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Open in New Tab
+                    </a>
+                  </div>
+                  <div className="flex-1 bg-white rounded-xl shadow-inner border border-slate-200 overflow-hidden relative">
+                    {pdfPreviewUrl ? (
+                      <iframe 
+                        src={pdfPreviewUrl} 
+                        className="w-full h-full border-none"
+                        title="PDF Preview"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                        <RefreshCw className="w-8 h-8 animate-spin mb-2" />
+                        <p className="text-sm font-medium">Generating Preview...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions Panel */}
+                <div className="w-full md:w-80 p-8 flex flex-col gap-6 justify-center bg-slate-50 border-l border-slate-200">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-blue-500" /> Save to Cloud
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Upload this PDF report directly to the project's site operations folder in Google Drive.
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={uploadToDrive}
+                    disabled={isUploadingToDrive || !pdfPreviewBlob}
+                    className="w-full px-6 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isUploadingToDrive ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <HardDrive className="w-5 h-5" />
+                    )}
+                    {isUploadingToDrive ? 'Uploading...' : 'Save to Drive'}
+                  </button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-slate-50 px-2 text-slate-400 font-bold">Or</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <a 
+                      href={pdfPreviewUrl || '#'} 
+                      download={pdfFileName}
+                      className="w-full px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" /> Download Locally
+                    </a>
+                    <button 
+                      onClick={handleClosePreview}
+                      className="w-full px-6 py-3 bg-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-300 transition-all"
+                    >
+                      Close & Return to List
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/UserContext';
 import { 
   Users, 
   Shield, 
@@ -66,32 +67,48 @@ type TabType =
 export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
+  const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
-  const [activeTab, setActiveTab] = useState<TabType>('hrmp');
-
-  const tabs = [
+  
+  const allTabs = [
     // PLAN
-    { id: 'hrmp', label: t('hrmp'), icon: Briefcase, color: 'slate' },
-    { id: 'resource-plan', label: t('resource_plan'), icon: Layers, color: 'blue' },
-    { id: 'resource-structure', label: t('resource_structure'), icon: Layers, color: 'purple' },
-    { id: 'responsibility-matrix', label: t('responsibility_matrix'), icon: Grid3X3, color: 'amber' },
-    { id: 'job-descriptions', label: t('job_descriptions'), icon: Briefcase, color: 'slate' },
-    { id: 'vendor-evaluation', label: t('vendor_evaluation'), icon: Target, color: 'emerald' },
-    { id: 'operating-agreement', label: t('operating_agreement'), icon: FileText, color: 'cyan' },
+    { id: 'hrmp', pageId: '2.1.10', label: t('hrmp'), icon: Briefcase, color: 'slate' },
+    { id: 'resource-plan', pageId: '2.6.1', label: t('resource_plan'), icon: Layers, color: 'blue' },
+    { id: 'resource-structure', pageId: '2.6.4', label: t('resource_structure'), icon: Layers, color: 'purple' },
+    { id: 'responsibility-matrix', pageId: '2.6.5', label: t('responsibility_matrix'), icon: Grid3X3, color: 'amber' },
+    { id: 'job-descriptions', pageId: '2.6.6', label: t('job_descriptions'), icon: Briefcase, color: 'slate' },
+    { id: 'vendor-evaluation', pageId: '2.6.7', label: t('vendor_evaluation'), icon: Target, color: 'emerald' },
+    { id: 'operating-agreement', pageId: '3.3.5', label: t('operating_agreement'), icon: FileText, color: 'cyan' },
     
     // EXECUTE
-    { id: 'contacts', label: t('contacts'), icon: Users, color: 'blue' },
-    { id: 'companies', label: t('companies'), icon: Users2, color: 'indigo' },
-    { id: 'team-directory', label: t('team_directory'), icon: Users2, color: 'indigo' },
-    { id: 'tasks', label: t('task_management'), icon: LayoutDashboard, color: 'sky' },
-    { id: 'meetings', label: t('meeting_management'), icon: Calendar, color: 'pink' },
-    { id: 'inventory-3m', label: t('inventory_3m'), icon: Package, color: 'orange' },
-    { id: 'optimization', label: t('optimization'), icon: Zap, color: 'rose' },
+    { id: 'contacts', pageId: 'contacts', label: t('contacts'), icon: Users, color: 'blue' },
+    { id: 'companies', pageId: 'companies', label: t('companies'), icon: Users2, color: 'indigo' },
+    { id: 'team-directory', pageId: '3.3.1', label: t('team_directory'), icon: Users2, color: 'indigo' },
+    { id: 'tasks', pageId: '2.6.21', label: t('task_management'), icon: LayoutDashboard, color: 'sky' },
+    { id: 'meetings', pageId: '2.6.22', label: t('meeting_management'), icon: Calendar, color: 'pink' },
+    { id: 'inventory-3m', pageId: '3.3.4', label: t('inventory_3m'), icon: Package, color: 'orange' },
+    { id: 'optimization', pageId: '3m_resources', label: t('optimization'), icon: Zap, color: 'rose' },
     
     // MONITOR
-    { id: 'performance', label: t('performance_assessment'), icon: BarChart3, color: 'violet' },
-    { id: 'progress', label: t('progress_reports'), icon: FileText, color: 'teal' },
+    { id: 'performance', pageId: '3.3.2', label: t('performance_assessment'), icon: BarChart3, color: 'violet' },
+    { id: 'progress', pageId: '3.3.3', label: t('progress_reports'), icon: FileText, color: 'teal' },
   ];
+
+  const tabs = allTabs.filter(tab => {
+    if (isAdmin) return true;
+    if (!userProfile) return false;
+    return userProfile.accessiblePages?.includes(tab.pageId);
+  });
+
+  const [activeTab, setActiveTab] = useState<TabType>(
+    (tabs.length > 0 ? tabs[0].id : 'hrmp') as TabType
+  );
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
+      setActiveTab(tabs[0].id as TabType);
+    }
+  }, [tabs, activeTab]);
 
   return (
     <div className="w-full space-y-8">

@@ -610,6 +610,40 @@ app.post('/api/upload', upload.single('file'), async (req: any, res: any) => {
   }
 });
 
+app.get('/api/drive/folders-recursive/:folderId', async (req: any, res: any) => {
+  const { folderId } = req.params;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const folders: any[] = [];
+    
+    async function collectFolders(currentId: string, currentPath: string = '') {
+      const response = await drive.files.list({
+        q: `'${currentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        fields: 'files(id, name)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      });
+
+      if (response.data.files) {
+        for (const f of response.data.files) {
+          const folderPath = currentPath ? `${currentPath}/${f.name}` : f.name;
+          folders.push({ id: f.id, name: f.name, path: folderPath });
+          // Recursively search subfolders
+          await collectFolders(f.id, folderPath);
+        }
+      }
+    }
+
+    await collectFolders(folderId);
+    res.json({ folders });
+  } catch (error) {
+    console.error('Failed to list folders recursively:', error);
+    res.status(500).json({ error: 'Failed to list folders recursively' });
+  }
+});
+
 app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   const { folderId } = req.params;
   const { drive, error } = getDriveClient();

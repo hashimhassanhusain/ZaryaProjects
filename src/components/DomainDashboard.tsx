@@ -81,6 +81,7 @@ import { RiskPlanTab } from './risk/RiskPlanTab';
 import { RiskMatrixTab } from './risk/RiskMatrixTab';
 import { IssueLogTab } from './risk/IssueLogTab';
 
+import { useAuth } from '../context/UserContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -101,10 +102,18 @@ const ICON_MAP: Record<string, any> = {
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
+  const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
   const domainKey = page.domain || 'governance';
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
+
+  // Filter children based on permissions
+  const filteredChildren = childrenPages.filter(child => {
+    if (isAdmin) return true;
+    if (!userProfile) return false;
+    return userProfile.accessiblePages?.includes(child.id);
+  });
 
   // Risk Data State
   const [risks, setRisks] = useState<RiskEntry[]>([]);
@@ -437,7 +446,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           )}
         </button>
 
-        {childrenPages.map((child) => {
+        {filteredChildren.map((child) => {
           const isActive = activeTab === child.id || activeHubId === child.id;
           const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
           const focusAreaColor = 
@@ -620,7 +629,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             ) : (
               <div className="overflow-hidden">
                 {(() => {
-                  const activePage = childrenPages.find(cp => cp.id === activeTab);
+                  const activePage = filteredChildren.find(cp => cp.id === activeTab);
                   return activePage ? renderPageContent(activePage) : (
                     <div className="p-12 text-center text-slate-400">
                       {t('page_not_found')}

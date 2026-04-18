@@ -45,7 +45,7 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { ScheduleHubView } from './components/ScheduleHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
@@ -57,11 +57,13 @@ import { ProjectProvider, useProject } from './context/ProjectContext';
 import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { UserProvider, useAuth } from './context/UserContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { Toaster } from 'react-hot-toast';
 
 const PageRenderer = () => {
   const { t } = useLanguage();
+  const { userProfile, isAdmin } = useAuth();
   const { id } = useParams<{ id: string }>();
   const { selectedProject } = useProject();
   
@@ -78,12 +80,47 @@ const PageRenderer = () => {
 
   if (!page) return <Navigate to="/page/gov" />;
 
+  // Permission Check
+  if (!isAdmin && userProfile) {
+    const isAccessible = userProfile.accessiblePages?.includes(page.id);
+    
+    // Also consider domain hubs accessible if any child is accessible
+    const hasAccessibleChild = page.type === 'hub' && pages.filter(p => p.parentId === page.id).some(p => userProfile.accessiblePages?.includes(p.id));
+    
+    if (!isAccessible && !hasAccessibleChild) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+          <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+            <ShieldAlert className="w-10 h-10 text-rose-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+          <p className="text-slate-500 max-w-md">
+            You do not have permission to access the <strong>{page.title}</strong> page. 
+            Please contact your administrator for access.
+          </p>
+          <button 
+            onClick={() => window.history.back()}
+            className="mt-8 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+          >
+            Go Back
+          </button>
+        </div>
+      );
+    }
+  }
+
   // If it's a risk domain page, always render DomainDashboard with the correct tab
   const isRiskDomain = 'domain' in page && page.domain === 'risk';
   if (isRiskDomain || page.id === 'risk') {
     const hubPage = pages.find(p => p.id === 'risk');
     if (hubPage) {
-      const children = sortDomainPages(pages.filter(p => p.parentId === 'risk'), 'risk');
+      const allChildren = pages.filter(p => p.parentId === 'risk');
+      const accessibleChildren = allChildren.filter(child => {
+        if (isAdmin) return true;
+        if (!userProfile) return false;
+        return userProfile.accessiblePages?.includes(child.id);
+      });
+      const children = sortDomainPages(accessibleChildren, 'risk');
       return (
         <div className="w-full">
           <DomainDashboard 
@@ -99,7 +136,13 @@ const PageRenderer = () => {
   if (id && hubIds.includes(id)) {
     const hubPage = pages.find(p => p.id === id);
     if (hubPage) {
-      const children = sortDomainPages(pages.filter(p => p.parentId === id), hubPage.domain || '');
+      const allChildren = pages.filter(p => p.parentId === id);
+      const accessibleChildren = allChildren.filter(child => {
+        if (isAdmin) return true;
+        if (!userProfile) return false;
+        return userProfile.accessiblePages?.includes(child.id);
+      });
+      const children = sortDomainPages(accessibleChildren, hubPage.domain || '');
 
       return (
         <div className="w-full">
@@ -347,20 +390,22 @@ export default function App() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        {!user ? (
-          <Login />
-        ) : (
-          <ProjectProvider>
-            <UIProvider>
-              <CurrencyProvider>
-                <Router>
-                  <AppLayout />
-                  <Toaster position="top-right" />
-                </Router>
-              </CurrencyProvider>
-            </UIProvider>
-          </ProjectProvider>
-        )}
+        <UserProvider>
+          {!user ? (
+            <Login />
+          ) : (
+            <ProjectProvider>
+              <UIProvider>
+                <CurrencyProvider>
+                  <Router>
+                    <AppLayout />
+                    <Toaster position="top-right" />
+                  </Router>
+                </CurrencyProvider>
+              </UIProvider>
+            </ProjectProvider>
+          )}
+        </UserProvider>
       </LanguageProvider>
     </ErrorBoundary>
   );
