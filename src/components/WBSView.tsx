@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { WBSLevel, BOQItem, WorkPackage } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -20,6 +20,7 @@ import { ActivityListView } from './ActivityListView';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { masterFormatData } from '../data/masterFormat';
 import { Page, Activity } from '../types';
+import { AddWBSLevelModal } from './AddWBSLevelModal';
 
 export const WBSView: React.FC = () => {
   const { selectedProject } = useProject();
@@ -30,7 +31,6 @@ export const WBSView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAddWbs, setShowAddWbs] = useState(false);
-  const [newWbs, setNewWbs] = useState({ title: '', type: 'Zone' as any, parentId: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
   const [selectedWbsIds, setSelectedWbsIds] = useState<string[]>([]);
@@ -65,6 +65,35 @@ export const WBSView: React.FC = () => {
       setSelectedWbsIds(prev => [...new Set([...prev, ...wbsPks.map(p => p.id)])]);
     }
   };
+
+  const filteredWbsForTree = useMemo(() => {
+    if (!searchTerm) return wbsLevels;
+    
+    const searchLower = searchTerm.toLowerCase();
+    const matchingIds = new Set<string>();
+    
+    // First pass: find all nodes that match directly
+    const directMatches = wbsLevels.filter(l => 
+      l.title.toLowerCase().includes(searchLower) ||
+      l.code.toLowerCase().includes(searchLower)
+    );
+    
+    // Second pass: include all ancestors of matches
+    const addAncestors = (parentId: string) => {
+      const parent = wbsLevels.find(p => p.id === parentId);
+      if (parent && !matchingIds.has(parent.id)) {
+        matchingIds.add(parent.id);
+        if (parent.parentId) addAncestors(parent.parentId);
+      }
+    };
+    
+    directMatches.forEach(match => {
+      matchingIds.add(match.id);
+      if (match.parentId) addAncestors(match.parentId);
+    });
+    
+    return wbsLevels.filter(l => matchingIds.has(l.id));
+  }, [wbsLevels, searchTerm]);
 
   const toggleSelectWbs = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -158,6 +187,36 @@ export const WBSView: React.FC = () => {
   
   const [isManualTitle, setIsManualTitle] = useState(false);
   const [isManualWbsTitle, setIsManualWbsTitle] = useState(false);
+
+  const hierarchyRules: Record<string, string[]> = {
+    'Zone': [],
+    'Area': ['Zone'],
+    'Building': ['Area', 'Zone'],
+    'Cost Account': ['Building', 'Area', 'Zone', 'Root'],
+    'Work Package': ['Cost Account']
+  };
+
+  useEffect(() => {
+    if (!editingWbs) return;
+    
+    const allowedParents = hierarchyRules[editingWbs.type] || [];
+    const parent = wbsLevels.find(l => l.id === editingWbs.parentId);
+    
+    if (editingWbs.type === 'Work Package') {
+      if (!parent || parent.type !== 'Cost Account') {
+        const firstCA = wbsLevels.find(l => l.type === 'Cost Account');
+        if (firstCA && firstCA.id !== editingWbs.id) {
+          setEditingWbs(prev => prev ? ({ ...prev, parentId: firstCA.id }) : null);
+        }
+      }
+    } else if (editingWbs.type === 'Zone') {
+      if (editingWbs.parentId) {
+        setEditingWbs(prev => prev ? ({ ...prev, parentId: '' }) : null);
+      }
+    } else if (parent && !allowedParents.includes(parent.type)) {
+      setEditingWbs(prev => prev ? ({ ...prev, parentId: '' }) : null);
+    }
+  }, [editingWbs?.type]);
   const [manualTitle, setManualTitle] = useState('');
   
   // Work Package states
@@ -183,10 +242,22 @@ export const WBSView: React.FC = () => {
     }
   };
 
-  const generateCode = (type: string, parentId?: string, existingLevels: WBSLevel[] = []) => {
+  const generateCode = (type: string, parentId?: string, existingLevels: WBSLevel[] = [], divisionCode?: string) => {
+    if (type === 'Cost Account' && divisionCode) {
+      const parent = existingLevels.find(l => l.id === parentId);
+      const code = `${divisionCode} CA`;
+      return parent ? `${parent.code}-${code}` : code;
+    }
+
     const prefix = getPrefix(type);
     const parent = existingLevels.find(l => l.id === parentId);
-    const siblings = existingLevels.filter(l => l.parentId === parentId && l.type === type);
+    const siblings = existingLevels.filter(l => {
+      const isRoot = parentId === undefined || parentId === '' || parentId === null;
+      if (isRoot) {
+        return (!l.parentId || l.parentId === '' || l.parentId === null) && l.type === type;
+      }
+      return l.parentId === parentId && l.type === type;
+    });
     const nextNum = siblings.length + 1;
     
     if (parent) {
@@ -248,10 +319,11 @@ export const WBSView: React.FC = () => {
       for (const item of generatedWbs) {
         const id = crypto.randomUUID();
         const parentId = item.parentTitle ? titleToId[item.parentTitle] : undefined;
-        const code = generateCode(item.type, parentId, currentLevels);
         
         const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === item.title || d.title === item.title);
         const divisionCode = div ? div.id : (item.title.match(/\d+/)?.[0] || '01');
+        
+        const code = generateCode(item.type, parentId, currentLevels, divisionCode);
         
         const level: any = {
           id,
@@ -387,48 +459,6 @@ export const WBSView: React.FC = () => {
     setIsManualTitle(!isStandard);
   };
 
-  const handleAddWbs = async () => {
-    if (!selectedProject || !newWbs.title) return;
-    try {
-      const parent = wbsLevels.find(l => l.id === newWbs.parentId);
-      const code = generateCode(newWbs.type, newWbs.parentId || undefined, wbsLevels);
-      
-      // Extract division code if type is Cost Account
-      let divisionCode = '';
-      if (newWbs.type === 'Cost Account') {
-        const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === newWbs.title || d.title === newWbs.title);
-        divisionCode = div ? div.id : (newWbs.title.match(/\d+/)?.[0] || '01');
-      } else if (newWbs.type === 'Work Package' && parent && parent.divisionCode) {
-        divisionCode = parent.divisionCode;
-      }
-
-      const level: any = {
-        id: crypto.randomUUID(),
-        projectId: selectedProject.id,
-        title: newWbs.title,
-        type: newWbs.type,
-        code,
-        status: 'Not Started',
-        level: parent ? parent.level + 1 : 1
-      };
-
-      if (divisionCode) {
-        level.divisionCode = divisionCode;
-      }
-
-      if (newWbs.parentId) {
-        level.parentId = newWbs.parentId;
-      }
-
-      await setDoc(doc(db, 'wbs', level.id), level);
-      setShowAddWbs(false);
-      setIsManualWbsTitle(false);
-      setNewWbs({ title: '', type: 'Zone', parentId: '' });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'wbs');
-    }
-  };
-
   const handleDeleteWbs = async (id: string) => {
     const level = wbsLevels.find(l => l.id === id);
     if (!level) return;
@@ -466,7 +496,26 @@ export const WBSView: React.FC = () => {
   };
 
   const renderWbsTree = (parentId?: string, depth = 0) => {
-    const levels = wbsLevels.filter(l => l.parentId === parentId);
+    // Handle root nodes correctly whether parentId is undefined, null or empty string
+    const levels = filteredWbsForTree.filter(l => {
+      if (parentId === undefined || parentId === '' || parentId === null) {
+        return !l.parentId || l.parentId === '' || l.parentId === null;
+      }
+      return l.parentId === parentId;
+    });
+
+    if (levels.length === 0 && depth === 0 && wbsLevels.length > 0) {
+      if (searchTerm) {
+        return (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Search className="w-12 h-12 text-slate-200 mb-4" />
+            <h4 className="text-lg font-bold text-slate-900 mb-1">No Matches Found</h4>
+            <p className="text-sm text-slate-400">Try searching for a different term or code.</p>
+          </div>
+        );
+      }
+    }
+
     return (
       <div className={cn("space-y-3", depth > 0 && "ml-8 border-l-2 border-slate-100 pl-6")}>
         {levels.map(level => {
@@ -485,9 +534,11 @@ export const WBSView: React.FC = () => {
                     level.type === 'Zone' ? "bg-purple-100 text-purple-600" :
                     level.type === 'Area' ? "bg-blue-100 text-blue-600" :
                     level.type === 'Building' ? "bg-emerald-100 text-emerald-600" :
-                    "bg-amber-100 text-amber-600"
+                    level.type === 'Cost Account' ? "bg-amber-100 text-amber-600" :
+                    level.type === 'Work Package' ? "bg-sky-100 text-sky-600" :
+                    "bg-slate-100 text-slate-600"
                   )}>
-                    {level.type[0]}
+                    {level.type === 'Work Package' ? <Package className="w-5 h-5" /> : level.type[0]}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -547,8 +598,6 @@ export const WBSView: React.FC = () => {
             { id: 'hierarchy', label: 'WBS Hierarchy', icon: LayoutGrid },
             { id: 'costaccount', label: 'Cost Account', icon: Database },
             { id: 'packages', label: 'Work Packages', icon: Package },
-            { id: 'milestones', label: 'Milestones', icon: Target },
-            { id: 'activities', label: 'Activities', icon: List },
           ].map(tab => (
             <button
               key={tab.id}
@@ -635,7 +684,6 @@ export const WBSView: React.FC = () => {
               )}
               <button 
                 onClick={() => {
-                  setNewWbs({ title: '', type: 'Cost Account', parentId: '' });
                   setShowAddWbs(true);
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
@@ -744,7 +792,7 @@ export const WBSView: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : activeTab === 'packages' ? (
+      ) : (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -861,88 +909,6 @@ export const WBSView: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      ) : activeTab === 'milestones' ? (
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900">Project Milestones</h3>
-              <p className="text-slate-500">Key project events and target completion dates.</p>
-            </div>
-            <button 
-              onClick={() => {
-                // Open activity attributes modal with milestone type pre-selected
-                // We'll need a state for this or use a specific function
-                setShowAddMilestone(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-            >
-              <Plus className="w-4 h-4" />
-              Add Milestone
-            </button>
-          </div>
-
-          <div className="relative pb-20">
-            {milestones.length === 0 ? (
-              <div className="p-20 text-center bg-white border border-slate-200 rounded-3xl">
-                <Target className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                <p className="text-slate-400">No milestones defined in the schedule.</p>
-              </div>
-            ) : (
-              <div className="relative px-4">
-                {/* Timeline Line */}
-                <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2" />
-                
-                <div className="flex flex-wrap justify-center gap-y-24 gap-x-8 md:gap-x-16 relative">
-                  {milestones
-                    .sort((a, b) => new Date(a.finishDate || '').getTime() - new Date(b.finishDate || '').getTime())
-                    .map((m, idx) => (
-                      <div key={m.id} className="relative flex flex-col items-center group">
-                        {/* Milestone Circle */}
-                        <motion.div 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: idx * 0.1 }}
-                          onClick={() => {
-                            setEditingActivity(m);
-                          }}
-                          className={cn(
-                            "w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 flex items-center justify-center z-10 transition-all cursor-pointer group-hover:scale-110",
-                            m.status === 'Completed' 
-                              ? "bg-emerald-50 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-500/20" 
-                              : "bg-blue-50 border-blue-500 text-blue-600 shadow-lg shadow-blue-500/20"
-                          )}
-                        >
-                          <Target className="w-6 h-6 sm:w-8 sm:h-8" />
-                        </motion.div>
-
-                        {/* Label Top */}
-                        <div className="absolute -top-12 sm:-top-16 w-32 sm:w-40 text-center">
-                          <div className="text-[10px] sm:text-xs font-black text-slate-900 line-clamp-2 px-2">{m.description}</div>
-                        </div>
-
-                        {/* Label Bottom */}
-                        <div className="absolute -bottom-12 sm:-bottom-16 w-32 sm:w-40 text-center">
-                          <div className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                            {m.finishDate || 'TBD'}
-                          </div>
-                          <div className={cn(
-                            "inline-block px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-bold uppercase tracking-wider",
-                            m.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600"
-                          )}>
-                            {m.status}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <ActivityListView page={{ id: 'activities', title: 'Activities', type: 'terminal' }} />
         </div>
       )}
 
@@ -1133,7 +1099,9 @@ export const WBSView: React.FC = () => {
                   </div>
                 ) : null}
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Parent Level</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    {editingWbs.type === 'Work Package' ? 'Parent Cost Account' : 'Parent Level'}
+                  </label>
                   <select 
                     value={editingWbs.parentId || ''}
                     onChange={e => {
@@ -1146,12 +1114,20 @@ export const WBSView: React.FC = () => {
                     }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
-                    <option value="">None (Root Level)</option>
-                    {wbsLevels.filter(l => l.id !== editingWbs.id).map(l => (
-                      <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                    ))}
+                    {editingWbs.type !== 'Work Package' && <option value="">None (Root Level)</option>}
+                    {wbsLevels
+                      .filter(l => l.id !== editingWbs.id && (hierarchyRules[editingWbs.type] || []).includes(l.type))
+                      .map(l => (
+                        <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
+                      ))
+                    }
                     <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
                   </select>
+                  {editingWbs.type === 'Work Package' && wbsLevels.filter(l => l.type === 'Cost Account').length === 0 && (
+                    <p className="mt-1 text-[10px] text-rose-500 font-bold uppercase tracking-wider">
+                      No Cost Accounts available to link.
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button 
@@ -1336,193 +1312,12 @@ export const WBSView: React.FC = () => {
       </AnimatePresence>
 
       {/* Add WBS Modal */}
-      <AnimatePresence>
-        {showAddWbs && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
-            >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Add WBS Level</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
-                  <input 
-                    type="text" 
-                    value={newWbs.title}
-                    onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="e.g. South Zone, Villa 2, Floor 1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Type</label>
-                  <select 
-                    value={newWbs.type}
-                    onChange={e => {
-                      const type = e.target.value as any;
-                      let parentId = newWbs.parentId;
-                      if (type === 'Work Package') {
-                        // Auto-select first Cost Account if available
-                        const costAccount = wbsLevels.find(l => l.type === 'Cost Account');
-                        if (costAccount) {
-                          parentId = costAccount.id;
-                        } else {
-                          // Default to 01 General Requirements if no Cost Account exists
-                          const generalReq = wbsLevels.find(l => l.title.includes('01 General Requirements'));
-                          if (generalReq) parentId = generalReq.id;
-                        }
-                      }
-                      setNewWbs({...newWbs, type, parentId});
-                    }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="Zone">Zone</option>
-                    <option value="Area">Area</option>
-                    <option value="Building">Building</option>
-                    <option value="Cost Account">Cost Account</option>
-                    <option value="Work Package">Work Package</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                {newWbs.type === 'Cost Account' ? (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account Title</label>
-                    <div className="space-y-2">
-                      {!isManualWbsTitle ? (
-                        <select 
-                          value={masterFormatDivisions.some(d => `${d.id} - ${d.title}` === newWbs.title) ? newWbs.title : ''}
-                          onChange={e => {
-                            if (e.target.value === 'manual') {
-                              setIsManualWbsTitle(true);
-                              setNewWbs({...newWbs, title: ''});
-                            } else {
-                              setNewWbs({...newWbs, title: e.target.value});
-                            }
-                          }}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                          <option value="">Select Cost Account...</option>
-                          {masterFormatDivisions.map(div => (
-                            <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
-                          ))}
-                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                        </select>
-                      ) : (
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={newWbs.title}
-                            onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
-                            placeholder="Enter custom cost account title..."
-                            autoFocus
-                          />
-                          <button 
-                            onClick={() => setIsManualWbsTitle(false)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
-                          >
-                            <List className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : newWbs.type === 'Work Package' ? (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package Title</label>
-                    <div className="space-y-2">
-                      {!isManualWbsTitle ? (
-                        <select 
-                          value={masterFormatSections.some(s => s.title === newWbs.title) ? newWbs.title : ''}
-                          onChange={e => {
-                            if (e.target.value === 'manual') {
-                              setIsManualWbsTitle(true);
-                              setNewWbs({...newWbs, title: ''});
-                            } else {
-                              setNewWbs({...newWbs, title: e.target.value});
-                            }
-                          }}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                          <option value="">Select Work Package...</option>
-                          {masterFormatSections
-                            .filter(s => {
-                              const parent = wbsLevels.find(l => l.id === newWbs.parentId);
-                              if (parent && parent.divisionCode) {
-                                return s.divisionId === parent.divisionCode;
-                              }
-                              return true;
-                            })
-                            .map(section => (
-                              <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                            ))
-                          }
-                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                        </select>
-                      ) : (
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={newWbs.title}
-                            onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
-                            placeholder="Enter custom work package title..."
-                            autoFocus
-                          />
-                          <button 
-                            onClick={() => setIsManualWbsTitle(false)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
-                          >
-                            <List className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Parent Level</label>
-                  <select 
-                    value={newWbs.parentId}
-                    onChange={e => {
-                      if (e.target.value === 'new') {
-                        setNewWbs({ title: '', type: 'Zone', parentId: '' });
-                        setIsManualWbsTitle(false);
-                        return;
-                      }
-                      setNewWbs({...newWbs, parentId: e.target.value});
-                    }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="">None (Root Level)</option>
-                    {wbsLevels.map(l => (
-                      <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                    ))}
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
-                  </select>
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    onClick={() => { setShowAddWbs(false); setIsManualWbsTitle(false); }}
-                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleAddWbs}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                  >
-                    Create Level
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <AddWBSLevelModal 
+        isOpen={showAddWbs}
+        onClose={() => setShowAddWbs(false)}
+        selectedProject={selectedProject}
+        wbsLevels={wbsLevels}
+      />
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

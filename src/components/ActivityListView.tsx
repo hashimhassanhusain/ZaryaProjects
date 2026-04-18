@@ -17,6 +17,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { cn } from '../lib/utils';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { useLanguage } from '../context/LanguageContext';
+import { AddWBSLevelModal } from './AddWBSLevelModal';
 
 interface ActivityListViewProps {
   page: Page;
@@ -43,8 +44,6 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>('');
   const [selectedWorkPackageId, setSelectedWorkPackageId] = useState<string>('');
   const [isAddingWP, setIsAddingWP] = useState(false);
-  const [newWPCode, setNewWPCode] = useState('');
-  const [newWPTitle, setNewWPTitle] = useState('');
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -101,32 +100,6 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
       sUnsubscribe();
     };
   }, [selectedProject]);
-
-  const handleAddWorkPackage = async () => {
-    if (!selectedProject || !selectedWbsId || !selectedDivisionId || !newWPTitle.trim() || !newWPCode.trim()) return;
-    
-    try {
-      const parentWbs = wbsLevels.find(l => l.id === selectedWbsId);
-      const wp: WBSLevel = {
-        id: crypto.randomUUID(),
-        projectId: selectedProject.id,
-        parentId: selectedWbsId,
-        divisionCode: selectedDivisionId,
-        code: newWPCode.trim(),
-        title: newWPTitle.trim(),
-        type: 'Work Package',
-        level: (parentWbs?.level || 0) + 1,
-        status: 'Not Started'
-      };
-      await setDoc(doc(db, 'wbs', wp.id), wp);
-      setSelectedWorkPackageId(wp.id);
-      setNewWPTitle('');
-      setNewWPCode('');
-      setIsAddingWP(false);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'wbs');
-    }
-  };
 
   const generateFromBOQ = async () => {
     if (!selectedProject || boqItems.length === 0) return;
@@ -371,82 +344,18 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
       </div>
 
       {/* Add Work Package Modal */}
-      <AnimatePresence>
-        {isAddingWP && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
-            >
-              <h3 className="text-lg font-bold text-slate-900 mb-6">{t('add_new_work_package')}</h3>
-              <div className="space-y-4">
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('masterformat_suggestions')}</label>
-                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    {selectedDivisionId ? (
-                      masterFormatData.find(d => d.number === selectedDivisionId)?.items.map(item => (
-                        <button
-                          key={item.code}
-                          onClick={() => {
-                            setNewWPCode(item.code);
-                            setNewWPTitle(item.title);
-                          }}
-                          className={cn(
-                            "flex items-center justify-between p-2 rounded-lg text-left transition-all",
-                            newWPCode === item.code ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-blue-50"
-                          )}
-                        >
-                          <span className="text-xs font-bold">{item.title}</span>
-                          <span className="font-mono text-[10px] opacity-60">{item.code}</span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-slate-400 text-xs italic">
-                        {t('select_division_first')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">{t('code')}</label>
-                    <input 
-                      type="text"
-                      value={newWPCode}
-                      onChange={(e) => setNewWPCode(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                      placeholder="00000"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">{t('title')}</label>
-                    <input 
-                      type="text"
-                      value={newWPTitle}
-                      onChange={(e) => setNewWPTitle(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g. Foundation Concrete Works"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 mt-8">
-                  <button onClick={() => setIsAddingWP(false)} className="px-4 py-2 text-slate-500 font-bold text-sm">{t('cancel')}</button>
-                  <button 
-                    onClick={handleAddWorkPackage}
-                    disabled={!newWPTitle.trim() || !newWPCode.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all disabled:opacity-50"
-                  >
-                    {t('create_package')}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <AddWBSLevelModal 
+        isOpen={isAddingWP}
+        onClose={() => setIsAddingWP(false)}
+        selectedProject={selectedProject}
+        wbsLevels={wbsLevels}
+        initialType="Work Package"
+        initialDivisionId={selectedDivisionId || '01'}
+        initialParentId={selectedWbsId}
+        onSuccess={(id) => {
+            setSelectedWorkPackageId(id);
+        }}
+      />
 
       <div className="space-y-6">
         {Object.keys(groupedActivities).length === 0 ? (

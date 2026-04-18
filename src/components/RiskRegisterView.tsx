@@ -371,7 +371,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
             </div>
           </div>
 
-          <div className="p-10 space-y-8">
+          <div className="p-10 space-y-8 pb-32">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk ID</label>
@@ -500,27 +500,23 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2rem] p-8 mt-12">
-              <div className="flex items-center gap-4 text-white/60 text-xs font-bold uppercase tracking-widest">
-                <Clock className="w-4 h-4" />
-                Last Updated: {editingEntry?.updatedAt ? new Date(editingEntry.updatedAt).toLocaleString('en-US') : 'Never'}
-              </div>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setView('list')}
-                  className="px-8 py-4 text-white font-bold text-sm hover:bg-white/10 rounded-2xl transition-all"
-                >
-                  Discard
-                </button>
-                <button 
-                  onClick={() => handleSave(false)}
-                  disabled={isSaving}
-                  className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Update Current
-                </button>
-              </div>
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
+              <button 
+                onClick={() => setView('list')}
+                className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
+              >
+                <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                Discard
+              </button>
+              <button 
+                onClick={() => handleSave(false)}
+                disabled={isSaving}
+                className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                {editingEntry ? 'Update Risk' : 'Save Risk'}
+              </button>
             </div>
           </div>
         </div>

@@ -124,3 +124,25 @@ export function sortDomainPages(items: any[], domainKey: string) {
     return getWeight(a) - getWeight(b);
   });
 }
+
+export function getFullWBSCode(levelId: string, allLevels: { id: string, parentId?: string, code: string }[]): string {
+  const level = allLevels.find(l => l.id === levelId);
+  if (!level) return '';
+  
+  let fullCode = level.code;
+  let current = level;
+  
+  while (current.parentId) {
+    const parent = allLevels.find(l => l.id === current.parentId);
+    if (!parent) break;
+    
+    // If the current fullCode doesn't already include the parent's code as a prefix, add it
+    if (!fullCode.startsWith(parent.code + '-')) {
+      fullCode = parent.code + '-' + fullCode;
+    }
+    
+    current = parent;
+  }
+  
+  return fullCode;
+}

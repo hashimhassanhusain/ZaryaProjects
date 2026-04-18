@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, ChevronDown, User as UserIcon, LogOut, Shield, Bell, Menu, Loader2, Languages } from 'lucide-react';
+import { Settings, ChevronDown, User as UserIcon, LogOut, Shield, Bell, Menu, Loader2, Languages, Search, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { auth, handleFirestoreError, OperationType } from '../firebase';
+import { updateDoc, doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { User, signOut } from 'firebase/auth';
 import { cn } from '../lib/utils';
 
@@ -11,8 +12,10 @@ import { useUI } from '../context/UIContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { RefreshCw, DollarSign, Coins } from 'lucide-react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { pages as allPages } from '../data';
+import { User as AppUser } from '../types';
+import { toast } from 'react-hot-toast';
 
 export const Header: React.FC = () => {
   const { language, setLanguage, t, isRtl } = useLanguage();
@@ -22,22 +25,44 @@ export const Header: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [editingRate, setEditingRate] = useState(exchangeRate.toString());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [taskCount, setTaskCount] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const projectMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const currencyMenuRef = useRef<HTMLDivElement>(null);
+  const favoritesMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Get current page ID from path
+  const currentPageId = location.pathname.includes('/page/') 
+    ? location.pathname.split('/page/')[1] 
+    : location.pathname === '/' ? 'dashboard' : null;
 
   useEffect(() => {
     setEditingRate(exchangeRate.toString());
   }, [exchangeRate]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
+      setUser(u);
+      if (u) {
+        const userSnap = await getDoc(doc(db, 'users', u.uid));
+        if (userSnap.exists()) {
+          setAppUser({ ...userSnap.data(), uid: u.uid } as AppUser);
+        }
+      } else {
+        setAppUser(null);
+      }
+    });
     return () => unsubscribe();
   }, []);
 
@@ -51,6 +76,12 @@ export const Header: React.FC = () => {
       }
       if (currencyMenuRef.current && !currencyMenuRef.current.contains(event.target as Node)) {
         setIsCurrencyMenuOpen(false);
+      }
+      if (favoritesMenuRef.current && !favoritesMenuRef.current.contains(event.target as Node)) {
+        setIsFavoritesOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
       }
     };
 
@@ -103,9 +134,39 @@ export const Header: React.FC = () => {
     setIsRefreshing(false);
   };
 
+  const toggleFavorite = async (pageId: string) => {
+    if (!user || !appUser) return;
+    
+    const currentFavorites = appUser.favoritePages || [];
+    const isFavorite = currentFavorites.includes(pageId);
+    
+    const newFavorites = isFavorite 
+      ? currentFavorites.filter(id => id !== pageId)
+      : [...currentFavorites, pageId];
+      
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        favoritePages: newFavorites
+      });
+      setAppUser({ ...appUser, favoritePages: newFavorites });
+      toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+    }
+  };
+
+  const filteredPages = searchQuery.trim() === '' ? [] : allPages.filter(page => 
+    page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    page.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    page.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (page as any).domain?.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 10);
+
+  const favoritePagesData = allPages.filter(p => appUser?.favoritePages?.includes(p.id));
+
   return (
     <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
-      {/* Left: Hamburger (Mobile) & Project Selector */}
+      {/* Left: Hamburger (Mobile) & Search */}
       <div className="flex-1 flex justify-start items-center gap-2">
         <button 
           onClick={toggleSidebar}
@@ -114,11 +175,109 @@ export const Header: React.FC = () => {
           <Menu className="w-5 h-5" />
         </button>
 
+        <div className="relative hidden md:block" ref={searchRef}>
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+            <input 
+              type="text"
+              placeholder={t('search_pages')}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsSearchOpen(true);
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              className="w-64 lg:w-80 px-10 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+            />
+          </div>
+
+          <AnimatePresence>
+            {isSearchOpen && (searchQuery.trim() !== '' || favoritePagesData.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className={cn(
+                  "absolute top-full mt-2 w-[400px] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50 p-2",
+                  isRtl ? "right-0" : "left-0"
+                )}
+              >
+                {searchQuery.trim() !== '' ? (
+                  <div className="space-y-4 p-2">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">{t('search_results')}</div>
+                    {filteredPages.length > 0 ? (
+                      <div className="space-y-1">
+                        {filteredPages.map(page => (
+                          <button
+                            key={page.id}
+                            onClick={() => {
+                              navigate(`/page/${page.id}`);
+                              setIsSearchOpen(false);
+                              setSearchQuery('');
+                            }}
+                            className="w-full flex items-center justify-between group p-3 hover:bg-blue-50 rounded-xl transition-all text-left"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-slate-100 group-hover:bg-white rounded-lg flex items-center justify-center text-slate-600 group-hover:text-blue-600 transition-colors">
+                                <Search className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{page.title}</div>
+                                <div className="text-[10px] text-slate-400">{page.id} • {page.domain}</div>
+                              </div>
+                            </div>
+                            <Star 
+                              className={cn(
+                                "w-4 h-4 transition-colors",
+                                appUser?.favoritePages?.includes(page.id) ? "fill-yellow-400 text-yellow-400" : "text-slate-300 hover:text-yellow-400"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(page.id);
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center space-y-2">
+                        <div className="text-slate-400 font-medium">{t('no_results_found')}</div>
+                        <div className="text-[10px] text-slate-300 uppercase tracking-widest">Try searching for domains like "Finance" or "Schedule"</div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                {searchQuery.trim() === '' && favoritePagesData.length > 0 && (
+                  <div className="space-y-4 p-2 border-t border-slate-50 mt-2 pt-4">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">{t('favorites')}</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {favoritePagesData.map(page => (
+                        <button
+                          key={page.id}
+                          onClick={() => {
+                            navigate(`/page/${page.id}`);
+                            setIsSearchOpen(false);
+                          }}
+                          className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-yellow-50 rounded-xl transition-all group"
+                        >
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 shrink-0" />
+                          <span className="text-xs font-bold text-slate-700 group-hover:text-yellow-700 truncate">{page.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div className="relative" ref={projectMenuRef}>
           <button 
             onClick={() => !projectsLoading && setIsProjectMenuOpen(!isProjectMenuOpen)}
             disabled={projectsLoading}
-            className="flex items-center gap-3 px-3 md:px-4 py-1.5 hover:bg-slate-50 rounded-xl transition-all group border border-slate-100 disabled:opacity-50"
+            className="flex items-center gap-3 px-3 md:px-4 py-1.5 hover:bg-slate-50 rounded-xl transition-all group border border-slate-100 disabled:opacity-50 ml-2"
           >
             <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-medium text-xs shadow-sm shrink-0">
               {projectsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : (selectedProject?.name.charAt(0) || '?')}
@@ -190,6 +349,86 @@ export const Header: React.FC = () => {
 
       {/* Right: User & Admin Settings */}
       <div className="flex-1 flex justify-end items-center gap-4">
+        {/* Favorites Quick Access */}
+        <div className="relative hidden lg:block" ref={favoritesMenuRef}>
+          <button 
+            onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
+              isFavoritesOpen ? "bg-yellow-50 text-yellow-600 border-yellow-200" : "hover:bg-slate-50 text-slate-400 border-slate-100"
+            )}
+            title={t('favorites')}
+          >
+            <Star className={cn("w-4 h-4", favoritePagesData.length > 0 ? "fill-yellow-500 text-yellow-500" : "")} />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden xl:inline">{t('favorites')}</span>
+            {favoritePagesData.length > 0 && (
+              <span className="min-w-[16px] h-4 px-1 bg-yellow-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {favoritePagesData.length}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {isFavoritesOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className={cn(
+                  "absolute top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden p-2 z-50",
+                  isRtl ? "left-0" : "right-0"
+                )}
+              >
+                <div className="px-4 py-3 border-b border-slate-50 mb-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('quick_access_favorites')}</div>
+                </div>
+
+                {favoritePagesData.length > 0 ? (
+                  <div className="space-y-1">
+                    {favoritePagesData.map(page => (
+                      <button
+                        key={page.id}
+                        onClick={() => {
+                          navigate(`/page/${page.id}`);
+                          setIsFavoritesOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between group p-3 hover:bg-slate-50 rounded-xl transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                          <span className="text-sm font-bold text-slate-700 truncate">{page.title}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center space-y-2">
+                    <Star className="w-8 h-8 text-slate-100 mx-auto" />
+                    <div className="text-sm font-medium text-slate-400">{t('no_favorites')}</div>
+                    <p className="text-[10px] text-slate-300">{t('star_pages_to_add')}</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Favorite Current Page Toggle */}
+        {currentPageId && (
+          <button 
+            onClick={() => toggleFavorite(currentPageId)}
+            className={cn(
+              "p-2 rounded-xl transition-all border",
+              appUser?.favoritePages?.includes(currentPageId) 
+                ? "bg-yellow-50 text-yellow-600 border-yellow-200" 
+                : "text-slate-400 border-slate-100 hover:bg-slate-50"
+            )}
+            title={appUser?.favoritePages?.includes(currentPageId) ? 'Remove Favorite' : 'Add Favorite'}
+          >
+            <Star className={cn("w-5 h-5", appUser?.favoritePages?.includes(currentPageId) ? "fill-yellow-500" : "")} />
+          </button>
+        )}
+
         {/* Language Toggle */}
         <button 
           onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}

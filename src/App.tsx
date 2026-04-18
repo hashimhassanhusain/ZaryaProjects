@@ -28,7 +28,7 @@ import { Login } from './components/Login';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
-import { VendorMasterRegister } from './components/VendorMasterRegister';
+import { SupplierMasterRegister } from './components/SupplierMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
@@ -67,7 +67,7 @@ const PageRenderer = () => {
   
   // Handle domain and focus area IDs
   const hubIds = [
-    'gov', 'scope', 'sched', 'fin', 'stak', 'res', 'risk', '2.1.2'
+    'gov', 'scope', 'fin', 'stak', 'res', 'risk', '2.1.2'
   ];
 
   const page = id === 'logs' 
@@ -118,7 +118,7 @@ const PageRenderer = () => {
   const isWorkPackagesPage = page.id === '2.2.10';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
-  const isSchedulePage = page.id === '2.3';
+  const isSchedulePage = page.id === '2.3' || page.id === 'sched';
   const isAssumptionLogPage = page.id === '2.1.5';
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
@@ -195,7 +195,7 @@ const PageRenderer = () => {
         ) : isChangeRequestPage ? (
           <ChangeRequestView page={page} />
         ) : isVendorRegisterPage ? (
-          <VendorMasterRegister page={page} />
+          <SupplierMasterRegister page={page} />
         ) : isLogManagementPage ? (
           <LogManagementView page={page} />
         ) : isFormalAcceptancePage ? (
@@ -265,6 +265,8 @@ const AppLayout = () => {
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
             <Route path="/profile" element={<UserFormView />} />
             <Route path="/admin/users" element={<AdminSettings />} />
+            <Route path="/admin/users/new" element={<UserFormView />} />
+            <Route path="/admin/users/:uid" element={<UserFormView />} />
             <Route path="/admin/projects" element={<AdminSettings />} />
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
@@ -282,6 +284,9 @@ export default function App() {
 
   useEffect(() => {
     const seedUsers = async () => {
+      // Only attempt to seed if authenticated and admin, to avoid permission errors
+      if (!user || user.email !== 'hashim.h.husain@gmail.com') return;
+      
       try {
         const usersRef = collection(db, 'users');
         const snapshot = await getDocs(usersRef);
@@ -295,7 +300,7 @@ export default function App() {
       }
     };
     seedUsers();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -339,23 +344,23 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <Login />;
-  }
-
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        <ProjectProvider>
-          <UIProvider>
-            <CurrencyProvider>
-              <Router>
-                <AppLayout />
-                <Toaster position="top-right" />
-              </Router>
-            </CurrencyProvider>
-          </UIProvider>
-        </ProjectProvider>
+        {!user ? (
+          <Login />
+        ) : (
+          <ProjectProvider>
+            <UIProvider>
+              <CurrencyProvider>
+                <Router>
+                  <AppLayout />
+                  <Toaster position="top-right" />
+                </Router>
+              </CurrencyProvider>
+            </UIProvider>
+          </ProjectProvider>
+        )}
       </LanguageProvider>
     </ErrorBoundary>
   );

@@ -4327,7 +4327,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   const renderReadingView = () => {
     return (
-      <div id="pdf-content" className="space-y-6 py-8 px-4 md:px-8 bg-white rounded-3xl border border-slate-100 shadow-sm">
+      <div id="pdf-content" className="space-y-4 py-6 px-4 md:px-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
         {page.formFields?.map((field, index) => {
           const val = formData[field] || 'Not specified';
           const isArabic = /[\u0600-\u06FF]/.test(val);
@@ -4335,21 +4335,21 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           return (
             <motion.div 
               key={index}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="max-w-3xl mx-auto"
+              className="max-w-4xl mx-auto"
             >
-              <h4 className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-2">
+              <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5 opacity-80">
                 {field}
               </h4>
               <div className={cn(
-                "text-lg font-normal text-slate-900 leading-relaxed",
+                "text-base font-normal text-slate-900 leading-normal",
                 isArabic ? "text-right font-sans" : "text-left"
               )}>
                 {val}
               </div>
-              <div className="mt-4 h-px bg-slate-50 w-full" />
+              <div className="mt-2 h-px bg-slate-50 w-full" />
             </motion.div>
           );
         })}
@@ -4360,27 +4360,27 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   return (
     <div className="space-y-8 pb-20">
       {/* Form Actions Header */}
-      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-8 px-8 py-4 mb-8 flex justify-between items-center gap-4">
-        <div className="flex-1 flex items-center gap-4">
+      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-4 lg:-mx-8 px-4 lg:px-8 py-2 mb-4 flex justify-between items-center gap-4 shadow-sm">
+        <div className="flex-1 flex items-center gap-3">
           {page.focusArea && (
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap">
+            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
               {page.focusArea}
             </span>
           )}
           {isLogPage && (
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input 
                 type="text" 
                 placeholder={`Search ${page.title}...`}
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
               />
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isEditing ? (
             <div className="flex items-center gap-2">
               <button 

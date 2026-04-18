@@ -107,6 +107,12 @@ export interface PurchaseOrder {
   location?: string;
   actualStartDate?: string;
   actualFinishDate?: string;
+  contractNumber?: string;
+  contractDuration?: number;
+  contractDurationType?: 'Work Days' | 'Calendar Days';
+  contractDriveUrl?: string;
+  changeOrdersUrl?: string;
+  sowUrl?: string;
 }
 
 export type DependencyType = 'FS' | 'SS' | 'FF' | 'SF';
@@ -522,11 +528,11 @@ export interface SelectionCriterion {
   description: string;
 }
 
-export interface VendorEvaluation {
+export interface SupplierEvaluation {
   id: string;
   projectId: string;
-  vendorId: string;
-  vendorName: string;
+  supplierId: string;
+  supplierName: string;
   criteriaScores: {
     criterionId: string;
     rating: number; // 1-5 or 1-10
@@ -573,13 +579,16 @@ export interface Page {
 export interface Company {
   id: string;
   name: string;
-  type: 'Main' | 'Vendor' | 'Stakeholder' | 'Other';
+  type: 'Main' | 'Supplier' | 'Stakeholder' | 'Other';
   address?: string;
   phone?: string;
   email?: string;
   website?: string;
   status: 'Active' | 'Inactive';
   createdAt?: string;
+  // Supplier specifics
+  supplierCode?: string;
+  discipline?: string;
 }
 
 export interface Contact {
@@ -590,7 +599,7 @@ export interface Contact {
   phone: string;
   companyId: string;
   companyName: string;
-  type: 'Employee' | 'Vendor' | 'Stakeholder' | 'Other';
+  type: 'Employee' | 'Supplier' | 'Stakeholder' | 'Other';
   role?: string;
   status: 'Active' | 'Inactive';
   createdAt: string;
@@ -609,6 +618,7 @@ export interface User {
   accessiblePages?: string[];
   accessibleProjects?: string[];
   assignedTasksCount?: number;
+  favoritePages?: string[];
 }
 
 export type TaskStatus = string;
@@ -892,10 +902,10 @@ export interface BreadcrumbItem {
   path: string;
 }
 
-export interface Vendor {
+export interface Supplier {
   id: string;
   projectId: string;
-  vendorCode: string;
+  vendorCode: string; // Renamed to supplierCode in UI but id remains vendorCode in DB for now to avoid migration issues? No, let's rename it if possible.
   name: string;
   contactDetails: {
     address: string;

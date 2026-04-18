@@ -6,9 +6,11 @@ import { Company } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../context/LanguageContext';
 
 export const CompaniesView: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +18,7 @@ export const CompaniesView: React.FC = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [formData, setFormData] = useState<Partial<Company>>({
     name: '',
-    type: 'Vendor',
+    type: 'Supplier',
     status: 'Active',
     address: '',
     phone: '',
@@ -113,7 +115,7 @@ export const CompaniesView: React.FC = () => {
       }
       setIsAdding(false);
       setEditingCompany(null);
-      setFormData({ name: '', type: 'Vendor', status: 'Active', address: '', phone: '', email: '', website: '' });
+      setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
     } catch (error) {
       handleFirestoreError(error, editingCompany ? OperationType.UPDATE : OperationType.CREATE, 'companies');
     }
@@ -143,19 +145,19 @@ export const CompaniesView: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Company Management</h1>
-            <p className="text-slate-500 text-sm">Manage partners, vendors, and stakeholders.</p>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('admin-companies')}</h1>
+            <p className="text-slate-500 text-sm">Manage partners, suppliers, and stakeholders.</p>
           </div>
         </div>
         <button 
           onClick={() => {
             setEditingCompany(null);
-            setFormData({ name: '', type: 'Vendor', status: 'Active', address: '', phone: '', email: '', website: '' });
+            setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
             setIsAdding(true);
           }}
           className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" /> Add Company
+          <Plus className="w-4 h-4" /> {t('add_company')}
         </button>
       </header>
 
@@ -198,11 +200,11 @@ export const CompaniesView: React.FC = () => {
                     className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-6 py-4">Company Name</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">{t('company_name')}</th>
+                <th className="px-6 py-4">{t('type')}</th>
+                <th className="px-6 py-4">{t('status')}</th>
                 <th className="px-6 py-4">Contact Info</th>
-                <th className="px-6 py-4">Address</th>
+                <th className="px-6 py-4">{t('address')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -238,10 +240,13 @@ export const CompaniesView: React.FC = () => {
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       company.type === 'Main' ? 'bg-blue-50 text-blue-600' :
-                      company.type === 'Vendor' ? 'bg-amber-50 text-amber-600' :
+                      company.type === 'Supplier' ? 'bg-amber-50 text-amber-600' :
                       company.type === 'Stakeholder' ? 'bg-purple-50 text-purple-600' : 'bg-slate-50 text-slate-600'
                     }`}>
-                      {company.type === 'Vendor' ? 'Supplier' : company.type}
+                      {company.type === 'Supplier' ? t('type_supplier') : 
+                       company.type === 'Main' ? t('type_main') :
+                       company.type === 'Stakeholder' ? t('type_stakeholder') :
+                       company.type === 'Other' ? t('type_other') : company.type}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -301,109 +306,109 @@ export const CompaniesView: React.FC = () => {
             >
               <form onSubmit={handleSubmit} className="flex flex-col h-full">
                 <div className="p-8 border-b border-slate-100">
-                  <h2 className="text-2xl font-bold text-slate-900">{editingCompany ? 'Edit Company' : 'Add New Company'}</h2>
-                  <p className="text-slate-500 text-sm">Enter company details below.</p>
+                  <h2 className="text-2xl font-bold text-slate-900">{editingCompany ? t('edit_company') : t('add_company')}</h2>
+                  <p className="text-slate-500 text-sm">{t('company_details_desc')}</p>
                 </div>
 
                 <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Company Name</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('company_name')}</label>
                       <input 
                         required
                         type="text" 
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-                        placeholder="e.g. Zarya Construction"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+                        placeholder={t('company_name_placeholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Type</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('type')}</label>
                       <select 
                         value={formData.type}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                       >
-                        <option value="Main">Main (Zerya)</option>
-                        <option value="Vendor">Supplier</option>
-                        <option value="Stakeholder">Stakeholder</option>
-                        <option value="Other">Other</option>
+                        <option value="Main">{t('type_main')}</option>
+                        <option value="Supplier">{t('type_supplier')}</option>
+                        <option value="Stakeholder">{t('type_stakeholder')}</option>
+                        <option value="Other">{t('type_other')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('status')}</label>
                       <select 
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                       >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="Active">{t('active')}</option>
+                        <option value="Inactive">{t('inactive')}</option>
                       </select>
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Address</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('address')}</label>
                       <input 
                         type="text" 
                         value={formData.address}
                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-                        placeholder="Full office address"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+                        placeholder={t('address_placeholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Phone</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('phone')}</label>
                       <input 
                         type="text" 
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                         placeholder="+964..."
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('email')}</label>
                       <input 
                         type="email" 
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                         placeholder="contact@company.com"
                       />
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Website</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('website')}</label>
                       <input 
                         type="text" 
                         value={formData.website}
                         onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                         placeholder="https://..."
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8 bg-slate-50 flex justify-end gap-3">
+                <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 z-10">
                   <button 
                     type="button"
                     onClick={() => setIsAdding(false)}
                     className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-2xl transition-all"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button 
                     type="submit"
                     className="px-10 py-3 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
                   >
-                    {editingCompany ? 'Update Company' : 'Save Company'}
+                    {editingCompany ? t('update_company') : t('save_company')}
                   </button>
                 </div>
               </form>

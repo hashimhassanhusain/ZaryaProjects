@@ -1,31 +1,35 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Vendor, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity } from '../types';
+import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
-import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History } from 'lucide-react';
+import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, getFullWBSCode } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
 import { DollarSign, Coins, RefreshCw } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import toast from 'react-hot-toast';
+import { useLanguage } from '../context/LanguageContext';
+import { DataImportModal } from './DataImportModal';
 
 interface ZaryaPOTrackerProps {
   page: Page;
 }
 
 export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
+  const { t } = useLanguage();
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Supplier[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
+  const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -34,6 +38,29 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [previewPOs, setPreviewPOs] = useState<PurchaseOrder[] | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedPOIds, setSelectedPOIds] = useState<string[]>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
+  const [newActivityData, setNewActivityData] = useState<Partial<Activity>>({
+    description: '',
+    unit: '',
+    quantity: 0,
+    rate: 0,
+    amount: 0,
+    status: 'Planned'
+  });
+
+  const getAmountColor = (amount: number) => {
+    // 3,000,000 or less: Green
+    // 15,000,000 or more: Red
+    if (amount <= 3000000) return 'text-emerald-600';
+    if (amount >= 15000000) return 'text-rose-600 font-black';
+    
+    // Gradient logic: Green -> Amber -> Orange -> Red
+    if (amount < 6000000) return 'text-green-600';
+    if (amount < 9000000) return 'text-amber-500';
+    if (amount < 12000000) return 'text-orange-500';
+    return 'text-red-500 font-bold';
+  };
 
   // New PO State
   const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
@@ -47,7 +74,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     actualFinishDate: '',
     inputCurrency: baseCurrency,
     exchangeRateUsed: globalExchangeRate,
-    lineItems: []
+    lineItems: [],
+    contractNumber: '',
+    contractDuration: 0,
+    contractDurationType: 'Calendar Days',
+    contractDriveUrl: '',
+    changeOrdersUrl: '',
+    sowUrl: ''
   });
 
   // Sync newPO exchange rate when global rate changes or project changes
@@ -74,9 +107,9 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     );
 
     const vendorsUnsubscribe = onSnapshot(
-      query(collection(db, 'companies'), where('type', '==', 'Vendor')),
+      query(collection(db, 'companies'), where('type', '==', 'Supplier')),
       (snapshot) => {
-        setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vendor)));
+        setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
       }
     );
 
@@ -91,6 +124,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setWbsLevels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
+      }
+    );
+
+    const boqUnsubscribe = onSnapshot(
+      query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setBoqItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BOQItem)));
       }
     );
 
@@ -212,6 +252,30 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       }, 0);
       const poCompletion = totalAmount > 0 ? Math.round(totalWeightedCompletion / totalAmount) : 0;
 
+      let finalActivityId = newPO.activityId;
+
+      // Handle new activity creation
+      if (isAddingNewActivity && newActivityData.description) {
+        const activityId = crypto.randomUUID();
+        const wp = wbsLevels.find(l => l.id === newPO.workPackageId);
+        const activity: Activity = {
+          id: activityId,
+          projectId: selectedProject.id,
+          wbsId: newPO.wbsId || '',
+          workPackage: wp?.title || '',
+          description: newActivityData.description,
+          unit: newActivityData.unit || 'unit',
+          quantity: newActivityData.quantity || 0,
+          rate: newActivityData.rate || 0,
+          amount: newActivityData.amount || 0,
+          status: poCompletion === 100 ? 'Completed' : 'In Progress',
+          startDate: newPO.date,
+          percentComplete: poCompletion
+        };
+        await setDoc(doc(db, 'activities', activityId), activity);
+        finalActivityId = activityId;
+      }
+
       // History tracking
       const history: POActivity[] = [...(newPO.history || [])];
       if (editingPOId) {
@@ -245,6 +309,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
       const poData: PurchaseOrder = {
         ...newPO as PurchaseOrder,
+        activityId: finalActivityId,
         projectId: selectedProject.id,
         amount: totalAmount,
         inputCurrency,
@@ -278,6 +343,15 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
       setView('list');
       setEditingPOId(null);
+      setIsAddingNewActivity(false);
+      setNewActivityData({
+        description: '',
+        unit: '',
+        quantity: 0,
+        rate: 0,
+        amount: 0,
+        status: 'Planned'
+      });
       setNewPO({
         id: '',
         date: new Date().toISOString().split('T')[0],
@@ -296,6 +370,67 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     setNewPO(po);
     setEditingPOId(po.id);
     setView('form');
+  };
+
+  const poTargetColumns = [
+    { key: 'id', label: 'PO Number / ID', required: true, description: 'Unique identifier for the PO' },
+    { key: 'date', label: 'Order Date', required: true, type: 'date' as const, description: 'Date of the order' },
+    { key: 'supplier', label: 'Supplier Name', required: true, description: 'Name of the vendor' },
+    { key: 'masterFormat', label: 'Cost Account (Division)', description: 'MasterFormat code (e.g., 03, 09)' },
+    { key: 'amount', label: 'Total Amount', required: true, type: 'number' as const, description: 'Total value of the PO' },
+    { key: 'inputCurrency', label: 'Currency', type: 'string' as const, description: 'USD or IQD' },
+    { key: 'exchangeRateUsed', label: 'Exchange Rate', type: 'number' as const, description: 'Rate used for conversion' },
+    { key: 'contractNumber', label: 'Contract Number', description: 'Associated contract ID' },
+  ];
+
+  const handleImportPOData = async (mappedData: any[]) => {
+    if (!selectedProject) return;
+    setIsAnalyzing(true);
+    let successCount = 0;
+    
+    try {
+      for (const item of mappedData) {
+        const id = item.id || `PO-${crypto.randomUUID().slice(0, 8)}`;
+        const inputCurrency = item.inputCurrency || baseCurrency;
+        const exchangeRateUsed = item.exchangeRateUsed || globalExchangeRate;
+        
+        const poData: PurchaseOrder = {
+          id,
+          projectId: selectedProject.id,
+          date: item.date || new Date().toISOString().split('T')[0],
+          supplier: item.supplier || 'Unknown Supplier',
+          amount: parseFloat(item.amount) || 0,
+          status: 'Approved',
+          workflowStatus: 'Approved',
+          inputCurrency,
+          exchangeRateUsed,
+          lineItems: item.lineItems || [],
+          projectName: selectedProject.name,
+          purchaseOffice: selectedProject.code,
+          wbsId: item.wbsId || '',
+          activityId: item.activityId || '',
+          workPackageId: item.workPackageId || '',
+          masterFormat: item.masterFormat || '',
+          contractNumber: item.contractNumber || '',
+          company: item.company || '',
+          buyer: item.buyer || '',
+          buyerName: item.buyerName || '',
+          location: item.location || '',
+          actualCost: parseFloat(item.actualCost) || 0,
+          divisions: item.divisions || '',
+          completion: parseFloat(item.completion) || 0
+        };
+
+        await setDoc(doc(db, 'purchaseOrders', id), poData);
+        successCount++;
+      }
+      toast.success(`Successfully imported ${successCount} Purchase Orders.`);
+    } catch (err) {
+      console.error("Error importing POs:", err);
+      toast.error("Failed to import some Purchase Orders.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handlePOFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,7 +460,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       For each PO, identify:
       - PO Number/ID
       - Date (YYYY-MM-DD)
-      - Supplier/Vendor Name
+      - Supplier Name
       - Cost Account (also known as Masterformat or Division). Map these to the project's specific names if possible (e.g., 'Div. 01' -> 'General Requirements').
       - Work Package name
       - % Completion (if mentioned, otherwise 0)
@@ -363,7 +498,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               properties: {
                 poId: { type: Type.STRING, description: "Purchase Order Number/ID" },
                 date: { type: Type.STRING, description: "Order Date (YYYY-MM-DD)" },
-                supplier: { type: Type.STRING, description: "Supplier/Vendor Name" },
+                supplier: { type: Type.STRING, description: "Supplier Name" },
                 costAccount: { type: Type.STRING, description: "Cost Account / Masterformat / Division" },
                 workPackage: { type: Type.STRING, description: "Work Package Name" },
                 completion: { type: Type.NUMBER, description: "Percentage completion (0-100)" },
@@ -580,72 +715,53 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     
     // Also check if the selected level itself is a Cost Account
     const selectedWBS = wbsLevels.find(l => l.id === newPO.wbsId);
-    const result = costAccounts.map(ca => ca.title);
+    const result = costAccounts.map(ca => ({ 
+      title: ca.title, 
+      code: getFullWBSCode(ca.id, wbsLevels) || ca.code 
+    }));
     if (selectedWBS?.type === 'Cost Account') {
-      result.push(selectedWBS.title);
+      result.push({ 
+        title: selectedWBS.title, 
+        code: getFullWBSCode(selectedWBS.id, wbsLevels) || selectedWBS.code 
+      });
     }
     
     // Fallback to activities if no WBS Cost Accounts found (for backward compatibility)
     if (result.length === 0) {
       const filteredActivities = activities.filter(a => a.wbsId === newPO.wbsId);
-      return Array.from(new Set(filteredActivities.map(a => a.division).filter(Boolean)));
+      const uniqueDivisions = Array.from(new Set(filteredActivities.map(a => a.division).filter(Boolean)));
+      return uniqueDivisions.map(div => ({ title: div, code: '' }));
     }
     
-    return Array.from(new Set(result));
+    // Ensure unique results by title
+    const uniqueMap = new Map();
+    result.forEach(item => uniqueMap.set(item.title, item));
+    return Array.from(uniqueMap.values());
   }, [wbsLevels, activities, newPO.wbsId]);
 
-  const availableActivities = useMemo(() => {
-    if (!newPO.wbsId || !newPO.masterFormat) return [];
-    
-    // Find the Cost Account WBS level ID for the selected masterFormat title
-    const costAccountLevel = wbsLevels.find(l => l.title === newPO.masterFormat && l.type === 'Cost Account');
-    
-    let combined: { id: string; description: string; type: 'Activity' | 'Work Package' }[] = [];
+  const availableWorkPackages = useMemo(() => {
+    return wbsLevels
+      .filter(l => l.type === 'Work Package')
+      .map(l => ({ 
+        id: l.id, 
+        description: l.title, 
+        code: getFullWBSCode(l.id, wbsLevels) || l.code 
+      }));
+  }, [wbsLevels]);
 
-    if (costAccountLevel) {
-      // Find all descendant IDs (including the cost account itself)
-      const findDescendantIds = (parentId: string): string[] => {
-        const children = wbsLevels.filter(l => l.parentId === parentId);
-        let ids = children.map(c => c.id);
-        children.forEach(c => {
-          ids = [...ids, ...findDescendantIds(c.id)];
-        });
-        return ids;
-      };
-      
-      const descendantIds = [costAccountLevel.id, ...findDescendantIds(costAccountLevel.id)];
-      
-      // Add Work Packages from WBS
-      const wbsPackages = wbsLevels
-        .filter(l => l.type === 'Work Package' && descendantIds.includes(l.id))
-        .map(l => ({ id: l.id, description: l.title, type: 'Work Package' as const }));
-      
-      combined = [...wbsPackages];
+  const filteredActivities = useMemo(() => {
+    if (!newPO.workPackageId) return [];
+    const wp = wbsLevels.find(l => l.id === newPO.workPackageId);
+    if (!wp) return [];
+    return activities.filter(a => a.workPackage === wp.title);
+  }, [activities, newPO.workPackageId, wbsLevels]);
 
-      // Add Activities linked to these levels
-      const linkedActivities = activities
-        .filter(a => descendantIds.includes(a.wbsId))
-        .map(a => ({ id: a.id, description: a.description, type: 'Activity' as const }));
-      
-      combined = [...combined, ...linkedActivities];
-    } else {
-      // Fallback
-      const wbsPackages = wbsLevels
-        .filter(l => l.type === 'Work Package' && l.parentId === newPO.wbsId)
-        .map(l => ({ id: l.id, description: l.title, type: 'Work Package' as const }));
-      
-      const linkedActivities = activities
-        .filter(a => a.wbsId === newPO.wbsId && a.division === newPO.masterFormat)
-        .map(a => ({ id: a.id, description: a.description, type: 'Activity' as const }));
-      
-      combined = [...wbsPackages, ...linkedActivities];
-    }
-    
-    return combined;
-  }, [activities, wbsLevels, newPO.wbsId, newPO.masterFormat]);
+  const renderPOForm = () => {
+    const totalPOAmount = (newPO.lineItems || []).reduce((sum, li) => sum + (li.amount || 0), 0);
+    const requiresContract = totalPOAmount >= 15000000;
 
-  const renderPOForm = () => (
-    <motion.div
+    return (
+      <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
@@ -661,74 +777,154 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 space-y-8">
-        {/* Step 1: Hierarchy Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex-1 overflow-y-auto p-8 space-y-8 pb-32">
+        {/* Step 1: Work Package & Activity Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">1. WBS Level</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Work Package</label>
             <select
-              value={newPO.wbsId}
+              value={newPO.workPackageId}
               onChange={(e) => {
-                if (e.target.value === 'new') {
-                  navigate('/page/2.2.9');
+                const selectedId = e.target.value;
+                if (selectedId === 'new') {
+                  navigate('/page/work-packages');
                   return;
                 }
-                setNewPO(prev => ({ ...prev, wbsId: e.target.value, masterFormat: '', activityId: '' }));
-              }}
-              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
-            >
-              <option value="">Select WBS...</option>
-              {availableWBS.map(w => (
-                <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
-              ))}
-              <option value="new" className="text-blue-600 font-medium">+ Add New Level...</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">2. Cost Account</label>
-            <select
-              value={newPO.masterFormat}
-              disabled={!newPO.wbsId}
-              onChange={(e) => {
-                if (e.target.value === 'new') {
-                  navigate('/page/2.2.1');
-                  return;
+                
+                const wp = wbsLevels.find(l => l.id === selectedId);
+                
+                let parentId = '';
+                let costAccountTitle = '';
+                let wbsTopLevelId = '';
+
+                if (wp && wp.type === 'Work Package') {
+                  parentId = wp.parentId || '';
+                  
+                  // Find Cost Account (parent of Work Package)
+                  const costAccount = wbsLevels.find(l => l.id === parentId);
+                  if (costAccount) {
+                    costAccountTitle = costAccount.title;
+                    wbsTopLevelId = costAccount.parentId || '';
+                  }
                 }
-                setNewPO(prev => ({ ...prev, masterFormat: e.target.value, activityId: '' }));
+
+                setNewPO(prev => ({ 
+                  ...prev, 
+                  workPackageId: selectedId,
+                  activityId: '', // Reset activity when WP changes
+                  wbsId: wbsTopLevelId,
+                  masterFormat: costAccountTitle
+                }));
+                setIsAddingNewActivity(false);
               }}
-              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
+              className="w-full bg-slate-50 border border-slate-200 p-4 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none rounded-2xl shadow-sm hover:border-blue-200 transition-all text-slate-900"
             >
-              <option value="">Select Cost Account...</option>
-              {availableMasterFormat.map(mf => (
-                <option key={mf} value={mf}>{mf}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">3. Activity / Work Package</label>
-            <select
-              value={newPO.activityId}
-              disabled={!newPO.masterFormat}
-              onChange={(e) => {
-                if (e.target.value === 'new') {
-                  navigate('/page/2.2.10'); // Schedule / Activities
-                  return;
-                }
-                const act = activities.find(a => a.id === e.target.value);
-                setNewPO(prev => ({ ...prev, activityId: e.target.value, workPackageId: e.target.value }));
-              }}
-              className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 rounded-xl"
-            >
-              <option value="">Select Activity / Work Package...</option>
-              {availableActivities.map(a => (
+              <option value="">Select Work Package...</option>
+              {availableWorkPackages.map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.type === 'Work Package' ? '📦 ' : '⚡ '}{a.description}
+                  📦 {a.code ? `${a.code} - ` : ''}{a.description}
                 </option>
               ))}
-              <option value="new" className="text-blue-600 font-bold">+ Add New Activity...</option>
+              <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
+            </select>
+            
+            {newPO.masterFormat && (
+              <div className="flex items-center gap-2 mt-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold w-fit">
+                <Database className="w-3 h-3" />
+                Linked Cost Account: {newPO.masterFormat}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Activity</label>
+            <select
+              value={isAddingNewActivity ? 'new' : newPO.activityId}
+              disabled={!newPO.workPackageId}
+              onChange={(e) => {
+                if (e.target.value === 'new') {
+                  setIsAddingNewActivity(true);
+                  setNewPO(prev => ({ ...prev, activityId: '' }));
+                } else {
+                  setIsAddingNewActivity(false);
+                  setNewPO(prev => ({ ...prev, activityId: e.target.value }));
+                }
+              }}
+              className="w-full bg-slate-50 border border-slate-200 p-4 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none rounded-2xl shadow-sm hover:border-blue-200 transition-all text-slate-900"
+            >
+              <option value="">Select Activity...</option>
+              {filteredActivities.map(a => (
+                <option key={a.id} value={a.id}>⚡ {a.description}</option>
+              ))}
+              <option value="new" className="text-blue-600 font-bold">+ {t('create_new_activity')}...</option>
             </select>
           </div>
         </div>
+
+        {/* Inline New Activity Form */}
+        <AnimatePresence>
+          {isAddingNewActivity && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="col-span-full mb-2">
+                   <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                     <Sparkles className="w-4 h-4" />
+                     Define New Activity under {wbsLevels.find(l => l.id === newPO.workPackageId)?.title}
+                   </h4>
+                </div>
+                <div className="md:col-span-1 border-r border-blue-100 pr-4">
+                  <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Activity Name</label>
+                  <input
+                    type="text"
+                    value={newActivityData.description}
+                    onChange={(e) => setNewActivityData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="e.g. Concrete Pouring"
+                    className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Unit</label>
+                  <input
+                    type="text"
+                    value={newActivityData.unit}
+                    onChange={(e) => setNewActivityData(prev => ({ ...prev, unit: e.target.value }))}
+                    placeholder="m3, ton..."
+                    className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Qty</label>
+                  <input
+                    type="number"
+                    value={newActivityData.quantity}
+                    onChange={(e) => {
+                      const qty = parseFloat(e.target.value) || 0;
+                      setNewActivityData(prev => ({ ...prev, quantity: qty, amount: qty * (prev.rate || 0) }));
+                    }}
+                    className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Planned Rate</label>
+                  <input
+                    type="number"
+                    value={newActivityData.rate}
+                    onChange={(e) => {
+                      const rate = parseFloat(e.target.value) || 0;
+                      setNewActivityData(prev => ({ ...prev, rate: rate, amount: (prev.quantity || 0) * rate }));
+                    }}
+                    className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Step 2: PO Details */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6 pt-6 border-t border-slate-100">
@@ -809,7 +1005,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Supplier</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{t('supplier')}</label>
             <select
               value={newPO.supplier}
               onChange={(e) => {
@@ -821,11 +1017,11 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               }}
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
-              <option value="">Select Supplier...</option>
+              <option value="">{t('select_supplier')}...</option>
               {vendors.map(v => (
                 <option key={v.id} value={v.name}>{v.name}</option>
               ))}
-              <option value="new" className="text-blue-600 font-medium">+ Add New Supplier...</option>
+              <option value="new" className="text-blue-600 font-medium">+ {t('add_supplier')}...</option>
             </select>
           </div>
         </div>
@@ -883,7 +1079,10 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 </div>
                 <div className="col-span-2 space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Amount ({baseCurrency})</label>
-                  <div className="w-full bg-slate-100 p-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg">
+                  <div className={cn(
+                    "w-full bg-slate-100 p-2 text-xs font-bold border border-slate-200 rounded-lg",
+                    getAmountColor(item.amount)
+                  )}>
                     {formatAmount(item.amount, baseCurrency)}
                   </div>
                 </div>
@@ -916,6 +1115,95 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 No line items added. Click "Add Item" to begin.
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Contract & Documentation Section */}
+        <div className={cn(
+          "space-y-6 pt-6 border-t transition-all",
+          requiresContract ? "border-rose-200 bg-rose-50/20 p-6 rounded-3xl" : "border-slate-100"
+        )}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className={cn("w-5 h-5", requiresContract ? "text-rose-500" : "text-blue-500")} />
+              <h4 className="text-sm font-bold text-slate-900">Contract & Documentation</h4>
+              {requiresContract && (
+                <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black uppercase rounded animate-pulse">
+                  Contract Required
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Contract Number</label>
+              <input
+                type="text"
+                value={newPO.contractNumber || ''}
+                onChange={(e) => setNewPO(prev => ({ ...prev, contractNumber: e.target.value }))}
+                placeholder="e.g. ZRY-CONT-2024-042"
+                className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Contract Duration</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={newPO.contractDuration || ''}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, contractDuration: parseInt(e.target.value) || 0 }))}
+                  placeholder="Days"
+                  className="flex-1 bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+                />
+                <select
+                  value={newPO.contractDurationType || 'Calendar Days'}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, contractDurationType: e.target.value as any }))}
+                  className="w-32 bg-white border border-slate-200 p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
+                >
+                  <option value="Calendar Days">Calendar Days</option>
+                  <option value="Work Days">Work Days</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Contract PDF Link (Drive)</label>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={newPO.contractDriveUrl || ''}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, contractDriveUrl: e.target.value }))}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl pr-10"
+                />
+                <FileText className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Scope of Work (Google Doc)</label>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={newPO.sowUrl || ''}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, sowUrl: e.target.value }))}
+                  placeholder="https://docs.google.com/..."
+                  className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl pr-10"
+                />
+                <Database className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Change Orders Link</label>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={newPO.changeOrdersUrl || ''}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, changeOrdersUrl: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl pr-10"
+                />
+                <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -962,23 +1250,27 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         )}
       </div>
 
-      <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
         <button
           onClick={() => setView('list')}
-          className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors rounded-xl"
+          className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
         >
+          <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
           Cancel
         </button>
         <button
           onClick={handleSavePO}
           disabled={!newPO.id || !newPO.supplier || !newPO.activityId}
-          className="px-8 py-2 bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+          className="px-8 py-4 bg-blue-600 text-white text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl flex items-center gap-2"
         >
+          <Save className="w-5 h-5" />
           {editingPOId ? 'Update Purchase Order' : 'Save Purchase Order'}
         </button>
       </div>
     </motion.div>
-  );
+    );
+  };
 
   const formatCurrency = (val: number, curr: string = 'IQD') => {
     return formatAmount(val, curr as 'USD' | 'IQD');
@@ -1009,9 +1301,9 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
         <div className="grid grid-cols-2 gap-8 mb-8">
           <div className="space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-slate-500">Supplier Name:</span> <span className="font-semibold">Wasta Noory Restaurant</span></div>
-            <div className="flex justify-between text-sm"><span className="text-slate-500">PO Number:</span> <span className="font-semibold">COS003853</span></div>
-            <div className="flex justify-between text-sm"><span className="text-slate-500">Project Name:</span> <span className="font-semibold">Villa 2</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-500">{t('supplier_name')}:</span> <span className="font-semibold">Wasta Noory Restaurant</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-500">{t('po_number')}:</span> <span className="font-semibold">COS003853</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-500">{t('project_name')}:</span> <span className="font-semibold">Villa 2</span></div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm"><span className="text-slate-500">Payment Number:</span> <span className="font-semibold">3rd Payment</span></div>
@@ -1185,87 +1477,137 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <TrendingDown className="w-5 h-5 text-blue-600" />
+        {/* Financial Summary & Comparison Table */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-xl">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Plan vs. Actual (Execution)</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Comparison per Work Package</p>
+                </div>
               </div>
-              <h3 className="font-bold text-slate-800">Package Utilization</h3>
             </div>
-            <div className="space-y-4">
-              {items.map((item, idx) => {
-                const { totalReceived } = calculateRemaining(item);
-                const percent = (totalReceived / item.totalQty) * 100;
-                return (
-                  <div key={idx}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-500 truncate w-32">{item.description}</span>
-                      <span className="font-bold">{percent.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div 
-                        className={cn("h-full transition-all duration-1000", percent > 80 ? "bg-rose-500" : "bg-blue-500")}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Work Package</th>
+                    <th className="px-6 py-4 text-right">BOQ Planned</th>
+                    <th className="px-6 py-4 text-right">PO Committed</th>
+                    <th className="px-6 py-4 text-right">Variance</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {wbsLevels.filter(l => l.type === 'Work Package').map(wp => {
+                    const planned = boqItems
+                      .filter(item => item.workPackage === wp.title)
+                      .reduce((sum, item) => sum + item.amount, 0);
+                    
+                    const actualCommited = pos
+                      .filter(po => po.workPackageId === wp.id)
+                      .reduce((sum, po) => sum + po.amount, 0);
+                    
+                    const variance = planned - actualCommited;
+                    const variancePercent = planned > 0 ? (variance / planned) * 100 : 0;
+                    
+                    return (
+                      <tr key={wp.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-900">{wp.title}</div>
+                          <div className="text-[10px] text-slate-400 font-mono italic">{getFullWBSCode(wp.id, wbsLevels)}</div>
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono font-bold text-slate-600">
+                          {formatAmount(planned, baseCurrency)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono font-bold text-blue-600">
+                          {formatAmount(actualCommited, baseCurrency)}
+                        </td>
+                        <td className={cn(
+                          "px-6 py-4 text-right font-mono font-bold",
+                          variance < 0 ? "text-rose-600" : "text-emerald-600"
+                        )}>
+                          {formatAmount(variance, baseCurrency)}
+                          <div className="text-[10px] opacity-70">
+                            {variancePercent.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest",
+                            actualCommited === 0 ? "bg-slate-100 text-slate-500" :
+                            variance < 0 ? "bg-rose-100 text-rose-700 animate-pulse" : "bg-emerald-100 text-emerald-700"
+                          )}>
+                            {actualCommited === 0 ? 'Not Started' :
+                             variance < 0 ? 'Over Budget' : 'Within Budget'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-rose-50 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
-              </div>
-              <h3 className="font-bold text-slate-800">Critical Alerts</h3>
-            </div>
-            <div className="space-y-3">
-              {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty > 0.8).map((item, idx) => (
-                <div key={idx} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+          <div className="space-y-6">
+            <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl border border-white/5">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+                Financial Summary
+              </h3>
+              <div className="space-y-6">
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Committed (POs)</div>
+                  <div className="text-2xl font-black text-blue-400">
+                    {formatAmount(totalCommitted, baseCurrency)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                   <div>
-                    <div className="text-xs font-bold text-rose-900">{item.code} - Low Balance</div>
-                    <div className="text-[10px] text-rose-700">Less than 20% remaining on this PO line. Action required.</div>
+                    <div className="text-[10px] text-slate-400 mb-1">Items Paid</div>
+                    <div className="text-sm font-bold">
+                      {formatAmount(items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0), baseCurrency)}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty <= 0.8).length === items.length && (
-                <div className="text-center py-6">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  <p className="text-xs text-slate-400">All PO balances are healthy.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
-            <h3 className="font-bold mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-400" />
-              Financial Summary
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Committed (POs)</div>
-                <div className="text-2xl font-bold text-blue-400">
-                  {formatAmount(totalCommitted, baseCurrency)}
+                  <div>
+                    <div className="text-[10px] text-slate-400 mb-1">Total Remaining</div>
+                    <div className="text-sm font-bold text-emerald-400">
+                      {formatAmount(items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0), baseCurrency)}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
-                <div>
-                  <div className="text-[10px] text-slate-400 mb-1">Total Paid</div>
-                  <div className="text-sm font-bold">
-                    {formatAmount(items.reduce((acc, i) => acc + ((i.previousQty + i.currentQty) * i.price), 0), baseCurrency)}
-                  </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+               <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-rose-50 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-rose-600" />
                 </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 mb-1">Total Remaining</div>
-                  <div className="text-sm font-bold text-emerald-400">
-                    {formatAmount(items.reduce((acc, i) => acc + calculateRemaining(i).remainingAmount, 0), baseCurrency)}
+                <h3 className="font-bold text-slate-800">Critical Alerts</h3>
+              </div>
+              <div className="space-y-3">
+                {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty > 0.8).map((item, idx) => (
+                  <div key={idx} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-rose-900">{item.code} - Low Balance</div>
+                      <div className="text-[10px] text-rose-700">Less than 20% remaining on this PO line. Action required.</div>
+                    </div>
                   </div>
-                </div>
+                ))}
+                {items.filter(i => (i.previousQty + i.currentQty) / i.totalQty <= 0.8).length === items.length && (
+                  <div className="text-center py-6">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Budget healthy</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1298,11 +1640,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             )}
           </div>
           <div className="flex gap-2">
-            <label className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100">
-              {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
-              <input type="file" className="hidden" onChange={handlePOFileUpload} disabled={isAnalyzing} />
-            </label>
+            <button 
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
+            >
+              {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+              {isAnalyzing ? 'Importing...' : 'Import Data'}
+            </button>
             <button
               onClick={() => {
                 setNewPO({
@@ -1312,7 +1656,13 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   wbsId: '',
                   masterFormat: '',
                   activityId: '',
-                  lineItems: []
+                  lineItems: [],
+                  contractNumber: '',
+                  contractDuration: 0,
+                  contractDurationType: 'Calendar Days',
+                  contractDriveUrl: '',
+                  changeOrdersUrl: '',
+                  sowUrl: ''
                 });
                 setEditingPOId(null);
                 setView('form');
@@ -1338,14 +1688,15 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 <th className="px-3 py-3 whitespace-nowrap">WBS</th>
                 <th className="px-3 py-3 whitespace-nowrap">Cost Account</th>
                 <th className="px-3 py-3 whitespace-nowrap">Activity</th>
-                <th className="px-3 py-3 whitespace-nowrap">Order</th>
+                <th className="px-3 py-3 whitespace-nowrap">Order / Contract</th>
                 <th className="px-3 py-3 whitespace-nowrap">Order Date</th>
-                <th className="px-3 py-3 whitespace-nowrap">Suppliers</th>
+                <th className="px-3 py-3 whitespace-nowrap">{t('suppliers')}</th>
                 <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Qty</th>
                 <th className="px-3 py-3 whitespace-nowrap">Unit</th>
                 <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Rate</th>
                 <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Total ({baseCurrency})</th>
                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
+                <th className="px-3 py-3 whitespace-nowrap text-center">Docs</th>
                 <th className="px-3 py-3 whitespace-nowrap text-center">% Completion</th>
                 <th className="px-3 py-3 whitespace-nowrap">Actual Start</th>
                 <th className="px-3 py-3 whitespace-nowrap">Actual Finish</th>
@@ -1380,13 +1731,26 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                     <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-500">{po.masterFormat || 'N/A'}</td>
                     <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>
-                    <td className="px-3 py-3 font-mono font-bold text-blue-600">{po.id}</td>
+                    <td className="px-3 py-3">
+                      <div className="font-mono font-bold text-blue-600">{po.id}</div>
+                      {po.contractNumber && (
+                        <div className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1">
+                          <ShieldCheck className="w-2.5 h-2.5" />
+                          {po.contractNumber}
+                          {po.contractDuration && (
+                            <span className="text-slate-300 ml-1">({po.contractDuration} {po.contractDurationType === 'Work Days' ? 'WD' : 'CD'})</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-slate-500">{po.date}</td>
                     <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
                     <td className="px-3 py-3 text-right font-mono text-slate-600">{totalQty.toLocaleString()}</td>
                     <td className="px-3 py-3 text-slate-500">{unit}</td>
                     <td className="px-3 py-3 text-right font-mono text-slate-600">{formatAmount(avgRate, baseCurrency)}</td>
-                    <td className="px-3 py-3 text-right font-bold text-slate-900 font-mono">{formatAmount(po.amount, baseCurrency)}</td>
+                    <td className={cn("px-3 py-3 text-right font-bold font-mono", getAmountColor(po.amount))}>
+                      {formatAmount(po.amount, baseCurrency)}
+                    </td>
                     <td className="px-3 py-3">
                       <span className={cn(
                         "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
@@ -1394,6 +1758,26 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                       )}>
                         {po.status}
                       </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1 justify-center">
+                        {po.contractDriveUrl && (
+                          <a href={po.contractDriveUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-blue-50 text-blue-600 rounded" title="Contract PDF" onClick={e => e.stopPropagation()}>
+                            <FileText className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {po.sowUrl && (
+                          <a href={po.sowUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-emerald-50 text-emerald-600 rounded" title="Scope of Work (Scope Domain)" onClick={e => e.stopPropagation()}>
+                            <DraftingCompass className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {po.changeOrdersUrl && (
+                          <a href={po.changeOrdersUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-amber-50 text-amber-600 rounded" title="Change Orders" onClick={e => e.stopPropagation()}>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {!po.contractDriveUrl && !po.sowUrl && !po.changeOrdersUrl && <span className="text-slate-300">-</span>}
+                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -1451,6 +1835,16 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       </div>
 
       <AnimatePresence>
+        {showImportModal && (
+          <DataImportModal 
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImport={handleImportPOData}
+            targetColumns={poTargetColumns}
+            title="Import Purchase Orders"
+            entityName="Purchase Orders"
+          />
+        )}
         {showPreviewModal && previewPOs && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
@@ -1488,7 +1882,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                             <div className="text-sm font-bold text-blue-600">{po.id}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('supplier')}</div>
                             <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
                           </div>
                           <div>

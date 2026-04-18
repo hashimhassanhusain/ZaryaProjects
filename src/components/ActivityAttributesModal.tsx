@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Vendor, WorkPackage, User, Stakeholder } from '../types';
+import { Activity, BOQItem, WBSLevel, ActivityDependency, DependencyType, Supplier, WorkPackage, User, Stakeholder } from '../types';
 import { masterFormatDivisions } from '../data';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, onSnapshot, setDoc, doc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Clock, Save, Database, Plus, Trash2, Link2, DollarSign, TrendingUp, CheckCircle2, ShoppingCart, Layers, Box } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, getFullWBSCode } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
+import { AddWBSLevelModal } from './AddWBSLevelModal';
 
 interface ActivityAttributesModalProps {
   activity: Activity;
@@ -28,6 +30,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
   onClose, 
   onSave 
 }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { formatAmount, convertToBase, currency: baseCurrency, exchangeRate: marketRate } = useCurrency();
@@ -37,12 +40,20 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     inputCurrency: activity.inputCurrency || (selectedProject?.baseCurrency as 'USD' | 'IQD') || 'IQD',
     inputRate: activity.inputRate || marketRate
   });
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Supplier[]>([]);
   const [workPackages, setWorkPackages] = useState<WBSLevel[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [isAddingWP, setIsAddingWP] = useState(false);
-  const [newWPData, setNewWPData] = useState({ title: '', divisionCode: '01', wbsId: '', code: '' });
+  const [isAddingVendor, setIsAddingVendor] = useState(false);
+  const [newVendorData, setNewVendorData] = useState({ 
+    name: '', 
+    vendorCode: '', 
+    discipline: '01 - General Requirements',
+    email: '',
+    phone: '',
+    address: ''
+  });
   const [displayAmount, setDisplayAmount] = useState<number>(activity.amount || 0);
   const [displayActualAmount, setDisplayActualAmount] = useState<number>(activity.actualAmount || 0);
 
@@ -60,9 +71,21 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
   useEffect(() => {
     if (!selectedProject) return;
     const vUnsubscribe = onSnapshot(
-      query(collection(db, 'vendors'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'companies'), where('type', '==', 'Supplier')),
       (snapshot) => {
-        setVendors(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Vendor)));
+        setVendors(snapshot.docs.map(d => ({ 
+          id: d.id, 
+          name: d.data().name,
+          vendorCode: d.data().supplierCode || '',
+          discipline: d.data().discipline || '',
+          status: d.data().status === 'Active' ? 'Active' : 'Contract Ended',
+          contactDetails: {
+            address: d.data().address || '',
+            phone: d.data().phone || '',
+            email: d.data().email || ''
+          },
+          projectId: selectedProject.id
+        } as Supplier)));
       }
     );
     const wpUnsubscribe = onSnapshot(
@@ -91,33 +114,77 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
     };
   }, [selectedProject]);
 
-  const handleAddWorkPackage = async () => {
-    if (!selectedProject || !newWPData.title || !newWPData.divisionCode || !newWPData.code) {
+  const handleAddVendor = async () => {
+    if (!selectedProject || !newVendorData.name || !newVendorData.vendorCode) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     try {
-      const parentWbs = wbsLevels.find(l => l.id === newWPData.wbsId);
-      const wp: WBSLevel = {
-        id: crypto.randomUUID(),
+      const vendorId = crypto.randomUUID();
+      const newVendor: Supplier = {
+        id: vendorId,
         projectId: selectedProject.id,
-        parentId: newWPData.wbsId || '',
-        divisionCode: newWPData.divisionCode,
-        code: newWPData.code,
-        title: newWPData.title,
-        type: 'Work Package',
-        level: (parentWbs?.level || 0) + 1,
-        status: 'Not Started'
+        name: newVendorData.name,
+        vendorCode: newVendorData.vendorCode,
+        discipline: newVendorData.discipline,
+        status: 'Active',
+        contactDetails: {
+          address: newVendorData.address,
+          phone: newVendorData.phone,
+          email: newVendorData.email
+        }
       };
 
-      await setDoc(doc(db, 'wbs', wp.id), wp);
-      setFormData(prev => ({ ...prev, workPackage: wp.title }));
-      setIsAddingWP(false);
-      setNewWPData({ title: '', divisionCode: '01', wbsId: '', code: '' });
-      toast.success('Work package added successfully');
+      await setDoc(doc(db, 'companies', vendorId), {
+        name: newVendor.name,
+        type: 'Supplier',
+        status: 'Active',
+        address: newVendor.contactDetails.address,
+        phone: newVendor.contactDetails.phone,
+        email: newVendor.contactDetails.email,
+        createdAt: new Date().toISOString(),
+        supplierCode: newVendor.vendorCode,
+        discipline: newVendor.discipline,
+        projectId: selectedProject.id
+      });
+
+      // Sync to Stakeholders as well (standard in this app)
+      const stakeholderId = `supplier_${vendorId}`;
+      const newStakeholder: Stakeholder = {
+        id: stakeholderId,
+        projectId: selectedProject.id,
+        name: newVendor.name,
+        position: 'External Supplier',
+        role: 'Supplier/Contractor',
+        contactInfo: newVendor.contactDetails.email || newVendor.contactDetails.phone || '',
+        classification: 'External',
+        influence: 'Medium',
+        interest: 'High',
+        expectations: 'Timely payment',
+        requirements: 'Payment',
+        priorityScore: 7,
+        influenceScore: 2,
+        criticalityIndex: 7,
+        communicationFrequency: 'Monthly',
+        engagementLevel: 'Amber',
+        category: 'External Supplier'
+      };
+      await setDoc(doc(db, 'stakeholders', stakeholderId), newStakeholder);
+
+      setFormData(prev => ({ ...prev, supplierId: vendorId }));
+      setIsAddingVendor(false);
+      setNewVendorData({ 
+        name: '', 
+        vendorCode: '', 
+        discipline: '01 - General Requirements',
+        email: '',
+        phone: '',
+        address: ''
+      });
+      toast.success('Supplier added successfully');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'wbs');
+      handleFirestoreError(error, OperationType.WRITE, 'vendors');
     }
   };
 
@@ -133,13 +200,14 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
 
       if (name === 'startDate') {
         // If start changes, we usually keep duration and move finish
-        if (start && !isNaN(dur)) {
+        if (start && !isNaN(dur) && !isNaN(new Date(start).getTime())) {
           const startDate = new Date(start);
           const finishDate = new Date(startDate);
           finishDate.setDate(startDate.getDate() + dur);
-          updatedData.finishDate = finishDate.toISOString().split('T')[0];
-        } else if (start && finish) {
-          // If no duration but finish exists, calculate duration
+          if (!isNaN(finishDate.getTime())) {
+            updatedData.finishDate = finishDate.toISOString().split('T')[0];
+          }
+        } else if (start && finish && !isNaN(new Date(start).getTime()) && !isNaN(new Date(finish).getTime())) {
           const startDate = new Date(start);
           const finishDate = new Date(finish);
           const diffTime = finishDate.getTime() - startDate.getTime();
@@ -148,11 +216,13 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         }
       } else if (name === 'duration') {
         // If duration changes, update finish
-        if (start && !isNaN(dur)) {
+        if (start && !isNaN(dur) && !isNaN(new Date(start).getTime())) {
           const startDate = new Date(start);
           const finishDate = new Date(startDate);
           finishDate.setDate(startDate.getDate() + dur);
-          updatedData.finishDate = finishDate.toISOString().split('T')[0];
+          if (!isNaN(finishDate.getTime())) {
+            updatedData.finishDate = finishDate.toISOString().split('T')[0];
+          }
         }
       } else if (name === 'finishDate') {
         // If finish changes, update duration
@@ -288,18 +358,26 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       }
     });
 
-    if (latestStart) {
+    if (latestStart && !isNaN(latestStart.getTime())) {
       const startStr = latestStart.toISOString().split('T')[0];
       const dur = formData.duration || 0;
       const finishDate = new Date(latestStart);
       finishDate.setDate(latestStart.getDate() + dur);
-      const finishStr = finishDate.toISOString().split('T')[0];
+      
+      if (!isNaN(finishDate.getTime())) {
+        const finishStr = finishDate.toISOString().split('T')[0];
 
-      setFormData(prev => ({
-        ...prev,
-        startDate: startStr,
-        finishDate: finishStr
-      }));
+        setFormData(prev => ({
+          ...prev,
+          startDate: startStr,
+          finishDate: finishStr
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          startDate: startStr
+        }));
+      }
     }
   };
 
@@ -333,45 +411,35 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               <Database className="w-3 h-3" /> Basic Information
             </h4>
             <div className="grid grid-cols-2 gap-6">
-              {/* Hierarchy Selection - Reordered as requested */}
-              <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Layers className="w-3 h-3" /> Level 1: WBS Level
-                </label>
-                <select 
-                  name="wbsId"
-                  value={formData.wbsId || ''}
-                  onChange={e => {
-                    if (e.target.value === 'new') {
-                      navigate('/page/2.2.9');
-                      return;
-                    }
-                    handleInputChange(e);
-                  }}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                >
-                  <option value="">Select WBS...</option>
-                  {wbsLevels.sort((a, b) => a.level - b.level).map(wbs => (
-                    <option key={wbs.id} value={wbs.id}>{wbs.code} - {wbs.title}</option>
-                  ))}
-                  <option value="new" className="text-blue-600 font-medium">+ Add New Level...</option>
-                </select>
+              <div className="col-span-2">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest">Activity Name / Description</label>
+                  <span className={cn(
+                    "text-[10px] font-bold tracking-widest uppercase",
+                    (formData.description?.length || 0) >= 100 ? "text-rose-500" : "text-slate-400"
+                  )}>
+                    {formData.description?.length || 0}/100
+                  </span>
+                </div>
+                <input 
+                  type="text"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  maxLength={100}
+                  className="w-full max-w-2xl px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all shadow-sm"
+                  placeholder="e.g., Concrete Pouring for Ground Floor"
+                />
               </div>
 
               <div>
                 <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Database className="w-3 h-3" /> MasterFormat 16 Cost Accounts
+                  <Database className="w-3 h-3" /> Cost Account (Division)
                 </label>
                 <select 
                   name="division"
                   value={formData.division || '01'}
-                  onChange={e => {
-                    if (e.target.value === 'new') {
-                      navigate('/page/2.2.1');
-                      return;
-                    }
-                    handleInputChange(e);
-                  }}
+                  onChange={handleInputChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   {masterFormatDivisions.map(div => (
@@ -389,11 +457,6 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.workPackage || ''}
                   onChange={e => {
                     if (e.target.value === 'new') {
-                      setNewWPData(prev => ({ 
-                        ...prev, 
-                        divisionCode: formData.division || '01', 
-                        wbsId: formData.wbsId || '' 
-                      }));
                       setIsAddingWP(true);
                       return;
                     }
@@ -406,7 +469,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     (!formData.wbsId || wp.parentId === formData.wbsId) && 
                     (!formData.division || wp.divisionCode === formData.division)
                   ).map(wp => (
-                    <option key={wp.id} value={wp.title}>{wp.title}</option>
+                    <option key={wp.id} value={wp.title}>
+                      {getFullWBSCode(wp.id, wbsLevels) || wp.code ? `${getFullWBSCode(wp.id, wbsLevels) || wp.code} - ` : ''}{wp.title}
+                    </option>
                   ))}
                   <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
                 </select>
@@ -427,18 +492,6 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     <option key={item.id} value={item.id}>{item.description} ({item.workPackage})</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Activity Description</label>
-                <textarea 
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[80px] resize-y"
-                  placeholder="Enter detailed activity description..."
-                />
               </div>
 
               <div>
@@ -485,7 +538,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Supplier / Vendor</label>
+                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Supplier</label>
                 <div className="relative">
                   <ShoppingCart className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <select 
@@ -493,7 +546,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     value={formData.supplierId || ''}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        navigate('/page/4.2.1');
+                        setIsAddingVendor(true);
                         return;
                       }
                       handleInputChange(e);
@@ -514,16 +567,15 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     type="checkbox"
                     id="isMilestone"
                     checked={formData.activityType === 'Milestone'}
-                    disabled={activity.activityType === 'Milestone'}
                     onChange={(e) => {
                       const isMilestone = e.target.checked;
                       setFormData(prev => ({
                         ...prev,
                         activityType: isMilestone ? 'Milestone' : 'Task',
-                        duration: isMilestone ? 0 : prev.duration
+                        duration: isMilestone ? 0 : (prev.duration || 1)
                       }));
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
                   <label htmlFor="isMilestone" className="text-sm font-medium text-slate-700 cursor-pointer">
                     Milestone
@@ -771,8 +823,21 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         </div>
 
         {/* Add Work Package Modal */}
+        <AddWBSLevelModal
+            isOpen={isAddingWP}
+            onClose={() => setIsAddingWP(false)}
+            selectedProject={selectedProject}
+            wbsLevels={wbsLevels}
+            initialType="Work Package"
+            initialDivisionId={formData.costAccountId || '01'}
+            onSuccess={(newId) => {
+                setFormData({ ...formData, wbsId: newId });
+            }}
+        />
+
+        {/* Add Vendor Modal */}
         <AnimatePresence>
-          {isAddingWP && (
+          {isAddingVendor && (
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -781,83 +846,92 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
               >
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <h3 className="text-lg font-bold text-slate-900 text-right w-full pr-12">اضافة حزمة عمل جديدة</h3>
-                  <button onClick={() => setIsAddingWP(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors order-first">
+                  <h3 className="text-lg font-bold text-slate-900">{t('add_new_supplier')}</h3>
+                  <button onClick={() => setIsAddingVendor(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Parent WBS</label>
-                      <select 
-                        value={newWPData.wbsId}
-                        onChange={e => setNewWPData({ ...newWPData, wbsId: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                      >
-                        <option value="">Root / Select Level...</option>
-                        {wbsLevels.sort((a, b) => a.level - b.level).map(l => (
-                          <option key={l.id} value={l.id}>{l.code} - {l.title}</option>
-                        ))}
-                      </select>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
+                      <input 
+                        type="text"
+                        value={newVendorData.vendorCode}
+                        onChange={e => setNewVendorData({ ...newVendorData, vendorCode: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-mono"
+                        placeholder="e.g. S-001"
+                      />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cost Account (Division)</label>
-                      <select 
-                        value={newWPData.divisionCode}
-                        onChange={e => setNewWPData({ ...newWPData, divisionCode: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                      >
-                        {masterFormatDivisions.map(div => (
-                          <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
-                        ))}
-                      </select>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('legal_supplier_name')}</label>
+                      <input 
+                        type="text"
+                        value={newVendorData.name}
+                        onChange={e => setNewVendorData({ ...newVendorData, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-bold"
+                        placeholder={t('company_name_placeholder')}
+                      />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('disciplinary_masterformat')}</label>
+                    <select 
+                      value={newVendorData.discipline}
+                      onChange={e => setNewVendorData({ ...newVendorData, discipline: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                    >
+                      {masterFormatDivisions.map(div => (
+                        <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Code</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('email')}</label>
                       <input 
-                        type="text"
-                        value={newWPData.code}
-                        onChange={e => setNewWPData({ ...newWPData, code: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-mono"
-                        placeholder="e.g. 01-A-01"
+                        type="email"
+                        value={newVendorData.email}
+                        onChange={e => setNewVendorData({ ...newVendorData, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                        placeholder="email@example.com"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Package Title</label>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('phone')}</label>
                       <input 
                         type="text"
-                        value={newWPData.title}
-                        onChange={e => setNewWPData({ ...newWPData, title: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-bold"
-                        placeholder="Enter package name..."
+                        value={newVendorData.phone}
+                        onChange={e => setNewVendorData({ ...newVendorData, phone: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                        placeholder="+964..."
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('address')}</label>
+                    <input 
+                      type="text"
+                      value={newVendorData.address}
+                      onChange={e => setNewVendorData({ ...newVendorData, address: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                      placeholder={t('address')}
+                    />
                   </div>
                 </div>
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
                   <button 
-                    onClick={() => navigate('/page/2.2.9?tab=packages')}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 underline"
+                    onClick={() => setIsAddingVendor(false)}
+                    className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-xl transition-all"
                   >
-                    Go to Manage Work Packages
+                    {t('cancel')}
                   </button>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setIsAddingWP(false)}
-                      className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-xl transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleAddWorkPackage}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                    >
-                      Add Package
-                    </button>
-                  </div>
+                  <button 
+                    onClick={handleAddVendor}
+                    className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
+                  >
+                    {t('register_supplier')}
+                  </button>
                 </div>
               </motion.div>
             </div>

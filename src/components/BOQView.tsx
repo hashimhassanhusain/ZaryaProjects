@@ -22,6 +22,8 @@ import autoTable from 'jspdf-autotable';
 import { GoogleGenAI, Type } from "@google/genai";
 import { DollarSign, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { AddWBSLevelModal } from './AddWBSLevelModal';
+import { DataImportModal } from './DataImportModal';
 
 export const BOQView: React.FC = () => {
   const { t, language } = useLanguage();
@@ -45,15 +47,9 @@ export const BOQView: React.FC = () => {
   const [newWorkPackage, setNewWorkPackage] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddPackageModal, setShowAddPackageModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string; type: 'item' | 'wbs' } | null>(null);
-  const [newPackageData, setNewPackageData] = useState<Partial<WorkPackage>>({
-    title: '',
-    description: '',
-    divisionId: '01',
-    wbsId: '',
-    status: 'Active'
-  });
-
+  
   // Form states
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState<Partial<BOQItem>>({
@@ -234,31 +230,61 @@ export const BOQView: React.FC = () => {
     }
   };
 
-  const handleAddWorkPackage = async () => {
-    if (!selectedProject || !newPackageData.title) return;
-    try {
-      const id = crypto.randomUUID();
-      const division = masterFormatDivisions.find(d => d.id === newPackageData.divisionId);
-      const parentWbs = wbsLevels.find(l => l.id === newPackageData.wbsId);
-      
-      const wp: WBSLevel = {
-        id,
-        projectId: selectedProject.id,
-        parentId: newPackageData.wbsId || '',
-        divisionCode: newPackageData.divisionId || '01',
-        title: newPackageData.title,
-        type: 'Work Package',
-        level: (parentWbs?.level || 0) + 1,
-        status: 'Not Started',
-        code: `${division?.id || '00'}-${parentWbs?.code || 'GEN'}-${workPackages.length + 1}`,
-      };
+  const boqTargetColumns = [
+    { key: 'division', label: 'Cost Account (Division)', required: true, description: 'MasterFormat Division (e.g., 01, 03, 09)' },
+    { key: 'workPackage', label: 'Work Package', required: true, description: 'Name of the work package' },
+    { key: 'description', label: 'Description', required: true, description: 'Detailed item description' },
+    { key: 'quantity', label: 'Quantity', required: true, type: 'number' as const },
+    { key: 'unit', label: 'Unit', required: true, description: 'Measurement unit (m3, m2, ton, LS)' },
+    { key: 'inputRate', label: 'Unit Rate', required: true, type: 'number' as const },
+    { key: 'inputCurrency', label: 'Currency', type: 'string' as const, description: 'USD or IQD' },
+    { key: 'exchangeRateUsed', label: 'Exchange Rate', type: 'number' as const, description: 'Current exchange rate' },
+  ];
 
-      await setDoc(doc(db, 'wbs', id), wp);
-      setShowAddPackageModal(false);
-      setNewItem(prev => ({ ...prev, workPackage: wp.title }));
-      setNewPackageData({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
+  const handleImportBOQData = async (mappedData: any[]) => {
+    if (!selectedProject || !selectedWbsId) return;
+    
+    setIsAnalyzing(true);
+    let successCount = 0;
+    
+    try {
+      for (const item of mappedData) {
+        const id = crypto.randomUUID();
+        const inputCurrency = item.inputCurrency || baseCurrency;
+        const exchangeRateUsed = item.exchangeRateUsed || globalExchangeRate;
+        const inputRate = item.inputRate || 0;
+        const quantity = item.quantity || 0;
+
+        const baseRate = convertToBase(inputRate, inputCurrency, exchangeRateUsed);
+        const amount = quantity * baseRate;
+
+        const fullItem: BOQItem = {
+          id,
+          description: item.description || '',
+          unit: item.unit || 'LS',
+          quantity: parseFloat(item.quantity) || 0,
+          rate: parseFloat(item.rate) || 0,
+          division: item.division || '01',
+          workPackage: item.workPackage || 'Unassigned',
+          wbsId: item.wbsId || selectedWbsId || 'master',
+          amount,
+          inputCurrency,
+          exchangeRateUsed,
+          inputRate,
+          completion: 0,
+          location: wbsLevels.find(l => l.id === (item.wbsId || selectedWbsId))?.title || 'General',
+          poNumber: item.poNumber || ''
+        };
+
+        await setDoc(doc(db, 'boq', id), fullItem);
+        successCount++;
+      }
+      toast.success(`Successfully imported ${successCount} items.`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'wbs');
+      console.error("Error importing items:", err);
+      toast.error("Failed to import some items.");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -687,11 +713,13 @@ export const BOQView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100">
-                      {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                      {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
-                      <input type="file" className="hidden" onChange={handleFileUpload} disabled={isAnalyzing} />
-                    </label>
+                    <button 
+                      onClick={() => setShowImportModal(true)}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
+                    >
+                      {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      {isAnalyzing ? 'Importing...' : 'Import Data'}
+                    </button>
                     
                     <button 
                       onClick={() => setShowAddItem(true)}
@@ -1018,7 +1046,6 @@ export const BOQView: React.FC = () => {
                     value={newItem.workPackage}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        setNewPackageData(prev => ({ ...prev, divisionId: newItem.division, wbsId: selectedWbsId || '' }));
                         setShowAddPackageModal(true);
                         return;
                       }
@@ -1198,7 +1225,6 @@ export const BOQView: React.FC = () => {
                     value={editingItem.workPackage}
                     onChange={e => {
                       if (e.target.value === 'new') {
-                        setNewPackageData(prev => ({ ...prev, divisionId: editingItem.division, wbsId: editingItem.wbsId }));
                         setShowAddPackageModal(true);
                         return;
                       }
@@ -1306,103 +1332,29 @@ export const BOQView: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showAddPackageModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[32px] p-8 w-full max-w-lg shadow-2xl border border-slate-100"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900">Add Work Package</h3>
-                  <p className="text-slate-500 text-xs font-medium mt-1">Create a new work package for this division.</p>
-                </div>
-                <button onClick={() => setShowAddPackageModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-              </div>
+      <AddWBSLevelModal 
+        isOpen={showAddPackageModal}
+        onClose={() => setShowAddPackageModal(false)}
+        selectedProject={selectedProject}
+        wbsLevels={wbsLevels}
+        initialType="Work Package"
+        initialDivisionId={newItem.division}
+        initialParentId={newItem.wbsId === 'master' ? '' : newItem.wbsId}
+        onSuccess={(id) => {
+            setNewItem({ ...newItem, workPackage: id });
+        }}
+      />
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Title</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      list="boq-masterformat-sections"
-                      value={newPackageData.title}
-                      onChange={e => setNewPackageData({...newPackageData, title: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                      placeholder="e.g. Concrete Substructure"
-                    />
-                    <datalist id="boq-masterformat-sections">
-                      {masterFormatSections
-                        .filter(s => s.divisionId === newPackageData.divisionId)
-                        .map(section => (
-                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                        ))
-                      }
-                    </datalist>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
-                  <textarea 
-                    value={newPackageData.description}
-                    onChange={e => setNewPackageData({...newPackageData, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none h-24 text-sm font-medium resize-none transition-all"
-                    placeholder="Brief description of the work package..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Cost Account</label>
-                    <select 
-                      value={newPackageData.divisionId}
-                      onChange={e => setNewPackageData({...newPackageData, divisionId: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                    >
-                      {masterFormatDivisions.map(div => (
-                        <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">WBS Level</label>
-                    <select 
-                      value={newPackageData.wbsId}
-                      onChange={e => setNewPackageData({...newPackageData, wbsId: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                    >
-                      <option value="">General / Project Wide</option>
-                      {wbsLevels.map(l => (
-                        <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-10">
-                <button 
-                  onClick={() => setShowAddPackageModal(false)}
-                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleAddWorkPackage}
-                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
-                >
-                  Create Package
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {showImportModal && (
+        <DataImportModal 
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportBOQData}
+          targetColumns={boqTargetColumns}
+          title="Import BOQ Items"
+          entityName="Bill of Quantities Items"
+        />
+      )}
       
       <AnimatePresence>
         {showPreviewModal && previewItems && (

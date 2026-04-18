@@ -68,7 +68,7 @@ import { LessonsLearnedView } from './LessonsLearnedView';
 import { ChangeRequestView } from './ChangeRequestView';
 import { ChangeManagementHubView } from './ChangeManagementHubView';
 import { DecisionLogView } from './DecisionLogView';
-import { VendorMasterRegister } from './VendorMasterRegister';
+import { SupplierMasterRegister } from './SupplierMasterRegister';
 import { LogManagementView } from './LogManagementView';
 import { FormalAcceptanceView } from './FormalAcceptanceView';
 
@@ -375,7 +375,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isDecisionLogPage) return <DecisionLogView page={p} />;
     if (isChangeManagementHubPage) return <ChangeManagementHubView page={p} />;
     if (isChangeRequestPage) return <ChangeRequestView page={p} />;
-    if (isVendorRegisterPage) return <VendorMasterRegister page={p} />;
+    if (isVendorRegisterPage) return <SupplierMasterRegister page={p} />;
     if (isLogManagementPage) return <LogManagementView page={p} />;
     if (isFormalAcceptancePage) return <FormalAcceptanceView page={p} />;
     

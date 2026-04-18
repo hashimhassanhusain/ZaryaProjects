@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { Project } from '../types';
-import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield } from 'lucide-react';
+import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield, X } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
@@ -146,24 +146,26 @@ export const ProjectFormView: React.FC = () => {
     <div className="w-full py-6 px-6">
       <Breadcrumbs currentPageId="admin-projects" />
 
-      <div className="flex justify-end gap-3 mb-12">
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
         <button 
           onClick={() => navigate(-1)}
-          className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-all"
+          className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
         >
+          <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
           {t('cancel')}
         </button>
         <button 
           onClick={handleSave}
           disabled={saving}
-          className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+          className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           {isNew ? t('initialize_project') : t('save_changes')}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pb-32">
         <div className="lg:col-span-2 space-y-8">
           {/* Basic Info */}
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">

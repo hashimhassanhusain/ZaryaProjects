@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { 
   SelectionCriterion, 
-  VendorEvaluation, 
-  Vendor 
+  SupplierEvaluation, 
+  Supplier 
 } from '../../types';
 import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError } from '../../firebase';
@@ -44,8 +44,8 @@ interface SelectionCriteriaTabProps {
 
 export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ projectId }) => {
   const [criteria, setCriteria] = useState<SelectionCriterion[]>([]);
-  const [evaluations, setEvaluations] = useState<VendorEvaluation[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [evaluations, setEvaluations] = useState<SupplierEvaluation[]>([]);
+  const [vendors, setVendors] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingCriterion, setIsAddingCriterion] = useState(false);
   const [isAddingEvaluation, setIsAddingEvaluation] = useState(false);
@@ -58,9 +58,9 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
     description: ''
   });
 
-  const [evaluationForm, setEvaluationForm] = useState<Partial<VendorEvaluation>>({
-    vendorId: '',
-    vendorName: '',
+  const [evaluationForm, setEvaluationForm] = useState<Partial<SupplierEvaluation>>({
+    supplierId: '',
+    supplierName: '',
     criteriaScores: [],
     totalScore: 0,
     comments: ''
@@ -73,16 +73,28 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
       setCriteria(data);
     });
 
-    const evalQ = query(collection(db, 'vendor_evaluations'), where('projectId', '==', projectId));
+    const evalQ = query(collection(db, 'supplier_evaluations'), where('projectId', '==', projectId));
     const unsubscribeEval = onSnapshot(evalQ, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VendorEvaluation));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupplierEvaluation));
       setEvaluations(data);
       setLoading(false);
     });
 
-    const vendorQ = query(collection(db, 'vendors'), where('projectId', '==', projectId));
+    const vendorQ = query(collection(db, 'companies'), where('type', '==', 'Supplier'));
     const unsubscribeVendor = onSnapshot(vendorQ, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vendor));
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        name: doc.data().name,
+        vendorCode: doc.data().supplierCode || '',
+        discipline: doc.data().discipline || '',
+        status: doc.data().status === 'Active' ? 'Active' : 'Contract Ended',
+        contactDetails: {
+          address: doc.data().address || '',
+          phone: doc.data().phone || '',
+          email: doc.data().email || ''
+        },
+        projectId: projectId
+      } as Supplier));
       setVendors(data);
     });
 
@@ -117,23 +129,23 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
 
   const handleSaveEvaluation = async () => {
     try {
-      const vendor = vendors.find(v => v.id === evaluationForm.vendorId);
+      const vendor = vendors.find(v => v.id === evaluationForm.supplierId);
       const data = { 
         ...evaluationForm, 
         projectId, 
-        vendorName: vendor?.name || '',
+        supplierName: vendor?.name || '',
         updatedAt: new Date().toISOString() 
       };
       if (editingId) {
-        await updateDoc(doc(db, 'vendor_evaluations', editingId), data);
+        await updateDoc(doc(db, 'supplier_evaluations', editingId), data);
       } else {
-        await addDoc(collection(db, 'vendor_evaluations'), data);
+        await addDoc(collection(db, 'supplier_evaluations'), data);
       }
       setIsAddingEvaluation(false);
       setEditingId(null);
-      setEvaluationForm({ vendorId: '', vendorName: '', criteriaScores: [], totalScore: 0, comments: '' });
+      setEvaluationForm({ supplierId: '', supplierName: '', criteriaScores: [], totalScore: 0, comments: '' });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'vendor_evaluations');
+      handleFirestoreError(error, OperationType.WRITE, 'supplier_evaluations');
     }
   };
 
@@ -148,13 +160,13 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
     const date = new Date().toLocaleDateString();
     
     doc.setFontSize(20);
-    doc.text('VENDOR SELECTION CRITERIA & SCORING', 148, 20, { align: 'center' });
+    doc.text('SUPPLIER SELECTION CRITERIA & SCORING', 148, 20, { align: 'center' });
     doc.setFontSize(10);
     doc.text(`Project: ${projectId} | Date: ${date}`, 148, 30, { align: 'center' });
 
-    const headers = ['Vendor', ...criteria.map(c => `${c.criterion} (${c.weight}%)`), 'Total Score'];
+    const headers = ['Supplier', ...criteria.map(c => `${c.criterion} (${c.weight}%)`), 'Total Score'];
     const body = evaluations.map(ev => [
-      ev.vendorName,
+      ev.supplierName,
       ...criteria.map(c => {
         const score = ev.criteriaScores.find(s => s.criterionId === c.id);
         return score ? `${score.rating} (${score.score.toFixed(2)})` : '-';
@@ -189,7 +201,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-black text-slate-900">Selection Criteria</h2>
-            <p className="text-sm text-slate-500">Define weighted criteria for vendor evaluation.</p>
+            <p className="text-sm text-slate-500">Define weighted criteria for supplier evaluation.</p>
           </div>
           <div className="flex items-center gap-4">
             <div className={cn(
@@ -253,7 +265,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-slate-900">Vendor Evaluations</h2>
+            <h2 className="text-2xl font-black text-slate-900">Supplier Evaluations</h2>
             <p className="text-sm text-slate-500">Multi-step evaluation and candidate scoring.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -278,7 +290,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Vendor</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</th>
                 {criteria.map(c => (
                   <th key={c.id} className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
                     {c.criterion}
@@ -296,7 +308,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                       <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
                         <Users className="w-5 h-5 text-slate-400" />
                       </div>
-                      <div className="font-bold text-slate-900">{ev.vendorName}</div>
+                      <div className="font-bold text-slate-900">{ev.supplierName}</div>
                     </div>
                   </td>
                   {criteria.map(c => {
@@ -433,7 +445,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-xl font-black text-slate-900">
-                  {editingId ? 'Edit Evaluation' : 'New Vendor Evaluation'}
+                  {editingId ? 'Edit Evaluation' : 'New Supplier Evaluation'}
                 </h2>
                 <button onClick={() => setIsAddingEvaluation(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
                   <X className="w-5 h-5 text-slate-400" />
@@ -442,13 +454,13 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
 
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Vendor</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Supplier</label>
                   <select
-                    value={evaluationForm.vendorId}
-                    onChange={(e) => setEvaluationForm({ ...evaluationForm, vendorId: e.target.value })}
+                    value={evaluationForm.supplierId}
+                    onChange={(e) => setEvaluationForm({ ...evaluationForm, supplierId: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all font-bold"
                   >
-                    <option value="">Select Vendor</option>
+                    <option value="">Select Supplier</option>
                     {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>
                 </div>

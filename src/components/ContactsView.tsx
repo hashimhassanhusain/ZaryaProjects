@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Trash2, Users, Building2, Phone, Mail, MoreVertical, Edit2, Loader2, Filter, User as UserIcon, X, ChevronRight } from 'lucide-react';
 import { db, OperationType, handleFirestoreError } from '../firebase';
-import { collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc, orderBy, where } from 'firebase/firestore';
 import { Contact, Company } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { cn } from '../lib/utils';
 
+import { useLanguage } from '../context/LanguageContext';
+
 export const ContactsView: React.FC = () => {
+  const { t } = useLanguage();
   const { selectedProject } = useProject();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'All' | 'Employee' | 'Vendor' | 'Stakeholder' | 'Other'>('All');
+  const [filterType, setFilterType] = useState<'All' | 'Employee' | 'Supplier' | 'Stakeholder' | 'Other'>('All');
   const [isAdding, setIsAdding] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [formData, setFormData] = useState<Partial<Contact>>({
@@ -26,6 +29,33 @@ export const ContactsView: React.FC = () => {
     role: '',
     status: 'Active'
   });
+
+  // Automatically sync Type and Company
+  useEffect(() => {
+    if (!formData.companyId || !companies.length) return;
+    const selectedCompany = companies.find(c => c.id === formData.companyId);
+    if (!selectedCompany) return;
+
+    if (selectedCompany.type === 'Supplier' && formData.type !== 'Supplier') {
+      setFormData(prev => ({ ...prev, type: 'Supplier' }));
+    } else if (selectedCompany.type === 'Main' && formData.type !== 'Employee') {
+      setFormData(prev => ({ ...prev, type: 'Employee' }));
+    }
+  }, [formData.companyId, companies]);
+
+  const handleTypeChange = (type: Contact['type']) => {
+    let companyId = formData.companyId;
+    if (type === 'Employee') {
+      const mainCompany = companies.find(c => c.type === 'Main');
+      if (mainCompany) companyId = mainCompany.id;
+    } else if (type === 'Supplier') {
+      const currentCompany = companies.find(c => c.id === formData.companyId);
+      if (currentCompany && currentCompany.type !== 'Supplier') {
+        companyId = ''; // Clear because supplier can't belong to Main
+      }
+    }
+    setFormData(prev => ({ ...prev, type, companyId }));
+  };
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -68,14 +98,43 @@ export const ContactsView: React.FC = () => {
     };
 
     try {
+      let contactId = editingContact?.id;
       if (editingContact) {
         await updateDoc(doc(db, 'contacts', editingContact.id), data);
       } else {
-        await addDoc(collection(db, 'contacts'), {
+        const docRef = await addDoc(collection(db, 'contacts'), {
           ...data,
           createdAt: new Date().toISOString()
         });
+        contactId = docRef.id;
       }
+
+      // Sync to Stakeholders if Employee (Required for site access/reports)
+      if (data.type === 'Employee' || data.type === 'Stakeholder') {
+        const stakeholderId = `stk_${contactId}`;
+        const stakeholderData = {
+          id: stakeholderId,
+          projectId: selectedProject.id,
+          name: data.name,
+          position: data.role || 'Personnel',
+          role: data.type === 'Employee' ? 'Employee' : 'Stakeholder',
+          contactInfo: data.email || data.phone || '',
+          classification: data.type === 'Employee' ? 'Internal' : 'External',
+          influence: 'Medium',
+          interest: 'High',
+          expectations: 'N/A',
+          requirements: 'Access to reports',
+          priorityScore: 5,
+          influenceScore: 5,
+          criticalityIndex: 5,
+          communicationFrequency: 'Regular',
+          engagementLevel: 'Green',
+          isSystemUser: true,
+          updatedAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'stakeholders', stakeholderId), stakeholderData);
+      }
+
       setIsAdding(false);
       setEditingContact(null);
       setFormData({ name: '', email: '', phone: '', companyId: '', companyName: '', type: 'Employee', role: '', status: 'Active' });
@@ -146,7 +205,7 @@ export const ContactsView: React.FC = () => {
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-[2rem] border border-slate-200 shadow-sm">
           <div className="flex bg-slate-100 p-1 rounded-xl">
-            {(['All', 'Employee', 'Vendor', 'Stakeholder', 'Other'] as const).map((type) => (
+            {(['All', 'Employee', 'Supplier', 'Stakeholder', 'Other'] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
@@ -155,7 +214,7 @@ export const ContactsView: React.FC = () => {
                   filterType === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 )}
               >
-                {type}
+                {type === 'Supplier' ? t('supplier') : type === 'All' ? t('all') : type === 'Employee' ? t('employee') : type === 'Stakeholder' ? t('stakeholder') : type}
               </button>
             ))}
           </div>
@@ -185,7 +244,7 @@ export const ContactsView: React.FC = () => {
                   <div className={cn(
                     "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner",
                     contact.type === 'Employee' ? "bg-blue-50 text-blue-600" :
-                    contact.type === 'Vendor' ? "bg-amber-50 text-amber-600" :
+                    contact.type === 'Supplier' ? "bg-amber-50 text-amber-600" :
                     contact.type === 'Stakeholder' ? "bg-purple-50 text-purple-600" : "bg-slate-50 text-slate-600"
                   )}>
                     <UserIcon className="w-7 h-7" />
@@ -293,11 +352,11 @@ export const ContactsView: React.FC = () => {
                     <div className="col-span-2">
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Contact Type</label>
                       <div className="flex gap-3">
-                        {(['Employee', 'Vendor', 'Stakeholder', 'Other'] as const).map(type => (
+                        {(['Employee', 'Supplier', 'Stakeholder', 'Other'] as const).map(type => (
                           <button
                             key={type}
                             type="button"
-                            onClick={() => setFormData({ ...formData, type })}
+                            onClick={() => handleTypeChange(type)}
                             className={cn(
                               "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all",
                               formData.type === type 
@@ -305,7 +364,7 @@ export const ContactsView: React.FC = () => {
                                 : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
                             )}
                           >
-                            {type}
+                            {type === 'Supplier' ? t('supplier') : type === 'Employee' ? t('employee') : type === 'Stakeholder' ? t('stakeholder') : type}
                           </button>
                         ))}
                       </div>
@@ -332,7 +391,13 @@ export const ContactsView: React.FC = () => {
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-slate-900/5 transition-all"
                       >
                         <option value="">Select Company</option>
-                        {companies.map(c => (
+                        {companies
+                          .filter(c => {
+                            if (formData.type === 'Employee') return c.type === 'Main';
+                            if (formData.type === 'Supplier') return c.type === 'Supplier';
+                            return true;
+                          })
+                          .map(c => (
                           <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
                         ))}
                       </select>
@@ -385,7 +450,7 @@ export const ContactsView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="px-10 py-8 bg-slate-50 flex justify-end gap-4">
+                <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 z-10">
                   <button 
                     type="button"
                     onClick={() => setIsAdding(false)}

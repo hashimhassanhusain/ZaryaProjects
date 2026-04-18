@@ -29,7 +29,8 @@ import {
   RefreshCw,
   Edit2,
   ChevronRight,
-  Download
+  Download,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -990,20 +991,27 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
               </p>
             </section>
 
-            {/* Floating Save Button */}
+            {/* Floating Action Buttons */}
             {canCreateReport && (
-              <div className="fixed bottom-8 right-8">
+              <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
+                <button 
+                  onClick={() => setView('list')}
+                  className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
+                >
+                  <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                  Discard
+                </button>
                 <button 
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                  className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? (
                     <RefreshCw className="w-5 h-5 animate-spin" />
                   ) : (
                     <Save className="w-5 h-5" />
                   )}
-                  {isSaving ? 'Saving Report...' : editingReport ? 'Update Report' : 'Submit Daily Report'}
+                  {isSaving ? 'Saving...' : editingReport ? 'Update Report' : 'Submit Report'}
                 </button>
               </div>
             )}

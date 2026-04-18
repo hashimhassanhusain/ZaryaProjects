@@ -34,7 +34,7 @@ import { ProcessImprovementTab } from './resource/ProcessImprovementTab';
 import { ResourcesView } from './ResourcesView';
 import { TasksView } from './TasksView';
 import { ProgressReportView } from './ProgressReportView';
-import { VendorMasterRegister } from './VendorMasterRegister';
+import { SupplierMasterRegister } from './SupplierMasterRegister';
 import { DetailView } from './DetailView';
 import { ContactsView } from './ContactsView';
 import { CompaniesView } from './CompaniesView';
@@ -144,7 +144,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           {activeTab === 'tasks' && <TasksView page={pages.find(p => p.id === '2.6.21')!} />}
           {activeTab === 'meetings' && <DetailView page={pages.find(p => p.id === '2.6.22')!} />}
           {activeTab === 'operating-agreement' && <TeamGovernanceTab projectId={projectId} />}
-          {activeTab === 'inventory-3m' && <VendorMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
+          {activeTab === 'inventory-3m' && <SupplierMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
           {activeTab === 'optimization' && <ProcessImprovementTab projectId={projectId} />}
           {activeTab === 'performance' && <PerformanceStatusTab projectId={projectId} />}
           {activeTab === 'progress' && <ProgressReportView page={pages.find(p => p.id === '3.3.3')!} />}
