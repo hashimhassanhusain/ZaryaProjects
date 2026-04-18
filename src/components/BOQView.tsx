@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BOQItem, WBSLevel, WorkPackage, Activity } from '../types';
+import { BOQItem, WBSLevel, WorkPackage } from '../types';
 import { masterFormatDivisions } from '../data';
 import { masterFormatSections } from '../constants/masterFormat';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
-import {
-  Table, Filter, LayoutGrid, List, Upload, RefreshCw, CheckCircle2,
+import { 
+  Table, Filter, LayoutGrid, List, Upload, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Database, Plus, Trash2, ChevronRight, ChevronDown,
   FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft, X,
-  Banknote, BarChart3
+  Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
@@ -33,9 +33,8 @@ export const BOQView: React.FC = () => {
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'boq' | 'summary' | 'export'>('boq');
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'boq' | 'export'>('boq');
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>('master');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewItems, setPreviewItems] = useState<BOQItem[] | null>(null);
@@ -99,18 +98,10 @@ const [loading, setLoading] = useState(true);
       }
     );
 
-    const actUnsubscribe = onSnapshot(
-      query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
-      (snapshot) => {
-        setActivities(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
-      }
-    );
-
     return () => {
       boqUnsubscribe();
       wbsUnsubscribe();
       wpUnsubscribe();
-      actUnsubscribe();
     };
   }, [selectedProject]);
 
@@ -660,17 +651,7 @@ const [loading, setLoading] = useState(true);
             <LayoutGrid className="w-4 h-4" />
             BOQ Manager
           </button>
-          <button
-            onClick={() => setActiveTab('summary')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
-              activeTab === 'summary' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            <BarChart3 className="w-4 h-4" />
-            Cost Summary
-          </button>
-          <button
+          <button 
             onClick={() => setActiveTab('export')}
             className={cn(
               "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
@@ -960,47 +941,6 @@ const [loading, setLoading] = useState(true);
                 </div>
               </div>
             )}
-
-            {activeTab === 'summary' && (() => {
-              const byWP: Record<string, Activity[]> = {};
-              activities.forEach(a => {
-                const key = a.workPackage || 'Unassigned';
-                if (!byWP[key]) byWP[key] = [];
-                byWP[key].push(a);
-              });
-              const grandTotal = activities.reduce((s, a) => s + (a.amount || 0), 0);
-              return (
-                <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-blue-500" />
-                    Cost Summary by Work Package
-                  </h3>
-                  {Object.entries(byWP).sort(([a], [b]) => a.localeCompare(b)).map(([wp, acts]) => {
-                    const wpTotal = acts.reduce((s, a) => s + (a.amount || 0), 0);
-                    const byDiv: Record<string, number> = {};
-                    acts.forEach(a => { const d = a.division || '—'; byDiv[d] = (byDiv[d] || 0) + (a.amount || 0); });
-                    return (
-                      <div key={wp} className="border border-slate-200 rounded-2xl overflow-hidden">
-                        <div className="flex justify-between items-center px-4 py-3 bg-slate-50">
-                          <span className="text-xs font-bold text-slate-700">{wp}</span>
-                          <span className="text-xs font-bold text-blue-600">{formatAmount(wpTotal, baseCurrency)}</span>
-                        </div>
-                        {Object.entries(byDiv).map(([div, cost]) => (
-                          <div key={div} className="flex justify-between items-center px-6 py-2 border-t border-slate-100">
-                            <span className="text-[11px] text-slate-500">{div}</span>
-                            <span className="text-[11px] font-mono text-slate-600">{formatAmount(cost, baseCurrency)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                  <div className="flex justify-between items-center px-4 py-3 bg-blue-50 rounded-2xl">
-                    <span className="text-xs font-bold text-blue-700">Grand Total</span>
-                    <span className="text-xs font-bold text-blue-700">{formatAmount(grandTotal, baseCurrency)}</span>
-                  </div>
-                </div>
-              );
-            })()}
 
             {activeTab === 'export' && (
             <div className="bg-white border border-slate-100 rounded-3xl p-12 shadow-sm text-center">

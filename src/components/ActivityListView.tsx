@@ -141,11 +141,10 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     const selectedActivities = activities.filter(a => activityIds.includes(a.id));
     if (selectedActivities.length === 0) return;
 
-    // Group by work package — resolve title to work_packages Firestore doc ID
-    const wpTitle = selectedActivities[0].workPackage;
-    const wpDoc = workPackages.find(p => p.title === wpTitle);
+    // Group by work package
+    const wp = selectedActivities[0].workPackage;
     const poId = `PO-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
-
+    
     const newPO: PurchaseOrder = {
       id: poId,
       projectId: selectedProject.id,
@@ -153,7 +152,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
       date: new Date().toISOString().split('T')[0],
       status: 'Draft',
       amount: selectedActivities.reduce((sum, a) => sum + a.amount, 0),
-      workPackageId: wpDoc?.id || wpTitle,
+      workPackageId: wp,
       lineItems: selectedActivities.map(a => ({
         id: crypto.randomUUID(),
         description: a.description,
