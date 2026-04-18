@@ -48,6 +48,7 @@ import { MeetingsArchiveView } from './MeetingsArchiveView';
 import { MeetingMinutesForm } from './MeetingMinutesForm';
 import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion, QualityAudit, Meeting } from '../types';
 import { ProjectScheduleView } from './ProjectScheduleView';
+import { VarianceAnalysisView } from './VarianceAnalysisView';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -59,6 +60,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
   const isMeetingsPage = page.id === '2.6.22';
+  const isVarianceAnalysisPage = page.id === '4.3.2';
   
   const [isCreating, setIsCreating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -4380,83 +4382,87 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   return (
     <div className="space-y-8 pb-20">
       {/* Form Actions Header */}
-      <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-4 lg:-mx-8 px-4 lg:px-8 py-2 mb-4 flex justify-between items-center gap-4 shadow-sm">
-        <div className="flex-1 flex items-center gap-3">
-          {page.focusArea && (
-            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
-              {page.focusArea}
-            </span>
-          )}
-          {isLogPage && (
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder={`Search ${page.title}...`}
-                value={globalSearch}
-                onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
-              />
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {isEditing ? (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => handleSaveDocument(false)}
-                disabled={isCreating}
-                className="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Update
-              </button>
-              <button 
-                onClick={() => handleSaveDocument(true)}
-                disabled={isCreating}
-                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save New Version
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Plan
-              </button>
-              <div className="w-px h-6 bg-slate-200 mx-2" />
-              <button 
-                onClick={() => generatePDF(false)}
-                disabled={isExporting}
-                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-              >
-                <Printer className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => generatePDF(true)}
-                disabled={isExporting}
-                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+      {!isVarianceAnalysisPage && (
+        <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-4 lg:-mx-8 px-4 lg:px-8 py-2 mb-4 flex justify-between items-center gap-4 shadow-sm">
+          <div className="flex-1 flex items-center gap-3">
+            {page.focusArea && (
+              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
+                {page.focusArea}
+              </span>
+            )}
+            {isLogPage && (
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder={`Search ${page.title}...`}
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleSaveDocument(false)}
+                  disabled={isCreating}
+                  className="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Update
+                </button>
+                <button 
+                  onClick={() => handleSaveDocument(true)}
+                  disabled={isCreating}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save New Version
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Plan
+                </button>
+                <div className="w-px h-6 bg-slate-200 mx-2" />
+                <button 
+                  onClick={() => generatePDF(false)}
+                  disabled={isExporting}
+                  className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => generatePDF(true)}
+                  disabled={isExporting}
+                  className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
+      )}
 
       {isLogPage ? (
         renderTable()
+      ) : isVarianceAnalysisPage ? (
+        <VarianceAnalysisView project={selectedProject!} />
       ) : (
         <div className="max-w-5xl mx-auto space-y-6">
           {isCharterPage ? (
@@ -4522,6 +4528,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 onCancel={() => setMeetingViewMode('archive')}
               />
             )
+          ) : isVarianceAnalysisPage ? (
+            <VarianceAnalysisView project={selectedProject!} />
           ) : isEditing ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
