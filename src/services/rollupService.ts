@@ -152,10 +152,22 @@ export async function rollupToParent(
       
       const [snapAct, snapActAlt] = await Promise.all([getDocs(qAct), getDocs(qActAlt)]);
       
-      // Use a Map to filter out duplicate activities by ID
       const activityMap = new Map<string, Activity>();
       snapAct.docs.forEach(d => activityMap.set(d.id, d.data() as Activity));
       snapActAlt.docs.forEach(d => activityMap.set(d.id, d.data() as Activity));
+
+      // Adoption logic (by division code)
+      const divCode = parentData.divisionCode || parentData.code;
+      if (divCode && (parentData.type === 'Division' || parentData.type === 'Cost Account')) {
+        const qAdopted = query(collection(db, 'activities'), where('division', '==', divCode), where('projectId', '==', parentData.projectId));
+        const snapAdopted = await getDocs(qAdopted);
+        snapAdopted.docs.forEach(d => {
+          const data = d.data() as Activity;
+          if (!data.wbsId && !data.divisionId) {
+            activityMap.set(d.id, data);
+          }
+        });
+      }
       
       const activityChildren = Array.from(activityMap.values());
       
@@ -166,11 +178,14 @@ export async function rollupToParent(
 
       // Process Activity Children
       activityChildren.forEach(child => {
-        if (child.startDate) {
-          if (!plannedStart || child.startDate < plannedStart) plannedStart = child.startDate;
+        const s = child.startDate || (child as any).plannedStart || '';
+        const f = child.finishDate || (child as any).plannedFinish || '';
+        
+        if (s) {
+          if (!plannedStart || s < plannedStart) plannedStart = s;
         }
-        if (child.finishDate) {
-          if (!plannedFinish || child.finishDate > plannedFinish) plannedFinish = child.finishDate;
+        if (f) {
+          if (!plannedFinish || f > plannedFinish) plannedFinish = f;
         }
         if (child.actualStartDate) {
           if (!actualStart || child.actualStartDate < actualStart) actualStart = child.actualStartDate;
@@ -184,6 +199,22 @@ export async function rollupToParent(
         actualCost += child.actualAmount || 0;
         totalWeightedProgress += childPlanned * (child.percentComplete || 0);
         totalPlannedCostForProgress += childPlanned;
+      });
+
+      // Fetch direct POs for this WBS node (and filter out those belonging to activities in memory)
+      const qDirectPo = query(collection(db, 'purchaseOrders'), where('wbsId', '==', parentId));
+      const snapDirectPo = await getDocs(qDirectPo);
+      const directPoChildren = snapDirectPo.docs
+        .map(d => d.data() as PurchaseOrder)
+        .filter(po => !po.activityId);
+
+      directPoChildren.forEach(po => {
+        plannedCost += po.amount || 0;
+        const completion = po.completion || 0;
+        actualCost += (po.amount || 0) * (completion / 100);
+        
+        totalWeightedProgress += (po.amount || 0) * completion;
+        totalPlannedCostForProgress += (po.amount || 0);
       });
 
       // Process WBS Children

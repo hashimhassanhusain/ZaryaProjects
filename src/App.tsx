@@ -370,25 +370,36 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          // Sync user to Firestore
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
-          if (!userSnap.exists()) {
-            const isAdminEmail = user.email === 'hashim.h.husain@gmail.com';
-            await setDoc(userRef, {
-              uid: user.uid,
-              name: user.displayName || 'New User',
-              email: user.email || '',
-              role: isAdminEmail ? 'admin' : 'engineer',
-              photoURL: user.photoURL || '',
-              accessiblePages: [],
-              accessibleProjects: []
-            });
+        // Retry logic for initial connection
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            // Sync user to Firestore
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+              const isAdminEmail = user.email === 'hashim.h.husain@gmail.com';
+              await setDoc(userRef, {
+                uid: user.uid,
+                name: user.displayName || 'New User',
+                email: user.email || '',
+                role: isAdminEmail ? 'admin' : 'engineer',
+                photoURL: user.photoURL || '',
+                accessiblePages: [],
+                accessibleProjects: []
+              });
+            }
+            break; // Success
+          } catch (err: any) {
+            console.warn(`Initial sync attempt failed (${retries} left):`, err.message);
+            retries--;
+            if (retries === 0) {
+              console.error("Failed to sync user to Firestore after multiple attempts:", err);
+              handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
+            }
+            // Wait 2 seconds before retry
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
-        } catch (err: any) {
-          console.error("Failed to sync user to Firestore:", err);
-          handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
         }
       }
       setUser(user);

@@ -1,13 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, addDoc, getDocFromServer, doc as firestoreDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, addDoc, getDocFromServer, doc as firestoreDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
-// @ts-ignore - firestoreDatabaseId is present in the config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Use initializeFirestore with force long polling to bypass network restrictions in some environments
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (firebaseConfig as any).firestoreDatabaseId || '(default)');
+
 // Explicitly pass the bucket URL to avoid initialization issues
 export const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
 export const auth = getAuth(app);

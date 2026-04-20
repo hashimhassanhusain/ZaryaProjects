@@ -33,6 +33,85 @@ import { useCurrency } from '../context/CurrencyContext';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+// Helper functions for live calculations
+function getProgress(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
+  if (activity.percentComplete !== undefined) return activity.percentComplete;
+  
+  // Fallback to PO status if no explicit progress
+  const linkedPO = purchaseOrders.find(po => po.id === activity.poId);
+  if (linkedPO) {
+    if (linkedPO.completion !== undefined) return linkedPO.completion;
+    const lineItem = linkedPO.lineItems?.find(li => li.description === activity.description);
+    if (lineItem && lineItem.status === 'Completed') return 100;
+    if (lineItem && lineItem.status === 'In Progress') return 50;
+  }
+
+  if (activity.actualFinishDate) return 100;
+  if (activity.actualStartDate && activity.finishDate) {
+    const today = new Date();
+    const start = new Date(activity.actualStartDate);
+    const finish = new Date(activity.finishDate);
+    if (start >= finish) return 0;
+    const progress = Math.min(100, Math.round(((today.getTime() - start.getTime()) / (finish.getTime() - start.getTime())) * 100));
+    return Math.max(0, progress);
+  }
+  
+  return 0;
+}
+
+function getWbsActivities(wbs: WBSLevel, activities: Activity[]): Activity[] {
+  return activities.filter(a => {
+    if (wbs.type === 'Division' || wbs.type === 'Cost Account') {
+      if (a.divisionId === wbs.id || a.wbsId === wbs.id) return true;
+      const divCode = wbs.divisionCode || wbs.code;
+      const actDiv = a.division || '01';
+      return !a.wbsId && !a.divisionId && actDiv === divCode;
+    }
+    
+    // For other levels, we can assume direct link if it exists
+    if (a.wbsId === wbs.id) return true;
+    
+    return false;
+  });
+}
+
+function collectAllDescendantActivities(wbsId: string | null, allWbs: WBSLevel[], activities: Activity[]): Activity[] {
+  if (!wbsId) return activities; // Project root
+
+  const node = allWbs.find(w => w.id === wbsId);
+  if (!node) return [];
+
+  const directActivities = getWbsActivities(node, activities);
+
+  const childWbs = allWbs.filter(w => w.parentId === wbsId);
+  const descendantActivities = childWbs.flatMap(child => collectAllDescendantActivities(child.id, allWbs, activities));
+
+  const activityMap = new Map<string, Activity>();
+  [...directActivities, ...descendantActivities].forEach(a => activityMap.set(a.id, a));
+  
+  return Array.from(activityMap.values());
+}
+
+function calcDateSpan(acts: Activity[]) {
+  let start = '', finish = '', actualStart = '', actualFinish = '';
+  acts.forEach(a => {
+    const s = a.startDate || (a as any).plannedStart || '';
+    const f = a.finishDate || (a as any).plannedFinish || '';
+    if (s && (!start || s < start)) start = s;
+    if (f && (!finish || f > finish)) finish = f;
+    if (a.actualStartDate && (!actualStart || a.actualStartDate < actualStart)) actualStart = a.actualStartDate;
+    if (a.actualFinishDate && (!actualFinish || a.actualFinishDate > actualFinish)) actualFinish = a.actualFinishDate;
+  });
+  const duration = start && finish ? Math.ceil((new Date(finish).getTime() - new Date(start).getTime()) / 86400000) : 0;
+  const actualDuration = actualStart && actualFinish ? Math.ceil((new Date(actualFinish).getTime() - new Date(actualStart).getTime()) / 86400000) : 0;
+  return { start, finish, duration, actualStart, actualFinish, actualDuration };
+}
+
+function getAllDescendantWbsIds(wbsId: string, wbsLevels: WBSLevel[]): string[] {
+  const children = wbsLevels.filter(w => w.parentId === wbsId);
+  return [wbsId, ...children.flatMap(child => getAllDescendantWbsIds(child.id, wbsLevels))];
+}
+
 interface VarianceAnalysisViewProps {
   project: Project;
 }
@@ -133,41 +212,30 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
   };
 
   const calculateVariances = () => {
-    let plannedCost = 0;
-    let actualCost = 0;
-    let totalPlannedDuration = 0;
-    let totalActualDuration = 0;
+    // Project Spans
+    const projectSpan = calcDateSpan(activities);
+    const totalPlannedDuration = projectSpan.duration;
+    const totalActualDuration = projectSpan.actualDuration;
 
-    // Use root level WBS levels to start calculation
-    const rootLevels = wbsLevels.filter(w => !w.parentId);
+    // Correct Project-wide costs (sum of ALL activities and ALL direct POs)
+    const plannedCost = activities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) +
+                       purchaseOrders.filter(po => !po.activityId && (!po.wbsId || !wbsLevels.some(w => w.id === po.wbsId))).reduce((sum, po) => sum + po.amount, 0);
     
-    if (rootLevels.length > 0) {
-      rootLevels.forEach(wbs => {
-        const costs = getRobustTotals(wbs.id, wbsLevels, activities, purchaseOrders);
-        plannedCost += costs.pc;
-        actualCost += costs.ac;
-        totalPlannedDuration += costs.pd;
-        totalActualDuration += costs.ad;
-      });
-    } else {
-      // Fallback for projects with only activities
-      activities.forEach(a => {
-        plannedCost += a.plannedCost || a.amount || 0;
-        const actActual = a.actualAmount || 0;
-        actualCost += actActual;
-        totalPlannedDuration += a.duration || 0;
-        
-        if (a.actualFinishDate && a.actualStartDate) {
-           const start = new Date(a.actualStartDate);
-           const end = new Date(a.actualFinishDate);
-           totalActualDuration += Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        } else if (a.actualStartDate) {
-           const start = new Date(a.actualStartDate);
-           const today = new Date();
-           totalActualDuration += Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        }
-      });
-    }
+    const actualCost = activities.reduce((sum, a) => {
+      const actPOs = purchaseOrders.filter(p => p.activityId === a.id);
+      if (actPOs.length > 0) {
+        return sum + actPOs.reduce((s, p) => s + (p.amount * (p.completion || 0) / 100), 0);
+      }
+      return sum + (getProgress(a, purchaseOrders) / 100 * (a.plannedCost || a.amount || 0));
+    }, 0) + purchaseOrders.filter(po => !po.activityId && (!po.wbsId || !wbsLevels.some(w => w.id === po.wbsId))).reduce((sum, po) => sum + (po.amount * (po.completion || 0) / 100), 0);
+
+    // Weighted Progress Calculation
+    let totalValue = activities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
+                    purchaseOrders.filter(p => !p.activityId).reduce((sum, p) => sum + p.amount, 0);
+    let weightedProgress = activities.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getProgress(a, purchaseOrders)), 0) +
+                        purchaseOrders.filter(p => !p.activityId).reduce((sum, p) => sum + (p.amount * (p.completion || 0)), 0);
+    
+    const overallProgress = totalValue > 0 ? Math.round(weightedProgress / totalValue) : 0;
 
     const costVar = actualCost - plannedCost;
     const costVarPct = plannedCost > 0 ? (costVar / plannedCost) * 100 : 0;
@@ -183,7 +251,8 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       totalPlannedDuration,
       totalActualDuration,
       schedVar,
-      schedVarPct
+      schedVarPct,
+      overallProgress
     };
   };
 
@@ -596,13 +665,13 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
                         <div 
                           className={cn(
                             "h-full transition-all duration-1000",
-                            stats.costVar > stats.plannedCost * 0.1 ? "bg-rose-500" : "bg-emerald-500"
+                            stats.overallProgress > 90 ? "bg-emerald-500" : "bg-blue-500"
                           )}
-                          style={{ width: `${Math.min(100, stats.plannedCost > 0 ? (stats.actualCost / stats.plannedCost) * 100 : 0)}%` }}
+                          style={{ width: `${stats.overallProgress}%` }}
                         />
                       </div>
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        {stats.plannedCost > 0 ? Math.round((stats.actualCost / stats.plannedCost) * 100) : 0}% OVERALL BURN
+                        {stats.overallProgress}% OVERALL PROGRESS
                       </span>
                     </div>
                   </td>
@@ -850,59 +919,47 @@ const VarianceCard = ({ label, value, subValue, icon, status = 'info' }: {
   );
 };
 
-const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity[], purchaseOrders: PurchaseOrder[]): { pc: number; ac: number; pd: number; ad: number } => {
+const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity[], purchaseOrders: PurchaseOrder[]): { pc: number; ac: number; pd: number; ad: number; progress: number } => {
   const wbs = wbsLevels.find(w => w.id === id);
-  if (!wbs) return { pc: 0, ac: 0, pd: 0, ad: 0 };
+  if (!wbs) return { pc: 0, ac: 0, pd: 0, ad: 0, progress: 0 };
 
-  // Get activities belonging to this WBS node
-  const nodeActivities = activities.filter(a => {
-    if (a.wbsId === id || a.divisionId === id) return true;
-    // Adoption logic
-    const divCode = wbs.divisionCode || wbs.code;
-    if (divCode && (wbs.type === 'Division' || wbs.type === 'Cost Account')) {
-      return !a.wbsId && !a.divisionId && a.division === divCode;
+  const descendantActs = collectAllDescendantActivities(id, wbsLevels, activities);
+  const span = calcDateSpan(descendantActs);
+  const descendantWbsIds = getAllDescendantWbsIds(id, wbsLevels);
+  const descendantActIds = descendantActs.map(a => a.id);
+
+  const relatedPOs = purchaseOrders.filter(po => 
+    (po.activityId && descendantActIds.includes(po.activityId)) || 
+    (po.wbsId && descendantWbsIds.includes(po.wbsId))
+  );
+
+  const pc = descendantActs.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
+             purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, po) => sum + po.amount, 0);
+  
+  const ac = descendantActs.reduce((sum, a) => {
+    const actPOs = purchaseOrders.filter(p => p.activityId === a.id);
+    if (actPOs.length > 0) {
+      return sum + actPOs.reduce((s, p) => s + (p.amount * (p.completion || 0) / 100), 0);
     }
-    return false;
-  });
+    return sum + (getProgress(a, purchaseOrders) / 100 * (a.plannedCost || a.amount || 0));
+  }, 0) + purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, po) => sum + (po.amount * (po.completion || 0) / 100), 0);
 
-  const nodeDirectPOs = purchaseOrders.filter(p => p.wbsId === id && !p.activityId);
+  // Weighted Progress logic matching schedule view
+  let totalValueForProgress = descendantActs.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
+                             purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, p) => sum + p.amount, 0);
+                             
+  let weightedProgress = descendantActs.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getProgress(a, purchaseOrders)), 0) +
+                        purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, p) => sum + (p.amount * (p.completion || 0)), 0);
 
-  const getActActual = (a: Activity) => {
-    const linkedPOs = purchaseOrders.filter(p => p.activityId === a.id);
-    if (linkedPOs.length > 0) {
-      return linkedPOs.reduce((sum, p) => sum + (p.amount * (p.completion || 0) / 100), 0);
-    }
-    return a.actualAmount || 0;
+  const progress = totalValueForProgress > 0 ? Math.round(weightedProgress / totalValueForProgress) : 0;
+
+  return {
+    pc,
+    ac,
+    pd: span.duration,
+    ad: span.actualDuration,
+    progress
   };
-
-  const getPoActual = (p: PurchaseOrder) => {
-    return p.amount * (p.completion || 0) / 100;
-  };
-
-  let totals = { 
-    pc: nodeActivities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + nodeDirectPOs.reduce((sum, p) => sum + p.amount, 0),
-    ac: nodeActivities.reduce((sum, a) => sum + getActActual(a), 0) + nodeDirectPOs.reduce((sum, p) => sum + getPoActual(p), 0),
-    pd: nodeActivities.reduce((sum, a) => sum + (a.duration || 0), 0),
-    ad: nodeActivities.reduce((sum, a) => {
-      if (a.actualFinishDate && a.actualStartDate) {
-        return sum + Math.ceil((new Date(a.actualFinishDate).getTime() - new Date(a.actualStartDate).getTime()) / 86400000);
-      } else if (a.actualStartDate) {
-        return sum + Math.ceil((new Date().getTime() - new Date(a.actualStartDate).getTime()) / 86400000);
-      }
-      return sum;
-    }, 0)
-  };
-
-  // Add children totals
-  wbsLevels.filter(w => w.parentId === id).forEach(child => {
-    const childTotals = getRobustTotals(child.id, wbsLevels, activities, purchaseOrders);
-    totals.pc += childTotals.pc;
-    totals.ac += childTotals.ac;
-    totals.pd += childTotals.pd;
-    totals.ad += childTotals.ad;
-  });
-
-  return totals;
 };
 
 const renderWBSRow = (
@@ -982,13 +1039,13 @@ const renderWBSRow = (
               <div 
                 className={cn(
                   "h-full transition-all duration-1000",
-                  costVar > totals.pc * 0.1 ? "bg-rose-500" : "bg-blue-500"
+                  totals.progress > 90 ? "bg-emerald-500" : "bg-blue-500"
                 )}
-                style={{ width: `${Math.min(100, totals.pc > 0 ? (totals.ac / totals.pc) * 100 : 0)}%` }}
+                style={{ width: `${totals.progress}%` }}
               />
             </div>
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-              {totals.pc > 0 ? Math.round((totals.ac / totals.pc) * 100) : 0}% Burn
+              {totals.progress}% COMPLETE
             </span>
           </div>
         </td>

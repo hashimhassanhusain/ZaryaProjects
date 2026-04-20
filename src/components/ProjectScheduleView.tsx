@@ -1965,6 +1965,42 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
 // Helper Components for Recursive Rendering
 
+function collectAllDescendantActivities(wbsId: string, allWbs: WBSLevel[], activities: Activity[]): Activity[] {
+  const node = allWbs.find(w => w.id === wbsId);
+  if (!node) return [];
+
+  const directActivities = activities.filter(a => {
+    if (a.wbsId === wbsId || a.divisionId === wbsId) return true;
+    const divCode = node.divisionCode || node.code;
+    const isDivisionLink = (node.type === 'Division' || node.type === 'Cost Account') && 
+                          !a.wbsId && !a.divisionId && a.division === divCode;
+    return isDivisionLink;
+  });
+
+  const childWbs = allWbs.filter(w => w.parentId === wbsId);
+  const descendantActivities = childWbs.flatMap(child => collectAllDescendantActivities(child.id, allWbs, activities));
+
+  const activityMap = new Map<string, Activity>();
+  [...directActivities, ...descendantActivities].forEach(a => activityMap.set(a.id, a));
+  
+  return Array.from(activityMap.values());
+}
+
+function calcDateSpan(acts: Activity[]) {
+  let start = '', finish = '', actualStart = '', actualFinish = '';
+  acts.forEach(a => {
+    const s = a.startDate || (a as any).plannedStart || '';
+    const f = a.finishDate || (a as any).plannedFinish || '';
+    if (s && (!start || s < start)) start = s;
+    if (f && (!finish || f > finish)) finish = f;
+    if (a.actualStartDate && (!actualStart || a.actualStartDate < actualStart)) actualStart = a.actualStartDate;
+    if (a.actualFinishDate && (!actualFinish || a.actualFinishDate > actualFinish)) actualFinish = a.actualFinishDate;
+  });
+  const duration = start && finish ? Math.ceil((new Date(finish).getTime() - new Date(start).getTime()) / 86400000) : 0;
+  const actualDuration = actualStart && actualFinish ? Math.ceil((new Date(actualFinish).getTime() - new Date(actualStart).getTime()) / 86400000) : 0;
+  return { start, finish, duration, actualStart, actualFinish, actualDuration };
+}
+
 interface WbsRowProps {
   wbs: WBSLevel;
   allWbs: WBSLevel[];
@@ -2380,12 +2416,21 @@ const WbsRow: React.FC<WbsRowProps> = ({
   const wbsPoAmount = wbsCosts.po;
   const wbsActualCost = wbsCosts.actual;
 
-  const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');
-  const wbsPlannedFinish = wbs.plannedFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '');
-  const wbsActualStart = wbs.actualStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.actualStartDate && a.actualStartDate < min) ? a.actualStartDate : min, '') : '');
-  const wbsActualFinish = wbs.actualFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.actualFinishDate && a.actualFinishDate > max) ? a.actualFinishDate : max, '') : '');
-  const wbsPlannedDuration = wbs.plannedDuration || (wbsPlannedStart && wbsPlannedFinish ? Math.ceil((new Date(wbsPlannedFinish).getTime() - new Date(wbsPlannedStart).getTime()) / (1000 * 60 * 60 * 24)) : 0);
-  const wbsActualDuration = wbs.actualDuration || (wbsActualStart && wbsActualFinish ? Math.ceil((new Date(wbsActualFinish).getTime() - new Date(wbsActualStart).getTime()) / (1000 * 60 * 60 * 24)) : 0);
+  const allDescendantActs = collectAllDescendantActivities(wbs.id, allWbs, activities);
+  const wbsSpan = calcDateSpan(allDescendantActs);
+
+  const wbsPlannedStart = wbs.plannedStart || wbsSpan.start;
+  const wbsPlannedFinish = wbs.plannedFinish || wbsSpan.finish;
+  const wbsActualStart = wbs.actualStart || wbsSpan.actualStart;
+  const wbsActualFinish = wbs.actualFinish || wbsSpan.actualFinish;
+  
+  const wbsPlannedDuration = typeof wbs.plannedDuration === 'number' 
+    ? (wbs.plannedDuration || wbsSpan.duration)
+    : wbsSpan.duration;
+    
+  const wbsActualDuration = typeof wbs.actualDuration === 'number'
+    ? (wbs.actualDuration || wbsSpan.actualDuration)
+    : wbsSpan.actualDuration;
 
   const directWbsPOs = purchaseOrders.filter(p => p.wbsId === wbs.id && !p.activityId && !p.workPackageId);
 
@@ -2673,8 +2718,11 @@ const GanttRow: React.FC<GanttRowProps> = ({
   const wbsActivities = getWbsActivities(wbs);
   const isExpanded = expanded[wbs.id];
 
-  const wbsPlannedStart = wbs.plannedStart || (wbsActivities.length > 0 ? wbsActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : '');
-  const wbsPlannedFinish = wbs.plannedFinish || (wbsActivities.length > 0 ? wbsActivities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '');
+  const allDescendantActs = collectAllDescendantActivities(wbs.id, allWbs, activities);
+  const wbsSpan = calcDateSpan(allDescendantActs);
+
+  const wbsPlannedStart = wbs.plannedStart || wbsSpan.start;
+  const wbsPlannedFinish = wbs.plannedFinish || wbsSpan.finish;
   const wbsProgress = wbs.progress ?? calculateWbsProgress(wbs.id);
 
   const activitiesByDivisionAndWP = useMemo(() => {
