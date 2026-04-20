@@ -247,6 +247,18 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         const diffTime = Math.abs(finishDate.getTime() - startDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         updatedData.actualDuration = diffDays;
+        
+        // Auto-complete if finish date set
+        updatedData.status = 'Completed';
+        updatedData.percentComplete = 100;
+        toast.success('Activity marked as Completed based on finish date');
+      } else if (start) {
+        // Auto mark as In Progress if start date set
+        if (updatedData.status === 'Not Started') {
+          updatedData.status = 'In Progress';
+          if (!updatedData.percentComplete) updatedData.percentComplete = 1;
+          toast.success('Activity marked as In Progress based on start date');
+        }
       }
     }
 

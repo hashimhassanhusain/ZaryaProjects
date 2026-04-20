@@ -21,7 +21,7 @@ export const CharterMilestones: React.FC<CharterMilestonesProps> = ({ milestones
       finishDate: newMilestone.date,
       activityType: 'Milestone',
       duration: 0,
-      status: 'Planned',
+      status: 'Not Started',
       projectId: '', // Will be set by parent if needed
       wbsId: '',
       workPackage: 'General',

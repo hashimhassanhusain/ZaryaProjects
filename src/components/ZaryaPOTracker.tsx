@@ -46,7 +46,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     quantity: 0,
     rate: 0,
     amount: 0,
-    status: 'Planned'
+    status: 'Not Started'
   });
 
   const getAmountColor = (amount: number) => {
@@ -350,7 +350,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         quantity: 0,
         rate: 0,
         amount: 0,
-        status: 'Planned'
+        status: 'Not Started'
       });
       setNewPO({
         id: '',
@@ -582,15 +582,23 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   };
 
   const handleConfirmImport = async () => {
-    if (!previewPOs) return;
-    try {
-      for (const po of previewPOs) {
-        await setDoc(doc(db, 'purchaseOrders', po.id), po);
-      }
-      toast.success(`Successfully imported ${previewPOs.length} Purchase Orders.`);
-      setShowPreviewModal(false);
-      setPreviewPOs(null);
-    } catch (err) {
+      if (!previewPOs) return;
+      try {
+        const affectedActivityIds = new Set<string>();
+        for (const po of previewPOs) {
+          await setDoc(doc(db, 'purchaseOrders', po.id), po);
+          if (po.activityId) affectedActivityIds.add(po.activityId);
+        }
+        
+        // Trigger rollups for affected activities
+        for (const actId of affectedActivityIds) {
+          await rollupToParent('po', actId);
+        }
+
+        toast.success(`Successfully imported ${previewPOs.length} Purchase Orders.`);
+        setShowPreviewModal(false);
+        setPreviewPOs(null);
+      } catch (err) {
       console.error("Import failed:", err);
       toast.error("Failed to import POs.");
     }
@@ -628,9 +636,18 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             onClick={async () => {
               toast.dismiss(t.id);
               try {
+                const affectedActivityIds = new Set<string>();
                 for (const id of selectedPOIds) {
+                  const po = pos.find(p => p.id === id);
+                  if (po?.activityId) affectedActivityIds.add(po.activityId);
                   await deleteDoc(doc(db, 'purchaseOrders', id));
                 }
+                
+                // Trigger rollups for affected activities
+                for (const actId of affectedActivityIds) {
+                  await rollupToParent('po', actId);
+                }
+
                 toast.success(`Deleted ${selectedPOIds.length} items`);
                 setSelectedPOIds([]);
               } catch (err) {

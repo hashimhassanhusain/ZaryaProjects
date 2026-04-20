@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BOQItem, WBSLevel, WorkPackage } from '../types';
 import { masterFormatDivisions } from '../data';
@@ -7,7 +7,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { 
   Table, Filter, LayoutGrid, List, Upload, RefreshCw, CheckCircle2, 
-  Clock, AlertCircle, Database, Plus, Trash2, ChevronRight, ChevronDown,
+  Clock, AlertCircle, Database, Plus, Trash2, ChevronRight, ChevronDown, Target,
   FileText, Printer, Download, Search, Info, Loader2, Sparkles, ArrowLeft, X,
   Banknote
 } from 'lucide-react';
@@ -25,6 +25,8 @@ import toast from 'react-hot-toast';
 import { AddWBSLevelModal } from './AddWBSLevelModal';
 import { DataImportModal } from './DataImportModal';
 
+import { Ribbon, RibbonGroup } from './Ribbon';
+
 export const BOQView: React.FC = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
@@ -35,6 +37,23 @@ export const BOQView: React.FC = () => {
   const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'boq' | 'export'>('boq');
+  
+  const ribbonGroups: RibbonGroup[] = [
+    {
+      id: 'main',
+      label: t('management'),
+      tabs: [
+        { id: 'boq', label: t('boq_manager'), icon: LayoutGrid },
+      ]
+    },
+    {
+      id: 'reports',
+      label: t('reporting'),
+      tabs: [
+        { id: 'export', label: t('export_reports'), icon: Download },
+      ]
+    }
+  ];
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>('master');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewItems, setPreviewItems] = useState<BOQItem[] | null>(null);
@@ -595,6 +614,13 @@ export const BOQView: React.FC = () => {
     );
   };
 
+  const projectBoqTotals = useMemo(() => {
+    return boqItems.reduce((acc, item) => ({
+      amount: acc.amount + item.amount,
+      count: acc.count + 1
+    }), { amount: 0, count: 0 });
+  }, [boqItems]);
+
   if (!selectedProject) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -638,31 +664,15 @@ export const BOQView: React.FC = () => {
   const sortedDivisions = Object.keys(groupedBoqItems).sort();
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center gap-3 bg-slate-100 p-1 rounded-2xl">
-          <button 
-            onClick={() => setActiveTab('boq')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
-              activeTab === 'boq' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            BOQ Manager
-          </button>
-          <button 
-            onClick={() => setActiveTab('export')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-semibold transition-all",
-              activeTab === 'export' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            <Download className="w-4 h-4" />
-            Export & Reports
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden">
+      {/* Ribbon Navigation */}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={(id) => setActiveTab(id as any)}
+      />
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8">
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content Area */}
@@ -754,6 +764,38 @@ export const BOQView: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
+                      {/* Project Summary Row (MS Project Task 0 Style) */}
+                      <tr className="bg-slate-900 text-white font-bold sticky top-0 z-[10] border-b border-white/10">
+                        <td className="px-6 py-4 text-center">
+                          <Target className="w-4 h-4 text-blue-400 mx-auto" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
+                            <span className="text-xs font-black uppercase tracking-widest truncate">{selectedProject.name} (Task 0)</span>
+                          </div>
+                        </td>
+                        <td colSpan={4} className="px-6 py-4 text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                          Master Project Summary | {projectBoqTotals.count} Global Items
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {/* Rate column - not applicable for summary */}
+                          -
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="text-xs font-black text-blue-400">
+                            {formatAmount(projectBoqTotals.amount, baseCurrency)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                           <div className="flex flex-col items-center justify-center w-full px-2">
+                            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-400" style={{ width: '100%' }} />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+
                       {boqItems.length === 0 ? (
                         <tr>
                           <td colSpan={9} className="px-6 py-20 text-center">
@@ -1474,6 +1516,7 @@ export const BOQView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };

@@ -36,11 +36,12 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
   }).format(amount) + ' ' + currency;
 }
 
-export function stripNumericPrefix(title: string): string {
-  // Matches "1.0 ", "5.1.1 ", "03.1_", etc. at the start or end of the string
+export function stripNumericPrefix(title: string | undefined | null): string {
+  if (!title) return '';
+  // Matches "1.0 ", "5.1.1 ", "03.1_", "[5.1.1]", "5.1.1: " etc. at the start or end
   return title
-    .replace(/^[\d\.]+[_\s-]*/, '') // Start: 1.0 Title
-    .replace(/[\s-]+[\d\.]+$/, '')   // End: Title 1.0
+    .replace(/^\[?[\d\.]+\]?[_\s-:]*/, '') // Start: [1.0] Title
+    .replace(/[_\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
     .trim();
 }
 

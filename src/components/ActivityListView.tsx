@@ -18,6 +18,7 @@ import { cn } from '../lib/utils';
 import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { useLanguage } from '../context/LanguageContext';
 import { AddWBSLevelModal } from './AddWBSLevelModal';
+import { rollupToParent } from '../services/rollupService';
 
 interface ActivityListViewProps {
   page: Page;
@@ -123,9 +124,14 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           rate: item.rate,
           amount: item.amount,
           division: item.division || '01',
-          status: 'Planned'
+          status: 'Not Started'
         };
         await setDoc(doc(db, 'activities', activity.id), activity);
+        
+        // Trigger rollup
+        if (activity.divisionId || activity.wbsId) {
+          await rollupToParent('workPackage', activity.divisionId || activity.wbsId!);
+        }
       }
       toast.success(t('activities_generated_success'));
     } catch (err) {
@@ -174,6 +180,11 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
           status: 'Converted to PO',
           poId: poId
         });
+        
+        // Trigger rollup
+        if (a.divisionId || a.wbsId) {
+          await rollupToParent('workPackage', a.divisionId || a.wbsId!);
+        }
       }
       
       toast.success(`${t('po_created_success')} ${poId}`);
@@ -197,7 +208,15 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             onClick={async () => {
               toast.dismiss(toastObj.id);
               try {
+                const actToDelete = activities.find(a => a.id === id);
+                const parentIdToRollup = actToDelete?.divisionId || actToDelete?.wbsId;
+
                 await deleteDoc(doc(db, 'activities', id));
+                
+                if (parentIdToRollup) {
+                  await rollupToParent('workPackage', parentIdToRollup);
+                }
+
                 toast.success(t('activity_deleted_success'));
               } catch (err) {
                 handleFirestoreError(err, OperationType.DELETE, 'activities');
@@ -215,6 +234,12 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const handleSaveAttributes = async (updatedActivity: Activity) => {
     try {
       await setDoc(doc(db, 'activities', updatedActivity.id), updatedActivity);
+      
+      // Trigger rollup
+      if (updatedActivity.divisionId || updatedActivity.wbsId) {
+        await rollupToParent('workPackage', updatedActivity.divisionId || updatedActivity.wbsId!);
+      }
+
       setEditingActivity(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'activities');
@@ -258,8 +283,21 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             onClick={async () => {
               toast.dismiss(tObj.id);
               try {
+                const affectedParentIds = new Set<string>();
+                selectedActivityIds.forEach(id => {
+                  const act = activities.find(a => a.id === id);
+                  const pid = act?.divisionId || act?.wbsId;
+                  if (pid) affectedParentIds.add(pid);
+                });
+
                 const promises = selectedActivityIds.map(id => deleteDoc(doc(db, 'activities', id)));
                 await Promise.all(promises);
+                
+                // Trigger rollups for all unique affected parents
+                for (const pid of affectedParentIds) {
+                  await rollupToParent('workPackage', pid);
+                }
+
                 setSelectedActivityIds([]);
                 toast.success(t('activities_deleted_success'));
               } catch (err) {
@@ -300,7 +338,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
 
   // Group activities by Work Package for the final display
   const groupedActivities = filteredActivities.reduce((acc, act) => {
-    const wp = act.workPackage || 'Unassigned';
+    const wp = act.workPackage || 'WP - Not Linked';
     if (!acc[wp]) acc[wp] = [];
     acc[wp].push(act);
     return acc;
@@ -517,6 +555,12 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             onSave={async (updatedActivity) => {
               try {
                 await setDoc(doc(db, 'activities', updatedActivity.id), updatedActivity);
+                
+                // Trigger rollup
+                if (updatedActivity.divisionId || updatedActivity.wbsId) {
+                  await rollupToParent('workPackage', updatedActivity.divisionId || updatedActivity.wbsId!);
+                }
+
                 setShowAddActivity(false);
               } catch (err) {
                 handleFirestoreError(err, OperationType.WRITE, 'activities');

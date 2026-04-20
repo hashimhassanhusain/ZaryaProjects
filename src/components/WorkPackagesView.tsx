@@ -22,11 +22,14 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
+import { deriveStatus, rollupToParent } from '../services/rollupService';
+import { Activity } from '../types';
 
 export const WorkPackagesView: React.FC = () => {
   const { selectedProject } = useProject();
   const projectId = selectedProject?.id || '';
   const [workPackages, setWorkPackages] = useState<WBSLevel[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,7 +61,19 @@ export const WorkPackagesView: React.FC = () => {
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'wbs'));
 
-    return () => unsubscribe();
+    const qAct = query(
+      collection(db, 'activities'),
+      where('projectId', '==', projectId)
+    );
+
+    const unsubAct = onSnapshot(qAct, (snapshot) => {
+      setActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity)));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubAct();
+    };
   }, [projectId]);
 
   const handleSave = async () => {
@@ -78,7 +93,13 @@ export const WorkPackagesView: React.FC = () => {
       if (editingId) {
         await updateDoc(doc(db, 'wbs', editingId), data);
       } else {
-        await addDoc(collection(db, 'wbs'), data);
+        const docRef = await addDoc(collection(db, 'wbs'), data);
+        (data as any).id = docRef.id;
+      }
+
+      // Trigger rollup to parent
+      if (data.parentId) {
+        await rollupToParent('division', data.parentId);
       }
 
       setIsAdding(false);
@@ -98,7 +119,15 @@ export const WorkPackagesView: React.FC = () => {
 
   const executeDelete = async (id: string) => {
     try {
+      const wpToDelete = workPackages.find(wp => wp.id === id);
+      const parentIdToRollup = wpToDelete?.parentId;
+
       await deleteDoc(doc(db, 'wbs', id));
+
+      if (parentIdToRollup) {
+        await rollupToParent('division', parentIdToRollup);
+      }
+
       setDeleteConfirmation(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'wbs');
@@ -229,9 +258,23 @@ export const WorkPackagesView: React.FC = () => {
                     <td className="px-8 py-5">
                       <span className={cn(
                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                        wp.status === 'Completed' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                        (() => {
+                          const wpActivities = activities.filter(a => a.divisionId === wp.id || a.wbsId === wp.id);
+                          const progress = wp.progress || (wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0);
+                          const actualStart = wp.actualStart || wpActivities.find(a => a.actualStartDate)?.actualStartDate;
+                          const actualFinish = wp.actualFinish || (wpActivities.length > 0 && wpActivities.every(a => a.actualFinishDate) ? wpActivities[0].actualFinishDate : null);
+                          const derived = deriveStatus(progress, actualStart, actualFinish);
+                          return derived === 'Completed' ? "bg-emerald-50 text-emerald-600" : 
+                                 derived === 'In Progress' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500";
+                        })()
                       )}>
-                        {wp.status || 'Not Started'}
+                        {(() => {
+                           const wpActivities = activities.filter(a => a.divisionId === wp.id || a.wbsId === wp.id);
+                           const progress = wp.progress || (wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0);
+                           const actualStart = wp.actualStart || wpActivities.find(a => a.actualStartDate)?.actualStartDate;
+                           const actualFinish = wp.actualFinish || (wpActivities.length > 0 && wpActivities.every(a => a.actualFinishDate) ? wpActivities[0].actualFinishDate : null);
+                           return deriveStatus(progress, actualStart, actualFinish);
+                        })()}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">

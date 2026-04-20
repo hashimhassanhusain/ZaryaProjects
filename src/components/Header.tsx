@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, handleFirestoreError, OperationType } from '../firebase';
 import { updateDoc, doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { User, signOut } from 'firebase/auth';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 
 import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
@@ -222,7 +222,7 @@ export const Header: React.FC = () => {
                                 <Search className="w-4 h-4" />
                               </div>
                               <div>
-                                <div className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{page.title}</div>
+                                <div className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{stripNumericPrefix(page.title)}</div>
                                 <div className="text-[10px] text-slate-400">{page.id} • {page.domain}</div>
                               </div>
                             </div>
@@ -262,7 +262,7 @@ export const Header: React.FC = () => {
                           className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-yellow-50 rounded-xl transition-all group"
                         >
                           <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 shrink-0" />
-                          <span className="text-xs font-bold text-slate-700 group-hover:text-yellow-700 truncate">{page.title}</span>
+                          <span className="text-xs font-bold text-slate-700 group-hover:text-yellow-700 truncate">{stripNumericPrefix(page.title)}</span>
                         </button>
                       ))}
                     </div>
@@ -396,7 +396,7 @@ export const Header: React.FC = () => {
                       >
                         <div className="flex items-center gap-3">
                           <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                          <span className="text-sm font-bold text-slate-700 truncate">{page.title}</span>
+                          <span className="text-sm font-bold text-slate-700 truncate">{stripNumericPrefix(page.title)}</span>
                         </div>
                       </button>
                     ))}

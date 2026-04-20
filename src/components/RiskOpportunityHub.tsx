@@ -69,37 +69,62 @@ interface RiskOpportunityHubProps {
 
 type RiskSubTab = 'dashboard' | 'plan' | 'register' | 'assumptions' | 'assessment' | 'matrix' | 'issues' | 'audit';
 
+import { Ribbon, RibbonGroup } from './Ribbon';
+
 export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const { t, isRtl } = useLanguage();
   
   const allTabs = [
-    { id: 'dashboard', pageId: 'risk', title: 'Risk Dashboard', icon: LayoutDashboard },
-    { id: 'plan', pageId: '2.1.14', title: 'Risk Plan', icon: ShieldAlert },
-    { id: 'register', pageId: '2.7.5', title: 'Risk Register', icon: ListChecks },
-    { id: 'assumptions', pageId: '2.1.5', title: 'Assumptions', icon: ClipboardList },
-    { id: 'assessment', pageId: '2.7.1', title: 'Assessment', icon: Activity },
-    { id: 'matrix', pageId: '2.7.2', title: 'Risk Matrix', icon: Grid },
-    { id: 'issues', pageId: '2.7.3', title: 'Issue Log', icon: AlertTriangle },
-    { id: 'audit', pageId: '4.4.1', title: 'Risk Audit', icon: ShieldCheck }
+    { id: 'dashboard', pageId: 'risk', title: t('dashboard'), icon: LayoutDashboard, group: 'overview' },
+    { id: 'plan', pageId: '2.1.14', title: t('mgmt_plan'), icon: ShieldAlert, group: 'overview' },
+    { id: 'register', pageId: '2.7.5', title: t('risk_register'), icon: ListChecks, group: 'tracking' },
+    { id: 'assumptions', pageId: '2.1.5', title: t('assumptions'), icon: ClipboardList, group: 'tracking' },
+    { id: 'assessment', pageId: '2.7.1', title: t('assessment'), icon: Activity, group: 'analysis' },
+    { id: 'matrix', pageId: '2.7.2', title: t('risk_matrix'), icon: Grid, group: 'analysis' },
+    { id: 'issues', pageId: '2.7.3', title: t('issue_log'), icon: AlertTriangle, group: 'governance' },
+    { id: 'audit', pageId: '4.4.1', title: t('risk_audit'), icon: ShieldCheck, group: 'governance' }
   ];
 
-  const tabs = allTabs.filter(tab => {
+  const filteredTabs = allTabs.filter(tab => {
     if (isAdmin) return true;
     if (!userProfile) return false;
     return userProfile.accessiblePages?.includes(tab.pageId);
   });
 
   const [activeTab, setActiveTab] = useState<RiskSubTab>(
-    (tabs.length > 0 ? tabs[0].id : 'dashboard') as RiskSubTab
+    (filteredTabs.length > 0 ? filteredTabs[0].id : 'dashboard') as RiskSubTab
   );
 
-  useEffect(() => {
-    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
-      setActiveTab(tabs[0].id as RiskSubTab);
+  const ribbonGroups: RibbonGroup[] = [
+    {
+      id: 'overview',
+      label: t('overview'),
+      tabs: filteredTabs.filter(t => t.group === 'overview').map(t => ({ id: t.id, label: t.title, icon: t.icon }))
+    },
+    {
+      id: 'tracking',
+      label: t('tracking'),
+      tabs: filteredTabs.filter(t => t.group === 'tracking').map(t => ({ id: t.id, label: t.title, icon: t.icon }))
+    },
+    {
+      id: 'analysis',
+      label: t('analysis'),
+      tabs: filteredTabs.filter(t => t.group === 'analysis').map(t => ({ id: t.id, label: t.title, icon: t.icon }))
+    },
+    {
+      id: 'governance',
+      label: t('governance'),
+      tabs: filteredTabs.filter(t => t.group === 'governance').map(t => ({ id: t.id, label: t.title, icon: t.icon }))
     }
-  }, [tabs, activeTab]);
+  ].filter(g => g.tabs.length > 0);
+
+  useEffect(() => {
+    if (filteredTabs.length > 0 && !filteredTabs.find(t => t.id === activeTab)) {
+      setActiveTab(filteredTabs[0].id as RiskSubTab);
+    }
+  }, [filteredTabs, activeTab]);
 
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
@@ -157,32 +182,21 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
   }
 
   return (
-    <div className="space-y-8">
-      {/* Sub-Navigation */}
-      <div className="bg-white rounded-[2rem] border border-slate-200 p-2 shadow-sm flex items-center gap-2 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as RiskSubTab)}
-            className={cn(
-              "flex items-center gap-3 px-6 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap",
-              activeTab === tab.id 
-                ? "bg-red-600 text-white shadow-lg shadow-red-200" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-            )}
-          >
-            <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-white" : "text-slate-400")} />
-            {tab.title}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden">
+      {/* Ribbon Navigation */}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={(id) => setActiveTab(id as any)}
+      />
 
       {/* Content Area */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+      <div className="flex-1 overflow-y-auto px-6 py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
@@ -227,6 +241,7 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
           )}
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 };

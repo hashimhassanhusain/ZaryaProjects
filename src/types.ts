@@ -35,7 +35,7 @@ export interface WBSLevel {
   projectId: string;
   parentId?: string;
   title: string;
-  type: 'Zone' | 'Area' | 'Building' | 'Cost Account' | 'Work Package' | 'Other';
+  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Division' | 'Cost Account' | 'Work Package' | 'Other';
   level: number; // 1, 2, 3...
   code: string; // e.g. Z1, Z1-A1
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
@@ -171,7 +171,7 @@ export interface Activity {
   plannedCost?: number; // Rolled up from POs
   actualAmount?: number; // Actual Cost (Rolled up from POs)
   division?: string; // Master Format 2024 Division Code (e.g. "01", "03")
-  status: 'Planned' | 'In Progress' | 'Completed' | 'Converted to PO';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Converted to PO';
   activityType?: 'Task' | 'Milestone';
   charterMilestoneId?: string; // Link to milestone defined in Charter
   poId?: string;

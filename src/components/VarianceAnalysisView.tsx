@@ -22,12 +22,14 @@ import {
   X,
   Printer
 } from 'lucide-react';
-import { Project, WBSLevel, Activity, User, LessonEntry } from '../types';
+import { Project, WBSLevel, Activity, User, LessonEntry, PurchaseOrder } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs, orderBy } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
+import { useProject } from '../context/ProjectContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
@@ -58,8 +60,10 @@ interface VarianceData {
 
 export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ project }) => {
   const { t, isRtl } = useLanguage();
+  const { currency: baseCurrency, formatAmount } = useCurrency();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [varianceData, setVarianceData] = useState<VarianceData>({
     projectId: project.id,
     date: new Date().toISOString().split('T')[0],
@@ -94,7 +98,13 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
     });
 
-    // 3. Fetch latest Variance Analysis record
+    // 3. Fetch Purchase Orders for actual cost calculation
+    const qPo = query(collection(db, 'purchaseOrders'), where('projectId', '==', project.id));
+    const unsubPo = onSnapshot(qPo, (snap) => {
+      setPurchaseOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
+    });
+
+    // 4. Fetch latest Variance Analysis record
     const qVariance = query(
       collection(db, 'variance_analyses'), 
       where('projectId', '==', project.id),
@@ -110,6 +120,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
     return () => {
       unsubWbs();
       unsubActivities();
+      unsubPo();
       unsubVariance();
     };
   }, [project.id]);
@@ -127,22 +138,25 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
     let totalPlannedDuration = 0;
     let totalActualDuration = 0;
 
-    wbsLevels.forEach(wbs => {
-      if (wbs.type === 'Cost Account' || wbs.type === 'Work Package') {
-        plannedCost += wbs.plannedCost || 0;
-        actualCost += wbs.actualCost || 0;
-        totalPlannedDuration += wbs.plannedDuration || 0;
-        totalActualDuration += wbs.actualDuration || 0;
-      }
-    });
-
-    // If those are zero, fallback to activity rollup
-    if (plannedCost === 0) {
+    // Use root level WBS levels to start calculation
+    const rootLevels = wbsLevels.filter(w => !w.parentId);
+    
+    if (rootLevels.length > 0) {
+      rootLevels.forEach(wbs => {
+        const costs = getRobustTotals(wbs.id, wbsLevels, activities, purchaseOrders);
+        plannedCost += costs.pc;
+        actualCost += costs.ac;
+        totalPlannedDuration += costs.pd;
+        totalActualDuration += costs.ad;
+      });
+    } else {
+      // Fallback for projects with only activities
       activities.forEach(a => {
         plannedCost += a.plannedCost || a.amount || 0;
-        actualCost += a.actualAmount || 0;
+        const actActual = a.actualAmount || 0;
+        actualCost += actActual;
         totalPlannedDuration += a.duration || 0;
-        // Approximation for actual duration if not finished
+        
         if (a.actualFinishDate && a.actualStartDate) {
            const start = new Date(a.actualStartDate);
            const end = new Date(a.actualFinishDate);
@@ -256,8 +270,8 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       startY: 65,
       head: [['Category', 'Planned', 'Actual', 'Variance', '%']],
       body: [
-        ['Schedule (Days)', stats.totalPlannedDuration, stats.totalActualDuration, stats.schedVar, `${stats.schedVarPct.toFixed(1)}%`],
-        ['Cost (USD)', `$${stats.plannedCost.toLocaleString()}`, `$${stats.actualCost.toLocaleString()}`, `$${stats.costVar.toLocaleString()}`, `${stats.costVarPct.toFixed(1)}%`]
+        [`Schedule (Days)`, stats.totalPlannedDuration, stats.totalActualDuration, stats.schedVar, `${stats.schedVarPct.toFixed(1)}%`],
+        [`Cost (${baseCurrency})`, formatAmount(stats.plannedCost, baseCurrency), formatAmount(stats.actualCost, baseCurrency), formatAmount(stats.costVar, baseCurrency), `${stats.costVarPct.toFixed(1)}%`]
       ],
       headStyles: { fillColor: [30, 64, 175] }
     });
@@ -540,9 +554,63 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
+                {/* Project Root Level (MS Project Style) */}
+                <tr className="bg-slate-900 text-white font-bold">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-white/10">
+                        <BarChart3 className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold">{project.name}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{project.code}</span>
+                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-white/10 text-white">
+                            PROJECT SUMMARY
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center tabular-nums font-bold">
+                    {formatAmount(stats.plannedCost, baseCurrency)}
+                  </td>
+                  <td className={cn(
+                    "px-6 py-4 text-center tabular-nums font-bold",
+                    stats.costVar > 0 ? "text-rose-400" : "text-emerald-400"
+                  )}>
+                    {formatAmount(stats.actualCost, baseCurrency)}
+                  </td>
+                  <td className="px-6 py-4 text-center tabular-nums text-slate-300">
+                    {stats.totalPlannedDuration}d
+                  </td>
+                  <td className={cn(
+                    "px-6 py-4 text-center tabular-nums",
+                    stats.schedVar > 0 ? "text-rose-400" : "text-emerald-400"
+                  )}>
+                    {stats.totalActualDuration}d
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            "h-full transition-all duration-1000",
+                            stats.costVar > stats.plannedCost * 0.1 ? "bg-rose-500" : "bg-emerald-500"
+                          )}
+                          style={{ width: `${Math.min(100, stats.plannedCost > 0 ? (stats.actualCost / stats.plannedCost) * 100 : 0)}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        {stats.plannedCost > 0 ? Math.round((stats.actualCost / stats.plannedCost) * 100) : 0}% OVERALL BURN
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+
                 {wbsLevels
                   .filter(n => !n.parentId || n.type === 'Cost Account')
-                  .map(node => renderWBSRow(node, wbsLevels, activities, expandedNodes, toggleNode, isRtl))}
+                  .map(node => renderWBSRow(node, wbsLevels, activities, purchaseOrders, expandedNodes, toggleNode, isRtl, formatAmount, baseCurrency))}
               </tbody>
             </table>
           </div>
@@ -782,51 +850,79 @@ const VarianceCard = ({ label, value, subValue, icon, status = 'info' }: {
   );
 };
 
+const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity[], purchaseOrders: PurchaseOrder[]): { pc: number; ac: number; pd: number; ad: number } => {
+  const wbs = wbsLevels.find(w => w.id === id);
+  if (!wbs) return { pc: 0, ac: 0, pd: 0, ad: 0 };
+
+  // Get activities belonging to this WBS node
+  const nodeActivities = activities.filter(a => {
+    if (a.wbsId === id || a.divisionId === id) return true;
+    // Adoption logic
+    const divCode = wbs.divisionCode || wbs.code;
+    if (divCode && (wbs.type === 'Division' || wbs.type === 'Cost Account')) {
+      return !a.wbsId && !a.divisionId && a.division === divCode;
+    }
+    return false;
+  });
+
+  const nodeDirectPOs = purchaseOrders.filter(p => p.wbsId === id && !p.activityId);
+
+  const getActActual = (a: Activity) => {
+    const linkedPOs = purchaseOrders.filter(p => p.activityId === a.id);
+    if (linkedPOs.length > 0) {
+      return linkedPOs.reduce((sum, p) => sum + (p.amount * (p.completion || 0) / 100), 0);
+    }
+    return a.actualAmount || 0;
+  };
+
+  const getPoActual = (p: PurchaseOrder) => {
+    return p.amount * (p.completion || 0) / 100;
+  };
+
+  let totals = { 
+    pc: nodeActivities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + nodeDirectPOs.reduce((sum, p) => sum + p.amount, 0),
+    ac: nodeActivities.reduce((sum, a) => sum + getActActual(a), 0) + nodeDirectPOs.reduce((sum, p) => sum + getPoActual(p), 0),
+    pd: nodeActivities.reduce((sum, a) => sum + (a.duration || 0), 0),
+    ad: nodeActivities.reduce((sum, a) => {
+      if (a.actualFinishDate && a.actualStartDate) {
+        return sum + Math.ceil((new Date(a.actualFinishDate).getTime() - new Date(a.actualStartDate).getTime()) / 86400000);
+      } else if (a.actualStartDate) {
+        return sum + Math.ceil((new Date().getTime() - new Date(a.actualStartDate).getTime()) / 86400000);
+      }
+      return sum;
+    }, 0)
+  };
+
+  // Add children totals
+  wbsLevels.filter(w => w.parentId === id).forEach(child => {
+    const childTotals = getRobustTotals(child.id, wbsLevels, activities, purchaseOrders);
+    totals.pc += childTotals.pc;
+    totals.ac += childTotals.ac;
+    totals.pd += childTotals.pd;
+    totals.ad += childTotals.ad;
+  });
+
+  return totals;
+};
+
 const renderWBSRow = (
   node: WBSLevel, 
   allWbs: WBSLevel[], 
   activities: Activity[],
+  purchaseOrders: PurchaseOrder[],
   expandedNodes: Set<string>,
   toggleNode: (id: string) => void,
   isRtl: boolean,
+  formatAmount: (amount: number, currency: string) => string,
+  baseCurrency: string,
   depth = 0
 ) => {
   const hasChildren = allWbs.some(w => w.parentId === node.id);
   const isExpanded = expandedNodes.has(node.id);
   const children = allWbs.filter(w => w.parentId === node.id);
 
-  // Rolled up totals
-  const rollup = (id: string): { pc: number; ac: number; pd: number; ad: number } => {
-    let totals = { pc: 0, ac: 0, pd: 0, ad: 0 };
-    
-    // Direct activities
-    activities.filter(a => a.wbsId === id).forEach(a => {
-      totals.pc += a.plannedCost || a.amount || 0;
-      totals.ac += a.actualAmount || 0;
-      totals.pd += a.duration || 0;
-      if (a.actualFinishDate && a.actualStartDate) {
-        totals.ad += Math.ceil((new Date(a.actualFinishDate).getTime() - new Date(a.actualStartDate).getTime()) / 86400000);
-      }
-    });
-
-    // Recurse children
-    allWbs.filter(w => w.parentId === id).forEach(child => {
-      const childTotals = rollup(child.id);
-      totals.pc += childTotals.pc;
-      totals.ac += childTotals.ac;
-      totals.pd += childTotals.pd;
-      totals.ad += childTotals.ad;
-    });
-
-    return totals;
-  };
-
-  const totals = node.plannedCost ? {
-    pc: node.plannedCost || 0,
-    ac: node.actualCost || 0,
-    pd: node.plannedDuration || 0,
-    ad: node.actualDuration || 0
-  } : rollup(node.id);
+  // Use robust totals which are consistent with schedule view
+  const totals = getRobustTotals(node.id, allWbs, activities, purchaseOrders);
 
   const costVar = totals.ac - totals.pc;
   const timeVar = totals.ad - totals.pd;
@@ -863,13 +959,13 @@ const renderWBSRow = (
           </div>
         </td>
         <td className="px-6 py-4 text-center font-bold text-slate-600 tabular-nums">
-          ${totals.pc.toLocaleString()}
+          {formatAmount(totals.pc, baseCurrency)}
         </td>
         <td className={cn(
           "px-6 py-4 text-center font-bold tabular-nums",
           costVar > 0 ? "text-rose-600" : "text-emerald-600"
         )}>
-          ${totals.ac.toLocaleString()}
+          {formatAmount(totals.ac, baseCurrency)}
         </td>
         <td className="px-6 py-4 text-center font-bold text-slate-600 tabular-nums">
           {totals.pd}d
@@ -897,7 +993,7 @@ const renderWBSRow = (
           </div>
         </td>
       </tr>
-      {isExpanded && children.map(child => renderWBSRow(child, allWbs, activities, expandedNodes, toggleNode, isRtl, depth + 1))}
+      {isExpanded && children.map(child => renderWBSRow(child, allWbs, activities, purchaseOrders, expandedNodes, toggleNode, isRtl, formatAmount, baseCurrency, depth + 1))}
     </React.Fragment>
   );
 };

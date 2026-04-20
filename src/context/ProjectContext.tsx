@@ -44,12 +44,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       actualDuration: true,
       actualFinish: true,
       progress: true,
+      status: true,
       supplier: false,
       plannedCost: true,
       poCost: false,
       actualCost: false
     },
-    columnOrder: ['plannedStart', 'plannedFinish', 'plannedDuration', 'actualStart', 'actualFinish', 'actualDuration', 'progress', 'plannedCost', 'supplier', 'poCost', 'actualCost']
+    columnOrder: ['status', 'plannedStart', 'plannedFinish', 'plannedDuration', 'actualStart', 'actualFinish', 'actualDuration', 'progress', 'plannedCost', 'supplier', 'poCost', 'actualCost']
   });
   const [selectedProject, setSelectedProjectState] = useState<Project | null>(() => {
     const saved = localStorage.getItem('selectedProject');

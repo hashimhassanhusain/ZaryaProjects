@@ -532,15 +532,6 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-            <FileText className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Project Charter</h2>
-            <p className="text-xs text-slate-500 font-medium">Official authorization and high-level project definition</p>
-          </div>
-        </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsEditing(!isEditing)}

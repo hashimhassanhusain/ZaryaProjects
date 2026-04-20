@@ -8,7 +8,11 @@ import {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
   DollarSign, Users, ShieldAlert, Target, Info,
   Shield, DraftingCompass, Calendar, Banknote, Package,
-  LayoutDashboard, FileText, ChevronRight
+  LayoutDashboard, FileText, ChevronRight, Zap, Activity,
+  Flag, BookOpen, ClipboardList, BarChart3, List, Table,
+  LayoutGrid, Layers, Briefcase, User, Users2,
+  ShieldCheck, Award, ShoppingCart, GitBranch, MessageSquare,
+  ListChecks, Grid, Building2, CheckSquare, ListChecks as TableAlt
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType } from '../types';
@@ -52,6 +56,8 @@ import { ContactsView } from './ContactsView';
 import { CompaniesView } from './CompaniesView';
 import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanView';
 import { TasksView } from './TasksView';
+import { ProjectCharterView } from './ProjectCharterView';
+import { GovernancePoliciesView } from './GovernancePoliciesView';
 import { ZaryaPOTracker } from './ZaryaPOTracker';
 import { BOQView } from './BOQView';
 import { WBSView } from './WBSView';
@@ -96,7 +102,11 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const ICON_MAP: Record<string, any> = {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
   DollarSign, Users, ShieldAlert, Target, Info,
-  Shield, DraftingCompass, Calendar, Banknote, Package
+  Shield, DraftingCompass, Calendar, Banknote, Package,
+  Zap, Activity, Flag, BookOpen, ClipboardList, BarChart3,
+  List, Table, LayoutGrid, Layers, Briefcase, User, Users2,
+  ShieldCheck, Award, ShoppingCart, GitBranch, MessageSquare,
+  ListChecks, Grid, Building2, CheckSquare, TableAlt
 };
 
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
@@ -322,17 +332,15 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isIssueLogPage = p.id === '2.7.3';
     const isStakeholderRegisterPage = p.id === '1.2.1';
     const isLessonsLearnedPage = p.id === '5.1.1';
-    const isGovernanceHubPage = [
-      '1.1.1', '1.1.2',
-      '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14',
-      '2.1.5', '1.2.1', '3.1.3', '5.1.1'
-    ].includes(p.id);
+    const isGovernanceHubPage = p.id === 'gov' || p.type === 'hub' && p.domain === 'governance';
     const isChangeRequestPage = p.id === '3.1.1';
     const isDecisionLogPage = p.id === '3.1.3';
     const isChangeManagementHubPage = p.id === '3.4';
     const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(p.id);
     const isFormalAcceptancePage = p.id === '4.1.2';
 
+    if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
+    if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
     if (isTasksPage) return <TasksView />;
     if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '2.6.22')!} />;
     if (isZaryaPage) return <ZaryaPOTracker page={p} />;
@@ -497,21 +505,25 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
       {/* Secondary Hub Tabs (Sub-navigation) */}
       {subPages.length > 0 && (
-        <div className="flex items-center gap-1 bg-white px-4 py-2 border-x border-slate-200 overflow-x-auto no-scrollbar border-b border-slate-100">
-          {subPages.map((sub) => (
-            <button
-              key={sub.id}
-              onClick={() => setActiveTab(sub.id)}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                activeTab === sub.id 
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-              )}
-            >
-              {stripNumericPrefix(t(sub.id) || sub.title)}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 bg-white px-4 py-2 border-x border-slate-200 overflow-x-auto no-scrollbar border-b border-slate-100">
+          {subPages.map((sub) => {
+            const SubIcon = ICON_MAP[sub.icon || 'FileText'] || FileText;
+            return (
+              <button
+                key={sub.id}
+                onClick={() => setActiveTab(sub.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  activeTab === sub.id 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                )}
+              >
+                <SubIcon className="w-3 h-3" />
+                {stripNumericPrefix(t(sub.id) || sub.title)}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -630,9 +642,40 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
               <div className="overflow-hidden">
                 {(() => {
                   const activePage = filteredChildren.find(cp => cp.id === activeTab);
-                  return activePage ? renderPageContent(activePage) : (
+                  if (!activePage) return (
                     <div className="p-12 text-center text-slate-400">
                       {t('page_not_found')}
+                    </div>
+                  );
+                  
+                  const parentPage = pages.find(p => p.id === activePage.parentId);
+                  
+                  return (
+                    <div className="flex flex-col">
+                      {/* Breadcrumb style header exactly as requested */}
+                      <div className="px-8 py-6 mb-2 border-b border-slate-50">
+                        <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-2">
+                          <span className="text-slate-400 font-medium uppercase text-xs tracking-widest">
+                            {stripNumericPrefix(t(page.id) || page.title)}
+                          </span>
+                          <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                          {parentPage && parentPage.id !== page.id && (
+                            <>
+                              <span className="text-slate-400 font-medium uppercase text-xs tracking-widest">
+                                {stripNumericPrefix(t(parentPage.id) || parentPage.title)}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                            </>
+                          )}
+                          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent uppercase text-xs tracking-widest font-black">
+                            {stripNumericPrefix(t(activePage.id) || activePage.title)}
+                          </span>
+                        </h1>
+                      </div>
+                      
+                      <div className="p-0">
+                        {renderPageContent(activePage)}
+                      </div>
                     </div>
                   );
                 })()}

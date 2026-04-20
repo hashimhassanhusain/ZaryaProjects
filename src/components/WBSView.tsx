@@ -21,8 +21,13 @@ import { ActivityAttributesModal } from './ActivityAttributesModal';
 import { masterFormatData } from '../data/masterFormat';
 import { Page, Activity } from '../types';
 import { AddWBSLevelModal } from './AddWBSLevelModal';
+import { deriveStatus, rollupToParent } from '../services/rollupService';
+import { Ribbon, RibbonGroup } from './Ribbon';
+import { useLanguage } from '../context/LanguageContext';
+import { Flag } from 'lucide-react';
 
 export const WBSView: React.FC = () => {
+  const { t } = useLanguage();
   const { selectedProject } = useProject();
   const location = useLocation();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
@@ -34,6 +39,25 @@ export const WBSView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
   const [selectedWbsIds, setSelectedWbsIds] = useState<string[]>([]);
+
+  const ribbonGroups: RibbonGroup[] = [
+    {
+      id: 'structure',
+      label: t('structure'),
+      tabs: [
+        { id: 'hierarchy', label: t('wbs_hierarchy'), icon: LayoutGrid },
+        { id: 'costaccount', label: t('cost_accounts'), icon: Database },
+        { id: 'packages', label: t('work_packages'), icon: Package },
+      ]
+    },
+    {
+      id: 'scheduling',
+      label: t('scheduling'),
+      tabs: [
+        { id: 'milestones', label: t('milestones'), icon: Flag },
+      ]
+    }
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -406,6 +430,12 @@ export const WBSView: React.FC = () => {
       };
 
       await setDoc(doc(db, 'wbs', id), wp);
+      
+      // Trigger rollup to parent
+      if (wp.parentId) {
+        await rollupToParent('division', wp.parentId);
+      }
+      
       setShowAddPackage(false);
       setIsManualTitle(false);
       setNewPackage({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
@@ -419,6 +449,12 @@ export const WBSView: React.FC = () => {
       const wp = wbsLevels.find(p => p.id === id);
       if (!wp) return;
       await setDoc(doc(db, 'wbs', id), { ...wp, ...updates });
+      
+      // Trigger rollup to parent
+      if (wp.parentId) {
+        await rollupToParent('division', wp.parentId);
+      }
+      
       setEditingPackage(null);
       setIsManualTitle(false);
     } catch (err) {
@@ -467,6 +503,9 @@ export const WBSView: React.FC = () => {
 
   const executeDeleteWbs = async (id: string) => {
     try {
+      const levelToDelete = wbsLevels.find(l => l.id === id);
+      const parentIdToRollup = levelToDelete?.parentId;
+
       // Find all children recursively
       const findChildren = (parentId: string): string[] => {
         const children = wbsLevels.filter(l => l.parentId === parentId);
@@ -488,6 +527,11 @@ export const WBSView: React.FC = () => {
 
       const boqToDelete = boqItems.filter(item => idsToDelete.includes(item.wbsId));
       await Promise.all(boqToDelete.map(item => deleteDoc(doc(db, 'boq', item.id))));
+
+      // Trigger rollup for parent
+      if (parentIdToRollup) {
+        await rollupToParent('division', parentIdToRollup);
+      }
 
       setDeleteConfirmation(null);
     } catch (err) {
@@ -517,7 +561,44 @@ export const WBSView: React.FC = () => {
     }
 
     return (
-      <div className={cn("space-y-3", depth > 0 && "ml-8 border-l-2 border-slate-100 pl-6")}>
+      <div className={cn("space-y-3", (depth > 0 || (depth === 0 && !parentId && !searchTerm)) && "ml-8 border-l-2 border-slate-100 pl-6")}>
+        {depth === 0 && !parentId && !searchTerm && (
+          <div className="-ml-8 mb-3">
+            <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
+                    <div className="text-sm font-black text-white">{selectedProject.name} (Task 0)</div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-black">PROJECT SUMMARY</div>
+                    <span className="text-slate-800">|</span>
+                    <div className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                      {formatCurrency(boqItems.reduce((sum, i) => sum + i.amount, 0))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: '100%' }} />
+                    </div>
+                    <span className="text-[9px] font-black text-blue-400 uppercase">100% DISC.</span>
+                  </div>
+                </div>
+                <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-white uppercase tracking-widest">
+                  {wbsLevels.length} NODES
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {levels.map(level => {
           const items = boqItems.filter(i => i.wbsId === level.id);
           const totalValue = items.reduce((sum, i) => sum + i.amount, 0);
@@ -590,29 +671,15 @@ export const WBSView: React.FC = () => {
   const milestones = activities.filter(a => a.activityType === 'Milestone');
 
   return (
-    <div className="w-full p-4 md:p-8">
-      {/* Tabs Navigation */}
-      <div className="flex justify-between items-center gap-4 mb-6">
-        <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto max-w-full no-scrollbar">
-          {[
-            { id: 'hierarchy', label: 'WBS Hierarchy', icon: LayoutGrid },
-            { id: 'costaccount', label: 'Cost Account', icon: Database },
-            { id: 'packages', label: 'Work Packages', icon: Package },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                activeTab === tab.id ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              )}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="w-full flex flex-col h-[calc(100vh-140px)] overflow-hidden">
+      {/* Ribbon Navigation */}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={(id) => setActiveTab(id as any)}
+      />
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-8">
 
       {activeTab === 'hierarchy' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -765,10 +832,10 @@ export const WBSView: React.FC = () => {
                         <td className="px-6 py-4">
                           <span className={cn(
                             "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                            ca.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
-                            ca.status === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
+                            deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish) === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
+                            deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish) === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
                           )}>
-                            {ca.status || 'Not Started'}
+                            {deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish)}
                           </span>
                         </td>
                       </tr>
@@ -884,21 +951,21 @@ export const WBSView: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-xs font-medium text-slate-600">
-                              {parent?.type === 'Cost Account' ? parent.title : (wp.divisionCode || 'N/A')}
+                              {parent?.type === 'Cost Account' ? parent.title : (masterFormatDivisions.find(d => d.id === wp.divisionCode)?.title || wp.divisionCode || 'N/L')}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-xs font-medium text-slate-600">
-                              {grandParent ? grandParent.title : (parent?.type !== 'Cost Account' ? parent?.title : 'N/A')}
+                              {grandParent ? grandParent.title : (parent?.type !== 'Cost Account' && parent ? parent.title : 'N/L')}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className={cn(
                               "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                              wp.status === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
-                              wp.status === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
+                              deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish) === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
+                              deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish) === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
                             )}>
-                              {wp.status || 'Not Started'}
+                              {deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish)}
                             </span>
                           </td>
                         </tr>
@@ -926,7 +993,7 @@ export const WBSView: React.FC = () => {
               quantity: 1,
               rate: 0,
               amount: 0,
-              status: 'Planned',
+              status: 'Not Started',
               activityType: 'Milestone'
             }}
             allActivities={activities}
@@ -1154,6 +1221,12 @@ export const WBSView: React.FC = () => {
                           delete updatedWbs.divisionCode;
                         }
                         await setDoc(doc(db, 'wbs', editingWbs.id), updatedWbs);
+                        
+                        // Trigger rollup to parent if exists
+                        if (updatedWbs.parentId) {
+                          await rollupToParent('division', updatedWbs.parentId);
+                        }
+                        
                         setEditingWbs(null);
                         setIsManualWbsTitle(false);
                       } catch (err) {
@@ -1362,6 +1435,7 @@ export const WBSView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };

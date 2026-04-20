@@ -6,13 +6,19 @@ export type RollupLevel = 'lineItem' | 'po' | 'workPackage' | 'division' | 'floo
 
 const LEVEL_ORDER: RollupLevel[] = ['lineItem', 'po', 'workPackage', 'division', 'floor', 'building', 'area', 'zone'];
 
+export function deriveStatus(progress: number, actualStart?: string | null, actualFinish?: string | null): string {
+  if (actualFinish || progress >= 100) return 'Completed';
+  if (actualStart || progress > 0) return 'In Progress';
+  return 'Not Started';
+}
+
 export async function rollupToParent(
   level: RollupLevel,
   parentId: string
 ) {
   if (!parentId) return;
 
-  console.log(`Rolling up from level: ${level}, parentId: ${parentId}`);
+  console.log(`[Rollup] Executing rollup for ${level} -> parentId: ${parentId}`);
 
   try {
     let plannedStart: string | null = null;
@@ -24,63 +30,60 @@ export async function rollupToParent(
     let totalWeightedProgress = 0;
     let totalPlannedCostForProgress = 0;
 
-    // 1. Fetch all children and calculate values
+    // 1. Fetch children based on level
     if (level === 'lineItem') {
-      // Parent is a PO
+      // Parent is a Purchase Order (PO)
       const poRef = doc(db, 'purchaseOrders', parentId);
       const poDoc = await getDoc(poRef);
-      if (!poDoc.exists()) {
-        console.warn(`Purchase Order ${parentId} not found for rollup`);
-        return;
-      }
+      if (!poDoc.exists()) return;
+      
       const po = poDoc.data() as PurchaseOrder;
       const children = po.lineItems || [];
 
       children.forEach(child => {
-        // Line items don't have dates in the current type, but we might need them
-        // For now, we use PO dates if line items don't have them
         plannedCost += child.amount || 0;
-        // Actual cost for line item is amount * completion
-        const childActualCost = (child.amount || 0) * ((child.completion || 0) / 100);
+        const completion = child.completion || 0;
+        const childActualCost = (child.amount || 0) * (completion / 100);
         actualCost += childActualCost;
         
-        totalWeightedProgress += (child.amount || 0) * (child.completion || 0);
+        totalWeightedProgress += (child.amount || 0) * completion;
         totalPlannedCostForProgress += (child.amount || 0);
       });
 
-      const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
+      const progress = totalPlannedCostForProgress > 0 ? Math.round(totalWeightedProgress / totalPlannedCostForProgress) : 0;
+      const status = deriveStatus(progress, po.actualStartDate, po.actualFinishDate);
 
       // Update PO
       await updateDoc(poRef, {
         amount: plannedCost,
         actualCost: actualCost,
-        completion: Math.round(progress)
+        completion: progress,
+        status: status,
+        updatedAt: new Date().toISOString()
       });
 
-      // Continue rollup to Work Package
-      if (po.workPackageId) {
-        await rollupToParent('po', po.workPackageId);
+      // Continue rollup to Activity (Work Package level in schedule)
+      if (po.activityId) {
+        await rollupToParent('po', po.activityId);
       }
     } 
     else if (level === 'po') {
-      // Parent is a Work Package (Activity)
+      // Parent is an Activity
       const parentRef = doc(db, 'activities', parentId);
       const parentDoc = await getDoc(parentRef);
-      
-      if (!parentDoc.exists()) {
-        console.warn(`Activity ${parentId} not found for rollup. This might happen if workPackageId is a string label instead of a document ID.`);
-        return;
-      }
+      if (!parentDoc.exists()) return;
 
-      const q = query(collection(db, 'purchaseOrders'), where('workPackageId', '==', parentId));
+      const parentData = parentDoc.data() as Activity;
+      
+      // Get all POs for this activity
+      const q = query(collection(db, 'purchaseOrders'), where('activityId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as PurchaseOrder);
 
-      const parentData = parentDoc.data() as Activity;
-      const manualPlannedCost = parentData?.amount || 0;
-      const manualActualCost = parentData?.actualAmount || 0;
+      const manualPlannedCost = parentData.amount || 0; // The BOQ amount
 
       children.forEach(child => {
+        // Dates rollup
         if (child.date) {
           if (!plannedStart || child.date < plannedStart) plannedStart = child.date;
           if (!plannedFinish || child.date > plannedFinish) plannedFinish = child.date;
@@ -98,17 +101,17 @@ export async function rollupToParent(
         totalPlannedCostForProgress += (child.amount || 0);
       });
 
-      const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
-      
-      // Rule: plannedCost = max(manualCost, sum(children.plannedCost))
+      const progress = totalPlannedCostForProgress > 0 ? Math.round(totalWeightedProgress / totalPlannedCostForProgress) : 0;
+      // Rule: parent.plannedCost = max(manualCost, sum(children.plannedCost))
       const finalPlannedCost = Math.max(manualPlannedCost, plannedCost);
-      // Rule: actualCost = sum(children.actualCost)
-      const finalActualCost = actualCost;
+      const status = deriveStatus(progress, actualStart, actualFinish);
 
       const updateData: any = {
         plannedCost: finalPlannedCost,
-        actualAmount: finalActualCost,
-        percentComplete: Math.round(progress)
+        actualAmount: actualCost,
+        percentComplete: progress,
+        status: status,
+        updatedAt: new Date().toISOString()
       };
 
       if (plannedStart) updateData.startDate = plannedStart;
@@ -119,36 +122,50 @@ export async function rollupToParent(
       if (plannedStart && plannedFinish) {
         const start = new Date(plannedStart);
         const finish = new Date(plannedFinish);
-        updateData.duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        updateData.duration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
       }
 
       await updateDoc(parentRef, updateData);
 
-      // Continue rollup to Division
-      if (parentData?.division && parentData?.wbsId) {
-        // Division is identified by (floorId + divisionCode)
-        const divisionId = `${parentData.wbsId}-${parentData.division}`;
-        await rollupToParent('workPackage', divisionId);
+      // Continue rollup to WBS node (could be divisionId or a direct parent wbsId)
+      // Usually activities are linked to a WBS node via wbsId or divisionId
+      const nextParentId = parentData.divisionId || parentData.wbsId;
+      if (nextParentId) {
+        await rollupToParent('workPackage', nextParentId);
       }
     }
-    else if (level === 'workPackage') {
-      // Parent is a Division
-      // Division documents are in 'wbs' collection with type 'Division'
+    else {
+      // Parent is a WBS Level (Division, Cost Account, Floor, Building, Area, Zone)
       const parentRef = doc(db, 'wbs', parentId);
       const parentDoc = await getDoc(parentRef);
+      if (!parentDoc.exists()) return;
+
+      const parentData = parentDoc.data() as WBSLevel;
       
-      if (!parentDoc.exists()) {
-        console.warn(`Division WBS node ${parentId} not found for rollup`);
-        return;
-      }
+      // A WBS node can have:
+      // A) Activities as direct children (if it's a leaf node like Work Package)
+      // B) Other WBS nodes as children
+      
+      // Check for Activity children
+      const qAct = query(collection(db, 'activities'), where('divisionId', '==', parentId));
+      const qActAlt = query(collection(db, 'activities'), where('wbsId', '==', parentId));
+      
+      const [snapAct, snapActAlt] = await Promise.all([getDocs(qAct), getDocs(qActAlt)]);
+      
+      // Use a Map to filter out duplicate activities by ID
+      const activityMap = new Map<string, Activity>();
+      snapAct.docs.forEach(d => activityMap.set(d.id, d.data() as Activity));
+      snapActAlt.docs.forEach(d => activityMap.set(d.id, d.data() as Activity));
+      
+      const activityChildren = Array.from(activityMap.values());
+      
+      // Check for WBS children
+      const qWbs = query(collection(db, 'wbs'), where('parentId', '==', parentId));
+      const snapWbs = await getDocs(qWbs);
+      const wbsChildren = snapWbs.docs.map(d => d.data() as WBSLevel);
 
-      const q = query(collection(db, 'activities'), where('divisionId', '==', parentId));
-      const snapshot = await getDocs(q);
-      const children = snapshot.docs.map(d => d.data() as Activity);
-
-      const parentData = parentDoc.data() as any;
-
-      children.forEach(child => {
+      // Process Activity Children
+      activityChildren.forEach(child => {
         if (child.startDate) {
           if (!plannedStart || child.startDate < plannedStart) plannedStart = child.startDate;
         }
@@ -162,55 +179,15 @@ export async function rollupToParent(
           if (!actualFinish || child.actualFinishDate > actualFinish) actualFinish = child.actualFinishDate;
         }
 
-        plannedCost += child.plannedCost || child.amount || 0;
+        const childPlanned = child.plannedCost || child.amount || 0;
+        plannedCost += childPlanned;
         actualCost += child.actualAmount || 0;
-        totalWeightedProgress += (child.plannedCost || child.amount || 0) * (child.percentComplete || 0);
-        totalPlannedCostForProgress += (child.plannedCost || child.amount || 0);
+        totalWeightedProgress += childPlanned * (child.percentComplete || 0);
+        totalPlannedCostForProgress += childPlanned;
       });
 
-      const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
-      const finalPlannedCost = Math.max(parentData?.plannedCost || 0, plannedCost);
-
-      const updateData: any = {
-        plannedCost: finalPlannedCost,
-        actualCost,
-        progress: Math.round(progress)
-      };
-
-      if (plannedStart) updateData.plannedStart = plannedStart;
-      if (plannedFinish) updateData.plannedFinish = plannedFinish;
-      if (actualStart) updateData.actualStart = actualStart;
-      if (actualFinish) updateData.actualFinish = actualFinish;
-
-      if (plannedStart && plannedFinish) {
-        const start = new Date(plannedStart);
-        const finish = new Date(plannedFinish);
-        updateData.plannedDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      }
-
-      await updateDoc(parentRef, updateData);
-
-      if (parentData?.parentId) {
-        await rollupToParent('division', parentData.parentId);
-      }
-    }
-    else {
-      // Parent is Floor, Building, Area, or Zone (all in 'wbs' collection)
-      const parentRef = doc(db, 'wbs', parentId);
-      const parentDoc = await getDoc(parentRef);
-      
-      if (!parentDoc.exists()) {
-        console.warn(`WBS node ${parentId} not found for rollup`);
-        return;
-      }
-
-      const q = query(collection(db, 'wbs'), where('parentId', '==', parentId));
-      const snapshot = await getDocs(q);
-      const children = snapshot.docs.map(d => d.data() as any);
-
-      const parentData = parentDoc.data() as any;
-
-      children.forEach(child => {
+      // Process WBS Children
+      wbsChildren.forEach(child => {
         if (child.plannedStart) {
           if (!plannedStart || child.plannedStart < plannedStart) plannedStart = child.plannedStart;
         }
@@ -221,7 +198,7 @@ export async function rollupToParent(
           if (!actualStart || child.actualStart < actualStart) actualStart = child.actualStart;
         }
         if (child.actualFinish) {
-          if (!actualFinish || child.actualFinish > actualFinish) actualFinish = child.actualFinish;
+          if (!actualFinish || child.actualFinish < actualFinish) actualFinish = child.actualFinish;
         }
 
         plannedCost += child.plannedCost || 0;
@@ -230,13 +207,15 @@ export async function rollupToParent(
         totalPlannedCostForProgress += (child.plannedCost || 0);
       });
 
-      const progress = totalPlannedCostForProgress > 0 ? totalWeightedProgress / totalPlannedCostForProgress : 0;
-      const finalPlannedCost = Math.max(parentData?.plannedCost || 0, plannedCost);
+      const progress = totalPlannedCostForProgress > 0 ? Math.round(totalWeightedProgress / totalPlannedCostForProgress) : 0;
+      const status = deriveStatus(progress, actualStart, actualFinish);
 
       const updateData: any = {
-        plannedCost: finalPlannedCost,
-        actualCost,
-        progress: Math.round(progress)
+        plannedCost: plannedCost, // Note: For WBS, we strictly sum children if they exist
+        actualCost: actualCost,
+        progress: progress,
+        status: status,
+        updatedAt: new Date().toISOString()
       };
 
       if (plannedStart) updateData.plannedStart = plannedStart;
@@ -247,22 +226,29 @@ export async function rollupToParent(
       if (plannedStart && plannedFinish) {
         const start = new Date(plannedStart);
         const finish = new Date(plannedFinish);
-        updateData.plannedDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        updateData.plannedDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+      }
+
+      if (actualStart && actualFinish) {
+        const start = new Date(actualStart);
+        const finish = new Date(actualFinish);
+        updateData.actualDuration = Math.ceil((finish.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+      } else if (actualStart) {
+        const start = new Date(actualStart);
+        const today = new Date();
+        updateData.actualDuration = Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
       }
 
       await updateDoc(parentRef, updateData);
 
-      if (parentData?.parentId) {
-        const currentLevelIndex = LEVEL_ORDER.indexOf(level);
-        const nextLevel = LEVEL_ORDER[currentLevelIndex + 1];
-        if (nextLevel) {
-          await rollupToParent(nextLevel, parentData.parentId);
-        }
+      // Recursive call to parent WBS node
+      if (parentData.parentId) {
+        await rollupToParent('division', parentData.parentId);
       }
     }
 
   } catch (error) {
-    console.error(`Error in rollupToParent at level ${level}:`, error);
+    console.error(`[Rollup Error] Level: ${level}, ParentId: ${parentId}`, error);
     handleFirestoreError(error, OperationType.UPDATE, 'rollup');
   }
 }

@@ -876,8 +876,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               description: m.description,
               finishDate: m.date,
               activityType: 'Milestone',
-              status: 'Planned',
-              projectId: selectedProject.id
+              status: 'Not Started',
+              projectId: selectedProject.id,
+              wbsId: '',
+              workPackage: 'General',
+              unit: 'LS',
+              quantity: 1,
+              rate: 0,
+              amount: 0
             } as Activity)));
           } else {
             setCharterMilestones([]);
@@ -4385,11 +4391,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       {!isVarianceAnalysisPage && (
         <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-4 lg:-mx-8 px-4 lg:px-8 py-2 mb-4 flex justify-between items-center gap-4 shadow-sm">
           <div className="flex-1 flex items-center gap-3">
-            {page.focusArea && (
-              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
-                {page.focusArea}
-              </span>
-            )}
             {isLogPage && (
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />

@@ -7,6 +7,7 @@ import { WBSLevel, Project } from '../types';
 import { masterFormatDivisions } from '../data';
 import { masterFormatSections } from '../constants/masterFormat';
 import { toast } from 'react-hot-toast';
+import { rollupToParent } from '../services/rollupService';
 
 interface AddWBSLevelModalProps {
   isOpen: boolean;
@@ -178,6 +179,12 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
       if (divisionCode) level.divisionCode = divisionCode;
 
       await setDoc(doc(db, 'wbs', levelId), level);
+      
+      // Trigger rollup for parent
+      if (activeParentId) {
+        await rollupToParent('division', activeParentId);
+      }
+      
       toast.success('Level added successfully');
       if (onSuccess) onSuccess(levelId);
       onClose();

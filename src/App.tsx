@@ -45,7 +45,7 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { ScheduleHubView } from './components/ScheduleHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert, ChevronRight } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
@@ -67,15 +67,10 @@ const PageRenderer = () => {
   const { id } = useParams<{ id: string }>();
   const { selectedProject } = useProject();
   
-  // Handle domain and focus area IDs
-  const hubIds = [
-    'gov', 'scope', 'fin', 'stak', 'res', 'risk', '2.1.2'
-  ];
-
   const page = id === 'logs' 
-    ? { id: 'logs', title: t('project_logs'), type: 'hub' as const } 
+    ? { id: 'logs', title: t('project_logs'), type: 'hub' as const, domain: '', parentId: '' } 
     : id === 'files'
-      ? { id: 'files', title: t('project_files'), type: 'terminal' as const }
+      ? { id: 'files', title: t('project_files'), type: 'terminal' as const, parentId: '' }
       : pages.find(p => p.id === id);
 
   if (!page) return <Navigate to="/page/gov" />;
@@ -109,47 +104,47 @@ const PageRenderer = () => {
     }
   }
 
-  // If it's a risk domain page, always render DomainDashboard with the correct tab
-  const isRiskDomain = 'domain' in page && page.domain === 'risk';
-  if (isRiskDomain || page.id === 'risk') {
-    const hubPage = pages.find(p => p.id === 'risk');
-    if (hubPage) {
-      const allChildren = pages.filter(p => p.parentId === 'risk');
-      const accessibleChildren = allChildren.filter(child => {
-        if (isAdmin) return true;
-        if (!userProfile) return false;
-        return userProfile.accessiblePages?.includes(child.id);
-      });
-      const children = sortDomainPages(accessibleChildren, 'risk');
-      return (
-        <div className="w-full">
-          <DomainDashboard 
-            page={hubPage} 
-            childrenPages={children} 
-            initialTab={page.id === 'risk' ? 'overview' : page.id} 
-          />
-        </div>
-      );
-    }
+  // Handle Hub pages (Focus Areas and Domains)
+  if (page.type === 'hub') {
+    const allChildren = pages.filter(p => p.parentId === page.id);
+    const accessibleChildren = allChildren.filter(child => {
+      if (isAdmin) return true;
+      if (!userProfile) return false;
+      return userProfile.accessiblePages?.includes(child.id);
+    });
+    const children = sortDomainPages(accessibleChildren, page.domain || '');
+
+    return (
+      <div className="w-full">
+        <DomainDashboard 
+          page={page} 
+          childrenPages={children} 
+          initialTab={id === page.id ? 'overview' : id}
+        />
+      </div>
+    );
   }
 
-  if (id && hubIds.includes(id)) {
-    const hubPage = pages.find(p => p.id === id);
-    if (hubPage) {
-      const allChildren = pages.filter(p => p.parentId === id);
-      const accessibleChildren = allChildren.filter(child => {
-        if (isAdmin) return true;
-        if (!userProfile) return false;
-        return userProfile.accessiblePages?.includes(child.id);
-      });
-      const children = sortDomainPages(accessibleChildren, hubPage.domain || '');
+  // If the current page is a terminal page but belongs to a Hub that should be rendered as a dashboard
+  const parentHub = pages.find(p => p.id === (page as any).parentId && p.type === 'hub');
+  if (parentHub) {
+    const allChildren = pages.filter(p => p.parentId === parentHub.id);
+    const accessibleChildren = allChildren.filter(child => {
+      if (isAdmin) return true;
+      if (!userProfile) return false;
+      return userProfile.accessiblePages?.includes(child.id);
+    });
+    const children = sortDomainPages(accessibleChildren, parentHub.domain || '');
 
-      return (
-        <div className="w-full">
-          <DomainDashboard page={hubPage} childrenPages={children} />
-        </div>
-      );
-    }
+    return (
+      <div className="w-full">
+        <DomainDashboard 
+          page={parentHub} 
+          childrenPages={children} 
+          initialTab={page.id}
+        />
+      </div>
+    );
   }
 
   const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(page.id);
@@ -184,6 +179,17 @@ const PageRenderer = () => {
   const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
 
+  const parent = (page as any).parentId ? pages.find(p => p.id === (page as any).parentId) : null;
+  const grandParent = parent?.parentId ? pages.find(p => p.id === parent.parentId) : null;
+  const pageTitle = stripNumericPrefix(t(page.id) || page.title);
+  const parentTitle = parent ? stripNumericPrefix(t(parent.id) || parent.title) : '';
+  const grandParentTitle = grandParent ? stripNumericPrefix(t(grandParent.id) || grandParent.title) : '';
+
+  useEffect(() => {
+    const projectPrefix = selectedProject ? `[${selectedProject.code}] ` : '';
+    document.title = `${projectPrefix}${pageTitle} | ZARYA`;
+  }, [pageTitle, selectedProject]);
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -194,8 +200,26 @@ const PageRenderer = () => {
         transition={{ duration: 0.2 }}
         className="w-full"
       >
-        <div className={cn(isSchedulePage || isResourceOptimizationPage || page.id === '2.1.2' ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12")}>
-          <Breadcrumbs currentPageId={page.id} />
+        <div className={cn(isSchedulePage || isResourceOptimizationPage || page.id === '2.1.2' ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
+          <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-2 uppercase text-xs tracking-[0.2em]">
+              {grandParent && (
+                <>
+                  <span className="text-slate-400 font-medium">{grandParentTitle}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                </>
+              )}
+              {parent && (
+                <>
+                  <span className="text-slate-400 font-medium">{parentTitle}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                </>
+              )}
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-black">
+                {pageTitle}
+              </span>
+            </h1>
+          </div>
         </div>
         {isTasksPage ? (
           <TasksView />
@@ -243,8 +267,6 @@ const PageRenderer = () => {
           <LogManagementView page={page} />
         ) : isFormalAcceptancePage ? (
           <FormalAcceptanceView page={page} />
-        ) : page.type === 'hub' ? (
-          <DashboardView page={page} />
         ) : (
           <DetailView page={page} />
         )}

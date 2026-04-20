@@ -176,33 +176,8 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
               {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
               {activeTab === 'schedule' && <ProjectScheduleView page={{ ...page, id: '2.3', title: 'Project Schedule' }} />}
               {activeTab === 'plans' && (
-                <div className="space-y-4">
-                  {/* Top Tabs for Plans */}
-                  {viewMode === 'plan' && (
-                    <div className="flex flex-wrap items-center gap-1 bg-slate-50/50 p-1.5 rounded-lg border border-slate-200 w-full overflow-x-auto no-scrollbar">
-                      {managementPlans.map((plan) => (
-                        <button
-                          key={plan.id}
-                          onClick={() => {
-                            setActivePlan(plan.id as PlanSubTab);
-                            setViewMode('plan');
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all whitespace-nowrap",
-                            (activePlan === plan.id && viewMode === 'plan')
-                              ? "bg-white text-blue-600 shadow-sm border border-slate-200" 
-                              : "text-slate-400 hover:bg-white hover:text-slate-600"
-                          )}
-                        >
-                          <plan.icon className={cn("w-3.5 h-3.5", (activePlan === plan.id && viewMode === 'plan') ? "text-blue-600" : "text-slate-400")} />
-                          {plan.title}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="bg-white rounded-lg border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                    <div className="p-10">
+                <div className="bg-white rounded-lg border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+                  <div className="p-10">
                     {viewMode === 'plan' ? (
                       <>
                         {activePlan === 'pmp' && <ProjectManagementPlanView page={page} />}
@@ -229,8 +204,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
