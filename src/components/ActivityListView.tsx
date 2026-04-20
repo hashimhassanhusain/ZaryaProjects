@@ -8,7 +8,7 @@ import {
   List, Plus, Save, Trash2, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Database, ChevronRight, ChevronDown,
   FileText, ShoppingCart, Loader2, Sparkles, ArrowRight,
-  Edit2, Calendar, Link2, X, Filter, Layers, Box
+  Edit2, Calendar, Link2, X, Filter, Layers, Box, Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -411,8 +411,8 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             <div key={wp} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
               <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                    <Database className="w-4 h-4" />
+                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                    <Package className="w-4 h-4" />
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900">{wp}</h4>

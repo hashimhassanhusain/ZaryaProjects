@@ -655,19 +655,19 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                       {/* Breadcrumb style header exactly as requested */}
                       <div className="px-8 py-6 mb-2 border-b border-slate-50">
                         <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-2">
-                          <span className="text-slate-400 font-medium uppercase text-xs tracking-widest">
+                          <span className="text-slate-400 font-medium text-sm">
                             {stripNumericPrefix(t(page.id) || page.title)}
                           </span>
                           <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
                           {parentPage && parentPage.id !== page.id && (
                             <>
-                              <span className="text-slate-400 font-medium uppercase text-xs tracking-widest">
+                              <span className="text-slate-400 font-medium text-sm">
                                 {stripNumericPrefix(t(parentPage.id) || parentPage.title)}
                               </span>
                               <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
                             </>
                           )}
-                          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent uppercase text-xs tracking-widest font-black">
+                          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-black">
                             {stripNumericPrefix(t(activePage.id) || activePage.title)}
                           </span>
                         </h1>

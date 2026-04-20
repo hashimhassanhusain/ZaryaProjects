@@ -707,8 +707,9 @@ export interface MeetingTask {
 export interface MeetingDecision {
   id: string;
   decision: string;
-  category: 'Schedule' | 'Cost/Price' | 'Quantity' | 'Quality' | 'Scope';
+  category: 'Civil' | 'Technical Office' | 'Mechanical' | 'Electrical' | 'Administrative' | 'Other';
   responsibleParty: string;
+  dueDate?: string;
   decisionLogId?: string; // Link to Decision Log entry
 }
 

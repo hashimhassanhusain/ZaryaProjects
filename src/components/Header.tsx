@@ -568,7 +568,7 @@ export const Header: React.FC = () => {
             <div className="relative">
               {user?.photoURL ? (
                 <img 
-                  src={user.photoURL} 
+                  src={user.photoURL || undefined} 
                   alt="User" 
                   className="w-8 h-8 rounded-full border border-white shadow-sm object-cover"
                   referrerPolicy="no-referrer"

@@ -7,7 +7,8 @@ import {
   LayoutGrid, List, Plus, Trash2, Info, Loader2, 
   ChevronRight, ChevronDown,
   Search, Filter, Download, FileText, Sparkles, Upload,
-  Package, Edit2, X, Check, Target, Database, Calendar
+  Package, Edit2, X, Check, Target, Database, Calendar,
+  Building, Layers, MapPin, Zap, Cog, Droplets, Palette, HardHat, Mountain, Boxes, DraftingCompass, ShoppingCart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
@@ -539,6 +540,37 @@ export const WBSView: React.FC = () => {
     }
   };
 
+  const getWbsIcon = (type: string, size: string = "w-5 h-5", name: string = "") => {
+    const n = name.toLowerCase();
+    
+    if (type === 'Division' || type === 'Cost Account') {
+      if (n.includes('concrete')) return <Boxes className={cn(size, "text-orange-900")} />;
+      if (n.includes('electrical')) return <Zap className={cn(size, "text-yellow-500")} />;
+      if (n.includes('mechanical')) return <Cog className={cn(size, "text-blue-600")} />;
+      if (n.includes('plumbing') || n.includes('sanitary')) return <Droplets className={cn(size, "text-sky-500")} />;
+      if (n.includes('finishes') || n.includes('painting')) return <Palette className={cn(size, "text-pink-500")} />;
+      if (n.includes('site') || n.includes('excavation')) return <Mountain className={cn(size, "text-amber-700")} />;
+      if (n.includes('masonry') || n.includes('block')) return <HardHat className={cn(size, "text-orange-500")} />;
+    }
+
+    if (type === 'Work Package') {
+      if (n.includes('design')) return <DraftingCompass className={cn(size, "text-indigo-500")} />;
+      if (n.includes('procurement')) return <ShoppingCart className={cn(size, "text-emerald-500")} />;
+      return <Package className={cn(size, "text-teal-500")} />;
+    }
+
+    switch (type) {
+      case 'Zone': return <Target className={size} />;
+      case 'Area': return <MapPin className={size} />;
+      case 'Building': return <Building className={size} />;
+      case 'Floor': return <Layers className={size} />;
+      case 'Division':
+      case 'Cost Account': return <Database className={size} />;
+      case 'Work Package': return <Package className={size} />;
+      default: return <Database className={size} />;
+    }
+  };
+
   const renderWbsTree = (parentId?: string, depth = 0) => {
     // Handle root nodes correctly whether parentId is undefined, null or empty string
     const levels = filteredWbsForTree.filter(l => {
@@ -615,11 +647,12 @@ export const WBSView: React.FC = () => {
                     level.type === 'Zone' ? "bg-purple-100 text-purple-600" :
                     level.type === 'Area' ? "bg-blue-100 text-blue-600" :
                     level.type === 'Building' ? "bg-emerald-100 text-emerald-600" :
+                    level.type === 'Floor' ? "bg-orange-100 text-orange-600" :
                     level.type === 'Cost Account' ? "bg-amber-100 text-amber-600" :
                     level.type === 'Work Package' ? "bg-sky-100 text-sky-600" :
                     "bg-slate-100 text-slate-600"
                   )}>
-                    {level.type === 'Work Package' ? <Package className="w-5 h-5" /> : level.type[0]}
+                    {getWbsIcon(level.type, "w-5 h-5", level.title)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

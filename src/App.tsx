@@ -73,6 +73,18 @@ const PageRenderer = () => {
       ? { id: 'files', title: t('project_files'), type: 'terminal' as const, parentId: '' }
       : pages.find(p => p.id === id);
 
+  const parent = (page as any)?.parentId ? pages.find(p => p.id === (page as any).parentId) : null;
+  const grandParent = parent?.parentId ? pages.find(p => p.id === parent.parentId) : null;
+  const pageTitle = page ? stripNumericPrefix(t(page.id) || page.title) : '';
+  const parentTitle = parent ? stripNumericPrefix(t(parent.id) || parent.title) : '';
+  const grandParentTitle = grandParent ? stripNumericPrefix(t(grandParent.id) || grandParent.title) : '';
+
+  useEffect(() => {
+    if (!pageTitle) return;
+    const projectPrefix = selectedProject ? `[${selectedProject.code}] ` : '';
+    document.title = `${projectPrefix}${pageTitle} | ZARYA`;
+  }, [pageTitle, selectedProject]);
+
   if (!page) return <Navigate to="/page/gov" />;
 
   // Permission Check
@@ -179,17 +191,6 @@ const PageRenderer = () => {
   const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
 
-  const parent = (page as any).parentId ? pages.find(p => p.id === (page as any).parentId) : null;
-  const grandParent = parent?.parentId ? pages.find(p => p.id === parent.parentId) : null;
-  const pageTitle = stripNumericPrefix(t(page.id) || page.title);
-  const parentTitle = parent ? stripNumericPrefix(t(parent.id) || parent.title) : '';
-  const grandParentTitle = grandParent ? stripNumericPrefix(t(grandParent.id) || grandParent.title) : '';
-
-  useEffect(() => {
-    const projectPrefix = selectedProject ? `[${selectedProject.code}] ` : '';
-    document.title = `${projectPrefix}${pageTitle} | ZARYA`;
-  }, [pageTitle, selectedProject]);
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -202,20 +203,20 @@ const PageRenderer = () => {
       >
         <div className={cn(isSchedulePage || isResourceOptimizationPage || page.id === '2.1.2' ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
           <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-2 uppercase text-xs tracking-[0.2em]">
+            <h1 className="flex items-center flex-wrap gap-2 text-2xl font-black text-slate-900 tracking-tight">
               {grandParent && (
                 <>
-                  <span className="text-slate-400 font-medium">{grandParentTitle}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                  <span className="text-slate-400 font-medium text-lg">{grandParentTitle}</span>
+                  <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
                 </>
               )}
               {parent && (
                 <>
-                  <span className="text-slate-400 font-medium">{parentTitle}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
+                  <span className="text-slate-400 font-medium text-lg">{parentTitle}</span>
+                  <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
                 </>
               )}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-black">
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {pageTitle}
               </span>
             </h1>

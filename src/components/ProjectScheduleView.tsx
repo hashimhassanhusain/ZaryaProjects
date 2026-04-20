@@ -12,7 +12,8 @@ import {
   Loader2, Edit2, Search, Filter, Download, Upload,
   BarChart3, DollarSign, CheckCircle2, AlertCircle,
   ArrowRight, Link2, Plus, MoreHorizontal,
-  ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target, Package, List
+  ZoomIn, ZoomOut, ShoppingCart, TrendingUp, Target, Package, List,
+  Building, Layers, MapPin, Zap, Cog, Droplets, Palette, HardHat, Mountain, Boxes, DraftingCompass
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -50,6 +51,35 @@ interface ProjectScheduleViewProps {
 type ZoomLevel = 'day' | 'week' | 'month' | 'quarter';
 type ScheduleTab = 'gantt' | 'activities' | 'milestones';
 type ViewLevel = 'wbs' | 'costaccount' | 'workpackage' | 'po' | 'poitem';
+
+const getWbsIcon = (type: string, size: string = "w-3.5 h-3.5", name: string = "") => {
+  const n = name.toLowerCase();
+  
+  if (type === 'Division' || type === 'Cost Account') {
+    if (n.includes('concrete')) return <Boxes className={cn(size, "text-orange-900 mr-2")} />;
+    if (n.includes('electrical')) return <Zap className={cn(size, "text-yellow-500 mr-2")} />;
+    if (n.includes('mechanical')) return <Cog className={cn(size, "text-blue-600 mr-2")} />;
+    if (n.includes('plumbing') || n.includes('sanitary')) return <Droplets className={cn(size, "text-sky-500 mr-2")} />;
+    if (n.includes('finishes') || n.includes('painting')) return <Palette className={cn(size, "text-pink-500 mr-2")} />;
+    if (n.includes('site') || n.includes('excavation')) return <Mountain className={cn(size, "text-amber-700 mr-2")} />;
+    if (n.includes('masonry') || n.includes('block')) return <HardHat className={cn(size, "text-orange-500 mr-2")} />;
+    return <Database className={cn(size, "text-blue-500 mr-2")} />;
+  }
+
+  if (type === 'Work Package') {
+    if (n.includes('design')) return <DraftingCompass className={cn(size, "text-indigo-500 mr-2")} />;
+    if (n.includes('procurement')) return <ShoppingCart className={cn(size, "text-emerald-500 mr-2")} />;
+    return <Package className={cn(size, "text-teal-500 mr-2")} />;
+  }
+
+  switch (type) {
+    case 'Zone': return <Target className={cn(size, "text-purple-500 mr-2")} />;
+    case 'Area': return <MapPin className={cn(size, "text-sky-500 mr-2")} />;
+    case 'Building': return <Building className={cn(size, "text-emerald-500 mr-2")} />;
+    case 'Floor': return <Layers className={cn(size, "text-orange-400 mr-2")} />;
+    default: return <Database className={cn(size, "text-slate-400 mr-2")} />;
+  }
+};
 
 const SortableHeader: React.FC<{
   id: string;
@@ -207,30 +237,49 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     }
   };
 
-  const getProgress = useCallback((activity: Activity) => {
-    if (activity.percentComplete !== undefined) return activity.percentComplete;
+  const getCostCompletion = useCallback((activity: Activity): number => {
+    const linkedPOs = purchaseOrders.filter(p => p.activityId === activity.id);
+    if (linkedPOs.length === 0) return 0; // No PO = 0% always
     
-    // Fallback to PO status if no explicit progress
-    const linkedPO = purchaseOrders.find(po => po.id === activity.poId);
-    if (linkedPO) {
-      if (linkedPO.completion !== undefined) return linkedPO.completion;
-      const lineItem = linkedPO.lineItems?.find(li => li.description === activity.description);
-      if (lineItem && lineItem.status === 'Completed') return 100;
-      if (lineItem && lineItem.status === 'In Progress') return 50;
-    }
-
-    if (activity.actualFinishDate) return 100;
-    if (activity.actualStartDate && activity.finishDate) {
-      const today = new Date();
-      const start = new Date(activity.actualStartDate);
-      const finish = new Date(activity.finishDate);
-      if (start >= finish) return 0;
-      const progress = Math.min(100, Math.round(((today.getTime() - start.getTime()) / (finish.getTime() - start.getTime())) * 100));
-      return Math.max(0, progress);
-    }
+    const bac = activity.plannedCost || activity.amount || 0;
+    if (bac === 0) return 0;
     
-    return 0;
+    const ev = linkedPOs.reduce((sum, po) => {
+      return sum + (po.lineItems?.reduce((s, li) => s + (li.amount * (li.completion || 0) / 100), 0)
+        ?? (po.amount * (po.completion || 0) / 100));
+    }, 0);
+    
+    return Math.min(100, Math.round((ev / bac) * 100));
   }, [purchaseOrders]);
+
+  const getTimeCompletion = useCallback((activity: Activity): number => {
+    const today = new Date();
+    
+    if (activity.actualFinishDate) return 100;
+    
+    // Actual Start = first linked PO date (not planned start)
+    const linkedPOs = purchaseOrders.filter(p => p.activityId === activity.id);
+    const actualStart = linkedPOs.length > 0
+      ? linkedPOs.reduce((min, p) => (!min || (p.date && p.date < min) ? p.date : min), '')
+      : activity.actualStartDate || '';
+
+    const plannedStart = activity.startDate || activity.actualStartDate || '';
+    const plannedFinish = activity.finishDate || '';
+    
+    if (!plannedStart || !plannedFinish) return 0;
+    
+    const start = new Date(plannedStart);
+    const finish = new Date(plannedFinish);
+    const totalDuration = finish.getTime() - start.getTime();
+    
+    if (totalDuration <= 0) return 0;
+    if (today < start) return 0;
+    if (today > finish) return 99; // Overdue but not closed = 99%
+    
+    return Math.max(0, Math.min(99, Math.round(((today.getTime() - start.getTime()) / totalDuration) * 100)));
+  }, [purchaseOrders]);
+
+  const getProgress = useCallback((activity: Activity) => getCostCompletion(activity), [getCostCompletion]);
 
   const getPoActualCost = useCallback((po: PurchaseOrder): number => {
     return po.lineItems?.reduce((sum, li) => sum + (li.amount * (li.completion || 0) / 100), 0) || (po.amount * (po.completion || 0) / 100);
@@ -298,18 +347,75 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     
     let totalValue = wbsActivities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
                     wbsDirectPOs.reduce((sum, p) => sum + p.amount, 0);
-    let weightedProgress = wbsActivities.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getProgress(a)), 0) +
-                        wbsDirectPOs.reduce((sum, p) => sum + (p.amount * (p.completion || 0)), 0);
     
+    let weightedProgress = wbsActivities.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getProgress(a)), 0) + 
+                          wbsDirectPOs.reduce((sum, p) => sum + (p.amount * (p.completion || 0)), 0);
+
     children.forEach(child => {
       const childCosts = calculateWbsCosts(child.id);
       const childProgress = calculateWbsProgress(child.id);
       totalValue += childCosts.planned;
-      weightedProgress += (childCosts.planned * childProgress);
+      weightedProgress += childCosts.planned * childProgress;
+    });
+
+    return totalValue > 0 ? Math.round(weightedProgress / totalValue) : 0;
+  }, [wbsLevels, purchaseOrders, getWbsActivities, calculateWbsCosts, getProgress]);
+
+  // Weighted Cost Completion rollup (weight = plannedCost)
+  const calculateWbsCostCompletion = useCallback((wbsId: string): number => {
+    const wbs = wbsLevels.find(w => w.id === wbsId);
+    if (!wbs) return 0;
+
+    const wbsActs = getWbsActivities(wbs);
+    const wbsPOs = purchaseOrders.filter(p => p.wbsId === wbsId && !p.activityId);
+    const children = wbsLevels.filter(w => w.parentId === wbsId);
+    
+    let totalWeight = wbsActs.reduce((s, a) => s + (a.plannedCost || a.amount || 0), 0)
+                    + wbsPOs.reduce((s, p) => s + p.amount, 0);
+    let weightedEV = wbsActs.reduce((s, a) => s + (a.plannedCost || a.amount || 0) * getCostCompletion(a), 0)
+                   + wbsPOs.reduce((s, p) => s + p.amount * (p.completion || 0), 0);
+    
+    children.forEach(child => {
+      const childCosts = calculateWbsCosts(child.id);
+      const childPct = calculateWbsCostCompletion(child.id);
+      totalWeight += childCosts.planned;
+      weightedEV += childCosts.planned * childPct;
     });
     
-    return totalValue > 0 ? Math.round(weightedProgress / totalValue) : 0;
-  }, [wbsLevels, activities, purchaseOrders, getWbsActivities, calculateWbsCosts]);
+    return totalWeight > 0 ? Math.round(weightedEV / totalWeight) : 0;
+  }, [wbsLevels, purchaseOrders, getWbsActivities, getCostCompletion, calculateWbsCosts]);
+
+  // Weighted Time Completion rollup (weight = plannedDuration)
+  const calculateWbsTimeCompletion = useCallback((wbsId: string): number => {
+    const wbs = wbsLevels.find(w => w.id === wbsId);
+    if (!wbs) return 0;
+
+    const wbsActs = getWbsActivities(wbs);
+    const children = wbsLevels.filter(w => w.parentId === wbsId);
+    
+    let totalDur = 0, weightedTime = 0;
+    wbsActs.forEach(a => {
+      const dur = a.duration || 0;
+      totalDur += dur;
+      weightedTime += dur * getTimeCompletion(a);
+    });
+    children.forEach(child => {
+      const allChildActs = collectAllDescendantActivities(child.id, wbsLevels, activities);
+      const span = calcDateSpan(allChildActs);
+      const dur = span.duration;
+      totalDur += dur;
+      weightedTime += dur * calculateWbsTimeCompletion(child.id);
+    });
+    
+    return totalDur > 0 ? Math.round(weightedTime / totalDur) : 0;
+  }, [wbsLevels, activities, getWbsActivities, getTimeCompletion]);
+
+  // SPI = Cost% / Time%
+  const calculateSPI = useCallback((wbsId: string): number => {
+    const time = calculateWbsTimeCompletion(wbsId);
+    if (time === 0) return 1;
+    return Math.round((calculateWbsCostCompletion(wbsId) / time) * 100) / 100;
+  }, [calculateWbsTimeCompletion, calculateWbsCostCompletion]);
 
   const calculateCostAccountProgress = useCallback((divActivities: Activity[]) => {
     const totalAmount = divActivities.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0);
@@ -551,48 +657,62 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     if (!activity.startDate || !activity.finishDate) return null;
     
     const startOffset = getDayOffset(activity.startDate);
-    const duration = Math.ceil((new Date(activity.finishDate).getTime() - new Date(activity.startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1;
-    const progress = getProgress(activity);
+    const duration = Math.max(1, Math.ceil(
+      (new Date(activity.finishDate).getTime() - new Date(activity.startDate).getTime()) / 86400000
+    ));
+    const costPct = getCostCompletion(activity);    // Green bar
+    const timePct = getTimeCompletion(activity);    // Red vertical line position
     const isMilestone = activity.duration === 0;
-
-    // Conditional coloring for actual progress
-    const isAhead = activity.actualStartDate ? new Date(activity.actualStartDate) <= new Date(activity.startDate) : true;
-    const barColor = activity.isCritical ? "bg-red-500" : (isAhead ? "bg-emerald-500" : "bg-amber-500");
+    const spi = timePct > 0 ? costPct / timePct : 1;
+    const isDelayed = (timePct - costPct) > 15;    // Variance alert threshold
 
     return (
-      <div 
+      <div
         className="relative h-6 flex items-center group/bar"
-        style={{ 
-          marginLeft: `${startOffset * dayWidth}px`,
-          width: `${Math.max(dayWidth, duration * dayWidth)}px`
-        }}
+        style={{ marginLeft: `${startOffset * dayWidth}px`, width: `${duration * dayWidth}px` }}
       >
-        {/* Planned Bar */}
+        {/* Planned bar (background) */}
         <div className={cn(
-          "absolute inset-y-1 rounded-full opacity-30",
-          activity.isCritical ? "bg-red-200" : "bg-blue-200"
-        )} style={{ width: '100%' }} />
+          "absolute inset-y-1 rounded-full w-full opacity-30",
+          activity.isCritical ? 'bg-red-200' : 'bg-blue-200'
+        )} />
         
-        {/* Actual Progress Bar */}
-        <div 
+        {/* Cost Completion — Green fill */}
+        <div
           className={cn(
-            "absolute inset-y-1 rounded-full shadow-sm transition-all",
-            barColor
+            "absolute inset-y-1 rounded-full transition-all shadow-sm",
+            isDelayed ? 'bg-amber-400' : 'bg-emerald-500'
           )}
-          style={{ width: `${progress}%` }}
+          style={{ width: `${costPct}%` }}
         />
-
-        {/* Milestone Marker */}
+        
+        {/* Time Completion — Red vertical line (Today marker relative to bar) */}
+        {timePct > 0 && timePct < 100 && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-red-600 z-20 shadow-[0_0_8px_rgba(220,38,38,0.5)]"
+            style={{ left: `${timePct}%` }}
+            title={`Time: ${timePct}% | Cost: ${costPct}%`}
+          />
+        )}
+        
+        {/* Milestone */}
         {isMilestone && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rotate-45 w-3 h-3 bg-red-600 shadow-sm" />
         )}
 
-        {/* Label */}
-        <div className="absolute left-full ml-2 opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-          <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-xl flex items-center gap-2">
-            <span className="font-bold">{activity.description}</span>
-            <span className="text-slate-400">|</span>
-            <span className="text-blue-300">{progress}%</span>
+        {/* Hover tooltip */}
+        <div className="absolute left-full ml-2 opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none">
+          <div className="bg-slate-900 text-white text-[10px] px-2 py-1.5 rounded shadow-xl space-y-0.5">
+            <div className="font-bold">{activity.description}</div>
+            <div className="flex gap-3">
+              <span className="text-emerald-400 font-bold">Cost: {costPct}%</span>
+              <span className="text-red-400 font-bold">Time: {timePct}%</span>
+              <span className={cn("font-bold", spi >= 1 ? 'text-green-300' : 'text-red-300')}>SPI: {spi.toFixed(2)}</span>
+            </div>
+            {isDelayed && <div className="text-amber-300 font-black animate-pulse flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              SCHEDULE IMPACT
+            </div>}
           </div>
         </div>
       </div>
@@ -686,7 +806,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             <div className="flex items-center h-full divide-x divide-slate-200">
               <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(level + 1) * 16}px` }}>
                 {isDivExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
-                <Database className="w-3 h-3 text-slate-400 mr-2" />
+                {getWbsIcon('Cost Account', 'w-3 h-3', divId)}
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
                    {division ? `${division.id} - ${division.title}` : (divId === '01' ? 'General' : divId)}
                 </span>
@@ -754,7 +874,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                   <div className="flex items-center h-full divide-x divide-slate-200">
                     <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(level + 2) * 16}px` }}>
                       {isWpExpanded ? <ChevronDown className="w-3 h-3 text-slate-400 mr-2" /> : <ChevronRight className="w-3 h-3 text-slate-400 mr-2" />}
-                      <Package className="w-3 h-3 text-emerald-500 mr-2" />
+                      {getWbsIcon('Work Package', 'w-3 h-3', wpTitle)}
                       <span className="text-[10px] font-bold text-slate-600 truncate">
                          {wpDetails ? `${wpDetails.code} - ${wpDetails.title}` : wpTitle}
                       </span>
@@ -840,18 +960,30 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     let totalPlanned = 0;
     let totalPo = 0;
     let totalActual = 0;
-    let weightedProgress = 0;
+    let weightedCostProgress = 0;
+    let weightedTimeProgress = 0;
+    let totalDurationForTime = 0;
 
     topWbsNodes.forEach(w => {
       const costs = calculateWbsCosts(w.id);
-      const progress = calculateWbsProgress(w.id);
+      const costPct = calculateWbsCostCompletion(w.id);
+      const timePct = calculateWbsTimeCompletion(w.id);
+      
+      const allActs = collectAllDescendantActivities(w.id, wbsLevels, activities);
+      const span = calcDateSpan(allActs);
+      
       totalPlanned += costs.planned;
       totalActual += costs.actual;
       totalPo += costs.po;
-      weightedProgress += (costs.planned * progress);
+      weightedCostProgress += (costs.planned * costPct);
+      weightedTimeProgress += (span.duration * timePct);
+      totalDurationForTime += span.duration;
     });
 
-    const overallProgress = totalPlanned > 0 ? Math.round(weightedProgress / totalPlanned) : 0;
+    const costProgress = totalPlanned > 0 ? Math.round(weightedCostProgress / totalPlanned) : 0;
+    const timeProgress = totalDurationForTime > 0 ? Math.round(weightedTimeProgress / totalDurationForTime) : 0;
+    const spi = timeProgress > 0 ? costProgress / timeProgress : 1;
+
     const startDate = activities.length > 0 ? activities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '') : selectedProject?.startDate || '';
     const finishDate = activities.length > 0 ? activities.reduce((max, a) => !max || (a.finishDate && a.finishDate > max) ? a.finishDate : max, '') : '';
     const duration = startDate && finishDate ? Math.ceil((new Date(finishDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -860,7 +992,10 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       plannedCost: totalPlanned,
       poCost: totalPo,
       actualCost: totalActual,
-      progress: overallProgress,
+      progress: costProgress,
+      costProgress,
+      timeProgress,
+      spi,
       startDate,
       finishDate,
       duration
@@ -898,10 +1033,22 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 case 'actualFinish': content = projectStats.finishDate || '-'; break;
                 case 'progress':
                   content = (
-                    <div className="flex flex-col items-center justify-center w-full px-2">
-                      <span className="text-[10px] font-black text-blue-400 mb-0.5">{projectStats.progress}%</span>
-                      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-400" style={{ width: `${projectStats.progress}%` }} />
+                    <div className="flex flex-col items-center justify-center w-full px-2 gap-0.5">
+                      <div className="flex justify-between w-full text-[8px] font-black uppercase tracking-tighter text-blue-400">
+                        <span>{projectStats.costProgress}% COST</span>
+                        <span className={cn(projectStats.spi >= 1 ? 'text-emerald-400' : 'text-rose-400')}>SPI {projectStats.spi.toFixed(2)}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                        {/* Cost bar (emerald) */}
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-emerald-400 transition-all duration-1000" 
+                          style={{ width: `${projectStats.costProgress}%`, zIndex: 1 }} 
+                        />
+                        {/* Time line (rose) */}
+                        <div 
+                          className="absolute inset-y-0 w-0.5 bg-rose-400 z-10"
+                          style={{ left: `${Math.min(100, projectStats.timeProgress)}%` }}
+                        />
                       </div>
                     </div>
                   );
@@ -938,6 +1085,9 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             purchaseOrders={purchaseOrders}
             vendors={vendors}
             calculateWbsProgress={calculateWbsProgress}
+            calculateWbsCostCompletion={calculateWbsCostCompletion}
+            calculateWbsTimeCompletion={calculateWbsTimeCompletion}
+            calculateSPI={calculateSPI}
             calculateDivisionProgress={calculateCostAccountProgress}
             renderActivitiesByHierarchy={renderActivitiesByHierarchy}
             navigate={navigate}
@@ -2031,6 +2181,9 @@ interface WbsRowProps {
   getDurationColor: (actual: number | undefined, planned: number | undefined) => string;
   getCostColor: (actual: number | undefined, planned: number | undefined) => string;
   calculateWbsCosts: (wbsId: string) => { planned: number; po: number; actual: number };
+  calculateWbsCostCompletion: (id: string) => number;
+  calculateWbsTimeCompletion: (id: string) => number;
+  calculateSPI: (id: string) => number;
   getPoActualCost: (po: PurchaseOrder) => number;
   getActivityActualCost: (act: Activity) => number;
   getWbsActivities: (wbs: WBSLevel) => Activity[];
@@ -2380,7 +2533,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
   calculateWbsProgress, calculateDivisionProgress, renderActivitiesByHierarchy, navigate, setEditingActivity, 
   rowRefs, visibleColumns, columnOrder, activityColWidth, columnWidths, viewLevel,
   getDateColor, getDurationColor, getCostColor,
-  calculateWbsCosts, getPoActualCost, getActivityActualCost, getWbsActivities
+  calculateWbsCosts, calculateWbsCostCompletion, calculateWbsTimeCompletion, calculateSPI, getPoActualCost, getActivityActualCost, getWbsActivities
 }) => {
   const { formatAmount, currency: baseCurrency } = useCurrency();
   const children = allWbs.filter(w => w.parentId === wbs.id);
@@ -2451,7 +2604,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
             {(children.length > 0 || displayActivities.length > 0 || directWbsPOs.length > 0) ? (
               isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />
             ) : <div className="w-6" />}
-            <Database className="w-3.5 h-3.5 text-blue-500 mr-2" />
+            {getWbsIcon(wbs.type, "w-4 h-4", wbs.title)}
             <span className="text-xs font-bold text-slate-700 truncate">{wbs.title}</span>
           </div>
           
@@ -2468,16 +2621,32 @@ const WbsRow: React.FC<WbsRowProps> = ({
               case 'actualDuration': content = wbsActualDuration ? `${wbsActualDuration}d` : '-'; break;
               case 'plannedFinish': content = wbsPlannedFinish || '-'; break;
               case 'actualFinish': content = wbsActualFinish || '-'; break;
-              case 'progress':
+              case 'progress': {
+                const costPct = calculateWbsCostCompletion(wbs.id);
+                const timePct = calculateWbsTimeCompletion(wbs.id);
+                const spi = calculateSPI(wbs.id);
+                const isDelayed = (timePct - costPct) > 15;
+                
                 content = (
-                  <div className="flex flex-col items-center justify-center w-full px-2">
-                    <span className="text-[10px] font-bold text-blue-600 mb-0.5">{wbsProgress}%</span>
-                    <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500" style={{ width: `${wbsProgress}%` }} />
+                  <div className="flex flex-col items-center w-full px-1 gap-0.5">
+                    <div className="flex justify-between w-full text-[9px] font-black uppercase tracking-tighter">
+                      <span className="text-emerald-600">{costPct}% COST</span>
+                      <span className={cn("px-1 rounded", spi >= 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600')}>
+                        SPI {spi.toFixed(2)}
+                      </span>
+                    </div>
+                    {/* Cost bar (green) */}
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className={cn("h-full transition-all", isDelayed ? 'bg-amber-400' : 'bg-emerald-500')} style={{ width: `${costPct}%` }} />
+                    </div>
+                    {/* Time bar (indicator) */}
+                    <div className="w-full h-0.5 bg-slate-50 rounded-full overflow-hidden">
+                      <div className={cn("h-full transition-all opacity-50", spi >= 1 ? 'bg-blue-400' : 'bg-rose-400')} style={{ width: `${Math.min(100, timePct)}%` }} />
                     </div>
                   </div>
                 );
                 break;
+              }
               case 'status':
                 const wbsStatus = wbs.status || (wbsProgress >= 100 ? 'Completed' : wbsProgress > 0 ? 'In Progress' : 'Not Started');
                 content = (
@@ -2534,6 +2703,9 @@ const WbsRow: React.FC<WbsRowProps> = ({
               purchaseOrders={purchaseOrders}
               vendors={vendors}
               calculateWbsProgress={calculateWbsProgress}
+              calculateWbsCostCompletion={calculateWbsCostCompletion}
+              calculateWbsTimeCompletion={calculateWbsTimeCompletion}
+              calculateSPI={calculateSPI}
               calculateDivisionProgress={calculateDivisionProgress}
               renderActivitiesByHierarchy={renderActivitiesByHierarchy}
               navigate={navigate}

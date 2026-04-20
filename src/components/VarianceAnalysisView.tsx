@@ -34,29 +34,39 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 // Helper functions for live calculations
-function getProgress(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
-  if (activity.percentComplete !== undefined) return activity.percentComplete;
-  
-  // Fallback to PO status if no explicit progress
-  const linkedPO = purchaseOrders.find(po => po.id === activity.poId);
-  if (linkedPO) {
-    if (linkedPO.completion !== undefined) return linkedPO.completion;
-    const lineItem = linkedPO.lineItems?.find(li => li.description === activity.description);
-    if (lineItem && lineItem.status === 'Completed') return 100;
-    if (lineItem && lineItem.status === 'In Progress') return 50;
-  }
+function getCostCompletion(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
+  const linkedPOs = purchaseOrders.filter(p => p.activityId === activity.id);
+  if (linkedPOs.length === 0) return 0;
+  const bac = activity.plannedCost || activity.amount || 0;
+  if (bac === 0) return 0;
+  const ev = linkedPOs.reduce((sum, po) => {
+    return sum + (po.lineItems?.reduce((s, li) => s + (li.amount * (li.completion || 0) / 100), 0)
+      ?? (po.amount * (po.completion || 0) / 100));
+  }, 0);
+  return Math.min(100, Math.round((ev / bac) * 100));
+}
 
+function getTimeCompletion(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
+  const today = new Date();
   if (activity.actualFinishDate) return 100;
-  if (activity.actualStartDate && activity.finishDate) {
-    const today = new Date();
-    const start = new Date(activity.actualStartDate);
-    const finish = new Date(activity.finishDate);
-    if (start >= finish) return 0;
-    const progress = Math.min(100, Math.round(((today.getTime() - start.getTime()) / (finish.getTime() - start.getTime())) * 100));
-    return Math.max(0, progress);
-  }
-  
-  return 0;
+  const linkedPOs = purchaseOrders.filter(p => p.activityId === activity.id);
+  const actualStart = linkedPOs.length > 0
+    ? linkedPOs.reduce((min, p) => (!min || (p.date && p.date < min) ? p.date : min), '')
+    : activity.actualStartDate || '';
+  const plannedStart = activity.startDate || actualStart || '';
+  const plannedFinish = activity.finishDate || '';
+  if (!plannedStart || !plannedFinish) return 0;
+  const start = new Date(plannedStart);
+  const finish = new Date(plannedFinish);
+  const totalDuration = finish.getTime() - start.getTime();
+  if (totalDuration <= 0) return 0;
+  if (today < start) return 0;
+  if (today > finish) return 99;
+  return Math.max(0, Math.min(99, Math.round(((today.getTime() - start.getTime()) / totalDuration) * 100)));
+}
+
+function getProgress(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
+  return getCostCompletion(activity, purchaseOrders);
 }
 
 function getWbsActivities(wbs: WBSLevel, activities: Activity[]): Activity[] {
@@ -919,19 +929,14 @@ const VarianceCard = ({ label, value, subValue, icon, status = 'info' }: {
   );
 };
 
-const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity[], purchaseOrders: PurchaseOrder[]): { pc: number; ac: number; pd: number; ad: number; progress: number } => {
+const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity[], purchaseOrders: PurchaseOrder[]): { pc: number; ac: number; pd: number; ad: number; costProgress: number; timeProgress: number; spi: number } => {
   const wbs = wbsLevels.find(w => w.id === id);
-  if (!wbs) return { pc: 0, ac: 0, pd: 0, ad: 0, progress: 0 };
+  if (!wbs) return { pc: 0, ac: 0, pd: 0, ad: 0, costProgress: 0, timeProgress: 0, spi: 1 };
 
   const descendantActs = collectAllDescendantActivities(id, wbsLevels, activities);
   const span = calcDateSpan(descendantActs);
   const descendantWbsIds = getAllDescendantWbsIds(id, wbsLevels);
   const descendantActIds = descendantActs.map(a => a.id);
-
-  const relatedPOs = purchaseOrders.filter(po => 
-    (po.activityId && descendantActIds.includes(po.activityId)) || 
-    (po.wbsId && descendantWbsIds.includes(po.wbsId))
-  );
 
   const pc = descendantActs.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
              purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, po) => sum + po.amount, 0);
@@ -941,25 +946,27 @@ const getRobustTotals = (id: string, wbsLevels: WBSLevel[], activities: Activity
     if (actPOs.length > 0) {
       return sum + actPOs.reduce((s, p) => s + (p.amount * (p.completion || 0) / 100), 0);
     }
-    return sum + (getProgress(a, purchaseOrders) / 100 * (a.plannedCost || a.amount || 0));
+    return sum + (getCostCompletion(a, purchaseOrders) / 100 * (a.plannedCost || a.amount || 0));
   }, 0) + purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, po) => sum + (po.amount * (po.completion || 0) / 100), 0);
 
-  // Weighted Progress logic matching schedule view
+  // Weighted Cost Progress
   let totalValueForProgress = descendantActs.reduce((sum, a) => sum + (a.plannedCost || a.amount || 0), 0) + 
                              purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, p) => sum + p.amount, 0);
-                             
-  let weightedProgress = descendantActs.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getProgress(a, purchaseOrders)), 0) +
+  let weightedCostProgress = descendantActs.reduce((sum, a) => sum + ((a.plannedCost || a.amount || 0) * getCostCompletion(a, purchaseOrders)), 0) +
                         purchaseOrders.filter(po => !po.activityId && po.wbsId && descendantWbsIds.includes(po.wbsId)).reduce((sum, p) => sum + (p.amount * (p.completion || 0)), 0);
+  const costProgress = totalValueForProgress > 0 ? Math.round(weightedCostProgress / totalValueForProgress) : 0;
 
-  const progress = totalValueForProgress > 0 ? Math.round(weightedProgress / totalValueForProgress) : 0;
+  // Weighted Time Progress
+  let totalDur = 0, weightedTime = 0;
+  descendantActs.forEach(a => {
+    const dur = a.duration || 0;
+    totalDur += dur;
+    weightedTime += dur * getTimeCompletion(a, purchaseOrders);
+  });
+  const timeProgress = totalDur > 0 ? Math.round(weightedTime / totalDur) : 0;
+  const spi = timeProgress > 0 ? costProgress / timeProgress : 1;
 
-  return {
-    pc,
-    ac,
-    pd: span.duration,
-    ad: span.actualDuration,
-    progress
-  };
+  return { pc, ac, pd: span.duration, ad: span.actualDuration, costProgress, timeProgress, spi };
 };
 
 const renderWBSRow = (
@@ -1035,18 +1042,25 @@ const renderWBSRow = (
         </td>
         <td className="px-6 py-4 text-center">
           <div className="flex flex-col items-center gap-1">
-            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="flex justify-between w-full text-[8px] font-black uppercase text-slate-400">
+              <span className="text-emerald-600">{totals.costProgress}% COST</span>
+              <span className={cn(totals.spi >= 1 ? 'text-emerald-500' : 'text-rose-500')}>SPI {totals.spi.toFixed(2)}</span>
+            </div>
+            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden relative">
+              {/* Cost bar (green) */}
               <div 
                 className={cn(
-                  "h-full transition-all duration-1000",
-                  totals.progress > 90 ? "bg-emerald-500" : "bg-blue-500"
+                  "absolute inset-y-0 left-0 transition-all duration-1000",
+                  totals.costProgress > 90 ? "bg-emerald-500" : "bg-emerald-400"
                 )}
-                style={{ width: `${totals.progress}%` }}
+                style={{ width: `${totals.costProgress}%`, zIndex: 1 }}
+              />
+              {/* Time indicator line */}
+              <div 
+                className="absolute inset-y-0 w-0.5 bg-rose-500 z-10"
+                style={{ left: `${Math.min(100, totals.timeProgress)}%` }}
               />
             </div>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-              {totals.progress}% COMPLETE
-            </span>
           </div>
         </td>
       </tr>

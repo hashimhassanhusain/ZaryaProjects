@@ -22,7 +22,10 @@ import {
   X,
   FileText,
   Shield,
-  Briefcase
+  Briefcase,
+  Cloud,
+  Download,
+  HardDrive
 } from 'lucide-react';
 import { Meeting, MeetingAgendaItem, MeetingTask, MeetingDecision, Project, User, Stakeholder, WBSLevel, Task } from '../types';
 import { db, OperationType, handleFirestoreError } from '../firebase';
@@ -30,8 +33,8 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDo
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface MeetingMinutesFormProps {
   project: Project;
@@ -51,7 +54,6 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     attendeeIds: [],
     agenda: [],
     decisions: [],
-    tasks: [],
     notes: '',
     status: 'Draft'
   });
@@ -59,6 +61,8 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
   const [users, setUsers] = useState<User[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
+  const [internalSearch, setInternalSearch] = useState('');
+  const [externalSearch, setExternalSearch] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
   // PDF Preview & Drive states
@@ -69,6 +73,9 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
   const [pdfFileName, setPdfFileName] = useState('');
   const [pendingDrivePath, setPendingDrivePath] = useState('');
   const [newMeetingId, setNewMeetingId] = useState<string | null>(null);
+
+  const [showInternalDropdown, setShowInternalDropdown] = useState(false);
+  const [showExternalDropdown, setShowExternalDropdown] = useState(false);
 
   useEffect(() => {
     const uUnsubscribe = onSnapshot(collection(db, 'users'), (snap) => {
@@ -102,13 +109,8 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
   };
 
   const addDecision = () => {
-    const newItem: MeetingDecision = { id: crypto.randomUUID(), decision: '', category: 'Scope', responsibleParty: '' };
+    const newItem: MeetingDecision = { id: crypto.randomUUID(), decision: '', category: 'Civil', responsibleParty: '', dueDate: '' };
     setFormData(prev => ({ ...prev, decisions: [...(prev.decisions || []), newItem] }));
-  };
-
-  const addTask = () => {
-    const newItem: MeetingTask = { id: crypto.randomUUID(), description: '', assigneeId: '', dueDate: '', status: 'Open' };
-    setFormData(prev => ({ ...prev, tasks: [...(prev.tasks || []), newItem] }));
   };
 
   const toggleAttendee = (id: string) => {
@@ -155,7 +157,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
       return u ? u.name : (s ? s.name : 'Unknown');
     }) || [];
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 90,
       head: [['Attendance / الحضور']],
       body: attendeeNames.map(name => [name]),
@@ -164,7 +166,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     });
 
     // Agenda Table
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 10,
       head: [['Agenda Topic / موضوع الأجندة', 'Status']],
       body: formData.agenda?.map(a => [a.topic, a.isCompleted ? 'Completed' : 'Pending']) || [],
@@ -172,25 +174,15 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
       headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
     });
 
-    // Decisions Table
-    (doc as any).autoTable({
+    // Decisions & Action Items Table
+    autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 10,
-      head: [['Decision / القرار', 'Category', 'Responsible']],
-      body: formData.decisions?.map(d => [d.decision, d.category, d.responsibleParty]) || [],
+      head: [['Decision & Action Item / القرار والمهمة', 'Category', 'Responsible', 'Due Date']],
+      body: formData.decisions?.map(d => [d.decision, d.category, d.responsibleParty, d.dueDate || '-']) || [],
       theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
-    });
-
-    // Tasks Table
-    (doc as any).autoTable({
-      startY: (doc as any).lastAutoTable.finalY + 10,
-      head: [['Task / المهمة', 'Assignee', 'Due Date']],
-      body: formData.tasks?.map(t => {
-        const assignee = users.find(u => u.uid === t.assigneeId)?.name || 'Unassigned';
-        return [t.description, assignee, t.dueDate];
-      }) || [],
-      theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8 },
+      columnStyles: { 0: { cellWidth: 80 } }
     });
 
     // Footer
@@ -252,73 +244,76 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     toast.success('Meeting link copied to clipboard!');
   };
 
-  const handleSave = async () => {
+  const handleSave = async (asNew: boolean = false) => {
     // Logic to sync with Decision Log and Task Management
-    const finalData = { ...formData, updatedAt: new Date().toISOString() };
+    const finalData = { 
+      ...formData, 
+      updatedAt: new Date().toISOString() 
+    };
+    
+    // Clean data for Firestore
+    const sanitizedData = JSON.parse(JSON.stringify(finalData));
     
     try {
-      // 1. Sync Decisions to Decision Log
-      for (const decision of formData.decisions || []) {
-        if (!decision.decisionLogId && decision.decision) {
+      // 1. Sync Decisions to Decision Log & System Tasks
+      for (const decision of sanitizedData.decisions || []) {
+        if (decision.decision && !decision.decisionLogId) {
           try {
+            // A. Add to Decision Log
             const decRef = await addDoc(collection(db, 'decision_log'), {
               projectId: project.id,
               decision: decision.decision,
               category: decision.category,
               responsibleParty: decision.responsibleParty,
-              date: formData.date,
+              date: sanitizedData.date,
+              dueDate: decision.dueDate || '',
               status: 'Approved',
               source: 'Meeting',
               sourceId: meeting?.id || 'new',
               createdAt: serverTimestamp()
             });
             decision.decisionLogId = decRef.id;
+
+            // B. Add to Tasks if there's a responsible party and due date
+            // Try to find if responsibleParty is a Zarya User to get UID
+            const assignedUser = users.find(u => u.name === decision.responsibleParty);
+            if (assignedUser && decision.dueDate) {
+              await addDoc(collection(db, 'tasks'), {
+                projectId: project.id,
+                title: decision.decision,
+                description: `Created from meeting: ${sanitizedData.title}. Category: ${decision.category}`,
+                assigneeId: assignedUser.uid,
+                dueDate: decision.dueDate,
+                status: 'TO DO',
+                priority: 'Medium',
+                sourceType: 'decision',
+                sourceId: decRef.id,
+                createdAt: serverTimestamp()
+              });
+            }
           } catch (e) {
             handleFirestoreError(e, OperationType.WRITE, 'decision_log');
           }
         }
       }
 
-      // 2. Sync Tasks to Task Management
-      for (const task of formData.tasks || []) {
-        if (!task.taskId && task.description && task.assigneeId) {
-          try {
-            const taskRef = await addDoc(collection(db, 'tasks'), {
-              projectId: project.id,
-              title: task.description,
-              description: `Generated from meeting: ${formData.title}`,
-              assigneeId: task.assigneeId,
-              dueDate: task.dueDate,
-              status: 'TO DO',
-              priority: 'Medium',
-              sourceType: 'meeting',
-              sourceId: meeting?.id || 'new',
-              wbsId: task.wbsId || '',
-              createdAt: serverTimestamp()
-            });
-            task.taskId = taskRef.id;
-          } catch (e) {
-            handleFirestoreError(e, OperationType.WRITE, 'tasks');
-          }
-        }
-      }
-
-      let meetingId = meeting?.id;
+      let meetingId = asNew ? null : meeting?.id;
       if (!meetingId) {
         const docRef = await addDoc(collection(db, 'meetings'), {
-          ...finalData,
+          ...sanitizedData,
           projectId: project.id,
           createdAt: serverTimestamp()
         });
         meetingId = docRef.id;
       } else {
         await updateDoc(doc(db, 'meetings', meetingId), {
-          ...finalData,
+          ...sanitizedData,
           updatedAt: serverTimestamp()
         });
       }
       
       setNewMeetingId(meetingId);
+      setFormData(sanitizedData); // Sync local state
       
       // Generate PDF for preview
       const pdf = generatePDFBlob();
@@ -329,9 +324,9 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
       setPdfPreviewUrl(url);
       setShowPdfConfirm(true);
 
-      // We wait for modal close to call onSave
+      toast.success(asNew ? 'Meeting saved as new report!' : 'Meeting report updated!');
     } catch (err) {
-      handleFirestoreError(err, meeting ? OperationType.UPDATE : OperationType.CREATE, 'meetings');
+      handleFirestoreError(err, (meeting && !asNew) ? OperationType.UPDATE : OperationType.CREATE, 'meetings');
     }
   };
 
@@ -350,32 +345,6 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <h1 className="text-3xl font-black tracking-tight">Interactive Meeting Minutes</h1>
                 <p className="text-slate-400 text-sm font-medium">Where decisions turn into actions.</p>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => {
-                  const pdf = generatePDFBlob();
-                  const url = URL.createObjectURL(pdf.blob);
-                  window.open(url, '_blank');
-                }}
-                disabled={isExporting}
-                className="p-3 bg-slate-800 border border-slate-700 rounded-2xl text-slate-300 hover:text-white hover:border-slate-600 transition-all shadow-sm"
-              >
-                <Printer className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={onCancel}
-                className="px-6 py-3 bg-slate-800 text-slate-300 rounded-2xl font-bold hover:bg-slate-700 transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20"
-              >
-                <Save className="w-5 h-5" />
-                Save & Sync
-              </button>
             </div>
           </div>
 
@@ -441,55 +410,179 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Agenda & Attendance */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-1 space-y-8">
           {/* Attendance Section */}
-          <section className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
+          <section className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
                 Attendance / الحضور
               </h2>
-              <span className="text-xs font-bold text-slate-400">{formData.attendeeIds?.length || 0} Present</span>
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{formData.attendeeIds?.length || 0} Present</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {users.map(user => (
-                <button
-                  key={user.uid}
-                  onClick={() => toggleAttendee(user.uid)}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                    formData.attendeeIds?.includes(user.uid)
-                      ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
-                      : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border-2 border-white shadow-sm" referrerPolicy="no-referrer" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold truncate">{user.name}</div>
-                    <div className="text-[10px] font-medium opacity-60 truncate">{user.role}</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Internal / Zarya Employees */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Zarya Employees / موظفي زريا</h3>
+                </div>
+                
+                <div className="relative">
+                  <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl min-h-[50px] cursor-pointer hover:border-blue-300 transition-all"
+                       onClick={() => setShowInternalDropdown(!showInternalDropdown)}>
+                    {(formData.attendeeIds || []).filter(id => users.find(u => u.uid === id)).map(id => {
+                      const u = users.find(u => u.uid === id);
+                      if (!u) return null;
+                      return (
+                        <div key={id} className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold">
+                          {u.name}
+                          <button onClick={(e) => { e.stopPropagation(); toggleAttendee(id); }} className="hover:text-blue-900">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {(!formData.attendeeIds || formData.attendeeIds.filter(id => users.find(u => u.uid === id)).length === 0) && (
+                      <span className="text-xs text-slate-400 mt-1">Select employees...</span>
+                    )}
                   </div>
-                </button>
-              ))}
-              {stakeholders.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => toggleAttendee(s.id)}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                    formData.attendeeIds?.includes(s.id)
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
-                      : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
-                    {s.name.charAt(0)}
+                  
+                  <AnimatePresence>
+                    {showInternalDropdown && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute z-50 top-full inset-x-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl p-2 max-h-[300px] overflow-y-auto overflow-x-hidden custom-scrollbar"
+                      >
+                        <div className="sticky top-0 bg-white pb-2 mb-2 border-b border-slate-50">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input 
+                              type="text"
+                              placeholder="Search employees..."
+                              value={internalSearch}
+                              onChange={(e) => setInternalSearch(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/10"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {users
+                            .filter(u => u.name.toLowerCase().includes(internalSearch.toLowerCase()) || u.role.toLowerCase().includes(internalSearch.toLowerCase()))
+                            .map(user => {
+                              const isSelected = formData.attendeeIds?.includes(user.uid);
+                              return (
+                                <button
+                                  key={user.uid}
+                                  onClick={(e) => { e.stopPropagation(); toggleAttendee(user.uid); }}
+                                  className={cn(
+                                    "w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left",
+                                    isSelected ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-700"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                    isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-slate-200"
+                                  )}>
+                                    {isSelected && <Check className="w-2.5 h-2.5" />}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-bold truncate">{user.name}</div>
+                                    <div className="text-[10px] opacity-70 uppercase tracking-tighter">{user.role}</div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* External / Stakeholders */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Stakeholders / الستيك هولدر</h3>
+                </div>
+
+                <div className="relative">
+                  <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl min-h-[50px] cursor-pointer hover:border-emerald-300 transition-all"
+                       onClick={() => setShowExternalDropdown(!showExternalDropdown)}>
+                    {(formData.attendeeIds || []).filter(id => stakeholders.find(s => s.id === id)).map(id => {
+                      const s = stakeholders.find(s => s.id === id);
+                      if (!s) return null;
+                      return (
+                        <div key={id} className="flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold">
+                          {s.name}
+                          <button onClick={(e) => { e.stopPropagation(); toggleAttendee(id); }} className="hover:text-emerald-900">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {(!formData.attendeeIds || formData.attendeeIds.filter(id => stakeholders.find(s => s.id === id)).length === 0) && (
+                      <span className="text-xs text-slate-400 mt-1">Select stakeholders...</span>
+                    )}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold truncate">{s.name}</div>
-                    <div className="text-[10px] font-medium opacity-60 truncate">{s.role}</div>
-                  </div>
-                </button>
-              ))}
+                  
+                  <AnimatePresence>
+                    {showExternalDropdown && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute z-50 top-full inset-x-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl p-2 max-h-[300px] overflow-y-auto overflow-x-hidden custom-scrollbar"
+                      >
+                        <div className="sticky top-0 bg-white pb-2 mb-2 border-b border-slate-50">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input 
+                              type="text"
+                              placeholder="Search stakeholders..."
+                              value={externalSearch}
+                              onChange={(e) => setExternalSearch(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/10"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {stakeholders
+                            .filter(s => s.name.toLowerCase().includes(externalSearch.toLowerCase()) || (s.position || s.role || '').toLowerCase().includes(externalSearch.toLowerCase()))
+                            .map(s => {
+                              const isSelected = formData.attendeeIds?.includes(s.id);
+                              return (
+                                <button
+                                  key={s.id}
+                                  onClick={(e) => { e.stopPropagation(); toggleAttendee(s.id); }}
+                                  className={cn(
+                                    "w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left",
+                                    isSelected ? "bg-emerald-50 text-emerald-700" : "hover:bg-slate-50 text-slate-700"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                    isSelected ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-200"
+                                  )}>
+                                    {isSelected && <Check className="w-2.5 h-2.5" />}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-bold truncate">{s.name}</div>
+                                    <div className="text-[10px] opacity-70 uppercase tracking-tighter text-emerald-600">{s.position || s.role}</div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -555,49 +648,61 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               )}
             </div>
           </section>
+        </div>
 
-          {/* Decisions Section */}
+        {/* Right Column: Decisions & Action Items */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Decisions Section (Active Action Items) */}
           <section className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                Decision Log Integration / سجل القرارات
-              </h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Decisions & Action Items / سجل القرارات والمهام
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Direct sync to Project Decisions & Tasks</p>
+                </div>
+              </div>
               <button 
                 onClick={addDecision}
-                className="p-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all"
+                className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
               >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
+
             <div className="space-y-4">
               {formData.decisions?.map((dec, idx) => (
-                <div key={dec.id} className="p-6 rounded-2xl bg-slate-50/50 border border-slate-50 space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-1 space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Decision</label>
-                      <textarea 
-                        value={dec.decision}
-                        onChange={e => {
-                          const newDecs = [...(formData.decisions || [])];
-                          newDecs[idx].decision = e.target.value;
-                          setFormData(prev => ({ ...prev, decisions: newDecs }));
-                        }}
-                        rows={2}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all resize-none"
-                      />
-                    </div>
-                    <button 
-                      onClick={() => {
-                        const newDecs = formData.decisions?.filter((_, i) => i !== idx);
+                <div key={dec.id} className="p-6 rounded-2xl bg-slate-50/50 border border-slate-50 space-y-4 relative group">
+                  <button 
+                    onClick={() => {
+                      const newDecs = formData.decisions?.filter((_, i) => i !== idx);
+                      setFormData(prev => ({ ...prev, decisions: newDecs }));
+                    }}
+                    className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Decision / Action Item</label>
+                    <textarea 
+                      value={dec.decision}
+                      onChange={e => {
+                        const newDecs = [...(formData.decisions || [])];
+                        newDecs[idx].decision = e.target.value;
                         setFormData(prev => ({ ...prev, decisions: newDecs }));
                       }}
-                      className="p-2 text-slate-300 hover:text-rose-500 transition-colors self-start"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      rows={2}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all resize-none"
+                      placeholder="What was decided and what needs to be done?"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
                       <select 
@@ -609,20 +714,44 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                         }}
                         className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
                       >
-                        <option value="Scope">Scope</option>
-                        <option value="Schedule">Schedule</option>
-                        <option value="Cost/Price">Cost/Price</option>
-                        <option value="Quality">Quality</option>
+                        <option value="Civil">{language === 'ar' ? 'مدني' : 'Civil'}</option>
+                        <option value="Technical Office">{language === 'ar' ? 'المكتب الفني' : 'Technical Office'}</option>
+                        <option value="Mechanical">{language === 'ar' ? 'ميكانيك' : 'Mechanical'}</option>
+                        <option value="Electrical">{language === 'ar' ? 'كهرباء' : 'Electrical'}</option>
+                        <option value="Administrative">{language === 'ar' ? 'إداري' : 'Administrative'}</option>
+                        <option value="Other">{language === 'ar' ? 'أخرى' : 'Other'}</option>
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible</label>
-                      <input 
-                        type="text"
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible / المسؤول</label>
+                      <select 
                         value={dec.responsibleParty}
                         onChange={e => {
                           const newDecs = [...(formData.decisions || [])];
                           newDecs[idx].responsibleParty = e.target.value;
+                          setFormData(prev => ({ ...prev, decisions: newDecs }));
+                        }}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
+                      >
+                        <option value="">Select Responsible...</option>
+                        <optgroup label="Zarya Employees / موظفي زريا">
+                          {users.map(u => <option key={u.uid} value={u.name}>{u.name} ({u.role})</option>)}
+                        </optgroup>
+                        <optgroup label="Other Stakeholders / الستيك هولدر">
+                          {stakeholders.map(s => <option key={s.id} value={s.name}>{s.name} ({s.position || s.role})</option>)}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {language === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'}
+                      </label>
+                      <input 
+                        type="date"
+                        value={dec.dueDate || ''}
+                        onChange={e => {
+                          const newDecs = [...(formData.decisions || [])];
+                          newDecs[idx].dueDate = e.target.value;
                           setFormData(prev => ({ ...prev, decisions: newDecs }));
                         }}
                         className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
@@ -631,103 +760,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Right Column: Tasks & Logic Hub */}
-        <div className="space-y-8">
-          {/* Tasks Section */}
-          <section className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-blue-600" />
-                Task Distribution / المهام
-              </h2>
-              <button 
-                onClick={addTask}
-                className="p-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-6">
-              {formData.tasks?.map((task, idx) => (
-                <div key={task.id} className="p-6 rounded-2xl bg-slate-50/50 border border-slate-50 space-y-4 relative group">
-                  <button 
-                    onClick={() => {
-                      const newTasks = formData.tasks?.filter((_, i) => i !== idx);
-                      setFormData(prev => ({ ...prev, tasks: newTasks }));
-                    }}
-                    className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Task Description</label>
-                    <textarea 
-                      value={task.description}
-                      onChange={e => {
-                        const newTasks = [...(formData.tasks || [])];
-                        newTasks[idx].description = e.target.value;
-                        setFormData(prev => ({ ...prev, tasks: newTasks }));
-                      }}
-                      rows={2}
-                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assignee</label>
-                    <select 
-                      value={task.assigneeId}
-                      onChange={e => {
-                        const newTasks = [...(formData.tasks || [])];
-                        newTasks[idx].assigneeId = e.target.value;
-                        setFormData(prev => ({ ...prev, tasks: newTasks }));
-                      }}
-                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
-                    >
-                      <option value="">Select Assignee...</option>
-                      {users.map(u => <option key={u.uid} value={u.uid}>{u.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</label>
-                      <input 
-                        type="date"
-                        value={task.dueDate}
-                        onChange={e => {
-                          const newTasks = [...(formData.tasks || [])];
-                          newTasks[idx].dueDate = e.target.value;
-                          setFormData(prev => ({ ...prev, tasks: newTasks }));
-                        }}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">WBS Logic</label>
-                      <select 
-                        value={task.wbsId}
-                        onChange={e => {
-                          const newTasks = [...(formData.tasks || [])];
-                          newTasks[idx].wbsId = e.target.value;
-                          setFormData(prev => ({ ...prev, tasks: newTasks }));
-                        }}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
-                      >
-                        <option value="">Select WBS Code...</option>
-                        {wbsLevels.filter(w => w.type === 'Work Package').map(w => (
-                          <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              {(!formData.decisions || formData.decisions.length === 0) && (
+                <div className="py-12 text-center text-slate-400 text-xs font-medium italic border-2 border-dashed border-slate-100 rounded-3xl">
+                  No decisions or action items recorded yet.
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
@@ -743,9 +780,9 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   <RefreshCw className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold mb-1">Auto-Sync Enabled</div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Decisions and Tasks are automatically synced to their respective logs upon saving.
+                  <div className="text-xs font-bold mb-1">Dual Sync-Action</div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                    Every entry here is automatically archived in the Decision Log and assigned as a Task to the responsible party in Task Management.
                   </p>
                 </div>
               </div>
@@ -754,15 +791,57 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold mb-1">WBS Compliance</div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Linking tasks to WBS codes ensures all work stays within the approved project scope.
+                  <div className="text-xs font-bold mb-1">Task Accountability</div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                    Due dates are enforced across the platform, notifying responsible parties of their commitments.
                   </p>
                 </div>
               </div>
             </div>
           </section>
         </div>
+      </div>
+
+      {/* Sticky Floating Actions */}
+      <div className={cn(
+        "fixed bottom-8 z-[60] flex items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-[2rem] shadow-2xl border border-slate-200 transition-all duration-500",
+        isRtl ? "left-8" : "right-8"
+      )}>
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+        >
+          <X className="w-5 h-5 text-slate-400" />
+          {isRtl ? 'تجاهل' : 'Discard'}
+        </button>
+        
+        <button
+          onClick={() => {
+            const pdf = generatePDFBlob();
+            const url = URL.createObjectURL(pdf.blob);
+            window.open(url, '_blank');
+          }}
+          className="flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all shadow-sm"
+        >
+          <Printer className="w-5 h-5 text-slate-400" />
+          {isRtl ? 'عرض الطباعة' : 'Print Preview'}
+        </button>
+
+        <button
+          onClick={() => handleSave(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 rounded-2xl font-bold hover:bg-emerald-100 transition-all border border-emerald-100 shadow-sm"
+        >
+          <Plus className="w-5 h-5" />
+          {isRtl ? 'حفظ كجديد' : 'Save as New'}
+        </button>
+
+        <button
+          onClick={() => handleSave(false)}
+          className="flex items-center gap-2 px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-500 transition-all shadow-xl shadow-blue-400/20"
+        >
+          <Save className="w-5 h-5" />
+          {meeting ? (isRtl ? 'تحديث المحضر' : 'Update Report') : (isRtl ? 'حفظ المحضر' : 'Save Report')}
+        </button>
       </div>
 
       {/* PDF Modal */}
@@ -783,89 +862,125 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-5xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col h-[90vh]"
+              className="relative w-full max-w-5xl bg-slate-50 rounded-[32px] shadow-2xl overflow-hidden flex flex-col h-[85vh]"
             >
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
+              {/* Refined Header matching reference image */}
+              <div className="p-8 bg-blue-600 text-white relative flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                    <FileText className="w-6 h-6" />
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner">
+                    <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900">Meeting Minutes Generated</h3>
-                    <p className="text-sm text-slate-500 font-medium">Preview and archive your document</p>
+                    <h3 className="text-2xl font-black tracking-tight leading-none mb-1">
+                      {isRtl ? 'تم حفظ التقرير بنجاح' : 'Report Saved Successfully'}
+                    </h3>
+                    <p className="text-blue-100 text-sm font-medium italic">
+                      {isRtl ? 'تم تحديث قاعدة البيانات. التالي: أرشفة المستند.' : 'Database updated. Next: Document Archiving.'}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleShareLink}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Share Link
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPdfConfirm(false);
-                      onSave(formData);
-                    }}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setShowPdfConfirm(false);
+                    onSave(formData);
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-full transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
 
-              <div className="flex-1 bg-slate-100 p-8 overflow-hidden relative">
-                {pdfPreviewUrl ? (
-                  <iframe 
-                    src={pdfPreviewUrl} 
-                    className="w-full h-full rounded-2xl border-none shadow-lg bg-white"
-                    title="PDF Preview"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
-                    <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Generating Preview...</p>
+              <div className="flex-1 flex overflow-hidden">
+                {/* Left Side: PDF Preview */}
+                <div className="flex-1 p-8 flex flex-col">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <HardDrive className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">PDF Preview</span>
+                    </div>
+                    <button 
+                      onClick={handleShareLink}
+                      className="text-blue-600 text-[10px] font-black uppercase tracking-widest hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      {isRtl ? 'فتح في نافذة جديدة' : 'Open in New Tab'}
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <div className="p-8 bg-white border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-slate-50 rounded-lg">
-                    <MessageSquare className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-slate-400 font-medium tracking-tight">File Name: </span>
-                    <span className="text-slate-900 font-bold tracking-tight">{pdfFileName}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      if (pdfPreviewUrl) {
-                        const link = document.createElement('a');
-                        link.href = pdfPreviewUrl;
-                        link.download = pdfFileName;
-                        link.click();
-                      }
-                    }}
-                    className="px-8 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2"
-                  >
-                    Download
-                  </button>
-                  <button
-                    onClick={uploadToDrive}
-                    disabled={isUploadingToDrive}
-                    className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
-                  >
-                    {isUploadingToDrive ? (
-                      <RefreshCw className="w-5 h-5 animate-spin" />
+                  <div className="flex-1 bg-white rounded-2xl shadow-xl shadow-slate-200 overflow-hidden relative">
+                    {pdfPreviewUrl ? (
+                      <iframe 
+                        src={pdfPreviewUrl} 
+                        className="w-full h-full border-none"
+                        title="PDF Preview"
+                      />
                     ) : (
-                      <Check className="w-5 h-5 text-emerald-400" />
+                      <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
+                        <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Generating Preview...</p>
+                      </div>
                     )}
-                    Save to Drive
-                  </button>
+                  </div>
+                </div>
+
+                {/* Right Side: Options matching reference image */}
+                <div className="w-[380px] border-l border-slate-200 bg-white p-10 flex flex-col justify-center space-y-10">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-blue-600">
+                      <Cloud className="w-5 h-5 fill-blue-50" />
+                      <h4 className="text-base font-black tracking-tight">Save to Cloud</h4>
+                    </div>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Upload this PDF report directly to the project's site operations folder in Google Drive.
+                    </p>
+                    <button
+                      onClick={uploadToDrive}
+                      disabled={isUploadingToDrive}
+                      className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 group"
+                    >
+                      {isUploadingToDrive ? (
+                        <RefreshCw className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <>
+                          <HardDrive className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          <span>Save to Drive</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-100"></div>
+                    </div>
+                    <span className="relative px-4 bg-white text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">OR</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => {
+                        if (pdfPreviewUrl) {
+                          const link = document.createElement('a');
+                          link.href = pdfPreviewUrl;
+                          link.download = pdfFileName;
+                          link.click();
+                        }
+                      }}
+                      className="w-full h-14 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                    >
+                      <Download className="w-5 h-5 text-slate-400" />
+                      <span>Download Locally</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowPdfConfirm(false);
+                        onSave(formData);
+                      }}
+                      className="w-full h-14 bg-slate-100 text-slate-500 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                    >
+                      Close & Return to List
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

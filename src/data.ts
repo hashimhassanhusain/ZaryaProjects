@@ -86,7 +86,7 @@ export const initialMeetings: Meeting[] = [
       { id: 'a2', topic: 'Procurement delays for steel', isCompleted: false },
     ],
     decisions: [
-      { id: 'd1', decision: 'Approved overtime for concrete pour', category: 'Schedule', responsibleParty: 'Hashim Husain' }
+      { id: 'd1', decision: 'Approved overtime for concrete pour', category: 'Administrative', responsibleParty: 'Hashim Husain' }
     ],
     tasks: [
       { id: 'mt1', description: 'Order new safety gear', assigneeId: 'u4', dueDate: '2026-04-05', status: 'Open' }
@@ -103,50 +103,50 @@ export const projects: Project[] = [];
 
 export const pages: Page[] = [
   // --- DOMAIN HUBS (LEVEL 0 - ROOT) ---
-  { id: 'gov-hub', title: 'Governance', type: 'hub', icon: 'Shield', domain: 'governance', summary: 'Project authorization, policies, and management plans.' },
-  { id: 'scope-hub', title: 'Scope', type: 'hub', icon: 'DraftingCompass', domain: 'scope', summary: 'Defining work boundaries, requirements, and WBS.' },
-  { id: 'sched-hub', title: 'Schedule', type: 'hub', icon: 'Calendar', domain: 'schedule', summary: 'Timeline, milestones, and project schedule.' },
-  { id: 'fin-hub', title: 'Finance', type: 'hub', icon: 'Banknote', domain: 'finance', summary: 'Budgeting, BOQ, and financial control.' },
-  { id: 'stak-hub', title: 'Stakeholders', type: 'hub', icon: 'Users', domain: 'stakeholders', summary: 'Stakeholder identification and engagement.' },
-  { id: 'res-hub', title: 'Resources', type: 'hub', icon: 'Package', domain: 'resources', summary: 'Team, suppliers, and physical resources.' },
-  { id: 'risk-hub', title: 'Risk', type: 'hub', icon: 'AlertTriangle', domain: 'risk', summary: 'Risk assessment, issues, and audit logs.' },
+  { id: 'gov', title: 'Governance', type: 'hub', icon: 'Shield', domain: 'governance', summary: 'Project authorization, policies, and management plans.' },
+  { id: 'scope', title: 'Scope', type: 'hub', icon: 'DraftingCompass', domain: 'scope', summary: 'Defining work boundaries, requirements, and WBS.' },
+  { id: 'sched', title: 'Schedule', type: 'hub', icon: 'Calendar', domain: 'schedule', summary: 'Timeline, milestones, and project schedule.' },
+  { id: 'fin', title: 'Finance', type: 'hub', icon: 'Banknote', domain: 'finance', summary: 'Budgeting, BOQ, and financial control.' },
+  { id: 'stak', title: 'Stakeholders', type: 'hub', icon: 'Users', domain: 'stakeholders', summary: 'Stakeholder identification and engagement.' },
+  { id: 'res', title: 'Resources', type: 'hub', icon: 'Package', domain: 'resources', summary: 'Team, suppliers, and physical resources.' },
+  { id: 'risk', title: 'Risk', type: 'hub', icon: 'AlertTriangle', domain: 'risk', summary: 'Risk assessment, issues, and audit logs.' },
 
   // --- SUB-DOMAIN HUBS (LEVEL 1) grouped by Domain ---
   
   // Governance Sub-hubs
-  { id: 'initiating-gov', title: 'Initiating', parentId: 'gov-hub', type: 'hub', domain: 'governance', icon: 'Zap', summary: 'Process group for initial authorization.' },
-  { id: 'planning-gov', title: 'Planning', parentId: 'gov-hub', type: 'hub', domain: 'governance', icon: 'Target', summary: 'Process group for management planning.' },
-  { id: 'executing-gov', title: 'Executing', parentId: 'gov-hub', type: 'hub', domain: 'governance', icon: 'Activity', summary: 'Process group for executing plans.' },
-  { id: 'monitoring-gov', title: 'Monitoring', parentId: 'gov-hub', type: 'hub', domain: 'governance', icon: 'ShieldCheck', summary: 'Process group for tracking performance.' },
-  { id: 'closing-gov', title: 'Closing', parentId: 'gov-hub', type: 'hub', domain: 'governance', icon: 'Flag', summary: 'Process group for closing activities.' },
+  { id: 'initiating-gov', title: 'Initiating', parentId: 'gov', type: 'hub', domain: 'governance', icon: 'Zap', summary: 'Process group for initial authorization.' },
+  { id: 'planning-gov', title: 'Planning', parentId: 'gov', type: 'hub', domain: 'governance', icon: 'Target', summary: 'Process group for management planning.' },
+  { id: 'executing-gov', title: 'Executing', parentId: 'gov', type: 'hub', domain: 'governance', icon: 'Activity', summary: 'Process group for executing plans.' },
+  { id: 'monitoring-gov', title: 'Monitoring', parentId: 'gov', type: 'hub', domain: 'governance', icon: 'ShieldCheck', summary: 'Process group for tracking performance.' },
+  { id: 'closing-gov', title: 'Closing', parentId: 'gov', type: 'hub', domain: 'governance', icon: 'Flag', summary: 'Process group for closing activities.' },
 
   // Scope Sub-hubs
-  { id: 'planning-scope', title: 'Planning', parentId: 'scope-hub', type: 'hub', domain: 'scope', icon: 'Target', summary: 'Defining the scope baseline.' },
-  { id: 'monitoring-scope', title: 'Controlling', parentId: 'scope-hub', type: 'hub', domain: 'scope', icon: 'ShieldCheck', summary: 'Managing scope changes.' },
+  { id: 'planning-scope', title: 'Planning', parentId: 'scope', type: 'hub', domain: 'scope', icon: 'Target', summary: 'Defining the scope baseline.' },
+  { id: 'monitoring-scope', title: 'Controlling', parentId: 'scope', type: 'hub', domain: 'scope', icon: 'ShieldCheck', summary: 'Managing scope changes.' },
 
   // Schedule Sub-hubs
-  { id: 'planning-sched', title: 'Planning', parentId: 'sched-hub', type: 'hub', domain: 'schedule', icon: 'Target', summary: 'Developing the project schedule.' },
-  { id: 'monitoring-sched', title: 'Controlling', parentId: 'sched-hub', type: 'hub', domain: 'schedule', icon: 'ShieldCheck', summary: 'Tracking schedule progress.' },
+  { id: 'planning-sched', title: 'Planning', parentId: 'sched', type: 'hub', domain: 'schedule', icon: 'Target', summary: 'Developing the project schedule.' },
+  { id: 'monitoring-sched', title: 'Controlling', parentId: 'sched', type: 'hub', domain: 'schedule', icon: 'ShieldCheck', summary: 'Tracking schedule progress.' },
 
   // Finance Sub-hubs
-  { id: 'planning-fin', title: 'Planning', parentId: 'fin-hub', type: 'hub', domain: 'finance', icon: 'Target', summary: 'Budgeting and costing.' },
-  { id: 'executing-fin', title: 'Executing', parentId: 'fin-hub', type: 'hub', domain: 'finance', icon: 'Activity', summary: 'Managing expenditures.' },
-  { id: 'monitoring-fin', title: 'Monitoring', parentId: 'fin-hub', type: 'hub', domain: 'finance', icon: 'ShieldCheck', summary: 'Financial health tracking.' },
-  { id: 'closing-fin', title: 'Closing', parentId: 'fin-hub', type: 'hub', domain: 'finance', icon: 'Flag', summary: 'Final account closing.' },
+  { id: 'planning-fin', title: 'Planning', parentId: 'fin', type: 'hub', domain: 'finance', icon: 'Target', summary: 'Budgeting and costing.' },
+  { id: 'executing-fin', title: 'Executing', parentId: 'fin', type: 'hub', domain: 'finance', icon: 'Activity', summary: 'Managing expenditures.' },
+  { id: 'monitoring-fin', title: 'Monitoring', parentId: 'fin', type: 'hub', domain: 'finance', icon: 'ShieldCheck', summary: 'Financial health tracking.' },
+  { id: 'closing-fin', title: 'Closing', parentId: 'fin', type: 'hub', domain: 'finance', icon: 'Flag', summary: 'Final account closing.' },
 
   // Stakeholders Sub-hubs
-  { id: 'initiating-stak', title: 'Initiating', parentId: 'stak-hub', type: 'hub', domain: 'stakeholders', icon: 'Zap', summary: 'Identifying stakeholders.' },
-  { id: 'monitoring-stak', title: 'Monitoring', parentId: 'stak-hub', type: 'hub', domain: 'stakeholders', icon: 'ShieldCheck', summary: 'Engagement tracking.' },
+  { id: 'initiating-stak', title: 'Initiating', parentId: 'stak', type: 'hub', domain: 'stakeholders', icon: 'Zap', summary: 'Identifying stakeholders.' },
+  { id: 'monitoring-stak', title: 'Monitoring', parentId: 'stak', type: 'hub', domain: 'stakeholders', icon: 'ShieldCheck', summary: 'Engagement tracking.' },
 
   // Resources Sub-hubs
-  { id: 'planning-res', title: 'Planning', parentId: 'res-hub', type: 'hub', domain: 'resources', icon: 'Target', summary: 'Resource planning.' },
-  { id: 'executing-res', title: 'Executing', parentId: 'res-hub', type: 'hub', domain: 'resources', icon: 'Activity', summary: 'Acquiring resources.' },
-  { id: 'monitoring-res', title: 'Monitoring', parentId: 'res-hub', type: 'hub', domain: 'resources', icon: 'ShieldCheck', summary: 'Performance tracking.' },
+  { id: 'planning-res', title: 'Planning', parentId: 'res', type: 'hub', domain: 'resources', icon: 'Target', summary: 'Resource planning.' },
+  { id: 'executing-res', title: 'Executing', parentId: 'res', type: 'hub', domain: 'resources', icon: 'Activity', summary: 'Acquiring resources.' },
+  { id: 'monitoring-res', title: 'Monitoring', parentId: 'res', type: 'hub', domain: 'resources', icon: 'ShieldCheck', summary: 'Performance tracking.' },
 
   // Risk Sub-hubs
-  { id: 'planning-risk', title: 'Planning', parentId: 'risk-hub', type: 'hub', domain: 'risk', icon: 'Target', summary: 'Risk planning.' },
-  { id: 'executing-risk', title: 'Executing', parentId: 'risk-hub', type: 'hub', domain: 'risk', icon: 'Activity', summary: 'Addressing issues.' },
-  { id: 'monitoring-risk', title: 'Monitoring', parentId: 'risk-hub', type: 'hub', domain: 'risk', icon: 'ShieldCheck', summary: 'Risk auditing.' },
+  { id: 'planning-risk', title: 'Planning', parentId: 'risk', type: 'hub', domain: 'risk', icon: 'Target', summary: 'Risk planning.' },
+  { id: 'executing-risk', title: 'Executing', parentId: 'risk', type: 'hub', domain: 'risk', icon: 'Activity', summary: 'Addressing issues.' },
+  { id: 'monitoring-risk', title: 'Monitoring', parentId: 'risk', type: 'hub', domain: 'risk', icon: 'ShieldCheck', summary: 'Risk auditing.' },
 
   // --- TERMINAL PAGES (LEVEL 2) ---
 

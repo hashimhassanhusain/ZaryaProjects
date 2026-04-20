@@ -122,7 +122,7 @@ export const AdminUsersView: React.FC = () => {
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       {user.photoURL ? (
-                        <img src={user.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" referrerPolicy="no-referrer" />
+                        <img src={user.photoURL || undefined} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-sm border-2 border-white shadow-sm">
                           {user.name.charAt(0)}

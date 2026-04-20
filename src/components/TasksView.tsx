@@ -471,7 +471,7 @@ export const TasksView: React.FC = () => {
           <div className="flex items-center gap-2">
             {getAssignee(task.assigneeId)?.photoURL ? (
               <img 
-                src={getAssignee(task.assigneeId)?.photoURL} 
+                src={getAssignee(task.assigneeId)?.photoURL || undefined} 
                 alt="" 
                 className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover"
                 referrerPolicy="no-referrer"
@@ -782,7 +782,7 @@ export const TasksView: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {getAssignee(task.assigneeId)?.photoURL ? (
-                        <img src={getAssignee(task.assigneeId)?.photoURL} className="w-6 h-6 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        <img src={getAssignee(task.assigneeId)?.photoURL || undefined} className="w-6 h-6 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
                           <User className="w-3 h-3 text-slate-400" />
@@ -996,7 +996,7 @@ export const TasksView: React.FC = () => {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   {getAssignee(note.userId)?.photoURL ? (
-                                    <img src={getAssignee(note.userId)?.photoURL} className="w-5 h-5 rounded-full" alt="" />
+                                    <img src={getAssignee(note.userId)?.photoURL || undefined} className="w-5 h-5 rounded-full" alt="" />
                                   ) : (
                                     <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
                                       <User className="w-2.5 h-2.5 text-slate-400" />
@@ -1022,7 +1022,7 @@ export const TasksView: React.FC = () => {
                               <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-slate-100"></div>
                             )}
                             {getAssignee(item.userId)?.photoURL ? (
-                              <img src={getAssignee(item.userId)?.photoURL} className="w-8 h-8 rounded-full z-10" alt="" />
+                              <img src={getAssignee(item.userId)?.photoURL || undefined} className="w-8 h-8 rounded-full z-10" alt="" />
                             ) : (
                               <div className="w-8 h-8 rounded-full z-10 bg-slate-100 flex items-center justify-center border border-slate-200">
                                 <User className="w-4 h-4 text-slate-400" />

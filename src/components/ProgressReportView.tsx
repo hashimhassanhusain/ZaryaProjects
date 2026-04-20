@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User } from '../types';
+import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User, Activity } from '../types';
 import { purchaseOrders, users } from '../data';
 import { cn } from '../lib/utils';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
@@ -81,6 +81,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dbUsers, setDbUsers] = useState<Record<string, any>>({});
   const [dbPurchaseOrders, setDbPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [scheduleActivities, setScheduleActivities] = useState<Activity[]>([]);
   
   // PDF Preview & Save states
   const [showPdfConfirm, setShowPdfConfirm] = useState(false);
@@ -130,11 +131,48 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
       handleFirestoreError(error, OperationType.GET, 'purchaseOrders');
     });
 
-    return () => unsubscribe();
+    const activitiesUnsubscribe = onSnapshot(
+      query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
+      (snapshot) => {
+        setScheduleActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity)));
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      activitiesUnsubscribe();
+    };
   }, [selectedProject]);
 
   const isStakeholder = userProfile?.role === 'stakeholder';
   const canCreateReport = userProfile?.role === 'admin' || userProfile?.role === 'project-manager' || userProfile?.role === 'engineer' || userProfile?.role === 'technical-office';
+  
+  // Progress Calculation Helpers
+  const getCostCompletion = (activity: Activity): number => {
+    const linkedPOs = dbPurchaseOrders.filter(p => p.activityId === activity.id);
+    if (linkedPOs.length === 0) return 0;
+    const bac = activity.plannedCost || activity.amount || 0;
+    if (bac === 0) return 0;
+    const ev = linkedPOs.reduce((sum, po) => {
+      return sum + (po.lineItems?.reduce((s, li) => s + (li.amount * (li.completion || 0) / 100), 0)
+        ?? (po.amount * (po.completion || 0) / 100));
+    }, 0);
+    return Math.min(100, Math.round((ev / bac) * 100));
+  };
+
+  const getTimeCompletion = (activity: Activity): number => {
+    const today = new Date();
+    const plannedStart = activity.startDate || activity.actualStartDate || '';
+    const plannedFinish = activity.finishDate || '';
+    if (!plannedStart || !plannedFinish) return 0;
+    const start = new Date(plannedStart);
+    const finish = new Date(plannedFinish);
+    const totalDuration = finish.getTime() - start.getTime();
+    if (totalDuration <= 0) return 0;
+    if (today < start) return 0;
+    if (today > finish) return 100;
+    return Math.round(((today.getTime() - start.getTime()) / totalDuration) * 100);
+  };
 
   // Fetch reports
   useEffect(() => {
@@ -472,6 +510,33 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         toast.success('New report created successfully');
       }
 
+      // SYNC COMPLETION TO POs (Physical/Earned Progress)
+      for (const act of activities) {
+        if (act.poLineItemId && act.poLineItemId !== 'general') {
+          const poLineItem = allPOLineItems.find(li => li.id === act.poLineItemId);
+          if (poLineItem && poLineItem.poId) {
+            const poRef = doc(db, 'purchaseOrders', poLineItem.poId);
+            const poSnap = await getDocs(query(collection(db, 'purchaseOrders'), where('id', '==', poLineItem.poId)));
+            
+            if (!poSnap.empty) {
+              const poDoc = poSnap.docs[0];
+              const poData = poDoc.data() as PurchaseOrder;
+              const updatedLineItems = poData.lineItems.map(li => {
+                if (li.id === act.poLineItemId) {
+                  return { ...li, completion: act.progressUpdate };
+                }
+                return li;
+              });
+              
+              await updateDoc(poDoc.ref, {
+                lineItems: updatedLineItems,
+                updatedAt: serverTimestamp()
+              });
+            }
+          }
+        }
+      }
+
       // Sync issues to global Issue Log
       for (const issue of issues) {
         if (!issue.title) continue; // Skip empty issues
@@ -555,19 +620,29 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
     
     const activityRows = reportData.activities.map((a: any) => {
       const poItem = allPOLineItems.find(li => li.id === a.poLineItemId);
+      const scheduleActivity = scheduleActivities.find(sa => sa.id === poItem?.activityId);
+      
+      let metricsStr = `${a.progressUpdate}%`;
+      if (scheduleActivity) {
+        const timePct = getTimeCompletion(scheduleActivity);
+        const spi = timePct > 0 ? a.progressUpdate / timePct : 1;
+        metricsStr = `Cost: ${a.progressUpdate}% | Time: ${timePct}% | SPI: ${spi.toFixed(2)}`;
+        if (spi < 0.85) metricsStr += ' [SCHEDULE IMPACT]';
+      }
+
       return [
         a.poLineItemId === 'general' ? `[GENERAL] ${a.activityName}` : (poItem ? `${poItem.poId} - ${poItem.description}` : 'N/A'),
         a.description,
-        `${a.progressUpdate}%`
+        metricsStr
       ];
     });
 
     autoTable(doc, {
       startY: 80,
-      head: [['Activity Link / Item', 'Work Description', 'Progress']],
+      head: [['Activity Link / Item', 'Work Description', 'Progress Metrics']],
       body: activityRows,
       headStyles: { fillColor: [30, 64, 175] },
-      styles: { fontSize: 9 }
+      styles: { fontSize: 8 }
     });
 
     const pdfBlob = doc.output('blob');
@@ -955,6 +1030,30 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                           setActivities(newActivities);
                         }}
                       />
+                      {activity.poLineItemId && activity.poLineItemId !== 'general' && (() => {
+                        const poLineItem = allPOLineItems.find(li => li.id === activity.poLineItemId);
+                        const scheduleActivity = scheduleActivities.find(a => a.id === poLineItem?.activityId);
+                        if (!scheduleActivity) return null;
+                        
+                        const timePct = getTimeCompletion(scheduleActivity);
+                        const spi = timePct > 0 ? activity.progressUpdate / timePct : 1;
+                        const isSevere = spi < 0.85;
+
+                        return (
+                          <div className="flex flex-col gap-0.5 mt-1">
+                            <div className="flex justify-between text-[8px] font-black uppercase text-slate-400 px-1">
+                              <span>Time: {timePct}%</span>
+                              <span className={cn(spi >= 1 ? 'text-emerald-500' : 'text-rose-500')}>SPI {spi.toFixed(2)}</span>
+                            </div>
+                            {isSevere && (
+                              <div className="text-[8px] font-black text-rose-600 animate-pulse bg-rose-50 px-1 rounded flex items-center gap-0.5">
+                                <AlertTriangle className="w-2.5 h-2.5" />
+                                IMPACT
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="md:col-span-1 flex items-end justify-center pb-1">
                       <button 
