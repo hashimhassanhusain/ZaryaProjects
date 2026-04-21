@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { Breadcrumbs } from './components/Breadcrumbs';
 import { DashboardView } from './components/DashboardView';
 import { DetailView } from './components/DetailView';
 import { ZaryaPOTracker } from './components/ZaryaPOTracker';
@@ -75,6 +74,7 @@ import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { UserProvider, useAuth } from './context/UserContext';
+import { FocusAreaProvider } from './context/FocusAreaContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { Toaster } from 'react-hot-toast';
 
@@ -367,6 +367,7 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
+        <FocusAreaBar />
         
         {/* Horizontal Matrix Top Bar - Visible on Dashboard and Domain filtered views */}
         {(location.pathname === '/' || selectedDomain) && (
@@ -514,7 +515,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        <UserProvider>
+        <FocusAreaProvider>
+          <UserProvider>
           {!user ? (
             <Login />
           ) : (
@@ -530,7 +532,8 @@ export default function App() {
             </ProjectProvider>
           )}
         </UserProvider>
-      </LanguageProvider>
+      </FocusAreaProvider>
+    </LanguageProvider>
     </ErrorBoundary>
   );
 }

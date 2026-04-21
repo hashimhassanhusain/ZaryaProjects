@@ -90,6 +90,7 @@ import { IssueLogTab } from './risk/IssueLogTab';
 import { useAuth } from '../context/UserContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useFocusArea } from '../context/FocusAreaContext';
 
 interface DomainDashboardProps {
   page: Page;
@@ -113,6 +114,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
+  const { activeFocusArea } = useFocusArea();
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
   const domainKey = page.domain || 'governance';
@@ -124,6 +126,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (!userProfile) return false;
     return userProfile.accessiblePages?.includes(child.id);
   });
+
+  const focusChildren = filteredChildren.filter(child =>
+    child.focusArea?.includes(activeFocusArea)
+  );
 
   // Risk Data State
   const [risks, setRisks] = useState<RiskEntry[]>([]);
@@ -418,87 +424,30 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   return (
     <div className="flex flex-col h-full"> {/* Added h-full for layout stability */}
-      {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-stretch gap-2 bg-slate-50/50 p-1 rounded-t-3xl border-t border-x border-slate-200 w-full overflow-x-auto no-scrollbar">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={cn(
-            "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative overflow-hidden group whitespace-nowrap min-w-max",
-            activeTab === 'overview' 
-              ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
-              : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-          )}
-        >
-          <div className={cn(
-            "p-1.5 rounded-lg transition-all duration-300",
-            activeTab === 'overview' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
-          )}>
-            <Icon className="w-4 h-4" />
-          </div>
-          <span className="leading-tight font-semibold uppercase tracking-tight">
-            {(stripNumericPrefix(t(page?.id || '') || page?.title || '') || 'Overview')
-              .replace(/\s*DOMAIN$/i, '')
-              .replace(/-\w+$/i, '')}
-          </span>
-          {activeTab === 'overview' && (
-            <motion.div 
-              layoutId="activeDomainTab"
-              className="absolute inset-0 bg-white -z-10"
-              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-          )}
-        </button>
-
-        {filteredChildren.map((child) => {
-          if (!child) return null;
-          const isActive = activeTab === child.id;
-          const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
-          const focusAreaColor = 
-            child.focusArea?.includes('Initiating') ? 'bg-blue-500' :
-            child.focusArea?.includes('Planning') ? 'bg-indigo-500' :
-            child.focusArea?.includes('Executing') ? 'bg-emerald-500' :
-            child.focusArea?.includes('Monitoring') ? 'bg-amber-500' :
-            child.focusArea?.includes('Closing') ? 'bg-rose-500' :
-            'bg-slate-300';
-
-          return (
-            <button
-              key={child.id}
-              onClick={() => setActiveTab(child.id)}
-              className={cn(
-                "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative overflow-hidden group whitespace-nowrap min-w-max",
-                isActive 
-                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50" 
-                  : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
-              )}
-            >
-              <div className={cn(
-                "p-1.5 rounded-lg transition-all duration-300 relative",
-                isActive ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-600"
-              )}>
-                <ChildIcon className="w-4 h-4" />
-                {child.focusArea && (
-                  <div className={cn(
-                    "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white shadow-sm",
-                    focusAreaColor
-                  )} title={child.focusArea} />
+      {/* Focus Area content header */}
+      {focusChildren.length > 1 && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
+          {focusChildren.map(child => {
+            const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
+            const isSelected = activeTab === child.id;
+            return (
+              <button
+                key={child.id}
+                onClick={() => setActiveTab(child.id)}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-white'
                 )}
-              </div>
-              <span className="leading-tight font-semibold uppercase tracking-tight">
-                {(stripNumericPrefix(t(child.id) || child.title) || child.id)
-                  .replace(/-\w+$/i, '')}
-              </span>
-              {isActive && (
-                <motion.div 
-                  layoutId="activeDomainTab"
-                  className="absolute inset-0 bg-white -z-10"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
+              >
+                <ChildIcon className="w-3.5 h-3.5" />
+                {child.title}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-b-3xl p-2 shadow-sm -mt-px flex-1">
         <AnimatePresence mode="wait">
@@ -510,129 +459,28 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            {activeTab === 'overview' ? (
-              <div className="space-y-6">
-                {page.id === '2.1.2' ? (
-                  <ProjectManagementPlanView page={page} />
-                ) : domainKey === 'risk' ? (
-                  <RiskDashboardTab risks={risks} issues={issues} audits={audits} />
-                ) : (
-                  <>
-                    {kpis.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {kpis.map((kpi, idx) => {
-                          const Icon = ICON_MAP[kpi.icon || 'Info'] || Info;
-                          const colorClass = 
-                            kpi.status === 'success' ? 'text-emerald-600' :
-                            kpi.status === 'warning' ? 'text-amber-600' :
-                            kpi.status === 'danger' ? 'text-rose-600' :
-                            'text-blue-600';
-
-                          return (
-                            <motion.div
-                              key={kpi.label}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: idx * 0.05 }}
-                              className="bg-slate-50/50 p-5 rounded-xl border border-slate-100"
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <div className={`p-2 rounded-lg bg-white shadow-sm ${colorClass}`}>
-                                  <Icon className="w-5 h-5" />
-                                </div>
-                                {kpi.trend && (
-                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-white px-2 py-1 rounded-full shadow-sm">
-                                    {kpi.trend}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-2xl font-semibold text-slate-900">{kpi.value}</div>
-                              <div className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-2 bg-slate-50/30 p-6 rounded-xl border border-slate-100">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('domain_performance')}</h3>
-                          <div className="flex gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2 h-2 rounded-full bg-blue-500" />
-                              <span className="text-[10px] font-medium text-slate-500">{t('planned')}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                              <span className="text-[10px] font-medium text-slate-500">{t('actual')}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="h-64 w-full">
-                          {getChartData() || (
-                            <div className="h-full flex items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
-                              <p className="text-slate-400 text-sm">{t('no_chart_data')}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-slate-50/30 p-6 rounded-xl border border-slate-100 h-full">
-                          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">{t('domain_alerts')}</h3>
-                          <div className="space-y-3">
-                            {alerts.length > 0 ? alerts.map((alert, idx) => (
-                              <div 
-                                key={idx}
-                                className={cn(
-                                  "p-3 rounded-lg text-xs flex gap-3 items-start bg-white shadow-sm",
-                                  alert.type === 'danger' ? "text-rose-700 border border-rose-100" :
-                                  alert.type === 'warning' ? "text-amber-700 border border-amber-100" :
-                                  "text-blue-700 border border-blue-100"
-                                )}
-                              >
-                                {alert.type === 'danger' || alert.type === 'warning' ? (
-                                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                                ) : (
-                                  <Info className="w-4 h-4 shrink-0" />
-                                )}
-                                <p className="leading-relaxed">{alert.msg}</p>
-                              </div>
-                            )) : (
-                              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                                <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
-                                <p className="text-xs">{t('no_active_alerts')}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-hidden h-full">
-                {(() => {
-                  const activePage = filteredChildren.find(cp => cp.id === activeTab);
-                  if (!activePage) return (
-                    <div className="p-12 text-center text-slate-400">
-                      <Info className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                      <p className="text-sm font-medium">{t('page_not_found')}</p>
-                    </div>
-                  );
-                  
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden h-full">
+              {focusChildren.length === 0 ? (
+                <div className="p-16 text-center text-slate-400">
+                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  <p className="text-sm font-medium">No processes defined for this intersection yet.</p>
+                </div>
+              ) : (
+                (() => {
+                  const pageToShow = focusChildren.find(c => c.id === activeTab) || focusChildren[0];
+                  // auto-select first if activeTab not in this focus area
+                  // Note: setState during render is generally bad, but we are inside an IIFE mapped to content
+                  // For now we'll just show it.
                   return (
                     <div className="flex flex-col h-full overflow-hidden">
                       <div className="p-0 flex-1 overflow-visible">
-                        {renderPageContent(activePage)}
+                        {renderPageContent(pageToShow)}
                       </div>
                     </div>
                   );
-                })()}
-              </div>
-            )}
+                })()
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

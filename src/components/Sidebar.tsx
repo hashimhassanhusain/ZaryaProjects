@@ -1,182 +1,81 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Shield,
-  DraftingCompass,
-  Calendar,
-  Banknote,
-  Users,
-  Package,
-  AlertTriangle,
-  FolderOpen,
-  Settings,
-  Zap,
-  Target,
-  Activity,
-  ShieldCheck,
-  Flag,
-  ChevronRight,
-  ChevronDown
+  LayoutDashboard, Shield, DraftingCompass, Calendar,
+  Banknote, Users, Package, AlertTriangle, FolderOpen, Settings,
 } from 'lucide-react';
-import { pages } from '../data';
-import { cn, stripNumericPrefix } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
-import { useLanguage } from '../context/LanguageContext';
 
-import { PERFORMANCE_DOMAINS, FOCUS_AREAS, DomainId } from '../constants/navigation';
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard, path: '/' },
+  { id: 'gov',       label: 'Governance',   icon: Shield,           path: '/page/gov' },
+  { id: 'scope',     label: 'Scope',        icon: DraftingCompass,  path: '/page/scope' },
+  { id: 'sched',     label: 'Schedule',     icon: Calendar,         path: '/page/sched' },
+  { id: 'fin',       label: 'Finance',      icon: Banknote,         path: '/page/fin' },
+  { id: 'stak',      label: 'Stakeholders', icon: Users,            path: '/page/stak' },
+  { id: 'res',       label: 'Resources',    icon: Package,          path: '/page/res' },
+  { id: 'risk',      label: 'Risk',         icon: AlertTriangle,    path: '/page/risk' },
+];
 
-const BOTTOM_NAV = [
-  { id: 'drive', label: 'Files', icon: FolderOpen, path: '/page/files' },
-  { id: 'admin', label: 'Admin', icon: Settings,   path: '/admin/users' },
+const BOTTOM_ITEMS = [
+  { id: 'drive', label: 'Drive Explorer',  icon: FolderOpen, path: '/page/files' },
+  { id: 'admin', label: 'Admin Settings',  icon: Settings,   path: '/admin/users' },
 ];
 
 export const Sidebar: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, isAdmin } = useAuth();
-  const { isSidebarOpen, setSelectedDomain, setSelectedFocusArea } = useUI();
-  const { t } = useLanguage();
-  const [expandedFocusArea, setExpandedFocusArea] = useState<string | null>(null);
-  const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
+  const { isSidebarOpen } = useUI();
 
-  const canAccess = (pageId: string): boolean => {
+  const isActive = (item: typeof NAV_ITEMS[0]) =>
+    location.pathname === item.path ||
+    (item.id !== 'dashboard' && item.id !== 'admin' &&
+      location.pathname.startsWith(`/page/${item.id}`));
+
+  const canAccess = (item: typeof NAV_ITEMS[0]): boolean => {
+    if (item.id === 'admin') return isAdmin;
     if (isAdmin) return true;
     if (!userProfile) return false;
-    return userProfile.accessiblePages?.includes(pageId) ?? false;
+    if (item.id === 'dashboard') return userProfile.accessiblePages?.includes('dashboard') ?? false;
+    if (item.id === 'drive') return userProfile.accessiblePages?.includes('files') ?? false;
+    return (userProfile.accessiblePages?.includes(item.id) ?? false);
   };
 
-  const renderFocusArea = (focusArea: typeof FOCUS_AREAS[number]) => {
-    const isFAOuen = expandedFocusArea === focusArea.id;
-    const FAOcon = focusArea.icon;
-
-    // Filter domains that have pages in this focus area
-    const relevantDomains = PERFORMANCE_DOMAINS.filter(domain => {
-      const domainPages = pages.filter(p => p.domain === domain.id && p.focusArea === focusArea.id);
-      return isAdmin || domainPages.some(p => canAccess(p.id));
-    });
-
-    if (relevantDomains.length === 0 && !isAdmin) return null;
-
-    return (
-      <div key={focusArea.id} className="space-y-1">
-        <button
-          onClick={() => {
-            setExpandedFocusArea(isFAOuen ? null : focusArea.id);
-            setSelectedFocusArea(focusArea.id as any);
-          }}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group mb-1",
-            isFAOuen ? "bg-white shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-          )}
-        >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-            <FAOcon className="w-4 h-4" />
-          </div>
-          <span className="flex-1 text-[10px] font-black uppercase tracking-widest text-left truncate">
-            {focusArea.title}
-          </span>
-          {isFAOuen ? <ChevronDown className="w-3 h-3 text-slate-400" /> : <ChevronRight className="w-3 h-3 text-slate-400" />}
-        </button>
-
-        {isFAOuen && (
-          <div className="ml-5 pl-4 border-l border-slate-100 space-y-1 mb-3">
-            {relevantDomains.map(domain => {
-              const isDomainOpen = expandedDomain === `${focusArea.id}-${domain.id}`;
-              const domainPages = pages.filter(p => p.domain === domain.id && p.focusArea === focusArea.id);
-              const accessiblePages = domainPages.filter(p => canAccess(p.id));
-
-              return (
-                <div key={domain.id} className="space-y-1">
-                  <button
-                    onClick={() => setExpandedDomain(isDomainOpen ? null : `${focusArea.id}-${domain.id}`)}
-                    className={cn(
-                      "w-full flex items-center gap-2 py-1.5 text-left text-[9px] font-bold uppercase tracking-widest transition-all",
-                      isDomainOpen ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
-                    )}
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: domain.color }} />
-                    <span className="flex-1 truncate">{domain.title}</span>
-                    {isDomainOpen ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronRight className="w-2.5 h-2.5" />}
-                  </button>
-
-                  {isDomainOpen && (
-                    <div className="ml-2 pl-3 border-l border-slate-100 space-y-1">
-                      {accessiblePages.map(page => {
-                        const active = location.pathname === `/page/${page.id}`;
-                        return (
-                          <Link
-                            key={page.id}
-                            to={`/page/${page.id}`}
-                            className={cn(
-                              "block px-2 py-1 rounded-lg text-[10px] font-medium transition-all truncate border-l-2",
-                              active 
-                                ? "bg-slate-50 text-slate-900 font-bold border-blue-600" 
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent"
-                            )}
-                          >
-                            {stripNumericPrefix(t(page.id) || page.title)}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderBottomItem = (item: typeof BOTTOM_NAV[0]) => {
-    if (item.id === 'admin' && !isAdmin) return null;
-    const active = location.pathname === item.path;
+  const renderItem = (item: typeof NAV_ITEMS[0]) => {
+    if (!canAccess(item)) return null;
+    const active = isActive(item);
     const Icon = item.icon;
-
     return (
       <Link
         key={item.id}
         to={item.path}
         className={cn(
-          "flex flex-col items-center justify-center p-2 rounded-xl transition-all group",
-          active ? "bg-slate-200 text-slate-900" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          'flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group',
+          active
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
         )}
       >
-        <Icon className="w-5 h-5 mb-0.5" />
-        <span className="text-[8px] font-bold uppercase tracking-widest">{item.label}</span>
+        <Icon className={cn('w-5 h-5 shrink-0', active ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
+        <span className={cn('text-[11px] font-semibold uppercase tracking-wider truncate', active ? 'text-white' : '')}>
+          {item.label}
+        </span>
       </Link>
     );
   };
 
   return (
-    <aside
-      className={cn(
-        'h-screen bg-[#f8fafc] border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 custom-scrollbar',
-        isSidebarOpen
-          ? 'w-[140px] p-2 overflow-y-auto'
-          : 'w-0 p-0 overflow-hidden border-none'
-      )}
-    >
-      <nav className="flex-1 flex flex-col gap-1 pt-2">
-        <Link
-          to="/"
-          className={cn(
-            "flex flex-col items-center justify-center py-3 mb-2 rounded-xl transition-all group",
-            location.pathname === '/' ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-          )}
-        >
-          <LayoutDashboard className="w-7 h-7 mb-1" />
-          <span className="text-[8px] font-black uppercase tracking-widest">Dash</span>
-        </Link>
-        <div className="h-px bg-slate-100 mx-2 mb-2" />
-        {FOCUS_AREAS.map(renderFocusArea)}
+    <aside className={cn(
+      'h-screen bg-[#f8fafc] border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300',
+      isSidebarOpen ? 'w-[220px] p-3 overflow-y-auto' : 'w-0 p-0 overflow-hidden border-none'
+    )}>
+      <nav className="flex-1 flex flex-col gap-0.5 pt-2">
+        {NAV_ITEMS.map(renderItem)}
       </nav>
-
-      <div className="mt-auto pt-2 pb-2 border-t border-slate-100 flex flex-col gap-1">
-        {BOTTOM_NAV.map(renderBottomItem)}
+      <div className="mt-auto pt-3 pb-2 border-t border-slate-100 flex flex-col gap-0.5">
+        {BOTTOM_ITEMS.map(renderItem)}
       </div>
     </aside>
   );
