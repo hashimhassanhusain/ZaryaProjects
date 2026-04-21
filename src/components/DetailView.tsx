@@ -49,8 +49,8 @@ import { MeetingMinutesForm } from './MeetingMinutesForm';
 import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion, QualityAudit, Meeting } from '../types';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { VarianceAnalysisView } from './VarianceAnalysisView';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
@@ -288,7 +288,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
       if (isLogPage && !isStakeholderRegister) {
         const headers = page.formFields || [];
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [headers],
           body: [1, 2, 3, 4, 5].map(row => headers.map((f, i) => i === 0 ? `REC-00${row}` : `Sample ${f}`)),
@@ -335,7 +335,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           formData[`${obj} Person Approving`] || selectedProject.charterData?.[`${obj} Person Approving`] || 'N/A'
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Objective', 'Description', 'Success Criteria', 'Approver']],
           body: objectiveRows,
@@ -350,7 +350,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY += 10;
 
         const milestoneRows = charterMilestones.map(m => [m.description, m.finishDate || 'TBD']);
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Milestone', 'Due Date']],
           body: milestoneRows,
@@ -380,7 +380,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY += 10;
 
         const stakeholderRows = stakeholders.map(s => [s.name, s.role]);
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Name', 'Role']],
           body: stakeholderRows,
@@ -410,7 +410,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           s.engagementLevel || 'Green'
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['ID', 'Name', 'Position/Org', 'Role', 'Contact', 'Influence', 'Engagement']],
           body: stakeholderRows,
@@ -438,7 +438,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           new Date(s.lastUpdated).toLocaleDateString()
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['STAKEHOLDER', 'POWER (1-10)', 'INTEREST (1-10)', 'STRATEGY', 'LAST UPDATED']],
           body: analysisRows,
@@ -494,7 +494,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY += 6;
 
         const ccbRows = changePlan.ccbMembers.map(m => [m.name, m.role, m.responsibility, m.authority]);
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['NAME', 'ROLE', 'RESPONSIBILITY', 'AUTHORITY']],
           body: ccbRows,
@@ -513,7 +513,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY += 6;
 
         const phaseRows = pmPlan.phases.map((p, idx) => [idx + 1, p.name, p.deliverables.join(', ')]);
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['#', 'PHASE NAME', 'KEY DELIVERABLES']],
           body: phaseRows,
@@ -533,7 +533,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY += 6;
 
         const tailoringRows = pmPlan.tailoringDecisions.map(d => [d.knowledgeArea, d.isTailoredOut ? 'Tailored Out' : 'Active', d.justification || 'N/A']);
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['KNOWLEDGE AREA', 'STATUS', 'JUSTIFICATION']],
           body: tailoringRows,
@@ -611,7 +611,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         doc.text('2. ROLES & RESPONSIBILITIES', margin, currentY);
         currentY += 10;
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['TEAM MEMBER', 'QUALITY ROLE', 'RESPONSIBILITIES', 'AUTHORITY']],
           body: qualityPlan.roles.map(r => [

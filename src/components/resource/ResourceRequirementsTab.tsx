@@ -37,8 +37,8 @@ import {
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ResourceRequirementsTabProps {
   projectId: string;
@@ -204,12 +204,12 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
       req.status
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [['Resource', 'Type', 'Qty', 'Unit', 'Rate', 'Amount', 'Status']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillStyle: [15, 23, 42], textColor: [255, 255, 255] }
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
     });
 
     doc.save(`${projectId}-RES-REQ-V1-${date.replace(/\//g, '-')}.pdf`);

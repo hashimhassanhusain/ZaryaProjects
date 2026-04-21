@@ -35,8 +35,8 @@ import {
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface SelectionCriteriaTabProps {
   projectId: string;
@@ -174,13 +174,13 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
       ev.totalScore.toFixed(2)
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [headers],
       body: body,
       theme: 'grid',
       styles: { fontSize: 8 },
-      headStyles: { fillStyle: [15, 23, 42], textColor: [255, 255, 255] }
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
     });
 
     doc.save(`${projectId}-RES-SEL-V1-${date.replace(/\//g, '-')}.pdf`);

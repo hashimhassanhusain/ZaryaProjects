@@ -229,10 +229,10 @@ export const UserFormView: React.FC = () => {
     // Manual additions for items not in the data.ts pages list but in the sidebar
     if (parentId === null) {
       if (!children.find(p => p.id === 'dashboard')) {
-        children.unshift({ id: 'dashboard', title: 'Dashboard', type: 'hub' });
+        children.unshift({ id: 'dashboard', title: 'Dashboard', type: 'hub', domain: 'governance', focusArea: 'initiating' } as Page);
       }
       if (!children.find(p => p.id === 'files')) {
-        children.push({ id: 'files', title: 'Drive Explorer', type: 'terminal' });
+        children.push({ id: 'files', title: 'Drive Explorer', type: 'terminal', domain: 'governance', focusArea: 'initiating' } as Page);
       }
     }
 

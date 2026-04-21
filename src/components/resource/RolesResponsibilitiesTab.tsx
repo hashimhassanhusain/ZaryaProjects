@@ -28,8 +28,8 @@ import {
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface RolesResponsibilitiesTabProps {
   projectId: string;
@@ -126,12 +126,12 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
       r.qualifications
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [['Position', 'Authority', 'Responsibility', 'Qualifications']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillStyle: [15, 23, 42], textColor: [255, 255, 255] }
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
     });
 
     doc.save(`${projectId}-RES-ROLES-V1-${date.replace(/\//g, '-')}.pdf`);

@@ -2,11 +2,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Page, BOQItem, PurchaseOrder, ProjectManagementPlan } from '../types';
 import { getParent } from '../data';
 import { BarChart3, Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle2, AlertCircle, ShieldCheck, FileText, Printer, Download, Share2, UserCheck, Calendar, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
 
 interface EVMReportViewProps {
   page: Page;
@@ -73,12 +85,16 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
 
     const ev = boqItems.reduce((sum, item) => {
       const amount = item.amount || 0;
-      return sum + (amount * ((item.completion || 0) / 100));
+      // Use physical progress if available, fallback to completion
+      const progress = item.physicalProgress ?? item.completion ?? 0;
+      return sum + (amount * (progress / 100));
     }, 0);
 
-    const ac = pos.reduce((sum, po) => {
-      return sum + (po.amount || 0);
-    }, 0);
+    const ac = pos
+      .filter(po => ['Approved', 'Paid', 'Closed'].includes(po.status || ''))
+      .reduce((sum, po) => {
+        return sum + (po.amount || 0);
+      }, 0);
     
     // Calculate PV based on time elapsed if start/end dates exist
     let pv = 0;
@@ -119,6 +135,37 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
       percentSpent: bac > 0 ? (ac / bac) * 100 : 0
     };
   }, [boqItems, pos, selectedProject, isSyncing, baseCurrency]);
+
+  const sCurveData = useMemo(() => {
+    // Generate data points for the S-Curve
+    // In a real app, this would use daily snapshots
+    const points = [];
+    const months = 6; // Forecast for 6 months
+    const now = new Date();
+    
+    for (let i = -3; i <= months; i++) {
+      const date = new Date(now);
+      date.setMonth(now.getMonth() + i);
+      const label = date.toLocaleString('default', { month: 'short' });
+      
+      // Logistic function for S-curve (simplified)
+      const x = (i + 3) / (months + 3);
+      const sFactor = 1 / (1 + Math.exp(-10 * (x - 0.5)));
+      
+      const point: any = {
+        name: label,
+        PV: evmMetrics.bac * sFactor,
+      };
+
+      if (i <= 0) {
+        point.EV = evmMetrics.ev * (1 + i * 0.1); // Simulated historical EV
+        point.AC = evmMetrics.ac * (1 + i * 0.08); // Simulated historical AC
+      }
+
+      points.push(point);
+    }
+    return points;
+  }, [evmMetrics]);
 
   const handleSync = () => {
     setIsSyncing(true);
@@ -250,6 +297,54 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* S-Curve Chart */}
+          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-slate-900 italic uppercase">Cost Baseline S-Curve</h3>
+              </div>
+              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-300 rounded-full" /> PV</div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-500 rounded-full" /> EV</div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-500 rounded-full" /> AC</div>
+              </div>
+            </div>
+
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={sCurveData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPV" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#cbd5e1" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#cbd5e1" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorEV" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  />
+                  <YAxis 
+                    hide 
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="PV" stroke="#cbd5e1" strokeWidth={2} fillOpacity={1} fill="url(#colorPV)" />
+                  <Area type="monotone" dataKey="EV" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorEV)" />
+                  <Line type="monotone" dataKey="AC" stroke="#f59e0b" strokeWidth={3} strokeDasharray="5 5" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </section>
 

@@ -114,12 +114,13 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
   };
 
   const toggleAttendee = (id: string) => {
-    const current = formData.attendeeIds || [];
-    if (current.includes(id)) {
-      setFormData(prev => ({ ...prev, attendeeIds: current.filter(a => a !== id) }));
-    } else {
-      setFormData(prev => ({ ...prev, attendeeIds: [...current, id] }));
-    }
+    setFormData(prev => {
+      const current = Array.from(new Set(prev.attendeeIds || []));
+      const next = current.includes(id) 
+        ? current.filter(a => a !== id)
+        : [...current, id];
+      return { ...prev, attendeeIds: next };
+    });
   };
 
   const generatePDFBlob = () => {
@@ -193,39 +194,39 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
 
     const fileName = `${project.code}-ZRY-MEETING-${typeLabel.replace(/\s+/g, '_')}-${formData.date}.pdf`;
     const blob = doc.output('blob');
-    const path = `SITE_OPERATIONS_04/04.4_MEETING_MINUTES`;
+    
+    // Determine path based on meeting type matching server.ts structure
+    let path = 'MEETINGS_LOG_05/05.2_Internal_Technical_Meetings';
+    if (formData.type?.toLowerCase().includes('client')) {
+      path = 'MEETINGS_LOG_05/05.1_Client_Meetings';
+    } else if (formData.type?.toLowerCase().includes('subcon')) {
+      path = 'MEETINGS_LOG_05/05.3_Subcontractor_Meetings';
+    }
 
     return { blob, fileName, path };
   };
 
   const uploadToDrive = async () => {
-    if (!pdfPreviewBlob) return;
+    if (!pdfPreviewBlob || !project.driveFolderId) {
+      if (!project.driveFolderId) toast.error('Project Drive Folder not found. Please initialize the project first.');
+      return;
+    }
     setIsUploadingToDrive(true);
     
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onloadend = () => {
-          const base64String = (reader.result as string).split(',')[1];
-          resolve(base64String);
-        };
-      });
-      reader.readAsDataURL(pdfPreviewBlob);
-      const base64Data = await base64Promise;
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', pdfPreviewBlob, pdfFileName);
+      formDataToSend.append('projectRootId', project.driveFolderId);
+      formDataToSend.append('path', pendingDrivePath);
 
       const response = await fetch('/api/drive/upload-by-path', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          base64Data,
-          fileName: pdfFileName,
-          path: pendingDrivePath,
-        }),
+        body: formDataToSend,
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload to Google Drive');
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || error.message || 'Failed to upload to Google Drive');
       }
 
       toast.success('Meeting Minutes archived to Google Drive!');
@@ -431,11 +432,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <div className="relative">
                   <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl min-h-[50px] cursor-pointer hover:border-blue-300 transition-all"
                        onClick={() => setShowInternalDropdown(!showInternalDropdown)}>
-                    {(formData.attendeeIds || []).filter(id => users.find(u => u.uid === id)).map(id => {
+                    {Array.from(new Set((formData.attendeeIds || []) as string[])).filter(id => users.find(u => u.uid === id)).map(id => {
                       const u = users.find(u => u.uid === id);
                       if (!u) return null;
                       return (
-                        <div key={id} className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold">
+                        <div key={`internal-${id}`} className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold">
                           {u.name}
                           <button onClick={(e) => { e.stopPropagation(); toggleAttendee(id); }} className="hover:text-blue-900">
                             <X className="w-3 h-3" />
@@ -512,11 +513,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <div className="relative">
                   <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl min-h-[50px] cursor-pointer hover:border-emerald-300 transition-all"
                        onClick={() => setShowExternalDropdown(!showExternalDropdown)}>
-                    {(formData.attendeeIds || []).filter(id => stakeholders.find(s => s.id === id)).map(id => {
+                    {Array.from(new Set((formData.attendeeIds || []) as string[])).filter(id => stakeholders.find(s => s.id === id)).map(id => {
                       const s = stakeholders.find(s => s.id === id);
                       if (!s) return null;
                       return (
-                        <div key={id} className="flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold">
+                        <div key={`external-${id}`} className="flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold">
                           {s.name}
                           <button onClick={(e) => { e.stopPropagation(); toggleAttendee(id); }} className="hover:text-emerald-900">
                             <X className="w-3 h-3" />

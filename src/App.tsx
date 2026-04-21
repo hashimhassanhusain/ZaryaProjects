@@ -32,6 +32,17 @@ import { SupplierMasterRegister } from './components/SupplierMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
+import { MasterPlanAssemblyView } from './components/MasterPlanAssemblyView';
+import { SourcingStrategyView } from './components/SourcingStrategyView';
+import { ExecutionQAView } from './components/ExecutionQAView';
+import { PerformanceMonitoringView } from './components/PerformanceMonitoringView';
+import { ScheduleMilestoneOverview } from './components/ScheduleMilestoneOverview';
+import { ScheduleActivityDefinition } from './components/ScheduleActivityDefinition';
+import { ScheduleLogicEstimation } from './components/ScheduleLogicEstimation';
+import { ScheduleProgressTracking } from './components/ScheduleProgressTracking';
+import { ScheduleCadenceDashboard } from './components/ScheduleCadenceDashboard';
+import { ScheduleForecasting } from './components/ScheduleForecasting';
+import { ScheduleLessonsLearned } from './components/ScheduleLessonsLearned';
 import { CompaniesView } from './components/CompaniesView';
 import { ResourcesView } from './components/ResourcesView';
 import { ContactsView } from './components/ContactsView';
@@ -44,8 +55,14 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { ScheduleHubView } from './components/ScheduleHubView';
+import { FinanceHubView } from './components/FinanceHubView';
+import { StakeholdersHubView } from './components/StakeholdersHubView';
+import { ResourcesHubView } from './components/ResourcesHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
-import { Loader2, ShieldAlert, ChevronRight } from 'lucide-react';
+import { PERFORMANCE_DOMAINS } from './constants/navigation';
+import { FocusAreaBar } from './components/FocusAreaBar';
+import { MatrixDashboard } from './components/MatrixDashboard';
+import { Loader2, ShieldAlert, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
@@ -168,27 +185,38 @@ const PageRenderer = () => {
   const isWorkPackagesPage = page.id === '2.2.10';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
-  const isSchedulePage = page.id === '2.3' || page.id === 'sched';
+  const isSchedulePage = page.id === '2.3' || page.id === 'sched' || [
+    '1.3.1', '2.3.1', '2.3.2', '2.3.3', '3.5.1', '4.5.1', '4.5.2', '5.5.1'
+  ].includes(page.id);
   const isAssumptionLogPage = page.id === '2.1.5';
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
-  const isRiskRegisterPage = page.id === '2.7.5';
-  const isRiskHubPage = page.id === 'risk';
   const isStakeholderRegisterPage = page.id === '1.2.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
-  const isResourceOptimizationPage = [
-    '2.6', '2.6.1', '2.6.21', '2.6.22', '2.6.4', '2.6.5', '2.6.6', '2.6.7',
-    '3.3', '3.3.1', '3.3.2', '3.3.3', '3.3.5', '3.3.6'
+  const isMasterPlanPage = page.id === '2.1.2';
+  const isSourcingStrategyPage = page.id === '2.1.13';
+  const isExecutionQAPage = page.id === '3.1.3';
+  const isPerformanceMonitoringPage = page.id === '4.1.1';
+  const isRiskPage = page.domain === 'risk' || [
+    '2.1.14', '2.7.5', '2.7.6', '4.7.1', '4.7.2', '5.7.1', '2.7.3', '4.4.1'
+  ].includes(page.id);
+  const isResourcesPage = page.domain === 'resources' || [
+    '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1'
   ].includes(page.id);
   const isGovernanceHubPage = [
     'gov', '1.1.1', '1.1.2', // Charter, Policies
-    '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.13', '2.1.14', // Plans
-    '2.1.5', '1.2.1', '3.1.3', '5.1.1' // Logs
-  ].includes(page.id) && page.id !== '2.1.2';
+    '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
+    '2.1.5', '1.2.1', '5.1.1' // Logs
+  ].includes(page.id);
   const isChangeRequestPage = page.id === '3.1.1';
-  const isDecisionLogPage = page.id === '3.1.3';
   const isChangeManagementHubPage = page.id === '3.4';
+  const isStakeholdersPage = page.domain === 'stakeholders' || [
+    '1.2.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
+  ].includes(page.id);
   const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
+  const isFinancePage = page.domain === 'finance' || [
+    '1.4.1', '2.4.1', '2.4.2', '2.4.3', '4.4.1', '4.4.2', '5.4.1', '2.4.0', '4.2.2', '4.2.6', '5.2.1'
+  ].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
 
   return (
@@ -201,7 +229,7 @@ const PageRenderer = () => {
         transition={{ duration: 0.2 }}
         className="w-full"
       >
-        <div className={cn(isSchedulePage || isResourceOptimizationPage || page.id === '2.1.2' ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
+        <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
           <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
             <h1 className="flex items-center flex-wrap gap-2 text-2xl font-black text-slate-900 tracking-tight">
               {grandParent && (
@@ -226,6 +254,12 @@ const PageRenderer = () => {
           <TasksView />
         ) : isFilesPage ? (
           <FileExplorer projectId={selectedProject?.id || ''} />
+        ) : isFinancePage ? (
+          <FinanceHubView page={page} />
+        ) : isResourcesPage ? (
+          <ResourcesHubView page={page} />
+        ) : isStakeholdersPage ? (
+          <StakeholdersHubView page={page} />
         ) : isZaryaPage ? (
           <ZaryaPOTracker page={page} />
         ) : isBOQPage ? (
@@ -238,26 +272,44 @@ const PageRenderer = () => {
           <EVMReportView page={page} />
         ) : isProgressReportPage ? (
           <ProgressReportView page={page} />
+        ) : page.id === '1.3.1' ? (
+          <ScheduleMilestoneOverview page={page} />
+        ) : page.id === '2.3.1' ? (
+          <ScheduleActivityDefinition page={page} />
+        ) : page.id === '2.3.2' ? (
+          <ScheduleLogicEstimation page={page} />
+        ) : page.id === '2.3.3' ? (
+          <ProjectScheduleView page={page} />
+        ) : page.id === '3.5.1' ? (
+          <ScheduleCadenceDashboard page={page} />
+        ) : page.id === '4.5.1' ? (
+          <ScheduleProgressTracking page={page} />
+        ) : page.id === '4.5.2' ? (
+          <ScheduleForecasting page={page} />
+        ) : page.id === '5.5.1' ? (
+          <ScheduleLessonsLearned page={page} />
         ) : isSchedulePage ? (
           <ScheduleHubView page={page} />
         ) : isAssumptionLogPage ? (
           <AssumptionConstraintView page={page} />
         ) : isQualityMetricsPage ? (
           <QualityMetricsRegisterView page={page} />
-        ) : isRiskRegisterPage ? (
-          <RiskRegisterView page={page} />
-        ) : isRiskHubPage ? (
+        ) : isRiskPage ? (
           <RiskOpportunityHub page={page} />
+        ) : isMasterPlanPage ? (
+          <MasterPlanAssemblyView page={page} />
+        ) : isSourcingStrategyPage ? (
+          <SourcingStrategyView page={page} />
+        ) : isExecutionQAPage ? (
+           <ExecutionQAView page={page} />
+        ) : isPerformanceMonitoringPage ? (
+           <PerformanceMonitoringView page={page} />
         ) : isGovernanceHubPage ? (
           <GovernanceHubView page={page} />
         ) : isStakeholderRegisterPage ? (
           <StakeholderRegisterView page={page} />
         ) : isLessonsLearnedPage ? (
           <LessonsLearnedView page={page} />
-        ) : isResourceOptimizationPage ? (
-          <ResourceOptimizationHub page={page} />
-        ) : isDecisionLogPage ? (
-          <DecisionLogView page={page} />
         ) : isChangeManagementHubPage ? (
           <ChangeManagementHubView page={page} />
         ) : isChangeRequestPage ? (
@@ -278,7 +330,7 @@ const PageRenderer = () => {
 
 const AppLayout = () => {
   const { isRtl } = useLanguage();
-  const { isSidebarOpen, closeSidebar, sidebarWidth } = useUI();
+  const { isSidebarOpen, closeSidebar, sidebarWidth, selectedDomain, selectedFocusArea, setSelectedFocusArea } = useUI();
   const location = useLocation();
 
   return (
@@ -315,15 +367,25 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
+        
+        {/* Horizontal Matrix Top Bar - Visible on Dashboard and Domain filtered views */}
+        {(location.pathname === '/' || selectedDomain) && (
+          <FocusAreaBar 
+            selectedFocusArea={selectedFocusArea} 
+            onSelect={setSelectedFocusArea} 
+          />
+        )}
+
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
-            "flex-1 overflow-y-auto",
+            "flex-1 overflow-y-auto no-scrollbar",
             // Remove padding for schedule and governance hub to allow full width as requested
             (location.pathname.includes('/page/2.3') || 
              location.pathname.includes('/page/2.1.2') || 
              location.pathname.includes('/page/2.6') || 
-             location.pathname.includes('/page/3.3')) ? "p-0" : "pt-1 pb-6 px-4 md:px-8 lg:px-12"
+             location.pathname.includes('/page/3.3') ||
+             location.pathname === '/' ) ? "p-0" : "pt-1 pb-6 px-4 md:px-8 lg:px-12"
           )}
         >
           <Routes>
@@ -336,7 +398,35 @@ const AppLayout = () => {
             <Route path="/admin/projects" element={<AdminSettings />} />
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
-            <Route path="/" element={<ProjectDashboard />} />
+            <Route path="/" element={
+              selectedDomain ? (
+                <MatrixDashboard domainId={selectedDomain} focusAreaId={selectedFocusArea} />
+              ) : (
+                <div className="p-8 max-w-7xl mx-auto space-y-8">
+                  <div className="bg-white rounded-[3rem] p-16 border border-slate-100 shadow-sm text-center space-y-8">
+                    <div className="w-24 h-24 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto text-blue-600 shadow-inner">
+                      <LayoutDashboard className="w-10 h-10" />
+                    </div>
+                    <div className="space-y-4">
+                       <h2 className="text-5xl font-black text-slate-900 tracking-tighter">PROJECT MATRIX</h2>
+                       <p className="text-slate-500 max-w-lg mx-auto text-xl font-medium">
+                          Select a Performance Domain from the sidebar to visualize project processes across the lifecycle.
+                       </p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto pt-12">
+                      {PERFORMANCE_DOMAINS.map(d => (
+                        <div key={d.id} className="group p-8 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center gap-4 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-default">
+                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm ring-1 ring-slate-100 group-hover:ring-blue-100">
+                             <d.icon className="w-6 h-6 transition-transform group-hover:scale-110" style={{ color: d.color }} />
+                           </div>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">{d.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            } />
           </Routes>
         </main>
       </div>

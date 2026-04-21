@@ -414,17 +414,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     return <DetailView page={p} />;
   };
 
-  const currentPage = pages.find(p => p.id === activeTab);
-  const parentPage = currentPage ? pages.find(p => p.id === currentPage.parentId) : null;
-  
-  // If the current page is a sub-page of a hub in this domain, 
-  // we want to show the hub's children as sub-tabs
-  const isSubHubPage = parentPage && parentPage.domain === domainKey && parentPage.type === 'hub';
-  const subPages = isSubHubPage ? getChildren(parentPage.id) : (currentPage?.type === 'hub' ? getChildren(currentPage.id) : []);
-  const activeHubId = isSubHubPage ? parentPage.id : (currentPage?.type === 'hub' ? currentPage.id : null);
+  const activeHubId = null;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full"> {/* Added h-full for layout stability */}
       {/* Tabs Navigation */}
       <div className="flex flex-wrap items-stretch gap-2 bg-slate-50/50 p-1 rounded-t-3xl border-t border-x border-slate-200 w-full overflow-x-auto no-scrollbar">
         <button
@@ -443,7 +436,9 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             <Icon className="w-4 h-4" />
           </div>
           <span className="leading-tight font-semibold uppercase tracking-tight">
-            {stripNumericPrefix(t(page.id) || page.title).replace(/\s*DOMAIN$/i, '')}
+            {(stripNumericPrefix(t(page?.id || '') || page?.title || '') || 'Overview')
+              .replace(/\s*DOMAIN$/i, '')
+              .replace(/-\w+$/i, '')}
           </span>
           {activeTab === 'overview' && (
             <motion.div 
@@ -455,7 +450,8 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         </button>
 
         {filteredChildren.map((child) => {
-          const isActive = activeTab === child.id || activeHubId === child.id;
+          if (!child) return null;
+          const isActive = activeTab === child.id;
           const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
           const focusAreaColor = 
             child.focusArea?.includes('Initiating') ? 'bg-blue-500' :
@@ -489,7 +485,8 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 )}
               </div>
               <span className="leading-tight font-semibold uppercase tracking-tight">
-                {stripNumericPrefix(t(child.id) || child.title)}
+                {(stripNumericPrefix(t(child.id) || child.title) || child.id)
+                  .replace(/-\w+$/i, '')}
               </span>
               {isActive && (
                 <motion.div 
@@ -503,31 +500,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         })}
       </div>
 
-      {/* Secondary Hub Tabs (Sub-navigation) */}
-      {subPages.length > 0 && (
-        <div className="flex items-center gap-1.5 bg-white px-4 py-2 border-x border-slate-200 overflow-x-auto no-scrollbar border-b border-slate-100">
-          {subPages.map((sub) => {
-            const SubIcon = ICON_MAP[sub.icon || 'FileText'] || FileText;
-            return (
-              <button
-                key={sub.id}
-                onClick={() => setActiveTab(sub.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                  activeTab === sub.id 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
-                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                )}
-              >
-                <SubIcon className="w-3 h-3" />
-                {stripNumericPrefix(t(sub.id) || sub.title)}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="bg-white border border-slate-200 rounded-b-3xl p-4 shadow-sm -mt-px">
+      <div className="bg-white border border-slate-200 rounded-b-3xl p-2 shadow-sm -mt-px flex-1">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -535,6 +508,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
+            className="h-full"
           >
             {activeTab === 'overview' ? (
               <div className="space-y-6">
@@ -639,41 +613,19 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 )}
               </div>
             ) : (
-              <div className="overflow-hidden">
+              <div className="overflow-hidden h-full">
                 {(() => {
                   const activePage = filteredChildren.find(cp => cp.id === activeTab);
                   if (!activePage) return (
                     <div className="p-12 text-center text-slate-400">
-                      {t('page_not_found')}
+                      <Info className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm font-medium">{t('page_not_found')}</p>
                     </div>
                   );
                   
-                  const parentPage = pages.find(p => p.id === activePage.parentId);
-                  
                   return (
-                    <div className="flex flex-col">
-                      {/* Breadcrumb style header exactly as requested */}
-                      <div className="px-8 py-6 mb-2 border-b border-slate-50">
-                        <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-2">
-                          <span className="text-slate-400 font-medium text-sm">
-                            {stripNumericPrefix(t(page.id) || page.title)}
-                          </span>
-                          <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
-                          {parentPage && parentPage.id !== page.id && (
-                            <>
-                              <span className="text-slate-400 font-medium text-sm">
-                                {stripNumericPrefix(t(parentPage.id) || parentPage.title)}
-                              </span>
-                              <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
-                            </>
-                          )}
-                          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-black">
-                            {stripNumericPrefix(t(activePage.id) || activePage.title)}
-                          </span>
-                        </h1>
-                      </div>
-                      
-                      <div className="p-0">
+                    <div className="flex flex-col h-full overflow-hidden">
+                      <div className="p-0 flex-1 overflow-visible">
                         {renderPageContent(activePage)}
                       </div>
                     </div>

@@ -46,6 +46,7 @@ import { DataImportModal } from './DataImportModal';
 interface ProjectScheduleViewProps {
   page: Page;
   initialTab?: ScheduleTab;
+  hideHeader?: boolean;
 }
 
 type ZoomLevel = 'day' | 'week' | 'month' | 'quarter';
@@ -125,7 +126,7 @@ const SortableHeader: React.FC<{
   );
 };
 
-export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, initialTab }) => {
+export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, initialTab, hideHeader = false }) => {
   const { selectedProject, scheduleState, setScheduleState } = useProject();
   const navigate = useNavigate();
   const { formatAmount, currency: baseCurrency } = useCurrency();
@@ -1272,15 +1273,31 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
         );
       } catch(e) { /* skip if logo fails */ }
 
-      // Title
-      pdf.setFontSize(16);
+      // Title & Branding
+      pdf.setFontSize(22);
       pdf.setTextColor(15, 23, 42);
-      pdf.text(t('project_schedule'), 14, 28);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('ZARYA', 14, 20);
+      
+      pdf.setFontSize(16);
+      pdf.setTextColor(30, 64, 175);
+      pdf.text(t('project_schedule').toUpperCase(), 14, 30);
+      
+      pdf.setDrawColor(30, 64, 175);
+      pdf.setLineWidth(0.5);
+      pdf.line(14, 33, 80, 33);
+
       pdf.setFontSize(10);
       pdf.setTextColor(100, 116, 139);
-      pdf.text(`${selectedProject.name} [${selectedProject.code}]`, 14, 35);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${t('project')}: ${selectedProject.name}`, 14, 40);
+      pdf.text(`${t('code')}: ${selectedProject.code}`, 14, 45);
+      pdf.text(`WBS REF: SCH-${selectedProject.code}-001`, 14, 50);
+
       pdf.setFontSize(8);
-      pdf.text(`${t('generated')}: ${new Date().toLocaleDateString()}`, pdfWidth - 14, 10, { align: 'right' });
+      pdf.text(`${t('generated')}: ${new Date().toLocaleString()}`, pdfWidth - 14, 15, { align: 'right' });
+      pdf.text(`REV: 01-A`, pdfWidth - 14, 20, { align: 'right' });
+      pdf.text(`AUTHOR: ZARYA AI ENGINE`, pdfWidth - 14, 25, { align: 'right' });
 
       // KPI Cards
       const totalPlanned = activities.reduce((sum, a) => sum + (a.amount || 0), 0);
@@ -1297,7 +1314,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       ];
 
       const cardWidth = (pdfWidth - 28 - 9) / 4;
-      const cardY = 40;
+      const cardY = 55;
       const cardHeight = 25;
 
       kpis.forEach((kpi, i) => {
@@ -1982,6 +1999,25 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                     });
                   })}
                 </svg>
+                
+                {/* Today Line Overlay */}
+                {todayOffset !== null && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute top-0 bottom-0 w-[2px] bg-red-600/60 z-10 pointer-events-none"
+                    style={{ left: todayOffset }}
+                  >
+                    <motion.div 
+                      animate={{ scaleX: [1, 2, 1], opacity: [0.3, 0.1, 0.3] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute inset-0 bg-red-600/20 blur-md -left-2 -right-2"
+                    />
+                    <div className="sticky top-12 px-2 py-0.5 bg-red-600 text-[8px] font-black uppercase text-white rounded-r shadow-lg whitespace-nowrap">
+                      {t('today')}
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Gantt Rows */}
                 <div className="divide-y divide-slate-100">

@@ -555,12 +555,14 @@ export interface ProcessImprovement {
   updatedAt: string;
 }
 
+import { DomainId, FocusAreaId } from './constants/navigation';
+
 export interface Page {
   id: string;
   title: string;
   parentId?: string;
-  domain?: 'governance' | 'scope' | 'schedule' | 'finance' | 'stakeholders' | 'resources' | 'risk';
-  focusArea?: string;
+  domain: DomainId | string;
+  focusArea: FocusAreaId | string;
   type: 'hub' | 'terminal';
   content?: string;
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
@@ -820,6 +822,19 @@ export interface Project {
   pageHistory?: Record<string, PageVersion[]>;
   savedDocuments?: SavedDocument[];
   taskStatuses?: string[];
+  masterPlanData?: Record<string, any>;
+  masterPlanHistory?: PageVersion[];
+  sourcingStrategyData?: Record<string, any>;
+  sourcingStrategyHistory?: PageVersion[];
+  executionQAData?: Record<string, any>;
+  executionQAHistory?: PageVersion[];
+  performanceMonitoringData?: Record<string, any>;
+  performanceMonitoringHistory?: PageVersion[];
+  evmData?: Record<string, any>;
+  scheduleForecastingData?: Record<string, any>;
+  scheduleForecastingHistory?: PageVersion[];
+  cadenceData?: Record<string, any>;
+  cadenceHistory?: PageVersion[];
 }
 
 export interface QualityMetricEntry {

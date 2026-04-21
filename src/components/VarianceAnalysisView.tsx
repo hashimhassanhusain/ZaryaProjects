@@ -30,8 +30,8 @@ import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Helper functions for live calculations
 function getCostCompletion(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
@@ -345,7 +345,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
     doc.setTextColor(30, 41, 59);
     doc.text('Performance Summary', 20, 60);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 65,
       head: [['Category', 'Planned', 'Actual', 'Variance', '%']],
       body: [
@@ -384,7 +384,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       doc.setFontSize(14);
       doc.text('Quality Variances', 20, currentY);
       currentY += 5;
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: currentY,
         head: [['Work Item', 'Defect', 'Deviation', 'Root Cause']],
         body: varianceData.qualityVariances.map(v => [v.item, v.defect, `${v.planned} vs ${v.actual}`, v.rootCause]),

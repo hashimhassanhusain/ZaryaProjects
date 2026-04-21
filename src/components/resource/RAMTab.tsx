@@ -28,8 +28,8 @@ import {
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import { motion } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface RAMTabProps {
   projectId: string;
@@ -122,13 +122,13 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
       ...stakeholders.map(s => raciData[wbs.id]?.[s.id] || '')
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [headers],
       body: body,
       theme: 'grid',
       styles: { fontSize: 7 },
-      headStyles: { fillStyle: [15, 23, 42], textColor: [255, 255, 255] }
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
     });
 
     doc.save(`${projectId}-RES-RAM-V1-${date.replace(/\//g, '-')}.pdf`);

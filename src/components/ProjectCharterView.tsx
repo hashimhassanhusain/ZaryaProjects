@@ -24,23 +24,17 @@ import {
   Users,
   Briefcase,
   Award,
-  Gavel
+  Gavel,
+  Box,
+  LayoutDashboard
 } from 'lucide-react';
 import { Page, Project, PageVersion, Stakeholder, ProjectIssue } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
-  addDoc, 
   updateDoc, 
-  deleteDoc, 
   doc, 
   onSnapshot, 
-  query, 
-  where,
-  getDocs,
-  serverTimestamp,
-  setDoc,
-  orderBy,
   getDoc
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
@@ -50,6 +44,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+import { StandardProcessPage } from './StandardProcessPage';
 
 interface ProjectCharterViewProps {
   page: Page;
@@ -113,7 +109,7 @@ interface CharterData {
 export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) => {
   const { t, language, isRtl } = useLanguage();
   const { selectedProject } = useProject();
-  const { exchangeRate: currentExchangeRate, formatAmount } = useCurrency();
+  const { exchangeRate: currentExchangeRate } = useCurrency();
   const [charter, setCharter] = useState<CharterData>({
     projectTitle: '',
     projectSponsor: '',
@@ -151,10 +147,6 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
-  const [activeSection, setActiveSection] = useState(1);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -181,7 +173,6 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
             stakeholders: charterData.stakeholders || prev.stakeholders || []
           }));
         } else {
-          // Auto-fill project title if no data exists yet
           setCharter(prev => ({
             ...prev,
             projectTitle: `${selectedProject.name} (${selectedProject.code})`
@@ -200,90 +191,26 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   const handleSave = async (isNewVersion: boolean = false) => {
     if (!selectedProject) return;
     setIsSaving(true);
-
     try {
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
-      
       const updateData: any = {
         charterData: charter,
         updatedAt: timestamp,
         updatedBy: user
       };
-
       if (isNewVersion) {
-        const nextVersion = (versions[0]?.version || 0) + 1;
+        const nextVersion = (versions[0]?.version || 1.0) + 0.1;
         const newVersion: PageVersion = {
-          version: nextVersion,
+          version: Number(nextVersion.toFixed(1)),
           date: timestamp,
           author: user,
           data: charter as any
         };
         updateData.charterHistory = [newVersion, ...versions];
       }
-
       await updateDoc(doc(db, 'projects', selectedProject.id), updateData);
-
-      // Smart Linking (Breadcrumbing)
-      // 1. Stakeholders -> Stakeholder Register
-      for (const s of charter.stakeholders) {
-        if (s.name && s.role) {
-          const q = query(collection(db, 'stakeholders'), where('projectId', '==', selectedProject.id), where('name', '==', s.name));
-          const existing = await getDocs(q);
-          if (existing.empty) {
-            await addDoc(collection(db, 'stakeholders'), {
-              projectId: selectedProject.id,
-              name: s.name,
-              role: s.role,
-              classification: 'Internal',
-              influence: 'Medium',
-              interest: 'Medium',
-              engagementLevel: 'Green',
-              createdAt: timestamp
-            });
-          }
-        }
-      }
-
-      // 2. High-Level Risks -> Risk Register (Drafts)
-      if (charter.highLevelRisks) {
-        const risks = charter.highLevelRisks.split('\n').filter(r => r.trim());
-        for (const r of risks) {
-          const q = query(collection(db, 'risks'), where('projectId', '==', selectedProject.id), where('description', '==', r.trim()));
-          const existing = await getDocs(q);
-          if (existing.empty) {
-            await addDoc(collection(db, 'risks'), {
-              projectId: selectedProject.id,
-              description: r.trim(),
-              status: 'Draft',
-              probability: 'Medium',
-              impact: 'Medium',
-              createdAt: timestamp
-            });
-          }
-        }
-      }
-
-      // Prompt for restricted modules
-      const affected = [];
-      if (charter.milestones.some(m => m.description)) affected.push('Schedule');
-      if (charter.estimatedBudget) affected.push('PO/Reports');
-
-      if (affected.length > 0) {
-        setShowPrompt({
-          type: affected.join(' & '),
-          message: `This update affects the ${affected.join(' and ')}. Do you want to propose a link?`,
-          onConfirm: () => {
-            console.log('Linking proposed for:', affected);
-            setShowPrompt(null);
-          }
-        });
-      }
-
-      if (!isNewVersion) {
-        toast.success(t('charter_updated_success'));
-      }
-
+      toast.success(t('charter_updated_success'));
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, 'projects');
     } finally {
@@ -344,7 +271,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 }, 2: { fontStyle: 'bold', cellWidth: 35 } }
     });
 
-    const sections = [
+    const pdfSections = [
       { title: 'Project Purpose or Justification:', content: charter.purpose },
       { title: 'Project Description:', content: charter.description },
       { title: 'High-Level Requirements:', content: charter.requirements },
@@ -352,7 +279,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     ];
 
     let y = (doc as any).lastAutoTable.finalY + 10;
-    sections.forEach(s => {
+    pdfSections.forEach(s => {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text(s.title, margin, y);
@@ -486,20 +413,6 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     doc.save(`${selectedProject.code}-ZRY-MGT-FRM-CHA-${dateStr}-V${vStr}.pdf`);
   };
 
-  const addMilestone = () => {
-    setCharter({
-      ...charter,
-      milestones: [...charter.milestones, { id: Date.now().toString(), description: '', dueDate: '' }]
-    });
-  };
-
-  const removeMilestone = (id: string) => {
-    setCharter({
-      ...charter,
-      milestones: charter.milestones.filter(m => m.id !== id)
-    });
-  };
-
   const addStakeholder = () => {
     setCharter({
       ...charter,
@@ -514,728 +427,329 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     });
   };
 
-  const sections = [
-    { id: 1, title: t('project_identity'), icon: Briefcase },
-    { id: 2, title: t('objectives_milestones'), icon: Target },
-    { id: 3, title: t('financials_stakeholders'), icon: DollarSign },
-    { id: 4, title: t('governance_approvals'), icon: Gavel }
-  ];
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsEditing(!isEditing)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all",
-              isEditing 
-                ? "bg-amber-100 text-amber-700 border border-amber-200" 
-                : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
-            )}
-          >
-            {isEditing ? <CheckCircle2 className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
-            {isEditing ? 'Finish Editing' : 'Edit Plan'}
-          </button>
-          <button 
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
-          >
-            <History className="w-4 h-4" />
-            {t('history')}
-          </button>
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            {t('download_pdf')}
-          </button>
-          <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
-            <button 
-              onClick={() => handleSave(true)}
-              disabled={isSaving}
-              className="px-4 py-2 text-white font-bold text-xs hover:bg-white/10 rounded-lg transition-all"
-            >
-              {t('save_new_version')}
-            </button>
-            <button 
-              onClick={() => handleSave(false)}
-              disabled={isSaving}
-              className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
-            >
-              {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-              {t('overwrite')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[600px]">
-        <div className="p-10 space-y-16">
-          {/* Section 1: Project Identity */}
-          <div className="space-y-8">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-4">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              {t('project_identity')}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_title')}</label>
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    value={charter.projectTitle}
-                    onChange={(e) => setCharter({ ...charter, projectTitle: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                ) : (
-                  <div className="px-1 py-1 text-lg font-bold text-slate-900">{charter.projectTitle || '---'}</div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('date_prepared')}</label>
-                  {isEditing ? (
-                    <input 
-                      type="date"
-                      value={charter.datePrepared}
-                      onChange={(e) => setCharter({ ...charter, datePrepared: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                    />
-                  ) : (
-                    <div className="px-1 py-1 text-sm font-medium text-slate-600">{charter.datePrepared || '---'}</div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_sponsor')}</label>
-                  {isEditing ? (
-                    <input 
-                      type="text"
-                      value={charter.projectSponsor}
-                      onChange={(e) => setCharter({ ...charter, projectSponsor: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                    />
-                  ) : (
-                    <div className="px-1 py-1 text-sm font-medium text-slate-600">{charter.projectSponsor || '---'}</div>
-                  )}
-                </div>
-              </div>
+    <StandardProcessPage
+      page={page}
+      onSave={() => handleSave(true)}
+      onPrint={generatePDF}
+      isSaving={isSaving}
+      inputs={[
+        { id: 'business-case', title: 'Business Case', status: 'Approved' },
+        { id: 'agreements', title: 'Agreements', status: 'Finalized' },
+        { id: '1.1.2', title: 'Management Policies' },
+        { id: '1.2.1', title: 'Stakeholder Register' }
+      ]}
+    >
+      <div className="space-y-16">
+        {/* Project Canvas Hub */}
+        <section className="space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Project Canvas Hub</h2>
+              <p className="text-xs text-slate-500 font-medium tracking-wide border-l-2 border-blue-500 pl-3">Interactive Workspace: Defining the project core logic.</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_manager')}</label>
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    value={charter.projectManager}
-                    onChange={(e) => setCharter({ ...charter, projectManager: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                ) : (
-                  <div className="px-1 py-1 text-sm font-medium text-slate-600">{charter.projectManager || '---'}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_customer')}</label>
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    value={charter.projectCustomer}
-                    onChange={(e) => setCharter({ ...charter, projectCustomer: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                ) : (
-                  <div className="px-1 py-1 text-sm font-medium text-slate-600">{charter.projectCustomer || '---'}</div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_purpose_justification')}</label>
-              {isEditing ? (
-                <textarea 
-                  value={charter.purpose}
-                  onChange={(e) => setCharter({ ...charter, purpose: e.target.value })}
-                  rows={4}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                />
-              ) : (
-                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.purpose || '---'}</div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('project_description')}</label>
-              {isEditing ? (
-                <textarea 
-                  value={charter.description}
-                  onChange={(e) => setCharter({ ...charter, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                />
-              ) : (
-                <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.description || '---'}</div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('high_level_requirements')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.requirements}
-                    onChange={(e) => setCharter({ ...charter, requirements: e.target.value })}
-                    rows={6}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.requirements || '---'}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('high_level_risks')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.highLevelRisks}
-                    onChange={(e) => setCharter({ ...charter, highLevelRisks: e.target.value })}
-                    rows={6}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                    placeholder={t('high_level_risks_placeholder')}
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.highLevelRisks || '---'}</div>
-                )}
-              </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Smart Integration Active</span>
             </div>
           </div>
 
-          {/* Section 2: Objectives & Milestones */}
-          <div className="space-y-10 pt-10 border-t border-slate-100">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-4">
-              <Target className="w-5 h-5 text-blue-600" />
-              {t('objectives_milestones')}
-            </h3>
-            <div className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">{t('project_objectives')}</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-start border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">{t('objective')}</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('description')}</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('success_criteria')}</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('person_approving')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {['scope', 'time', 'cost', 'other'].map((key) => (
-                      <tr key={key}>
-                        <td className="px-6 py-4 font-bold text-slate-900 capitalize">{t(key)}:</td>
-                        <td className="px-6 py-4">
-                          {isEditing ? (
-                            <input 
-                              type="text"
-                              value={(charter.objectives as any)?.[key]?.objective || ''}
-                              onChange={(e) => setCharter({
-                                ...charter,
-                                objectives: {
-                                  ...(charter.objectives || {}),
-                                  [key]: { ...((charter.objectives as any)?.[key] || {}), objective: e.target.value }
-                                }
-                              })}
-                              className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            />
-                          ) : (
-                            <span className="text-sm text-slate-600">{(charter.objectives as any)?.[key]?.objective || '---'}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {isEditing ? (
-                            <input 
-                              type="text"
-                              value={(charter.objectives as any)?.[key]?.successCriteria || ''}
-                              onChange={(e) => setCharter({
-                                ...charter,
-                                objectives: {
-                                  ...(charter.objectives || {}),
-                                  [key]: { ...((charter.objectives as any)?.[key] || {}), successCriteria: e.target.value }
-                                }
-                              })}
-                              className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            />
-                          ) : (
-                            <span className="text-sm text-slate-600">{(charter.objectives as any)?.[key]?.successCriteria || '---'}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {isEditing ? (
-                            <input 
-                              type="text"
-                              value={(charter.objectives as any)?.[key]?.approver || ''}
-                              onChange={(e) => setCharter({
-                                ...charter,
-                                objectives: {
-                                  ...(charter.objectives || {}),
-                                  [key]: { ...((charter.objectives as any)?.[key] || {}), approver: e.target.value }
-                                }
-                              })}
-                              className="w-full bg-transparent border-none focus:ring-0 text-sm"
-                            />
-                          ) : (
-                            <span className="text-sm text-slate-600">{(charter.objectives as any)?.[key]?.approver || '---'}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1: Identity & Purpose */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-slate-50 rounded-[2.5rem] p-8 border border-slate-100 space-y-6">
+                 <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                    <Briefcase className="w-6 h-6" />
+                 </div>
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Project Title</label>
+                       <input 
+                         type="text"
+                         value={charter.projectTitle}
+                         onChange={(e) => setCharter({ ...charter, projectTitle: e.target.value })}
+                         className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                         placeholder="Enter Project Title"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Sponsor</label>
+                       <input 
+                         type="text"
+                         value={charter.projectSponsor}
+                         onChange={(e) => setCharter({ ...charter, projectSponsor: e.target.value })}
+                         className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                         placeholder="Sponsor Name"
+                       />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-6 shadow-2xl shadow-slate-900/20">
+                 <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400 backdrop-blur-md">
+                    <Target className="w-6 h-6" />
+                 </div>
+                 <div className="space-y-4">
+                    <h3 className="text-xl font-black tracking-tight leading-none">CORE OBJECTIVES</h3>
+                    <div className="space-y-3">
+                       <textarea 
+                         placeholder="Primary Project Objectives..." 
+                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                         rows={4}
+                         value={charter.purpose}
+                         onChange={(e) => setCharter({ ...charter, purpose: e.target.value })}
+                       />
+                    </div>
+                 </div>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t('summary_milestones')}</h3>
-                {isEditing && (
-                  <button 
-                    onClick={addMilestone}
-                    className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {charter.milestones.map((m, idx) => (
-                  <div key={m.id} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group">
-                    <div className="flex-1 space-y-4">
-                      {isEditing ? (
-                        <input 
-                          type="text"
-                          placeholder={t('milestone_description')}
-                          value={m.description}
-                          onChange={(e) => {
-                            const newMilestones = [...charter.milestones];
-                            newMilestones[idx].description = e.target.value;
-                            setCharter({ ...charter, milestones: newMilestones });
-                          }}
-                          className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold"
-                        />
-                      ) : (
-                        <div className="text-sm font-bold text-slate-900">{m.description || '---'}</div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        {isEditing ? (
-                          <input 
-                            type="date"
-                            value={m.dueDate}
-                            onChange={(e) => {
-                              const newMilestones = [...charter.milestones];
-                              newMilestones[idx].dueDate = e.target.value;
-                              setCharter({ ...charter, milestones: newMilestones });
-                            }}
-                            className="bg-transparent border-none focus:ring-0 text-[10px] font-black uppercase tracking-widest text-slate-500"
-                          />
-                        ) : (
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{m.dueDate || '---'}</span>
-                        )}
-                      </div>
-                    </div>
-                    {isEditing && (
-                      <button 
-                        onClick={() => removeMilestone(m.id)}
-                        className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+            {/* Column 2: Scope & Quality */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 space-y-6 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all">
+                  <div className="flex items-center justify-between">
+                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                        <Box className="w-5 h-5" />
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Initial Scope</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-black text-slate-900">Project Boundaries</h3>
+                     <textarea 
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                        placeholder="What's included and excluded?"
+                        rows={6}
+                        value={charter.description}
+                        onChange={(e) => setCharter({ ...charter, description: e.target.value })}
+                     />
+                  </div>
+               </div>
 
-          {/* Section 3: Financials & Stakeholders */}
-          <div className="space-y-10 pt-10 border-t border-slate-100">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-4">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-              {t('financials_stakeholders')}
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('estimated_budget')}</label>
-                {isEditing && (
-                  <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                    {(['USD', 'IQD'] as const).map((curr) => (
-                      <button
-                        key={curr}
-                        onClick={() => setCharter({ ...charter, currency: curr })}
-                        className={cn(
-                          "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
-                          charter.currency === curr ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                        )}
-                      >
-                        {curr}
-                      </button>
-                    ))}
+               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 space-y-6 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all">
+                  <div className="flex items-center justify-between">
+                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="w-5 h-5" />
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quality Assurance</span>
                   </div>
-                )}
-              </div>
-              {isEditing ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <input 
-                      type="number"
-                      value={charter.estimatedBudget}
-                      onChange={(e) => setCharter({ ...charter, estimatedBudget: Number(e.target.value) })}
-                      className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-lg font-black text-blue-400 outline-none"
-                      placeholder="0.00"
-                    />
-                    <div className={cn("absolute top-1/2 -translate-y-1/2 text-slate-500 font-bold", isRtl ? "left-4" : "right-4")}>
-                      {charter.currency}
-                    </div>
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-black text-slate-900">Success Criteria</h3>
+                     <textarea 
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                        placeholder="How is project success measured?"
+                        rows={6}
+                        value={charter.requirements}
+                        onChange={(e) => setCharter({ ...charter, requirements: e.target.value })}
+                     />
                   </div>
-                  <div className="relative">
-                    <input 
-                      type="number"
-                      value={charter.exchangeRate}
-                      onChange={(e) => setCharter({ ...charter, exchangeRate: Number(e.target.value) })}
-                      className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-lg font-black text-emerald-400 outline-none"
-                      placeholder={t('exchange_rate')}
-                    />
-                    <div className={cn("absolute top-1/2 -translate-y-1/2 text-slate-500 font-bold", isRtl ? "left-4" : "right-4")}>
-                      {t('rate')}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-1 text-2xl font-bold text-slate-900">
-                  {formatAmount(charter.estimatedBudget, charter.currency)}
-                </div>
-              )}
-            </div>
+               </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t('stakeholders')}</h3>
-                {isEditing && (
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={pullStakeholdersFromPolicies}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all"
-                    >
-                      <Users className="w-3 h-3" />
-                      {t('pull_from_policies')}
-                    </button>
-                    <button 
-                      onClick={addStakeholder}
-                      className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {charter.stakeholders.map((s, idx) => (
-                  <div key={s.id} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group">
-                    <div className="flex-1">
-                      {isEditing ? (
-                        <div className="grid grid-cols-2 gap-4">
-                          <input 
-                            type="text"
-                            placeholder={t('name')}
-                            value={s.name}
-                            onChange={(e) => {
-                              const newStakeholders = [...charter.stakeholders];
-                              newStakeholders[idx].name = e.target.value;
-                              setCharter({ ...charter, stakeholders: newStakeholders });
-                            }}
-                            className="bg-transparent border-none focus:ring-0 text-sm font-bold"
-                          />
-                          <input 
-                            type="text"
-                            placeholder={t('role')}
-                            value={s.role}
-                            onChange={(e) => {
-                              const newStakeholders = [...charter.stakeholders];
-                              newStakeholders[idx].role = e.target.value;
-                              setCharter({ ...charter, stakeholders: newStakeholders });
-                            }}
-                            className="bg-transparent border-none focus:ring-0 text-xs text-slate-500"
-                          />
+               {/* RAM Table Integrated Here */}
+               <div className="col-span-full bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                           <LayoutDashboard className="w-6 h-6" />
                         </div>
-                      ) : (
                         <div>
-                          <div className="text-sm font-bold text-slate-900">{s.name || '---'}</div>
-                          <div className="text-xs text-slate-500">{s.role || '---'}</div>
+                           <h3 className="text-xl font-black text-slate-900">Responsibility Assignment (RAM)</h3>
+                           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Matrix Structure: RACI Logic</p>
                         </div>
-                      )}
-                    </div>
-                    {isEditing && (
-                      <button 
-                        onClick={() => removeStakeholder(s.id)}
-                        className="p-2 text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                     </div>
+                     <button 
+                        onClick={addStakeholder}
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10"
+                     >
+                        <Plus className="w-4 h-4" />
+                        Add Node
+                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('pm_authority_level')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.pmAuthority}
-                    onChange={(e) => setCharter({ ...charter, pmAuthority: e.target.value })}
-                    rows={3}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.pmAuthority || '---'}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('staffing_decisions')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.staffingDecisions}
-                    onChange={(e) => setCharter({ ...charter, staffingDecisions: e.target.value })}
-                    rows={3}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.staffingDecisions || '---'}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('budget_management_variance')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.budgetManagement}
-                    onChange={(e) => setCharter({ ...charter, budgetManagement: e.target.value })}
-                    rows={3}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.budgetManagement || '---'}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 4: Governance & Approvals */}
-          <div className="space-y-10 pt-10 border-t border-slate-100">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-3 border-b border-slate-100 pb-4">
-              <Gavel className="w-5 h-5 text-blue-600" />
-              {t('governance_approvals')}
-            </h3>
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('technical_decisions')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.technicalDecisions}
-                    onChange={(e) => setCharter({ ...charter, technicalDecisions: e.target.value })}
-                    rows={4}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.technicalDecisions || '---'}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('conflict_resolution')}</label>
-                {isEditing ? (
-                  <textarea 
-                    value={charter.conflictResolution}
-                    onChange={(e) => setCharter({ ...charter, conflictResolution: e.target.value })}
-                    rows={4}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                  />
-                ) : (
-                  <div className="px-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{charter.conflictResolution || '---'}</div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">{t('approvals')}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('pm_name')}</label>
-                    {isEditing ? (
-                      <input 
-                        type="text"
-                        value={charter.approvals?.pmName || ''}
-                        onChange={(e) => setCharter({
-                          ...charter,
-                          approvals: { ...(charter.approvals || {}), pmName: e.target.value }
-                        })}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
-                      />
-                    ) : (
-                      <div className="px-1 text-sm font-bold text-slate-900">{charter.approvals?.pmName || '---'}</div>
-                    )}
+                  <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                     <table className="w-full text-left border-collapse">
+                        <thead>
+                           <tr className="bg-slate-50">
+                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Role / Entity</th>
+                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Responsibility</th>
+                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Accountability</th>
+                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Action</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                           {charter.stakeholders.map((s, idx) => (
+                              <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors">
+                                 <td className="px-6 py-4">
+                                    <input 
+                                       placeholder="Principal Role" 
+                                       className="bg-transparent font-bold text-slate-900 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all"
+                                       value={s.role}
+                                       onChange={(e) => {
+                                          const newS = [...charter.stakeholders];
+                                          newS[idx].role = e.target.value;
+                                          setCharter({...charter, stakeholders: newS});
+                                       }}
+                                    />
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <input 
+                                       placeholder="Assigned To" 
+                                       className="bg-transparent text-sm text-slate-600 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all"
+                                       value={s.name}
+                                       onChange={(e) => {
+                                          const newS = [...charter.stakeholders];
+                                          newS[idx].name = e.target.value;
+                                          setCharter({...charter, stakeholders: newS});
+                                       }}
+                                    />
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <div className="flex gap-2">
+                                       {['R', 'A', 'C', 'I'].map(type => (
+                                          <button 
+                                             key={type}
+                                             className={cn(
+                                                "w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center border",
+                                                idx % 4 === ['R', 'A', 'C', 'I'].indexOf(type) 
+                                                   ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" 
+                                                   : "bg-white border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600"
+                                             )}
+                                          >
+                                             {type}
+                                          </button>
+                                       ))}
+                                    </div>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <button 
+                                       onClick={() => removeStakeholder(s.id)}
+                                       className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                       <Trash2 className="w-4 h-4" />
+                                    </button>
+                                 </td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
                   </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('date')}</label>
-                    {isEditing ? (
-                      <input 
-                        type="date"
-                        value={charter.approvals?.pmDate || ''}
-                        onChange={(e) => setCharter({
-                          ...charter,
-                          approvals: { ...(charter.approvals || {}), pmDate: e.target.value }
-                        })}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
-                      />
-                    ) : (
-                      <div className="px-1 text-sm text-slate-600">{charter.approvals?.pmDate || '---'}</div>
-                    )}
+                  <div className="mt-4 flex items-center gap-6">
+                     <button 
+                        onClick={pullStakeholdersFromPolicies}
+                        className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-900 transition-all flex items-center gap-2"
+                     >
+                        <History className="w-4 h-4" />
+                        Repopulate from Project Database
+                     </button>
                   </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('sponsor_name')}</label>
-                    {isEditing ? (
-                      <input 
-                        type="text"
-                        value={charter.approvals?.sponsorName || ''}
-                        onChange={(e) => setCharter({
-                          ...charter,
-                          approvals: { ...(charter.approvals || {}), sponsorName: e.target.value }
-                        })}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
-                      />
-                    ) : (
-                      <div className="px-1 text-sm font-bold text-slate-900">{charter.approvals?.sponsorName || '---'}</div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ms-1">{t('date')}</label>
-                    {isEditing ? (
-                      <input 
-                        type="date"
-                        value={charter.approvals?.sponsorDate || ''}
-                        onChange={(e) => setCharter({
-                          ...charter,
-                          approvals: { ...(charter.approvals || {}), sponsorDate: e.target.value }
-                        })}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
-                      />
-                    ) : (
-                      <div className="px-1 text-sm text-slate-600">{charter.approvals?.sponsorDate || '---'}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
+               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* History List */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-xl font-bold flex items-center gap-3">
-            <History className="w-6 h-6 text-blue-400" />
-            {t('charter_version_history')}
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-start border-collapse">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">{t('version')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">{t('date')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">{t('author')}</th>
-                <th className={cn("px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest", isRtl ? "text-left" : "text-right")}>{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {versions.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-white/20 font-bold uppercase tracking-widest">{t('no_history_recorded')}</td>
-                </tr>
-              ) : (
-                versions.map((v) => (
-                  <tr key={v.version} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="text-blue-400 font-black">v{v.version.toFixed(1)}</span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white/60">
-                      {new Date(v.date).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-bold">
-                      {v.author}
-                    </td>
-                    <td className={cn("px-6 py-4", isRtl ? "text-left" : "text-right")}>
-                      <button 
-                        onClick={() => setCharter(v.data as unknown as CharterData)}
-                        className="text-xs font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest"
-                      >
-                        {t('restore')}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Restricted Data Linking Prompt */}
-      <AnimatePresence>
-        {showPrompt && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100"
-            >
-              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
-                <AlertTriangle className="w-8 h-8 text-amber-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">{t('restricted_data_link')}</h3>
-              <p className="text-slate-500 font-medium mb-8 leading-relaxed">
-                {showPrompt.message}
-              </p>
+        {/* Approvals & Budget Management */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-12 border-t border-slate-100">
+           <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 space-y-8">
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setShowPrompt(null)}
-                  className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-                >
-                  {t('no')}
-                </button>
-                <button 
-                  onClick={showPrompt.onConfirm}
-                  className="flex-1 px-6 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-                >
-                  {t('yes')}
-                </button>
+                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-900 shadow-sm">
+                    <DollarSign className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">Financial Framework</h3>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+              <div className="space-y-6">
+                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full translate-x-12 -translate-y-12 blur-2xl group-hover:bg-blue-500/10 transition-all" />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">High-Level Budget Estimate (IQD)</label>
+                    <div className="flex items-baseline gap-2">
+                       <span className="text-slate-400 font-bold">IQD</span>
+                       <input 
+                         type="number"
+                         value={charter.estimatedBudget}
+                         onChange={(e) => setCharter({ ...charter, estimatedBudget: Number(e.target.value) })}
+                         className="bg-transparent border-none p-0 text-3xl font-black text-slate-900 outline-none w-full"
+                       />
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-[11px] font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                       <span>Exchange Rate: (1,310)</span>
+                       <span className="text-blue-600">${(charter.estimatedBudget / 1310).toLocaleString()}</span>
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Budget Authority Details</label>
+                    <textarea 
+                      value={charter.budgetManagement}
+                      onChange={(e) => setCharter({ ...charter, budgetManagement: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-3xl px-6 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                      rows={3}
+                      placeholder="Define budget limits and approval steps."
+                    />
+                 </div>
+              </div>
+           </div>
+
+           <div className="space-y-6">
+              <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100">
+                 <div className="flex items-center gap-4 mb-8">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-900 shadow-sm">
+                       <ShieldAlert className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">Formal Approvals</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4 p-6 bg-white rounded-3xl border border-slate-100">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 block mb-4">Project Manager</span>
+                       <input 
+                          placeholder="Print Name" 
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold mb-2 outline-none focus:ring-2 focus:ring-blue-500/10"
+                          value={charter.approvals.pmName}
+                          onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, pmName: e.target.value}})}
+                       />
+                       <input 
+                          type="date"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10"
+                          value={charter.approvals.pmDate}
+                          onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, pmDate: e.target.value}})}
+                       />
+                    </div>
+                    <div className="space-y-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm border-t-4 border-t-amber-500">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 block mb-4">Project Sponsor</span>
+                       <input 
+                          placeholder="Print Name" 
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold mb-2 outline-none focus:ring-2 focus:ring-amber-500/10"
+                          value={charter.approvals.sponsorName}
+                          onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, sponsorName: e.target.value}})}
+                       />
+                       <input 
+                          type="date"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500/10"
+                          value={charter.approvals.sponsorDate}
+                          onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, sponsorDate: e.target.value}})}
+                       />
+                    </div>
+                 </div>
+              </div>
+              <div className="p-8 bg-blue-600 rounded-[2.5rem] text-white flex items-center justify-between">
+                 <div>
+                    <h4 className="font-black text-xl tracking-tight">Generate Final Charter</h4>
+                    <p className="text-xs text-blue-100 font-medium">Auto-populates data to PMBOK Standard PDF</p>
+                 </div>
+                 <button 
+                   onClick={generatePDF}
+                   className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-blue-600 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-blue-900/40"
+                 >
+                    <Download className="w-6 h-6" />
+                 </button>
+              </div>
+           </div>
+        </div>
+      </div>
+    </StandardProcessPage>
   );
 };

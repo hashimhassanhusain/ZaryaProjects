@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/UserContext';
 import { 
@@ -26,7 +27,8 @@ import {
   ShieldAlert,
   ClipboardCheck,
   GitBranch,
-  AlertTriangle
+  AlertTriangle,
+  Target
 } from 'lucide-react';
 import { Page } from '../types';
 import { ProjectCharterView } from './ProjectCharterView';
@@ -51,7 +53,7 @@ import { StakeholderRegisterView } from './StakeholderRegisterView';
 import { AssumptionConstraintView } from './AssumptionConstraintView';
 import { LessonsLearnedView } from './LessonsLearnedView';
 import { ResourceOptimizationHub } from './ResourceOptimizationHub';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface GovernanceHubViewProps {
@@ -64,151 +66,116 @@ type LogSubTab = 'stakeholders' | 'assumptions' | 'decisions' | 'lessons';
 export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
   const { userProfile, isAdmin } = useAuth();
+  const navigate = useNavigate();
   
   const allManagementPlans = [
-    { id: 'pmp', title: t('2.1.2'), icon: FileText, pageId: '2.1.2' },
-    { id: 'comm', title: t('2.1.6'), icon: MessageSquare, pageId: '2.1.6' },
-    { id: 'smp', title: t('2.1.7'), icon: Users, pageId: '2.1.7' },
-    { id: 'rmp', title: t('2.1.8'), icon: ClipboardList, pageId: '2.1.8' },
-    { id: 'scope', title: t('2.1.9'), icon: Box, pageId: '2.1.9' },
-    { id: 'hrmp', title: t('2.1.10'), icon: Briefcase, pageId: '2.1.10' },
-    { id: 'schedule', title: t('2.1.11'), icon: Activity, pageId: '2.1.11' },
-    { id: 'cost', title: t('2.1.12'), icon: DollarSign, pageId: '2.1.12' },
-    { id: 'procurement', title: t('2.1.13'), icon: ShoppingCart, pageId: '2.1.13' },
-    { id: 'risk', title: t('2.1.14'), icon: ShieldAlert, pageId: '2.1.14' },
-    { id: 'quality', title: t('2.1.4'), icon: ClipboardCheck, pageId: '2.1.4' }
+    { id: '2.1.2', title: t('2.1.2'), icon: FileText, desc: 'Assembly of all subsidiary plans into a cohesive blueprint.' },
+    { id: '2.1.13', title: t('2.1.13'), icon: ShoppingCart, desc: 'Strategic methodology for vendor and resource acquisition.' },
+    { id: '3.1.3', title: t('3.1.3'), icon: ShieldCheck, desc: 'Formal execution oversight and quality assurance verification.' },
+    { id: '4.1.1', title: t('4.1.1'), icon: Activity, desc: 'Real-time tracking of governance KPIs and plan variances.' },
+    { id: '1.1.1', title: t('1.1.1'), icon: Target, desc: 'Project authorization and high-level vision hub.' },
+    { id: '1.1.2', title: t('1.1.2'), icon: ShieldCheck, desc: 'Core management policies and governance guidelines.' }
   ];
 
-  const allLogTabs = [
-    { id: 'stakeholders', title: t('1.2.1'), icon: Users, pageId: '1.2.1' },
-    { id: 'assumptions', title: t('2.1.5'), icon: ClipboardList, pageId: '2.1.5' },
-    { id: 'decisions', title: t('3.1.3'), icon: Gavel, pageId: '3.1.3' },
-    { id: 'lessons', title: t('5.1.1'), icon: Award, pageId: '5.1.1' }
-  ];
-
-  const managementPlans = allManagementPlans.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.pageId));
-  const logTabs = allLogTabs.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.pageId));
-
-  const [activeTab, setActiveTab] = useState<'schedule' | 'charter' | 'policies' | 'plans'>('schedule');
-  const [activePlan, setActivePlan] = useState<PlanSubTab>(
-    (managementPlans.length > 0 ? managementPlans[0].id : 'pmp') as PlanSubTab
-  );
-  const [activeLog, setActiveLog] = useState<LogSubTab>(
-    (logTabs.length > 0 ? logTabs[0].id : 'stakeholders') as LogSubTab
-  );
-  const [viewMode, setViewMode] = useState<'plan' | 'log'>('plan');
-
-  // Check which main tabs are accessible
-  const isCharterAccessible = isAdmin || userProfile?.accessiblePages?.includes('1.1.1');
-  const isPoliciesAccessible = isAdmin || userProfile?.accessiblePages?.includes('1.1.2');
-  const isScheduleAccessible = isAdmin || userProfile?.accessiblePages?.includes('2.3');
-  const isPlansAccessible = managementPlans.length > 0 || logTabs.length > 0;
-
-  // Sync active tab with page.id if needed
-  useEffect(() => {
-    if (page.id === '1.1.1' && isCharterAccessible) setActiveTab('charter');
-    if (page.id === '1.1.2' && isPoliciesAccessible) setActiveTab('policies');
-    if (page.id === '2.3' && isScheduleAccessible) setActiveTab('schedule');
-    
-    const isLogPage = ['1.2.1', '2.1.5', '3.1.3', '5.1.1'].includes(page.id);
-    if (isLogPage && isPlansAccessible) {
-      setActiveTab('plans');
-      setViewMode('log');
-      if (page.id === '1.2.1') {
-        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('1.2.1');
-        if (hasAccess) setActiveLog('stakeholders');
-      }
-      if (page.id === '2.1.5') {
-        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('2.1.5');
-        if (hasAccess) setActiveLog('assumptions');
-      }
-      if (page.id === '3.1.3') {
-        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('3.1.3');
-        if (hasAccess) setActiveLog('decisions');
-      }
-      if (page.id === '5.1.1') {
-        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes('5.1.1');
-        if (hasAccess) setActiveLog('lessons');
-      }
-    }
-
-    if (page.id.startsWith('2.1') && page.id !== '2.1.5' && isPlansAccessible) {
-      setActiveTab('plans');
-      setViewMode('plan');
-      
-      const planMap: Record<string, PlanSubTab> = {
-        '2.1.2': 'pmp',
-        '2.1.1': 'cmp',
-        '2.1.3': 'qmp',
-        '2.1.6': 'comm',
-        '2.1.7': 'smp',
-        '2.1.8': 'rmp',
-        '2.1.9': 'scope',
-        '2.1.10': 'hrmp',
-        '2.1.11': 'schedule',
-        '2.1.12': 'cost',
-        '2.1.13': 'procurement',
-        '2.1.14': 'risk',
-        '2.1.4': 'quality'
-      };
-
-      if (planMap[page.id]) {
-        const hasAccess = isAdmin || userProfile?.accessiblePages?.includes(page.id);
-        if (hasAccess) setActivePlan(planMap[page.id]);
-      }
-    }
-  }, [page.id, isCharterAccessible, isPoliciesAccessible, isScheduleAccessible, isPlansAccessible, isAdmin, userProfile?.accessiblePages]);
+  const accessiblePlans = allManagementPlans.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.id));
 
   return (
-    <div className={cn("pb-20", activeTab === 'schedule' ? "space-y-0" : "space-y-6")}>
-      <div className="flex flex-col gap-8">
-        {/* Content Area */}
-        <main className={cn("flex-1 w-full", activeTab !== 'schedule' && "px-6")}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeTab}-${activePlan}-${activeLog}-${viewMode}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === 'charter' && <ProjectCharterView page={page} />}
-              {activeTab === 'policies' && <GovernancePoliciesView page={page} />}
-              {activeTab === 'schedule' && <ProjectScheduleView page={{ ...page, id: '2.3', title: 'Project Schedule' }} />}
-              {activeTab === 'plans' && (
-                <div className="bg-white rounded-lg border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                  <div className="p-10">
-                    {viewMode === 'plan' ? (
-                      <>
-                        {activePlan === 'pmp' && <ProjectManagementPlanView page={page} />}
-                        {activePlan === 'cmp' && <ChangeManagementPlanView page={page} />}
-                        {activePlan === 'qmp' && <QualityManagementPlanView page={page} />}
-                        {activePlan === 'comm' && <CommunicationsManagementPlanView page={page} />}
-                        {activePlan === 'smp' && <StakeholderManagementPlanView page={page} />}
-                        {activePlan === 'rmp' && <RequirementsManagementPlanView page={page} />}
-                        {activePlan === 'scope' && <ScopeManagementPlanView page={page} />}
-                        {activePlan === 'hrmp' && <HumanResourceManagementPlanView page={page} />}
-                        {activePlan === 'schedule' && <ScheduleManagementPlanView page={page} />}
-                        {activePlan === 'cost' && <CostManagementPlanView page={page} />}
-                        {activePlan === 'procurement' && <ProcurementManagementPlanView page={page} />}
-                        {activePlan === 'risk' && <RiskManagementPlanView page={page} />}
-                        {activePlan === 'quality' && <QualityMetricsRegisterView page={page} />}
-                      </>
-                    ) : (
-                      <>
-                        {activeLog === 'stakeholders' && <StakeholderRegisterView page={{ ...page, id: '1.2.1' }} />}
-                        {activeLog === 'assumptions' && <AssumptionConstraintView page={{ ...page, id: '2.1.5' }} />}
-                        {activeLog === 'decisions' && <DecisionLogView page={{ ...page, id: '3.1.3' }} />}
-                        {activeLog === 'lessons' && <LessonsLearnedView page={{ ...page, id: '5.1.1' }} />}
-                      </>
-                    )}
-                  </div>
+    <div className="pb-20 space-y-12 px-6">
+      <header className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+            <Gavel className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Governance Control Center</h2>
+            <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMBOK 8 Standard Framework</p>
+          </div>
+        </div>
+      </header>
+
+      {/* Domain Status Matrix */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {accessiblePlans.map((plan) => (
+          <div 
+            key={plan.id}
+            onClick={() => navigate(`/page/${plan.id}`)}
+            className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-blue-50 transition-colors" />
+            
+            <div className="relative z-10 space-y-6">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-blue-600/30 transition-all duration-500">
+                <plan.icon className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                  {stripNumericPrefix(plan.title)}
+                </h3>
+                <p className="text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
+                  {plan.desc}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Baselined</span>
                 </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
+                <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
+                  Open Hub <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* Governance Insights Summary */}
+      <section className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl" />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-20">
+          <div className="space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-2xl font-black tracking-tight">Compliance & Health Summary</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Decision Velocity</p>
+                <p className="text-4xl font-black italic tracking-tighter">4.2 <span className="text-xs uppercase text-slate-500 not-italic">Days</span></p>
+                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full w-[80%] bg-blue-500" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Process Consistency</p>
+                <p className="text-4xl font-black italic tracking-tighter">98%</p>
+                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full w-[98%] bg-emerald-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md space-y-6">
+            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Critical Blockers (2 Active)</h4>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+                <p className="text-xs font-bold text-red-100">Sourcing Strategy for heavy machinery requires Project Sponsor signature.</p>
+              </div>
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4">
+                <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+                <p className="text-xs font-bold text-amber-100">Quality Metrics baseline exceeds standard variance; readjustment required.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

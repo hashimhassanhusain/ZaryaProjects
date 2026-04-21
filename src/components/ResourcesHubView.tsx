@@ -1,51 +1,77 @@
 import React, { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
 import { 
+  Users2, 
+  Grid, 
+  Layers, 
+  UserPlus, 
   Calendar, 
+  Activity, 
+  CheckCircle,
   ChevronRight,
-  Flag,
-  LayoutGrid,
   Settings
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { ProjectScheduleView } from './ProjectScheduleView';
-import { ScheduleManagementPlanView } from './ScheduleManagementPlanView';
-
 import { Ribbon, RibbonGroup } from './Ribbon';
+import { useLanguage } from '../context/LanguageContext';
 
-interface ScheduleHubViewProps {
+// Sub-views (Placeholder or to be created)
+import { RACIMatrixView } from './RACIMatrixView';
+import { ResourceManagerDashboard } from './ResourceManagerDashboard';
+import { ResourceAcquisitionView } from './ResourceAcquisitionView';
+import { ResourceReleaseView } from './ResourceReleaseView';
+
+interface ResourcesHubViewProps {
   page: Page;
 }
 
-type TabType = 'plan' | 'gantt' | 'milestones' | 'activities';
+type TabType = 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 'release' | 'plan';
 
-export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
+export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('gantt');
+  const [activeTab, setActiveTab] = useState<TabType>('utilization');
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
   const ribbonGroups: RibbonGroup[] = [
     {
-      id: 'execution',
-      label: t('execution'),
+      id: 'planning',
+      label: 'Strategy & Structure',
       tabs: [
-        { id: 'gantt', label: t('view_gantt'), icon: Calendar },
-        { id: 'activities', label: t('view_activities'), icon: LayoutGrid },
-        { id: 'milestones', label: t('view_milestones'), icon: Flag },
+        { id: 'plan', label: 'Mgmt Plan', icon: Settings },
+        { id: 'raci', label: 'RACI Matrix', icon: Grid },
+        { id: 'rbs', label: 'Breakdown (RBS)', icon: Layers },
       ]
     },
     {
-      id: 'config',
-      label: t('configuration'),
+      id: 'execution',
+      label: 'Acquisition & Booking',
       tabs: [
-        { id: 'plan', label: t('setup_plan'), icon: Settings },
+        { id: 'acquisition', label: 'Acquisition', icon: UserPlus },
+        { id: 'assignments', label: 'Calendars', icon: Calendar },
+      ]
+    },
+    {
+      id: 'control',
+      label: 'Performance & Release',
+      tabs: [
+        { id: 'utilization', label: 'Utilization', icon: Activity },
+        { id: 'release', label: 'Release/Close', icon: CheckCircle },
       ]
     }
   ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'raci': return <RACIMatrixView page={page} />;
+      case 'utilization': return <ResourceManagerDashboard page={page} />;
+      case 'acquisition': return <ResourceAcquisitionView page={page} />;
+      case 'release': return <ResourceReleaseView page={page} />;
+      default: return <ResourceManagerDashboard page={page} />;
+    }
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
@@ -75,24 +101,17 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       />
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className="p-8"
           >
-            {activeTab === 'plan' && (
-              <div className="h-full overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">
-                <ScheduleManagementPlanView page={page} />
-              </div>
-            )}
-            {(activeTab === 'gantt' || activeTab === 'milestones' || activeTab === 'activities') && (
-              <ProjectScheduleView page={page} initialTab={activeTab as any} />
-            )}
+            {renderContent()}
           </motion.div>
         </AnimatePresence>
       </div>

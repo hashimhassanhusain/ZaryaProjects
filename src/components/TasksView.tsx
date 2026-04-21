@@ -76,7 +76,14 @@ export const TasksView: React.FC = () => {
 
   useEffect(() => {
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const usersList = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserType));
+      const usersList: UserType[] = [];
+      const seenIds = new Set();
+      snapshot.docs.forEach(doc => {
+        if (!seenIds.has(doc.id)) {
+          seenIds.add(doc.id);
+          usersList.push({ uid: doc.id, ...doc.data() } as UserType);
+        }
+      });
       setDbUsers(usersList);
     });
 
@@ -119,7 +126,7 @@ export const TasksView: React.FC = () => {
         const data = doc.data();
         // Map ProjectIssue to Task structure
         return {
-          id: doc.id,
+          id: 'issue-' + doc.id,
           title: data.issue || 'Unnamed Issue',
           description: `${data.impact || ''}\n\nActions: ${data.actions || ''}`,
           status: data.status === 'Open' ? 'TO DO' : 
@@ -192,6 +199,7 @@ export const TasksView: React.FC = () => {
       if (!task) return;
 
       if (task.sourceType === 'issue') {
+        const realId = taskId.replace('issue-', '');
         const issueUpdates: any = {};
         if (updates.title) issueUpdates.issue = updates.title;
         if (updates.endDate) issueUpdates.dueDate = updates.endDate;
@@ -201,7 +209,7 @@ export const TasksView: React.FC = () => {
                                 updates.status === 'COMPLETED' ? 'Resolved' : 'Open';
         }
         
-        await updateDoc(doc(db, 'issues', taskId), {
+        await updateDoc(doc(db, 'issues', realId), {
           ...issueUpdates,
           updatedAt: new Date().toISOString(),
           updatedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System'
@@ -229,8 +237,9 @@ export const TasksView: React.FC = () => {
       };
 
       if (task.sourceType === 'issue') {
+        const realId = taskId.replace('issue-', '');
         // For issues, we might want to append to comments or history
-        await updateDoc(doc(db, 'issues', taskId), {
+        await updateDoc(doc(db, 'issues', realId), {
           comments: (task as any).comments ? `${(task as any).comments}\n\n[${note.timestamp}] ${note.text}` : `[${note.timestamp}] ${note.text}`,
           updatedAt: new Date().toISOString(),
           updatedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System'
