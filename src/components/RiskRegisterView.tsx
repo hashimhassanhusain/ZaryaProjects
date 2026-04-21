@@ -18,6 +18,8 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+import { generateZaryaPDF } from '../lib/pdfService';
+import { cn } from '../lib/utils';
 
 interface Risk {
   id: string;
@@ -90,6 +92,24 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
   const categories = ['Technical', 'Financial', 'Commercial', 'Environmental', 'Political'];
   const strategies = ['Avoid', 'Mitigate', 'Transfer', 'Accept', 'Escalate'];
 
+  const handlePrint = () => {
+    generateZaryaPDF({
+      page,
+      project: selectedProject,
+      data: risks,
+      columns: ['Risk / ID', 'P', 'I', 'Score', 'Owner', 'Strategy', 'Status'],
+      rows: risks.map(r => [
+        `${r.title}\n(${r.id})`,
+        r.probability,
+        r.impact,
+        r.probability * r.impact,
+        team.find(m => m.id === r.ownerId)?.name || 'Unassigned',
+        r.responseStrategy,
+        r.status
+      ])
+    });
+  };
+
   return (
     <StandardProcessPage
       page={page}
@@ -100,6 +120,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
       outputs={[
         { id: '2.7.5-OUT', title: 'The Master Risk Register', status: 'Dynamic' }
       ]}
+      onPrint={handlePrint}
     >
       <div className="space-y-8 pb-20">
         <header className="flex items-center justify-between">
@@ -114,10 +135,13 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
           </div>
           <button 
             onClick={() => setIsAdding(!isAdding)}
-            className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2"
+            className={cn(
+              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+              isAdding ? "bg-rose-100 text-rose-600 border border-rose-200" : "bg-slate-900 text-white shadow-xl shadow-slate-900/10"
+            )}
           >
-            <Plus className="w-4 h-4" />
-            Identify Risk
+            {isAdding ? <ChevronDown className="w-4 h-4 rotate-180" /> : <Plus className="w-4 h-4" />}
+            {isAdding ? "Collapse Form" : "Identify Risk"}
           </button>
         </header>
 
