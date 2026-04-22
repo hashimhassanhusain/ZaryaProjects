@@ -135,7 +135,7 @@ const PageRenderer = () => {
 
   // Handle Hub pages (Focus Areas and Domains)
   if (page.type === 'hub') {
-    const allChildren = pages.filter(p => p.parentId === page.id);
+    const allChildren = pages.filter(p => p.parentId === page.id || (page.domain && p.domain === page.domain && p.id !== page.id));
     const accessibleChildren = allChildren.filter(child => {
       if (isAdmin) return true;
       if (!userProfile) return false;
@@ -157,7 +157,7 @@ const PageRenderer = () => {
   // If the current page is a terminal page but belongs to a Hub that should be rendered as a dashboard
   const parentHub = pages.find(p => p.id === (page as any).parentId && p.type === 'hub');
   if (parentHub) {
-    const allChildren = pages.filter(p => p.parentId === parentHub.id);
+    const allChildren = pages.filter(p => p.parentId === parentHub.id || (parentHub.domain && p.domain === parentHub.domain && p.id !== parentHub.id));
     const accessibleChildren = allChildren.filter(child => {
       if (isAdmin) return true;
       if (!userProfile) return false;
@@ -369,14 +369,6 @@ const AppLayout = () => {
         <Header />
         <FocusAreaBar />
         
-        {/* Horizontal Matrix Top Bar - Visible on Dashboard and Domain filtered views */}
-        {(location.pathname === '/' || selectedDomain) && (
-          <FocusAreaBar 
-            selectedFocusArea={selectedFocusArea} 
-            onSelect={setSelectedFocusArea} 
-          />
-        )}
-
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
