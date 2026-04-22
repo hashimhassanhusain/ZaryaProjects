@@ -6,10 +6,17 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
-// Use initializeFirestore with force long polling to bypass network restrictions in some environments
+
+// Improved Firestore initialization
+// We use (default) as a fallback, but the provided database ID from config is preferred.
+const dbId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
+
+console.log('Initializing Firestore with Database ID:', dbId);
+
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-}, (firebaseConfig as any).firestoreDatabaseId || '(default)');
+  // Use auto-detection instead of forced long polling which can sometimes backfire
+  experimentalAutoDetectLongPolling: true,
+}, dbId);
 
 // Explicitly pass the bucket URL to avoid initialization issues
 export const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
@@ -28,11 +35,20 @@ export const signInWithGoogle = async () => {
 
 // Connection Test
 async function testConnection() {
+  console.log('Testing Firestore connection...');
   try {
-    await getDocFromServer(firestoreDoc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
+    // Try to get a doc from server
+    const testDocRef = firestoreDoc(db, 'test_connection', 'status');
+    const snapshot = await getDocFromServer(testDocRef);
+    console.log('Firestore connection successful. Snapshot exists:', snapshot.exists());
+  } catch (error: any) {
+    console.error("Firestore initialization or connection failed:", error);
+    if (error?.message?.includes('the client is offline')) {
       console.error("Please check your Firebase configuration. The client is offline.");
+    } else if (error?.code === 'permission-denied') {
+       console.log("Firestore connection reached, but permission denied (this is expected if not signed in).");
+    } else {
+       console.error("Unknown Firestore error during connection test:", error.message || error);
     }
   }
 }

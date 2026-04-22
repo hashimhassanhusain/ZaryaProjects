@@ -17,6 +17,10 @@ service cloud.firestore {
       allow write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
     }
 
+    match /test_connection/status {
+      allow read: if true;
+    }
+
     match /team_members/{memberId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
