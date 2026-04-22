@@ -420,13 +420,20 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     return <DetailView page={p} />;
   };
 
-  const activeHubId = null;
+  // Auto-select first matching page when focus area or domain changes
+  React.useEffect(() => {
+    if (focusChildren.length > 0) {
+      const isValid = focusChildren.some(c => c.id === activeTab);
+      if (!isValid) setActiveTab(focusChildren[0].id);
+    }
+  }, [activeFocusArea, page.id]);
 
   return (
-    <div className="flex flex-col h-full"> {/* Added h-full for layout stability */}
-      {/* Focus Area content header */}
+    <div className="w-full">
+
+      {/* Process sub-selector: shown when multiple pages match the focus area */}
       {focusChildren.length > 1 && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
+        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100 flex-wrap">
           {focusChildren.map(child => {
             const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
             const isSelected = activeTab === child.id;
@@ -435,10 +442,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 key={child.id}
                 onClick={() => setActiveTab(child.id)}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
+                  'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border',
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-white'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-white border-slate-200'
                 )}
               >
                 <ChildIcon className="w-3.5 h-3.5" />
@@ -449,41 +456,33 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-b-3xl p-2 shadow-sm -mt-px flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="h-full"
-          >
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden h-full">
-              {focusChildren.length === 0 ? (
-                <div className="p-16 text-center text-slate-400">
-                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <p className="text-sm font-medium">No processes defined for this intersection yet.</p>
-                </div>
-              ) : (
-                (() => {
-                  const pageToShow = focusChildren.find(c => c.id === activeTab) || focusChildren[0];
-                  // auto-select first if activeTab not in this focus area
-                  // Note: setState during render is generally bad, but we are inside an IIFE mapped to content
-                  // For now we'll just show it.
-                  return (
-                    <div className="flex flex-col h-full overflow-hidden">
-                      <div className="p-0 flex-1 overflow-visible">
-                        {renderPageContent(pageToShow)}
-                      </div>
-                    </div>
-                  );
-                })()
-              )}
+      {/* Main content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab + activeFocusArea}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2 }}
+          className="w-full"
+        >
+          {focusChildren.length === 0 ? (
+            <div className="p-16 text-center text-slate-400">
+              <Info className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-semibold text-slate-500">No processes in this phase</p>
+              <p className="text-xs mt-1">{page.title} · <span className="font-medium">{activeFocusArea}</span></p>
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+          ) : (
+            <div className="w-full">
+              {(() => {
+                const pageToShow = focusChildren.find(c => c.id === activeTab) ?? focusChildren[0];
+                return pageToShow ? renderPageContent(pageToShow) : null;
+              })()}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
     </div>
   );
 };
