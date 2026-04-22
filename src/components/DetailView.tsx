@@ -53,13 +53,15 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { StandardProcessPage } from './StandardProcessPage';
+
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
-  const isMeetingsPage = page.id === '2.6.22';
+  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22';
   const isVarianceAnalysisPage = page.id === '4.3.2';
   
   const [isCreating, setIsCreating] = useState(false);
@@ -727,42 +729,48 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         
         // --- AUTOMATED STORAGE ROUTING ---
         let drivePath = '01_PROJECT_MANAGEMENT_FORMS';
+        const pathParts = page.id.split('.');
         
-        // Special Case: Project Charter (1.1.1) goes to 1.0_Initiating/1.1_Governance_Domain
-        if (page.id === '1.1.1') {
-          drivePath = '01_PROJECT_MANAGEMENT_FORMS/1.0_Initiating/1.1_Governance_Domain';
-        } else if (page.id === '1.2.1' || page.id === '1.2.2') {
-          drivePath = '01_PROJECT_MANAGEMENT_FORMS/1.0_Initiating/1.2_Stakeholders_Domain';
-        } else if (page.id === '2.1.1') {
-          drivePath = '01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain/2.1.1_CHANGE_MANAGEMENT_PLAN';
-        } else if (page.id === '2.1.2') {
-          drivePath = '01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain/2.1.2_PROJECT_MANAGEMENT_PLAN';
-        } else if (page.id === '2.1.3') {
-          drivePath = '01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain/2.1.3_QUALITY_MANAGEMENT_PLAN';
-        } else {
-          const pathParts = page.id.split('.');
-          if (pathParts.length >= 2) {
-            const focusAreaId = `${pathParts[0]}.0`;
-            const focusArea = pages.find(p => p.id === focusAreaId);
-            if (focusArea) {
-              let focusTitle = focusArea.title.replace(' Focus Area', '');
-              // Special case for 4.0 to match server.ts folder naming
-              if (focusAreaId === '4.0') focusTitle = 'Monitoring and Controlling';
-              
-              const focusFolderName = `${focusTitle.replace(/\s+/g, '_')}_${focusArea.id}`;
-              drivePath += `/${focusFolderName}`;
-              
-              if (pathParts.length >= 3) {
-                const domainHubId = `${pathParts[0]}.${pathParts[1]}`;
-                const domainHub = pages.find(p => p.id === domainHubId);
-                if (domainHub) {
-                  // Ensure domain hub naming matches server.ts (ID_Title)
-                  const domainFolderName = `${domainHub.id}_${domainHub.title.replace(/\s+/g, '_')}`;
-                  drivePath += `/${domainFolderName}`;
-                }
-              }
+        // Match server.ts structure: 01_PROJECT_MANAGEMENT_FORMS / X.0_FocusArea / X.Y_Domain_Domain
+        if (pathParts.length >= 2) {
+          const focusAreaNum = pathParts[0];
+          const focusAreaMap: Record<string, string> = {
+            '1': '1.0_Initiating',
+            '2': '2.0_Planning',
+            '3': '3.0_Executing',
+            '4': '4.0_Monitoring_and_Controlling',
+            '5': '5.0_Closing'
+          };
+          
+          const focusFolder = focusAreaMap[focusAreaNum];
+          if (focusFolder) {
+            drivePath += `/${focusFolder}`;
+            
+            const domainNum = pathParts[1];
+            const domainMap: Record<string, string> = {
+              '1': 'Governance_Domain',
+              '2': 'Scope_Domain',
+              '3': 'Schedule_Domain',
+              '4': 'Finance_Domain',
+              '5': 'Stakeholders_Domain',
+              '6': 'Resources_Domain',
+              '7': 'Risk_Domain'
+            };
+            
+            const domainTitle = domainMap[domainNum];
+            if (domainTitle) {
+              drivePath += `/${focusAreaNum}.${domainNum}_${domainTitle}`;
             }
           }
+        }
+        
+        // Special case overrides if nested further (optional, but keep for plan subfolders if desired)
+        if (page.id === '2.1.1') {
+          drivePath += '/2.1.1_CHANGE_MANAGEMENT_PLAN';
+        } else if (page.id === '2.1.2') {
+          drivePath += '/2.1.2_PROJECT_MANAGEMENT_PLAN';
+        } else if (page.id === '2.1.3') {
+          drivePath += '/2.1.3_QUALITY_MANAGEMENT_PLAN';
         }
         
         const uploadData = new FormData();
@@ -4386,81 +4394,32 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Form Actions Header */}
-      {!isVarianceAnalysisPage && (
-        <header className="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 -mx-4 lg:-mx-8 px-4 lg:px-8 py-2 mb-4 flex justify-between items-center gap-4 shadow-sm">
-          <div className="flex-1 flex items-center gap-3">
-            {isLogPage && (
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder={`Search ${page.title}...`}
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
-                />
-              </div>
-            )}
+    <StandardProcessPage
+      page={page}
+      onSave={() => handleSaveDocument(true)}
+      onPrint={() => generatePDF(false)}
+      isSaving={isCreating}
+      inputs={page.details?.inputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
+      tools={page.details?.tools?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
+      outputs={page.details?.outputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
+    >
+      <div className="space-y-8">
+        {/* Detail Content */}
+        {isLogPage && (
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder={`Search ${page.title}...`}
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => handleSaveDocument(false)}
-                  disabled={isCreating}
-                  className="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Update
-                </button>
-                <button 
-                  onClick={() => handleSaveDocument(true)}
-                  disabled={isCreating}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Save New Version
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setIsEditing(true)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Plan
-                </button>
-                <div className="w-px h-6 bg-slate-200 mx-2" />
-                <button 
-                  onClick={() => generatePDF(false)}
-                  disabled={isExporting}
-                  className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-                >
-                  <Printer className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => generatePDF(true)}
-                  disabled={isExporting}
-                  className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
-      )}
-
-      {isLogPage ? (
+        )}
+        {isLogPage ? (
         renderTable()
       ) : isVarianceAnalysisPage ? (
         <VarianceAnalysisView project={selectedProject!} />
@@ -4947,6 +4906,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </StandardProcessPage>
   );
 };

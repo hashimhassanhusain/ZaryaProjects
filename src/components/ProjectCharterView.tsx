@@ -147,6 +147,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   const [versions, setVersions] = useState<PageVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -410,7 +411,42 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-MGT-FRM-CHA-${dateStr}-V${vStr}.pdf`);
+    const fileName = `${selectedProject.code}-ZRY-MGT-FRM-CHA-${dateStr}-V${vStr}.pdf`;
+    
+    // Save locally
+    doc.save(fileName);
+
+    // Also upload to Drive
+    handleDriveUpload(doc, fileName);
+  };
+
+  const handleDriveUpload = async (doc: jsPDF, fileName: string) => {
+    if (!selectedProject) return;
+    setIsExporting(true);
+    
+    try {
+      const pdfBlob = doc.output('blob');
+      const formData = new FormData();
+      formData.append('file', pdfBlob, fileName);
+      formData.append('path', '01_PROJECT_MANAGEMENT_FORMS/1.0_Initiating/1.1_Governance_Domain');
+      
+      const res = await fetch('/api/drive/upload-by-path', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to upload to Google Drive');
+      }
+
+      toast.success(t('pdf_saved_to_drive'));
+    } catch (error: any) {
+      console.error('Drive upload error:', error);
+      toast.error(`${t('drive_upload_failed')}: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const addStakeholder = () => {
@@ -742,9 +778,10 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                  </div>
                  <button 
                    onClick={generatePDF}
-                   className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-blue-600 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-blue-900/40"
+                   disabled={isExporting}
+                   className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-blue-600 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-blue-900/40 disabled:opacity-50"
                  >
-                    <Download className="w-6 h-6" />
+                    {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
                  </button>
               </div>
            </div>

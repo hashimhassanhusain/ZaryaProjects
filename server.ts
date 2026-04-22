@@ -388,12 +388,15 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
         { "00.2_Outgoing_Correspondence": ["Transmittals", "RFIs", "Letters_Sent"] },
         { "00.3_Legal_and_Contracts": ["Client_Main_Contract"] }
       ],
-      "PROJECT_MANAGEMENT_FORMS_01": [
-        { "Initiating_1.0": ["1.1_Governance_Domain", "1.2_Stakeholders_Domain"] },
-        { "Planning_2.0": ["2.1_Governance_Domain", "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"] },
-        { "Executing_3.0": ["3.1_Governance_Domain", "3.2_Stakeholders_Domain", "3.3_Resources_Domain"] },
-        { "Monitoring_and_Controlling_4.0": ["4.1_Governance_Domain", "4.2_Finance_Domain", "4.3_Stakeholders_Domain", "4.4_Risk_Domain"] },
-        { "Closing_5.0": ["5.1_Governance_Domain", "5.2_Finance_Domain"] }
+      "01_PROJECT_MANAGEMENT_FORMS": [
+        { "1.0_Initiating": ["1.1_Governance_Domain", "1.2_Scope_Domain", "1.3_Schedule_Domain", "1.4_Finance_Domain", "1.5_Stakeholders_Domain", "1.6_Resources_Domain", "1.7_Risk_Domain"] },
+        { "2.0_Planning": [
+          { "2.1_Governance_Domain": ["2.1.1_CHANGE_MANAGEMENT_PLAN", "2.1.2_PROJECT_MANAGEMENT_PLAN", "2.1.3_QUALITY_MANAGEMENT_PLAN"] },
+          "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"
+        ] },
+        { "3.0_Executing": ["3.1_Governance_Domain", "3.2_Scope_Domain", "3.3_Schedule_Domain", "3.4_Finance_Domain", "3.5_Stakeholders_Domain", "3.6_Resources_Domain", "3.7_Risk_Domain"] },
+        { "4.0_Monitoring_and_Controlling": ["4.1_Governance_Domain", "4.2_Scope_Domain", "4.3_Schedule_Domain", "4.4_Finance_Domain", "4.5_Stakeholders_Domain", "4.6_Resources_Domain", "4.7_Risk_Domain"] },
+        { "5.0_Closing": ["5.1_Governance_Domain", "5.2_Scope_Domain", "5.3_Schedule_Domain", "5.4_Finance_Domain", "5.5_Stakeholders_Domain", "5.6_Resources_Domain", "5.7_Risk_Domain"] }
       ],
       "TECHNICAL_DIVISIONS_MASTERFORMAT_02": [
         { "Division_03_Concrete": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },

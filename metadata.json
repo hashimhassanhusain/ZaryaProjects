@@ -1,5 +1,5 @@
 {
-  "name": "Zarya Construction Management",
-  "description": "A comprehensive project management system for Zarya Construction Co. with Google Drive integration, task tracking, and financial monitoring.",
+  "name": "Zarya PMIS - PMBOK 8 Framework",
+  "description": "A professional Project Management Information System aligned with PMBOK 8th Edition Performance Domains and Focus Areas, featuring integrated data flows and card-based IPO processing.",
   "requestFramePermissions": []
 }

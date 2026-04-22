@@ -20,7 +20,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
   const [sidebarWidth, setSidebarWidth] = useState(120);
   const [selectedDomain, setSelectedDomain] = useState<DomainId | null>(null);
-  const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('planning');
+  const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);

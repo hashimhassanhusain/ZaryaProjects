@@ -90,7 +90,7 @@ import { IssueLogTab } from './risk/IssueLogTab';
 import { useAuth } from '../context/UserContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { useFocusArea } from '../context/FocusAreaContext';
+import { useUI } from '../context/UIContext';
 
 interface DomainDashboardProps {
   page: Page;
@@ -117,7 +117,8 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
   const domainKey = page.domain || 'governance';
-  const { activeFocusArea } = useFocusArea();
+  const { selectedFocusArea } = useUI();
+  const activeFocusArea = selectedFocusArea;
 
   // Filter children based on permissions
   const filteredChildren = childrenPages.filter(child => {
@@ -130,11 +131,11 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     child.focusArea?.includes(activeFocusArea)
   );
 
-  // Auto-select first matching page when focus area or domain changes
+  // Auto-select overview when domain or focus area changes, unless we are specifically on a terminal tab
   React.useEffect(() => {
-    if (focusChildren.length > 0) {
-      const isValid = focusChildren.some(c => c.id === activeTab);
-      if (!isValid) setActiveTab(focusChildren[0].id);
+    // If the active tab is not one of the children for the new focus area, go to overview
+    if (activeTab !== 'overview' && !focusChildren.some(c => c.id === activeTab)) {
+      setActiveTab('overview');
     }
   }, [activeFocusArea, page.id]);
 
@@ -424,37 +425,124 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   return (
     <div className="w-full">
-      {focusChildren.length > 1 && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100 flex-wrap">
-          {focusChildren.map(child => {
-            const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
-            const isSelected = activeTab === child.id;
-            return (
-              <button key={child.id} onClick={() => setActiveTab(child.id)}
-                className={cn('flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border',
-                  isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-white border-slate-200'
-                )}>
-                <ChildIcon className="w-3.5 h-3.5" />
-                {child.title}
-              </button>
-            );
-          })}
+      {/* ── Domain Metadata Header ── */}
+      <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+           <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+              <Icon className="w-5 h-5" />
+           </div>
+           <div>
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 leading-none">{page.title} Dashboard</h2>
+              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">Active Phase: {activeFocusArea}</p>
+           </div>
         </div>
-      )}
+        <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
+                activeTab === 'overview' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
+            >
+              Overview
+            </button>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            {focusChildren.map(child => (
+              <button 
+                key={child.id}
+                onClick={() => setActiveTab(child.id)}
+                className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
+                  activeTab === child.id ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
+              >
+                {stripNumericPrefix(child.title)}
+              </button>
+            ))}
+        </div>
+      </div>
+
       <AnimatePresence mode="wait">
-        <motion.div key={activeTab + activeFocusArea}
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="w-full">
-          {focusChildren.length === 0 ? (
-            <div className="p-16 text-center text-slate-400">
-              <Info className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-semibold text-slate-500">No processes in this phase</p>
+        <motion.div 
+          key={activeTab + activeFocusArea}
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }} 
+          transition={{ duration: 0.2 }} 
+          className="w-full"
+        >
+          {activeTab === 'overview' ? (
+            <div className="p-10 space-y-12 bg-slate-50/30">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full translate-x-12 -translate-y-12 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10 space-y-4">
+                       <div className="flex items-center gap-3">
+                          <Activity className="w-4 h-4 text-blue-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Processes</span>
+                       </div>
+                       <div className="text-5xl font-black text-slate-900">{focusChildren.length}</div>
+                    </div>
+                 </div>
+                 
+                 <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-12 -translate-y-12 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10 space-y-4">
+                       <div className="flex items-center gap-3">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Baseline Status</span>
+                       </div>
+                       <div className="text-3xl font-black text-white">HEALTHY</div>
+                       <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold">
+                          <Zap className="w-3 h-3" />
+                          98% COMPLIANCE
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center justify-center min-h-[160px]">
+                    {getChartData()}
+                 </div>
+              </div>
+
+              {/* Processes Grid */}
+              <div className="space-y-6">
+                 <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest px-2">Processes for {activeFocusArea}</h3>
+                 {focusChildren.length === 0 ? (
+                   <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
+                      <p className="text-slate-400 font-bold uppercase tracking-widest">No terminal processes defined for this lifecycle stage.</p>
+                   </div>
+                 ) : (
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {focusChildren.map(child => {
+                        const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
+                        return (
+                          <button 
+                            key={child.id}
+                            onClick={() => setActiveTab(child.id)}
+                            className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group text-left"
+                          >
+                             <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                   <ChildIcon className="w-6 h-6" />
+                                </div>
+                                <div className="text-[10px] font-black text-slate-300 group-hover:text-blue-600 transition-colors">ID: {child.id}</div>
+                             </div>
+                             <h4 className="text-lg font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{stripNumericPrefix(child.title)}</h4>
+                             <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6">{child.summary || 'Detail view of process activities, inputs, and outputs.'}</p>
+                             <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">View Process</span>
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                             </div>
+                          </button>
+                        );
+                      })}
+                   </div>
+                 )}
+              </div>
             </div>
           ) : (
             <div className="w-full">
               {(() => {
-                const p = focusChildren.find(c => c.id === activeTab) ?? focusChildren[0];
-                return p ? renderPageContent(p) : null;
+                const p = focusChildren.find(c => c.id === activeTab) ?? focusChildren.find(c => c.id === initialTab);
+                return p ? renderPageContent(p) : <DetailView page={pages.find(pg => pg.id === activeTab) || page} />;
               })()}
             </div>
           )}

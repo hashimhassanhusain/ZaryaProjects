@@ -46,6 +46,8 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
+import toast from 'react-hot-toast';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -96,6 +98,7 @@ const KNOWLEDGE_AREAS = [
 
 export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { t } = useLanguage();
   const [pmp, setPmp] = useState<PMPData>({
     projectTitle: '',
     datePrepared: new Date().toISOString().split('T')[0],
@@ -127,6 +130,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [activeSection, setActiveSection] = useState(1);
 
@@ -287,7 +291,42 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`);
+    const fileName = `${selectedProject.code}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`;
+
+    // Save locally
+    doc.save(fileName);
+
+    // Also upload to Drive
+    handleDriveUpload(doc, fileName);
+  };
+
+  const handleDriveUpload = async (doc: jsPDF, fileName: string) => {
+    if (!selectedProject) return;
+    setIsExporting(true);
+    
+    try {
+      const pdfBlob = doc.output('blob');
+      const formData = new FormData();
+      formData.append('file', pdfBlob, fileName);
+      formData.append('path', '01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain/2.1.2_PROJECT_MANAGEMENT_PLAN');
+      
+      const res = await fetch('/api/drive/upload-by-path', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to upload to Google Drive');
+      }
+
+      toast.success(t('pdf_saved_to_drive'));
+    } catch (error: any) {
+      console.error('Drive upload error:', error);
+      toast.error(`${t('drive_upload_failed')}: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const addPhase = () => {

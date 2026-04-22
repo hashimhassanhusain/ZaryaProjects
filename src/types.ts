@@ -573,9 +573,13 @@ export interface Page {
   icon?: string;
   automatedFields?: string[]; // Fields that should be read-only and calculated
   details?: {
+    inputs?: string[];
+    tools?: string[];
+    outputs?: string[];
     variance?: string;
     performance?: string;
     documentation?: string;
+    [key: string]: any;
   };
 }
 

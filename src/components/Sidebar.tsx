@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Shield, DraftingCompass, Calendar,
   Banknote, Users, Package, AlertTriangle, FolderOpen, Settings,
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
 
@@ -59,8 +59,8 @@ export const Sidebar: React.FC = () => {
         )}
       >
         <Icon className={cn('w-5 h-5 shrink-0', active ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
-        <span className={cn('text-[11px] font-semibold uppercase tracking-wider truncate', active ? 'text-white' : '')}>
-          {item.label}
+        <span className={cn('text-[11px] font-black uppercase tracking-widest truncate', active ? 'text-white' : '')}>
+          {stripNumericPrefix(item.label)}
         </span>
       </Link>
     );

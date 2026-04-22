@@ -74,7 +74,6 @@ import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { UserProvider, useAuth } from './context/UserContext';
-import { FocusAreaProvider } from './context/FocusAreaContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { Toaster } from 'react-hot-toast';
 
@@ -176,9 +175,9 @@ const PageRenderer = () => {
     );
   }
 
-  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(page.id);
-  const isTasksPage = page.id === '2.6.21';
-  const isMeetingsPage = page.id === '2.6.22';
+  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
+  const isTasksPage = page.id === '2.6.21' || page.id === '3.6.21';
+  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22';
   const isFilesPage = page.id === 'files';
   const isBOQPage = page.id === '2.4.0';
   const isWBSPage = page.id === '2.2.9';
@@ -186,7 +185,7 @@ const PageRenderer = () => {
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3';
   const isSchedulePage = page.id === '2.3' || page.id === 'sched' || [
-    '1.3.1', '2.3.1', '2.3.2', '2.3.3', '3.5.1', '4.5.1', '4.5.2', '5.5.1'
+    '1.3.1', '2.3.1', '2.3.2', '2.3.3', '3.5.1', '4.5.1', '4.5.2', '5.5.1', '3.3.2'
   ].includes(page.id);
   const isAssumptionLogPage = page.id === '2.1.5';
   const isVendorRegisterPage = page.id === '3.3.4';
@@ -203,8 +202,10 @@ const PageRenderer = () => {
   const isResourcesPage = page.domain === 'resources' || [
     '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1'
   ].includes(page.id);
+  const isCharterPage = page.id === '1.1.1';
+  const isProjectManagementPlanPage = page.id === '2.1.2';
   const isGovernanceHubPage = [
-    'gov', '1.1.1', '1.1.2', // Charter, Policies
+    'gov', '1.1.2', // Hub, Policies
     '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
     '2.1.5', '1.2.1', '5.1.1' // Logs
   ].includes(page.id);
@@ -278,7 +279,7 @@ const PageRenderer = () => {
           <ScheduleActivityDefinition page={page} />
         ) : page.id === '2.3.2' ? (
           <ScheduleLogicEstimation page={page} />
-        ) : page.id === '2.3.3' ? (
+        ) : (page.id === '2.3.3' || page.id === '3.3.2') ? (
           <ProjectScheduleView page={page} />
         ) : page.id === '3.5.1' ? (
           <ScheduleCadenceDashboard page={page} />
@@ -302,6 +303,10 @@ const PageRenderer = () => {
           <SourcingStrategyView page={page} />
         ) : isExecutionQAPage ? (
            <ExecutionQAView page={page} />
+        ) : isCharterPage ? (
+          <ProjectCharterView page={page} />
+        ) : isProjectManagementPlanPage ? (
+          <ProjectManagementPlanView page={page} />
         ) : isPerformanceMonitoringPage ? (
            <PerformanceMonitoringView page={page} />
         ) : isGovernanceHubPage ? (
@@ -373,12 +378,7 @@ const AppLayout = () => {
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
             "flex-1 overflow-y-auto no-scrollbar",
-            // Remove padding for schedule and governance hub to allow full width as requested
-            (location.pathname.includes('/page/2.3') || 
-             location.pathname.includes('/page/2.1.2') || 
-             location.pathname.includes('/page/2.6') || 
-             location.pathname.includes('/page/3.3') ||
-             location.pathname === '/' ) ? "p-0" : "pt-1 pb-6 px-4 md:px-8 lg:px-12"
+            "p-0"
           )}
         >
           <Routes>
@@ -507,8 +507,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        <FocusAreaProvider>
-          <UserProvider>
+        <UserProvider>
           {!user ? (
             <Login />
           ) : (
@@ -524,8 +523,7 @@ export default function App() {
             </ProjectProvider>
           )}
         </UserProvider>
-      </FocusAreaProvider>
-    </LanguageProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }
