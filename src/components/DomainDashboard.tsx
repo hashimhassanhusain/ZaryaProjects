@@ -114,11 +114,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
-  const { activeFocusArea } = useFocusArea();
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
   const domainKey = page.domain || 'governance';
-  const Icon = ICON_MAP[page.icon || 'Info'] || Info;
+  const { activeFocusArea } = useFocusArea();
 
   // Filter children based on permissions
   const filteredChildren = childrenPages.filter(child => {
@@ -131,21 +130,22 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     child.focusArea?.includes(activeFocusArea)
   );
 
+  // Auto-select first matching page when focus area or domain changes
+  React.useEffect(() => {
+    if (focusChildren.length > 0) {
+      const isValid = focusChildren.some(c => c.id === activeTab);
+      if (!isValid) setActiveTab(focusChildren[0].id);
+    }
+  }, [activeFocusArea, page.id]);
+
+  const Icon = ICON_MAP[page.icon || 'Info'] || Info;
+
   // Risk Data State
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
   const [audits, setAudits] = useState<RiskAuditEntry[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
-
-  // Reset tab when page changes to avoid "Cannot read properties of undefined" errors
-  React.useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    } else {
-      setActiveTab('overview');
-    }
-  }, [page.id, initialTab]);
 
   // Fetch Risk Data if in Risk or Governance Domain (since plans are consolidated there)
   React.useEffect(() => {
@@ -420,18 +420,12 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     return <DetailView page={p} />;
   };
 
-  // Auto-select first matching page when focus area or domain changes
-  React.useEffect(() => {
-    if (focusChildren.length > 0) {
-      const isValid = focusChildren.some(c => c.id === activeTab);
-      if (!isValid) setActiveTab(focusChildren[0].id);
-    }
-  }, [activeFocusArea, page.id]);
+  const activeHubId = null;
 
   return (
     <div className="w-full">
 
-      {/* Process sub-selector: shown when multiple pages match the focus area */}
+      {/* ── Process sub-selector: shown when multiple pages match the focus area ── */}
       {focusChildren.length > 1 && (
         <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100 flex-wrap">
           {focusChildren.map(child => {
@@ -456,7 +450,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         </div>
       )}
 
-      {/* Main content */}
+      {/* ── Main Content Area ── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab + activeFocusArea}
@@ -470,12 +464,15 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             <div className="p-16 text-center text-slate-400">
               <Info className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm font-semibold text-slate-500">No processes in this phase</p>
-              <p className="text-xs mt-1">{page.title} · <span className="font-medium">{activeFocusArea}</span></p>
+              <p className="text-xs mt-1 text-slate-400">
+                {page.title} · <span className="font-medium">{activeFocusArea}</span>
+              </p>
             </div>
           ) : (
             <div className="w-full">
               {(() => {
-                const pageToShow = focusChildren.find(c => c.id === activeTab) ?? focusChildren[0];
+                const pageToShow =
+                  focusChildren.find(c => c.id === activeTab) ?? focusChildren[0];
                 return pageToShow ? renderPageContent(pageToShow) : null;
               })()}
             </div>

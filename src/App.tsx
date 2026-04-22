@@ -198,7 +198,7 @@ const PageRenderer = () => {
   const isExecutionQAPage = page.id === '3.1.3';
   const isPerformanceMonitoringPage = page.id === '4.1.1';
   const isRiskPage = page.domain === 'risk' || [
-    '2.1.14', '2.7.5', '2.7.6', '4.7.1', '4.7.2', '5.7.1', '2.7.3', '4.4.1'
+    '2.1.14', '2.7.5', '2.7.6', '4.7.1', '4.7.2', '5.7.1', '2.7.3', '4.7.3'
   ].includes(page.id);
   const isResourcesPage = page.domain === 'resources' || [
     '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1'

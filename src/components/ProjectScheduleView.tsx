@@ -307,11 +307,11 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       }
       
       // For other levels (Building, Floor, etc.)
-      // Show if it belongs to this WBS and isn't assigned to an existing child Division node
-      const childDivIds = new Set(wbsLevels.filter(w => w.parentId === wbs.id && (w.type === 'Division' || w.type === 'Cost Account')).map(w => w.id));
-      return a.wbsId === wbs.id && (!a.divisionId || !childDivIds.has(a.divisionId));
+      // Only show if it belongs specifically to this WBS node and has no divisionId.
+      // If it has a divisionId, it will be rendered by its respective Division node.
+      return a.wbsId === wbs.id && !a.divisionId;
     });
-  }, [activities, wbsLevels]);
+  }, [activities]);
 
   const calculateWbsCosts = useCallback((wbsId: string): { planned: number; po: number; actual: number } => {
     const wbs = wbsLevels.find(w => w.id === wbsId);
@@ -2389,9 +2389,9 @@ const ActivityRow: React.FC<{
                 {act.predecessors && act.predecessors.length > 0 && <Link2 className="w-2.5 h-2.5 text-slate-400" title="Has Predecessors" />}
                 {linkedPOs.length > 0 && (
                   <div className="flex items-center gap-0.5">
-                    {linkedPOs.map((po, pidx) => (
+                    {linkedPOs.map((po) => (
                       <button 
-                        key={pidx}
+                        key={po.id}
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate('/page/4.2.3', { state: { editPOId: po.id } });

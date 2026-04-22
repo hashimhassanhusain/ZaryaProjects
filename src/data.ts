@@ -183,7 +183,7 @@ export const pages: Page[] = [
   { id: '4.7.2', title: 'Trend Analysis', type: 'terminal', domain: 'risk', focusArea: 'monitoring', icon: 'LineChart', summary: 'AI-driven prediction of emerging risks based on site performance trends.' },
   { id: '5.7.1', title: 'Risk Closure', type: 'terminal', domain: 'risk', focusArea: 'closing', icon: 'Lock', summary: 'Formal retirement of expired risks and archival of the Risk Lessons Learned.' },
   { id: '2.7.3', title: 'Issue Log', type: 'terminal', domain: 'risk', focusArea: 'executing', icon: 'AlertTriangle', summary: 'Capture and track blockers that have already occurred.' },
-  { id: '4.4.1', title: 'Risk Audit', type: 'terminal', domain: 'risk', focusArea: 'monitoring', icon: 'ShieldCheck', summary: 'Periodic verification of the effectiveness of risk responses.' },
+  { id: '4.7.3', title: 'Risk Audit', type: 'terminal', domain: 'risk', focusArea: 'monitoring', icon: 'ShieldCheck', summary: 'Periodic verification of the effectiveness of risk responses.' },
 
   // --- ADDITIONAL ---
   { id: '2.3', title: 'Project Schedule', type: 'terminal', domain: 'planning', focusArea: 'planning', icon: 'Clock' },
