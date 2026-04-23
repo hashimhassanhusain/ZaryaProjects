@@ -19,7 +19,7 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 3500,
       rollupOptions: {
         output: {
           manualChunks: {
@@ -28,7 +28,8 @@ export default defineConfig(({mode}) => {
             'vendor-charts': ['recharts'],
             'vendor-motion': ['motion/react'],
             'vendor-pdf': ['jspdf', 'jspdf-autotable'],
-            'vendor-ui': ['lucide-react', 'react-hot-toast', 'clsx', 'tailwind-merge'],
+            'vendor-icons': ['lucide-react'],
+            'vendor-ui': ['react-hot-toast', 'clsx', 'tailwind-merge'],
           },
         },
       },
