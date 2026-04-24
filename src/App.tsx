@@ -46,7 +46,7 @@ import { CompaniesView } from './components/CompaniesView';
 import { ResourcesView } from './components/ResourcesView';
 import { ContactsView } from './components/ContactsView';
 import { WorkPackagesView } from './components/WorkPackagesView';
-import { pages } from './data';
+import { pages, users as mockUsersData } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -440,8 +440,7 @@ export default function App() {
         const usersRef = collection(db, 'users');
         const snapshot = await getDocs(usersRef);
         if (snapshot.empty) {
-          const { users: mockUsers } = await import('./data');
-          await Promise.all(mockUsers.map(u => setDoc(doc(db, 'users', u.uid), u)));
+          await Promise.all(mockUsersData.map(u => setDoc(doc(db, 'users', u.uid), u)));
           console.log('Mock users seeded successfully');
         }
       } catch (err) {
