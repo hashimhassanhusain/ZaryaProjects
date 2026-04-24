@@ -120,8 +120,8 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
     <StandardProcessPage
       page={page}
       inputs={[
-        { id: '2.2.9', title: 'WBS', status: 'Approved' },
-        { id: '2.2.10', title: 'Work Packages', status: 'Ready' }
+        { id: '2.2.5', title: 'WBS', status: 'Approved' },
+        { id: '2.2.7', title: 'Work Packages', status: 'Ready' }
       ]}
       outputs={[
         { id: '2.3.1-OUT', title: 'Activity List', status: 'Draft' }

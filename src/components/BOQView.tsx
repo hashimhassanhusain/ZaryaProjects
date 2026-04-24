@@ -643,7 +643,7 @@ export const BOQView: React.FC = () => {
           <h3 className="text-xl font-bold text-slate-900 mb-2">{t('wbs_required')}</h3>
           <p className="text-slate-500 mb-8">{t('wbs_required_hint')}</p>
           <button 
-            onClick={() => navigate('/page/2.2.9')}
+            onClick={() => navigate('/page/2.2.5')}
             className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
             {t('go_to_wbs')}

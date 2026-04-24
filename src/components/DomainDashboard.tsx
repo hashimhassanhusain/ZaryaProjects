@@ -319,11 +319,11 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const renderPageContent = (p: Page) => {
     if (!p) return null;
     const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(p.id);
-    const isTasksPage = p.id === '2.6.21';
-    const isMeetingsPage = p.id === '2.6.22';
-    const isBOQPage = p.id === '2.4.0';
-    const isWBSPage = p.id === '2.2.9';
-    const isWorkPackagesPage = p.id === '2.2.10';
+    const isTasksPage = p.id === '3.6.3';
+    const isMeetingsPage = p.id === '3.6.4';
+    const isBOQPage = p.id === '2.4.1';
+    const isWBSPage = p.id === '2.2.5';
+    const isWorkPackagesPage = p.id === '2.2.7';
     const isEVMPage = p.id === '4.2.2';
     const isProgressReportPage = p.id === '3.3.3';
     const isSchedulePage = p.id === '2.3';
@@ -349,7 +349,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
     if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
     if (isTasksPage) return <TasksView />;
-    if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '2.6.22')!} />;
+    if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '3.6.4')!} />;
     if (isZaryaPage) return <ZaryaPOTracker page={p} />;
     if (isBOQPage) return <BOQView />;
     if (isWBSPage) return <WBSView />;

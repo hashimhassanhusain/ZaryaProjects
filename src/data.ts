@@ -281,7 +281,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.0', 
+    id: '2.4.1', 
     title: 'Bill of Quantities (BOQ)', 
     type: 'terminal', 
     domain: 'finance', 
@@ -295,7 +295,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.1', 
+    id: '2.4.2', 
     title: 'Develop Cost Estimates', 
     type: 'terminal', 
     domain: 'finance', 
@@ -309,7 +309,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.2', 
+    id: '2.4.3', 
     title: 'Develop Project Budget', 
     type: 'terminal', 
     domain: 'finance', 
@@ -323,7 +323,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.3', 
+    id: '2.4.4', 
     title: 'Define Financial Control Framework', 
     type: 'terminal', 
     domain: 'finance', 
@@ -715,7 +715,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.2.9', 
+    id: '2.2.5', 
     title: 'WBS Explorer (Zones/Areas)', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -729,7 +729,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.2.10', 
+    id: '2.2.7', 
     title: 'Work Package Definitions', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -1039,7 +1039,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.6.21', 
+    id: '3.6.3', 
     title: 'Project Task Manager', 
     type: 'terminal', 
     domain: 'resources', 
@@ -1053,7 +1053,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.6.22', 
+    id: '3.6.4', 
     title: 'Meetings & Minutes', 
     type: 'terminal', 
     domain: 'resources', 

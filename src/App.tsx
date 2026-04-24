@@ -178,12 +178,12 @@ const PageRenderer = () => {
   }
 
   const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
-  const isTasksPage = page.id === '2.6.21' || page.id === '3.6.21';
-  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22' || page.id === '3.5.2';
+  const isTasksPage = page.id === '3.6.3';
+  const isMeetingsPage = page.id === '3.6.4' || page.id === '3.5.2';
   const isFilesPage = page.id === 'files';
-  const isBOQPage = page.id === '2.4.0';
-  const isWBSPage = page.id === '2.2.9';
-  const isWorkPackagesPage = page.id === '2.2.10';
+  const isBOQPage = page.id === '2.4.1';
+  const isWBSPage = page.id === '2.2.5';
+  const isWorkPackagesPage = page.id === '2.2.7';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
   const isSchedulePage = page.id === '2.3' || page.id === 'sched' || [
@@ -218,7 +218,7 @@ const PageRenderer = () => {
   ].includes(page.id);
   const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isFinancePage = page.domain === 'finance' || [
-    '1.4.1', '2.4.1', '2.4.2', '2.4.3', '4.4.1', '4.4.2', '5.4.1', '2.4.0', '4.2.2', '4.2.6', '5.2.1'
+    '1.4.1', '2.4.1', '2.4.2', '2.4.3', '2.4.4', '4.4.1', '4.4.2', '5.4.1', '4.2.2', '4.2.6', '5.2.1'
   ].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
 

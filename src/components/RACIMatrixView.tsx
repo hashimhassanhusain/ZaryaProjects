@@ -87,7 +87,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
       page={page}
       inputs={[
         { id: '2.1.9', title: 'Scope Management Plan', status: 'Approved' },
-        { id: '2.2.9', title: 'WBS', status: 'Approved' }
+        { id: '2.2.5', title: 'WBS', status: 'Approved' }
       ]}
       outputs={[
         { id: '2.6.5-OUT', title: 'Project RACI Chart', status: 'Locked' }

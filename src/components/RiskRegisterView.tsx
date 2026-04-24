@@ -115,7 +115,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
       page={page}
       inputs={[
         { id: '2.1.14', title: 'Risk Mgmt Plan', status: 'Approved' },
-        { id: '2.2.9', title: 'WBS', status: 'Approved' }
+        { id: '2.2.5', title: 'WBS', status: 'Approved' }
       ]}
       outputs={[
         { id: '2.7.5-OUT', title: 'The Master Risk Register', status: 'Dynamic' }

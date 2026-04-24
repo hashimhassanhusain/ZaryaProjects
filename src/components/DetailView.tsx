@@ -61,7 +61,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const navigate = useNavigate();
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
-  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22';
+  const isMeetingsPage = page.id === '3.6.4';
   const isVarianceAnalysisPage = page.id === '4.3.2';
   
   const [isCreating, setIsCreating] = useState(false);
