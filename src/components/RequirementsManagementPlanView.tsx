@@ -287,7 +287,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -303,7 +303,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
           {isEditing ? (
             <input 
               type="date"
@@ -341,7 +341,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
           <section key={section.key} className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
                 {section.help && (
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
@@ -394,7 +394,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
           ].map((section) => (
             <section key={section.key} className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
                 <div className={cn("flex items-center gap-2 text-[10px] font-bold px-2 py-1 rounded", section.badgeColor || "text-blue-600 bg-blue-50")}>
                   {section.icon}
                   {section.badge}
@@ -424,7 +424,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
           { label: 'Configuration Management', key: 'configurationManagement', placeholder: 'Define requirements change control process...' }
         ].map((section) => (
           <section key={section.key} className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
             {isEditing ? (
               <textarea 
                 value={(rmp as any)[section.key]}
@@ -480,15 +480,15 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

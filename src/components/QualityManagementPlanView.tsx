@@ -287,7 +287,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id as any)}
             className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+              "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
               activeSubTab === tab.id 
                 ? "bg-white text-blue-600 shadow-md" 
                 : "text-slate-400 hover:text-slate-600"
@@ -303,7 +303,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
               {isEditing ? (
                 <input 
                   type="text"
@@ -319,7 +319,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
               {isEditing ? (
                 <input 
                   type="date"
@@ -337,13 +337,13 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
 
           {/* Roles and Responsibilities */}
           <section className="space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Quality Roles and Responsibilities</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Quality Roles and Responsibilities</h3>
             {isEditing ? (
               <div className="grid grid-cols-1 gap-4">
                 {qmp.roles.map((role, idx) => (
                   <div key={role.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{idx + 1}. Role</label>
                       <input 
                         type="text"
                         value={role.role}
@@ -356,7 +356,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{idx + 1}. Responsibilities</label>
                       <input 
                         type="text"
                         value={role.responsibilities}
@@ -376,8 +376,8 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50">
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Role</th>
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibilities</th>
+                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-1/3">Role</th>
+                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibilities</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -408,7 +408,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
               { key: 'acceptanceCriteriaLogic', title: 'Acceptance Criteria Logic' }
             ].map((section) => (
               <section key={section.key} className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{section.title}</label>
                 {isEditing ? (
                   <textarea 
                     value={(qmp as any)[section.key]}
@@ -428,15 +428,15 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
 
           {/* Revision History Table */}
           <section className="space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
             <div className="overflow-hidden rounded-2xl border border-slate-100">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">

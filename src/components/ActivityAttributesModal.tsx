@@ -652,7 +652,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           {/* Dependencies */}
           <section className="space-y-4">
             <div className="flex justify-between items-center">
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Link2 className="w-3 h-3" /> Dependencies (Predecessors)
               </h4>
               <div className="flex gap-2">

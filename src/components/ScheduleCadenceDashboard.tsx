@@ -77,12 +77,12 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
                 <Calendar className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Gantt Chart Tool</h3>
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest">Gantt Chart Tool</h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Interactive Cadence Visualization</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">
+              <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">
                 {showGantt ? 'Hide Tool' : 'Launch Tool'}
               </span>
               <ChevronRight className={cn("w-4 h-4 text-slate-400 transition-transform", showGantt && "rotate-90")} />
@@ -109,14 +109,14 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
                     <Zap className="w-5 h-5 animate-pulse" />
                  </div>
-                 <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none italic">Cadence Dashboard</h2>
+                 <h2 className="text-2xl font-semibold text-slate-900 tracking-tight leading-none italic">Cadence Dashboard</h2>
               </div>
               <p className="text-sm text-slate-500 font-medium ml-13">Monitoring daily work flow and execution synchronization.</p>
            </div>
            
            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Live Sync Active</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-900">Live Sync Active</span>
            </div>
         </header>
 
@@ -124,7 +124,7 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
            {/* Active Work Flow */}
            <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between px-2">
-                 <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Current Work Flow (Active Activities)</h3>
+                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Current Work Flow (Active Activities)</h3>
                  <span className="text-[9px] font-bold text-slate-400">{activities.length} ACTIVE</span>
               </div>
 
@@ -133,11 +133,11 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
                    <div key={act.id} className="group bg-white border border-slate-100 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-blue-500/5 transition-all">
                       <div className="flex items-start justify-between mb-6">
                          <div className="space-y-1">
-                            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{act.id}</span>
-                            <h4 className="text-xl font-black text-slate-900 tracking-tight italic">{act.description}</h4>
+                            <span className="text-[10px] font-semibold text-blue-500 uppercase tracking-widest">{act.id}</span>
+                            <h4 className="text-xl font-semibold text-slate-900 tracking-tight italic">{act.description}</h4>
                          </div>
                          <div className="flex items-center gap-2">
-                            <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black uppercase">
+                            <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-semibold uppercase">
                                {act.workPackage}
                             </div>
                          </div>
@@ -145,17 +145,17 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
 
                       <div className="grid grid-cols-3 gap-6 mb-8">
                          <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Progress</p>
-                            <p className="text-xl font-black text-slate-900 italic tracking-tighter">{act.percentComplete || 0}%</p>
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Progress</p>
+                            <p className="text-xl font-semibold text-slate-900 italic tracking-tighter">{act.percentComplete || 0}%</p>
                          </div>
                          <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Planned Finish</p>
-                            <p className="text-sm font-black text-slate-900">{act.finishDate || '---'}</p>
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Planned Finish</p>
+                            <p className="text-sm font-semibold text-slate-900">{act.finishDate || '---'}</p>
                          </div>
                          <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Criticality</p>
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Criticality</p>
                             <span className={cn(
-                              "text-[9px] font-black uppercase",
+                              "text-[9px] font-semibold uppercase",
                               act.isCritical ? "text-rose-500" : "text-emerald-500"
                             )}>
                                {act.isCritical ? 'Critical' : 'Standard'}
@@ -168,11 +168,11 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
                             {[1, 2, 3].map(i => (
                                <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 shadow-sm" />
                             ))}
-                            <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[8px] text-white font-black">
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[8px] text-white font-semibold">
                                +5
                             </div>
                          </div>
-                         <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:gap-3 transition-all">
+                         <button className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-blue-600 hover:gap-3 transition-all">
                             View Child Tasks
                             <ArrowRight className="w-4 h-4" />
                          </button>
@@ -193,7 +193,7 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
            <div className="space-y-8">
               <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-6">
                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black tracking-tight italic">Daily Sync Log</h3>
+                    <h3 className="text-lg font-semibold tracking-tight italic">Daily Sync Log</h3>
                     <Plus className="w-5 h-5 text-blue-400 cursor-pointer" />
                  </div>
                  
@@ -205,11 +205,11 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
                     ].map((log, i) => (
                       <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
                          <div className="space-y-1">
-                            <p className="text-xs font-black">{log.topic}</p>
+                            <p className="text-xs font-semibold">{log.topic}</p>
                             <span className="text-[9px] font-bold text-slate-500 uppercase">{log.time}</span>
                          </div>
                          <div className={cn(
-                           "px-2 py-0.5 rounded-full text-[8px] font-black uppercase",
+                           "px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase",
                            log.status === 'Done' ? "bg-emerald-500/20 text-emerald-400" : "bg-orange-500/20 text-orange-400"
                          )}>
                             {log.status}
@@ -220,7 +220,7 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
               </div>
 
               <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-                 <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
+                 <h3 className="text-sm font-semibold text-slate-900 tracking-tight flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-blue-500" />
                     Live Coordination
                  </h3>

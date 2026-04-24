@@ -153,7 +153,7 @@ export const WorkPackagesView: React.FC = () => {
     <div className="w-full">
       <div className="space-y-8">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+        <nav className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
           <span className="hover:text-slate-600 cursor-pointer transition-colors">Admin Settings</span>
           <ChevronRight className="w-3 h-3" />
           <span className="text-slate-900">Work Packages (MasterFormat Level 2)</span>
@@ -166,7 +166,7 @@ export const WorkPackagesView: React.FC = () => {
               <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-200">
                 <Grid3X3 className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Work Packages</h1>
+              <h1 className="text-4xl font-semibold text-slate-900 tracking-tight">Work Packages</h1>
             </div>
             <p className="text-slate-500 font-medium max-w-2xl ml-1">
               Manage project work packages based on CSI MasterFormat Level 2.
@@ -219,11 +219,11 @@ export const WorkPackagesView: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost Account</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Code</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Title</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Cost Account</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -249,7 +249,7 @@ export const WorkPackagesView: React.FC = () => {
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-semibold uppercase tracking-wider">
                           {wp.divisionCode}
                         </span>
                         <span className="text-sm font-medium text-slate-500">{division?.title}</span>
@@ -257,7 +257,7 @@ export const WorkPackagesView: React.FC = () => {
                     </td>
                     <td className="px-8 py-5">
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                        "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
                         (() => {
                           const wpActivities = activities.filter(a => a.divisionId === wp.id || a.wbsId === wp.id);
                           const progress = wp.progress || (wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0);
@@ -318,7 +318,7 @@ export const WorkPackagesView: React.FC = () => {
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Work Package' : 'Add New Work Package'}
                 </h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -329,7 +329,7 @@ export const WorkPackagesView: React.FC = () => {
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Account (Level 1)</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Cost Account (Level 1)</label>
                     <select
                       value={formData.divisionCode}
                       onChange={(e) => setFormData({ ...formData, divisionCode: e.target.value, code: '', title: '' })}
@@ -342,7 +342,7 @@ export const WorkPackagesView: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -356,7 +356,7 @@ export const WorkPackagesView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Cost Accounts Suggestions</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Cost Accounts Suggestions</label>
                   <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     {formData.divisionCode ? (
                       masterFormatData.find(d => d.number === formData.divisionCode)?.items.map(item => (
@@ -382,7 +382,7 @@ export const WorkPackagesView: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Code</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Code</label>
                     <input
                       type="text"
                       value={formData.code}
@@ -392,7 +392,7 @@ export const WorkPackagesView: React.FC = () => {
                     />
                   </div>
                   <div className="col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Title</label>
                     {!isManualTitle ? (
                       <select
                         value={masterFormatSections.some(s => s.title === formData.title) ? formData.title : ''}
@@ -437,7 +437,7 @@ export const WorkPackagesView: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description (Optional)</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Description (Optional)</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}

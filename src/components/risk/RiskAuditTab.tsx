@@ -192,7 +192,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
           {auditType === 'Event' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Event</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Risk Event</label>
                 <input 
                   type="text"
                   value={formData.event}
@@ -202,7 +202,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Root Cause</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Root Cause</label>
                   <textarea 
                     value={formData.cause}
                     onChange={(e) => setFormData({ ...formData, cause: e.target.value })}
@@ -211,7 +211,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Response Implemented</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Response Implemented</label>
                   <textarea 
                     value={formData.response}
                     onChange={(e) => setFormData({ ...formData, response: e.target.value })}
@@ -226,7 +226,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
           {auditType === 'Response' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Event / Response</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Risk Event / Response</label>
                 <input 
                   type="text"
                   value={formData.event}
@@ -236,7 +236,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Was Response Successful?</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Was Response Successful?</label>
                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <button 
                       onClick={() => setFormData({ ...formData, successful: true })}
@@ -253,7 +253,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Actions to Improve</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Actions to Improve</label>
                   <textarea 
                     value={formData.actionsToImprove}
                     onChange={(e) => setFormData({ ...formData, actionsToImprove: e.target.value })}
@@ -268,7 +268,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
           {auditType === 'Process' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Process Audited</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Process Audited</label>
                 <select 
                   value={formData.process}
                   onChange={(e) => setFormData({ ...formData, process: e.target.value })}
@@ -285,7 +285,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Process Followed?</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Process Followed?</label>
                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <button 
                       onClick={() => setFormData({ ...formData, followed: true })}
@@ -302,7 +302,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tools and Techniques Used</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Tools and Techniques Used</label>
                   <textarea 
                     value={formData.toolsUsed}
                     onChange={(e) => setFormData({ ...formData, toolsUsed: e.target.value })}
@@ -315,7 +315,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
           )}
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">General Comments</label>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">General Comments</label>
             <textarea 
               value={formData.comment}
               onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
@@ -386,7 +386,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Event Audits */}
         <div className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+          <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
             <Zap className="w-3 h-3 text-amber-500" />
             Risk Event Audits
           </h4>
@@ -404,7 +404,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   </button>
                   <div className="text-xs font-bold text-slate-900 mb-1">{a.event}</div>
                   <div className="text-[10px] text-slate-400 font-medium mb-2 line-clamp-2">{a.comment}</div>
-                  <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-widest text-slate-400">
                     <span>{new Date(a.date).toLocaleDateString()}</span>
                     <span>{a.auditor}</span>
                   </div>
@@ -416,7 +416,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
 
         {/* Response Audits */}
         <div className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+          <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
             <ShieldCheck className="w-3 h-3 text-emerald-500" />
             Response Effectiveness
           </h4>
@@ -434,12 +434,12 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   </button>
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs font-bold text-slate-900">{a.event}</div>
-                    <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase", a.successful ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
+                    <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-semibold uppercase", a.successful ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
                       {a.successful ? 'Successful' : 'Failed'}
                     </span>
                   </div>
                   <div className="text-[10px] text-slate-400 font-medium mb-2 line-clamp-2">{a.actionsToImprove}</div>
-                  <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-widest text-slate-400">
                     <span>{new Date(a.date).toLocaleDateString()}</span>
                     <span>{a.auditor}</span>
                   </div>
@@ -451,7 +451,7 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
 
         {/* Process Audits */}
         <div className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+          <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
             <Activity className="w-3 h-3 text-blue-500" />
             Process Compliance
           </h4>
@@ -469,12 +469,12 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
                   </button>
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs font-bold text-slate-900">{a.process}</div>
-                    <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase", a.followed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
+                    <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-semibold uppercase", a.followed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
                       {a.followed ? 'Followed' : 'Bypassed'}
                     </span>
                   </div>
                   <div className="text-[10px] text-slate-400 font-medium mb-2 line-clamp-2">Tools: {a.toolsUsed}</div>
-                  <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-widest text-slate-400">
                     <span>{new Date(a.date).toLocaleDateString()}</span>
                     <span>{a.auditor}</span>
                   </div>

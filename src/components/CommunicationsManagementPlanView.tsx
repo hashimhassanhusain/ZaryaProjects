@@ -332,7 +332,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -348,7 +348,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -367,7 +367,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       {/* Section A: Communications Matrix */}
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Section A: Communications Matrix</h3>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Section A: Communications Matrix</h3>
           {isEditing && (
             <button 
               onClick={() => setIsAddingEntry(true)}
@@ -383,12 +383,12 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Information</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sender</th>
-                {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Information</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Sender</th>
+                {isEditing && <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -407,7 +407,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                   <td className="px-6 py-4 text-sm text-slate-600">{entry.frequency}</td>
                   <td className="px-6 py-4">
                     <span className={cn(
-                      "px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest",
+                      "px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest",
                       entry.sender ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
                     )}>
                       {entry.sender || 'Unassigned'}
@@ -437,7 +437,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       {/* Section B: Assumptions & Constraints */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Section B: Assumptions</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Section B: Assumptions</label>
           {isEditing ? (
             <textarea 
               value={commPlan.assumptions}
@@ -453,7 +453,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
           )}
         </div>
         <div className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Section B: Constraints</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Section B: Constraints</label>
           {isEditing ? (
             <textarea 
               value={commPlan.constraints}
@@ -474,7 +474,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       <section className="space-y-4">
         <div className="flex items-center gap-2 ml-1">
           <BookOpen className="w-3 h-3 text-slate-400" />
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Section C: Glossary of Terms or Acronyms</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Section C: Glossary of Terms or Acronyms</label>
         </div>
         {isEditing ? (
           <textarea 
@@ -510,7 +510,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder</label>
                   <select 
                     value={newEntry.stakeholderId}
                     onChange={(e) => setNewEntry({ ...newEntry, stakeholderId: e.target.value })}
@@ -523,7 +523,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Information</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Information</label>
                   <input 
                     type="text"
                     value={newEntry.information}
@@ -533,7 +533,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</label>
                   <input 
                     type="text"
                     value={newEntry.method}
@@ -543,7 +543,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Timing/Frequency</label>
                   <input 
                     type="text"
                     value={newEntry.frequency}
@@ -553,7 +553,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sender</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Sender</label>
                   <select 
                     value={newEntry.sender}
                     onChange={(e) => setNewEntry({ ...newEntry, sender: e.target.value })}
@@ -624,15 +624,15 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

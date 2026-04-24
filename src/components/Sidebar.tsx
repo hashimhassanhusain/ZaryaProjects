@@ -8,23 +8,26 @@ import { cn, stripNumericPrefix } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
 
+import { useLanguage } from '../context/LanguageContext';
+
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard, path: '/' },
-  { id: 'gov',       label: 'Governance',   icon: Shield,           path: '/page/gov' },
-  { id: 'scope',     label: 'Scope',        icon: DraftingCompass,  path: '/page/scope' },
-  { id: 'sched',     label: 'Schedule',     icon: Calendar,         path: '/page/sched' },
-  { id: 'fin',       label: 'Finance',      icon: Banknote,         path: '/page/fin' },
-  { id: 'stak',      label: 'Stakeholders', icon: Users,            path: '/page/stak' },
-  { id: 'res',       label: 'Resources',    icon: Package,          path: '/page/res' },
-  { id: 'risk',      label: 'Risk',         icon: AlertTriangle,    path: '/page/risk' },
+  { id: 'dashboard', label: 'dashboard',    icon: LayoutDashboard, path: '/' },
+  { id: 'gov',       label: 'gov',          icon: Shield,           path: '/page/gov' },
+  { id: 'scope',     label: 'scope',        icon: DraftingCompass,  path: '/page/scope' },
+  { id: 'sched',     label: 'sched',        icon: Calendar,         path: '/page/sched' },
+  { id: 'fin',       label: 'fin',          icon: Banknote,         path: '/page/fin' },
+  { id: 'stak',      label: 'stak',         icon: Users,            path: '/page/stak' },
+  { id: 'res',       label: 'res',          icon: Package,          path: '/page/res' },
+  { id: 'risk',      label: 'risk',         icon: AlertTriangle,    path: '/page/risk' },
 ];
 
 const BOTTOM_ITEMS = [
-  { id: 'drive', label: 'Drive Explorer',  icon: FolderOpen, path: '/page/files' },
-  { id: 'admin', label: 'Admin Settings',  icon: Settings,   path: '/admin/users' },
+  { id: 'drive', label: 'drive',  icon: FolderOpen, path: '/page/files' },
+  { id: 'admin', label: 'admin',  icon: Settings,   path: '/admin/users' },
 ];
 
 export const Sidebar: React.FC = () => {
+  const { t } = useLanguage();
   const location = useLocation();
   const { userProfile, isAdmin } = useAuth();
   const { isSidebarOpen } = useUI();
@@ -59,8 +62,8 @@ export const Sidebar: React.FC = () => {
         )}
       >
         <Icon className={cn('w-5 h-5 shrink-0', active ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
-        <span className={cn('text-[11px] font-black uppercase tracking-widest truncate', active ? 'text-white' : '')}>
-          {stripNumericPrefix(item.label)}
+        <span className={cn('text-[11px] font-semibold uppercase tracking-widest truncate', active ? 'text-white' : '')}>
+          {t(item.label)}
         </span>
       </Link>
     );
@@ -68,7 +71,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className={cn(
-      'h-screen bg-[#f8fafc] border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300',
+      'h-screen bg-[#f8fafc] border-e border-slate-200 flex flex-col shrink-0 transition-all duration-300',
       isSidebarOpen ? 'w-[220px] p-3 overflow-y-auto' : 'w-0 p-0 overflow-hidden border-none'
     )}>
       <nav className="flex-1 flex flex-col gap-0.5 pt-2">

@@ -1927,8 +1927,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="bg-white p-12 rounded-xl border border-slate-100 shadow-xl shadow-slate-200/50">
           <div className="grid grid-cols-2 gap-6 aspect-square max-w-3xl mx-auto relative">
             {/* Axis Labels */}
-            <div className="absolute -left-16 top-1/2 -rotate-90 text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Power (1-10)</div>
-            <div className="absolute left-1/2 -bottom-12 -translate-x-1/2 text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Interest (1-10)</div>
+            <div className="absolute -left-16 top-1/2 -rotate-90 text-[12px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Power (1-10)</div>
+            <div className="absolute left-1/2 -bottom-12 -translate-x-1/2 text-[12px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Interest (1-10)</div>
 
             {Object.entries(quadrants).map(([strategy, members], idx) => (
               <div key={strategy} className={cn(
@@ -1940,13 +1940,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}>
                 <div className="flex items-center justify-between relative z-10">
                   <h4 className={cn(
-                    "text-xs font-black uppercase tracking-widest",
+                    "text-xs font-semibold uppercase tracking-widest",
                     strategy === 'Manage Closely' ? "text-rose-600" : 
                     strategy === 'Keep Satisfied' ? "text-amber-600" :
                     strategy === 'Keep Informed' ? "text-blue-600" :
                     "text-slate-500"
                   )}>{strategy}</h4>
-                  <span className="px-3 py-1 bg-white/80 backdrop-blur-sm border border-white rounded-full text-[10px] font-black text-slate-400 shadow-sm">{members.length}</span>
+                  <span className="px-3 py-1 bg-white/80 backdrop-blur-sm border border-white rounded-full text-[10px] font-semibold text-slate-400 shadow-sm">{members.length}</span>
                 </div>
                 
                 <div className="flex flex-wrap gap-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar relative z-10">
@@ -1991,7 +1991,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
           <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Stakeholder Analysis List</h3>
+              <h3 className="text-lg font-semibold text-slate-900 tracking-tight">Stakeholder Analysis List</h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Detailed Power/Interest Mapping</p>
             </div>
             <div className="flex items-center gap-3">
@@ -2012,12 +2012,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Power</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Interest</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Strategy</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Last Updated</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Stakeholder</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Power</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Interest</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Strategy</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Last Updated</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -2025,11 +2025,11 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <tr key={analysis.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-sm">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-sm">
                           {analysis.stakeholderName.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-900">{analysis.stakeholderName}</p>
+                          <p className="text-sm font-semibold text-slate-900">{analysis.stakeholderName}</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">v{analysis.version}.0</p>
                         </div>
                       </div>
@@ -2039,7 +2039,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${analysis.power * 10}%` }} />
                         </div>
-                        <span className="text-xs font-black text-slate-600">{analysis.power}/10</span>
+                        <span className="text-xs font-semibold text-slate-600">{analysis.power}/10</span>
                       </div>
                     </td>
                     <td className="px-8 py-5">
@@ -2047,12 +2047,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${analysis.interest * 10}%` }} />
                         </div>
-                        <span className="text-xs font-black text-slate-600">{analysis.interest}/10</span>
+                        <span className="text-xs font-semibold text-slate-600">{analysis.interest}/10</span>
                       </div>
                     </td>
                     <td className="px-8 py-5">
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block",
+                        "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest inline-block",
                         analysis.strategy === 'Manage Closely' ? "bg-rose-50 text-rose-600 border border-rose-100" : 
                         analysis.strategy === 'Keep Satisfied' ? "bg-amber-50 text-amber-600 border border-amber-100" :
                         analysis.strategy === 'Keep Informed' ? "bg-blue-50 text-blue-600 border border-blue-100" :
@@ -2138,8 +2138,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         >
           <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">{editingAnalysis.id ? 'Edit Analysis' : 'New Stakeholder Analysis'}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Matrix Mapping v{editingAnalysis.version}.0</p>
+              <h3 className="text-xl font-semibold text-slate-900 tracking-tight">{editingAnalysis.id ? 'Edit Analysis' : 'New Stakeholder Analysis'}</h3>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Matrix Mapping v{editingAnalysis.version}.0</p>
             </div>
             <button onClick={() => setIsAnalysisModalOpen(false)} className="p-3 hover:bg-slate-200 rounded-full transition-colors">
               <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -2148,7 +2148,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           
           <div className="p-10 space-y-10">
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Select Stakeholder</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Select Stakeholder</label>
               <select 
                 value={editingAnalysis.stakeholderId}
                 onChange={e => {
@@ -2168,8 +2168,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <div className="grid grid-cols-1 gap-10">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Power Level (1-10)</label>
-                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-black">{editingAnalysis.power}</span>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Power Level (1-10)</label>
+                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">{editingAnalysis.power}</span>
                 </div>
                 <input 
                   type="range" 
@@ -2187,8 +2187,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Interest Level (1-10)</label>
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black">{editingAnalysis.interest}</span>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Interest Level (1-10)</label>
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold">{editingAnalysis.interest}</span>
                 </div>
                 <input 
                   type="range" 
@@ -2209,9 +2209,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <div className="p-8 bg-slate-900 rounded-xl text-white space-y-4 shadow-2xl shadow-slate-900/20">
               <div className="flex items-center gap-3 opacity-60">
                 <BarChart3 className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Calculated Strategy</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Calculated Strategy</span>
               </div>
-              <h4 className="text-2xl font-black tracking-tight">
+              <h4 className="text-2xl font-semibold tracking-tight">
                 {(() => {
                   if (editingAnalysis.power > 5 && editingAnalysis.interest > 5) return 'Manage Closely';
                   if (editingAnalysis.power > 5 && editingAnalysis.interest <= 5) return 'Keep Satisfied';
@@ -2234,13 +2234,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={() => handleSaveStakeholderAnalysis(false)}
-                    className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-xl text-sm font-black hover:bg-slate-50 transition-all shadow-sm"
+                    className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all shadow-sm"
                   >
                     Update Current
                   </button>
                   <button 
                     onClick={() => handleSaveStakeholderAnalysis(true)}
-                    className="py-4 bg-blue-600 text-white rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
+                    className="py-4 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
                   >
                     Save as v{editingAnalysis.version + 1}.0
                   </button>
@@ -2248,7 +2248,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               ) : (
                 <button 
                   onClick={() => handleSaveStakeholderAnalysis(false)}
-                  className="w-full py-5 bg-blue-600 text-white rounded-3xl text-sm font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3"
+                  className="w-full py-5 bg-blue-600 text-white rounded-3xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3"
                 >
                   <Save className="w-5 h-5" />
                   Finalize Analysis
@@ -2256,7 +2256,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}
               <button 
                 onClick={() => setIsAnalysisModalOpen(false)}
-                className="w-full py-4 text-sm font-black text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full py-4 text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors"
               >
                 Cancel
               </button>
@@ -2283,8 +2283,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <History className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Audit Trail & Version History</h3>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder Analysis Matrix</p>
+                <h3 className="text-lg font-semibold text-slate-900 tracking-tight">Audit Trail & Version History</h3>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder Analysis Matrix</p>
               </div>
             </div>
             <button onClick={() => setShowAnalysisHistory(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
@@ -2298,7 +2298,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
                 <div className="bg-slate-50 rounded-xl p-6 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">Version {v.version}.0</span>
+                    <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">Version {v.version}.0</span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(v.timestamp).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
@@ -2307,8 +2307,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   </div>
                   <p className="text-sm font-medium text-slate-700 leading-relaxed">{v.changeSummary}</p>
                   <div className="pt-3 flex gap-4">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Power: <span className="text-blue-600">{v.data.power}</span></div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interest: <span className="text-emerald-600">{v.data.interest}</span></div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Power: <span className="text-blue-600">{v.data.power}</span></div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Interest: <span className="text-emerald-600">{v.data.interest}</span></div>
                   </div>
                 </div>
               </div>
@@ -2697,8 +2697,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <ShieldCheck className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Change Management Plan</h3>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Version {changePlan.version.toFixed(1)} • Last Updated: {new Date(changePlan.lastUpdated).toLocaleDateString()}</p>
+                <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Change Management Plan</h3>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version {changePlan.version.toFixed(1)} • Last Updated: {new Date(changePlan.lastUpdated).toLocaleDateString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -2721,7 +2721,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Management Approach</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Management Approach</label>
               <textarea 
                 value={changePlan.approach}
                 onChange={e => setChangePlan({ ...changePlan, approach: e.target.value })}
@@ -2730,7 +2730,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               />
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Definitions of Change</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Definitions of Change</label>
               <textarea 
                 value={changePlan.definitions}
                 onChange={e => setChangePlan({ ...changePlan, definitions: e.target.value })}
@@ -2743,7 +2743,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
             <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Budget Change Threshold</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Budget Change Threshold</label>
                 <DollarSign className="w-4 h-4 text-slate-400" />
               </div>
               <div className="flex items-center gap-4">
@@ -2751,7 +2751,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   type="number"
                   value={changePlan.budgetThreshold}
                   onChange={e => setChangePlan({ ...changePlan, budgetThreshold: Number(e.target.value) })}
-                  className="bg-transparent text-2xl font-black text-slate-900 outline-none w-full"
+                  className="bg-transparent text-2xl font-semibold text-slate-900 outline-none w-full"
                 />
                 <span className="text-xs font-bold text-slate-400">USD</span>
               </div>
@@ -2759,7 +2759,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
             <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule Change Threshold</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Schedule Change Threshold</label>
                 <Clock className="w-4 h-4 text-slate-400" />
               </div>
               <div className="flex items-center gap-4">
@@ -2767,7 +2767,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   type="number"
                   value={changePlan.scheduleThreshold}
                   onChange={e => setChangePlan({ ...changePlan, scheduleThreshold: Number(e.target.value) })}
-                  className="bg-transparent text-2xl font-black text-slate-900 outline-none w-full"
+                  className="bg-transparent text-2xl font-semibold text-slate-900 outline-none w-full"
                 />
                 <span className="text-xs font-bold text-slate-400">DAYS</span>
               </div>
@@ -2784,8 +2784,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <UserCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="text-lg font-black text-slate-900 tracking-tight">Change Control Board (CCB)</h4>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority & Responsibility Register</p>
+                <h4 className="text-lg font-semibold text-slate-900 tracking-tight">Change Control Board (CCB)</h4>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Authority & Responsibility Register</p>
               </div>
             </div>
             <button 
@@ -2803,11 +2803,11 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Member Name</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Role</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Authority</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Member Name</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Project Role</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Authority</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -2815,7 +2815,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-semibold text-slate-400">
                           {member.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <span className="text-sm font-bold text-slate-900">{member.name}</span>
@@ -2825,7 +2825,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     <td className="px-8 py-5 text-sm font-medium text-slate-600 max-w-xs truncate">{member.responsibility}</td>
                     <td className="px-8 py-5 text-center">
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         member.authority === 'High' ? "bg-red-100 text-red-600" :
                         member.authority === 'Medium' ? "bg-amber-100 text-amber-600" :
                         "bg-blue-100 text-blue-600"
@@ -2899,25 +2899,25 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
         {/* Version History List */}
         <div className="space-y-6">
-          <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
+          <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {changeVersions.map((v) => (
               <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest">v{v.version.toFixed(1)}</span>
+                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
                 </div>
                 <p className="text-xs font-medium text-slate-600 mb-4 line-clamp-2 italic">"{v.changeSummary}"</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-black text-blue-600">
+                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-semibold text-blue-600">
                       {v.userName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="text-[10px] font-bold text-slate-400">{v.userName}</span>
                   </div>
                   <button 
                     onClick={() => setChangePlan(v.data as ChangeManagementPlan)}
-                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     Restore
                   </button>
@@ -2942,8 +2942,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         >
           <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Quality Role Assignment</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Assign Responsibilities</p>
+              <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Quality Role Assignment</h3>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Assign Responsibilities</p>
             </div>
             <button onClick={() => setIsQualityRoleModalOpen(false)} className="p-3 hover:bg-slate-200 rounded-full transition-colors">
               <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -2952,7 +2952,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           
           <div className="p-10 space-y-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Select Team Member</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Select Team Member</label>
               <select 
                 value={editingQualityRole.userId}
                 onChange={e => {
@@ -2969,7 +2969,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Role Title</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Role Title</label>
               <input 
                 type="text" 
                 value={editingQualityRole.roleTitle}
@@ -2980,7 +2980,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Responsibilities</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Responsibilities</label>
               <textarea 
                 value={editingQualityRole.responsibilities}
                 onChange={e => setEditingQualityRole({...editingQualityRole, responsibilities: e.target.value})}
@@ -3012,7 +3012,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 setQualityPlan({...qualityPlan, roles});
                 setIsQualityRoleModalOpen(false);
               }}
-              className="w-full py-5 bg-slate-900 text-white rounded-3xl text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+              className="w-full py-5 bg-slate-900 text-white rounded-3xl text-sm font-semibold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
             >
               Save Role Assignment
             </button>
@@ -3035,8 +3035,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         >
           <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-10">
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Version History</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Quality Management Plan</p>
+              <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Version History</h3>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Quality Management Plan</p>
             </div>
             <button onClick={() => setShowQualityHistory(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors">
               <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -3047,20 +3047,20 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             {qualityVersions.map((v) => (
               <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest">v{v.version.toFixed(1)}</span>
+                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
                 </div>
                 <p className="text-xs font-medium text-slate-600 mb-4 line-clamp-2 italic">"{v.changeSummary}"</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-black text-blue-600">
+                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-semibold text-blue-600">
                       {v.userName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="text-[10px] font-bold text-slate-400">{v.userName}</span>
                   </div>
                   <button 
                     onClick={() => setQualityPlan(v.data as QualityManagementPlan)}
-                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     Restore
                   </button>
@@ -3115,9 +3115,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                 <RefreshCw className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Version</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Version</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">v{qualityPlan.version.toFixed(1)}</div>
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">v{qualityPlan.version.toFixed(1)}</div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">Last Updated: {new Date(qualityPlan.lastUpdated).toLocaleDateString()}</p>
           </div>
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
@@ -3125,9 +3125,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
                 <UserCheck className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Quality Roles</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Quality Roles</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">{qualityPlan.roles.length}</div>
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">{qualityPlan.roles.length}</div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">Assigned Personnel</p>
           </div>
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
@@ -3135,9 +3135,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Compliance</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Compliance</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">High</div>
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">High</div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">System Health Status</p>
           </div>
         </div>
@@ -3146,7 +3146,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
           <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
             <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Quality Management Approaches</h3>
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">Quality Management Approaches</h3>
               <p className="text-sm font-medium text-slate-500">Define how quality will be planned, assured, controlled, and improved.</p>
             </div>
             <div className="flex gap-3">
@@ -3159,7 +3159,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               {!isEditing ? (
                 <button 
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all"
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all"
                 >
                   <Edit2 className="w-4 h-4" />
                   Edit Plan
@@ -3168,7 +3168,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setIsEditing(false)}
-                    className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-semibold uppercase tracking-widest hover:bg-slate-50 transition-all"
                   >
                     Cancel
                   </button>
@@ -3177,7 +3177,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       const summary = prompt('Enter a summary of changes:');
                       if (summary !== null) handleSaveQualityPlan(false, summary || 'Minor update');
                     }}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
                   >
                     Update Current
                   </button>
@@ -3186,7 +3186,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       const summary = prompt('Enter a summary for this new version:');
                       if (summary !== null) handleSaveQualityPlan(true, summary || 'New major version');
                     }}
-                    className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
                   >
                     Save as New Version
                   </button>
@@ -3197,7 +3197,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
           <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quality Planning Approach</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Quality Planning Approach</label>
               {isEditing ? (
                 <textarea 
                   value={qualityPlan.planningApproach}
@@ -3212,7 +3212,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quality Assurance Approach</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Quality Assurance Approach</label>
               {isEditing ? (
                 <textarea 
                   value={qualityPlan.assuranceApproach}
@@ -3227,7 +3227,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quality Control Approach</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Quality Control Approach</label>
               {isEditing ? (
                 <textarea 
                   value={qualityPlan.controlApproach}
@@ -3242,7 +3242,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quality Improvement Approach</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Quality Improvement Approach</label>
               {isEditing ? (
                 <textarea 
                   value={qualityPlan.improvementApproach}
@@ -3257,7 +3257,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               )}
             </div>
             <div className="space-y-3 md:col-span-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria Logic</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria Logic</label>
               {isEditing ? (
                 <textarea 
                   value={qualityPlan.acceptanceCriteriaLogic}
@@ -3278,7 +3278,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
           <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
             <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Roles & Responsibilities</h3>
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">Roles & Responsibilities</h3>
               <p className="text-sm font-medium text-slate-500">Assign quality-specific duties to the project team.</p>
             </div>
             {isEditing && (
@@ -3294,7 +3294,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   });
                   setIsQualityRoleModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Add Quality Role
@@ -3306,11 +3306,11 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Team Member</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Quality Role</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Responsibilities</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Authority</th>
-                  {isEditing && <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Actions</th>}
+                  <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Team Member</th>
+                  <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Quality Role</th>
+                  <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Responsibilities</th>
+                  <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Authority</th>
+                  {isEditing && <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -3318,14 +3318,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <tr key={role.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-xs font-black text-blue-600">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-xs font-semibold text-blue-600">
                           {role.userName.substring(0, 2).toUpperCase()}
                         </div>
                         <span className="text-sm font-bold text-slate-900">{role.userName}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-semibold uppercase tracking-widest">
                         {role.roleTitle}
                       </span>
                     </td>
@@ -3336,10 +3336,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       {role.hasTechnicalApproverAuthority ? (
                         <div className="flex items-center gap-2 text-emerald-600">
                           <ShieldCheck className="w-4 h-4" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Technical Approver</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest">Technical Approver</span>
                         </div>
                       ) : (
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Standard</span>
+                        <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">Standard</span>
                       )}
                     </td>
                     {isEditing && (
@@ -3412,9 +3412,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                 <RefreshCw className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Version Control</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Version Control</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">v{pmPlan.version.toFixed(1)}</div>
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">v{pmPlan.version.toFixed(1)}</div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">Last Updated: {new Date(pmPlan.lastUpdated).toLocaleDateString()}</p>
           </div>
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
@@ -3422,9 +3422,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Tailoring Status</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Tailoring Status</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">
               {pmPlan.tailoringDecisions.filter(d => !d.isTailoredOut).length} / {pmPlan.tailoringDecisions.length}
             </div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">Knowledge Areas Active</p>
@@ -3434,9 +3434,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
                 <BarChart3 className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Phases Defined</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Phases Defined</span>
             </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">{pmPlan.phases.length}</div>
+            <div className="text-3xl font-semibold text-slate-900 tracking-tighter">{pmPlan.phases.length}</div>
             <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tight">Project Lifecycle Steps</p>
           </div>
         </div>
@@ -3446,7 +3446,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <button 
             onClick={() => setActiveTab('schedule')}
             className={cn(
-              "px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+              "px-8 py-3 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all",
               activeTab === 'schedule' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
@@ -3455,7 +3455,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <button 
             onClick={() => setActiveTab('plan')}
             className={cn(
-              "px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+              "px-8 py-3 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all",
               activeTab === 'plan' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
@@ -3468,7 +3468,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <button 
               onClick={() => setPmTab('lifecycle')}
               className={cn(
-                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
                 pmTab === 'lifecycle' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -3477,7 +3477,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <button 
               onClick={() => setPmTab('tailoring')}
               className={cn(
-                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
                 pmTab === 'tailoring' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -3486,7 +3486,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <button 
               onClick={() => setPmTab('baselines')}
               className={cn(
-                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
                 pmTab === 'baselines' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -3507,7 +3507,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <div className="p-10">
               <div className="flex items-center justify-between mb-10">
                 <div>
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Project Life Cycle</h3>
+                  <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">Project Life Cycle</h3>
                   <p className="text-sm font-medium text-slate-500">Define the phases and key deliverables for this project.</p>
                 </div>
                 <button 
@@ -3515,7 +3515,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     setEditingPhase({ id: crypto.randomUUID(), name: '', deliverables: [] });
                     setIsPhaseModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   Add Phase
@@ -3527,10 +3527,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <div key={phase.id} className="group relative bg-slate-50 rounded-3xl p-8 border border-slate-100 hover:border-blue-200 transition-all">
                     <div className="flex items-start justify-between mb-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 font-black shadow-sm">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 font-semibold shadow-sm">
                           {idx + 1}
                         </div>
-                        <h4 className="text-lg font-black text-slate-900 tracking-tight">{phase.name}</h4>
+                        <h4 className="text-lg font-semibold text-slate-900 tracking-tight">{phase.name}</h4>
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
@@ -3574,7 +3574,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           {activeTab === 'plan' && pmTab === 'tailoring' && (
             <div className="p-10">
               <div className="mb-10">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Process Tailoring</h3>
+                <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">Process Tailoring</h3>
                 <p className="text-sm font-medium text-slate-500">Decide which knowledge areas are applicable to this project.</p>
               </div>
 
@@ -3601,10 +3601,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                         )}>
                           <ShieldCheck className="w-5 h-5" />
                         </div>
-                        <h4 className="font-black text-slate-900 tracking-tight">{decision.knowledgeArea}</h4>
+                        <h4 className="font-semibold text-slate-900 tracking-tight">{decision.knowledgeArea}</h4>
                       </div>
                       <div className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         decision.isTailoredOut ? "bg-slate-200 text-slate-500" : "bg-emerald-100 text-emerald-600"
                       )}>
                         {decision.isTailoredOut ? 'Tailored Out' : 'Active'}
@@ -3622,14 +3622,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           {activeTab === 'plan' && pmTab === 'baselines' && (
             <div className="p-10">
               <div className="mb-10">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Project Baselines</h3>
+                <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">Project Baselines</h3>
                 <p className="text-sm font-medium text-slate-500">Define the core performance baselines for the project.</p>
               </div>
 
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Baseline</label>
                     <textarea 
                       value={pmPlan.baselines.scope}
                       onChange={(e) => setPmPlan({ ...pmPlan, baselines: { ...pmPlan.baselines, scope: e.target.value } })}
@@ -3638,7 +3638,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     />
                   </div>
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline</label>
                     <textarea 
                       value={pmPlan.baselines.schedule}
                       onChange={(e) => setPmPlan({ ...pmPlan, baselines: { ...pmPlan.baselines, schedule: e.target.value } })}
@@ -3649,7 +3649,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Baseline (Total Project Budget)</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Cost Baseline (Total Project Budget)</label>
                   <div className="relative">
                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400">
                       <DollarSign className="w-5 h-5" />
@@ -3658,7 +3658,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       type="number"
                       value={pmPlan.baselines.cost}
                       onChange={(e) => setPmPlan({ ...pmPlan, baselines: { ...pmPlan.baselines, cost: parseFloat(e.target.value) || 0 } })}
-                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       placeholder="0.00"
                     />
                   </div>
@@ -3706,25 +3706,25 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
         {/* Version History List */}
         <div className="space-y-6">
-          <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
+          <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pmVersions.map((v) => (
               <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest">v{v.version.toFixed(1)}</span>
+                  <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
                 </div>
                 <p className="text-xs font-medium text-slate-600 mb-4 line-clamp-2 italic">"{v.changeSummary}"</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-black text-blue-600">
+                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[8px] font-semibold text-blue-600">
                       {v.userName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="text-[10px] font-bold text-slate-400">{v.userName}</span>
                   </div>
                   <button 
                     onClick={() => setPmPlan(v.data as ProjectManagementPlan)}
-                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     Restore
                   </button>
@@ -3758,7 +3758,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-2 bg-blue-600 text-white rounded-xl">
                 <BarChart3 className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Project Phase Details</h3>
+              <h3 className="text-lg font-semibold text-slate-900 tracking-tight">Project Phase Details</h3>
             </div>
             <button onClick={() => setIsPhaseModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
               <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -3767,7 +3767,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
           <div className="p-8 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phase Name</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Phase Name</label>
               <input 
                 type="text"
                 value={editingPhase.name}
@@ -3778,7 +3778,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deliverables (Comma separated)</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Deliverables (Comma separated)</label>
               <textarea 
                 value={editingPhase.deliverables.join(', ')}
                 onChange={(e) => setEditingPhase({ ...editingPhase, deliverables: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') })}
@@ -3791,13 +3791,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-3">
             <button 
               onClick={() => setIsPhaseModalOpen(false)}
-              className="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+              className="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-semibold uppercase tracking-widest hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
             <button 
               onClick={() => handlePhaseSave(editingPhase)}
-              className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+              className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
             >
               Save Phase
             </button>
@@ -3828,7 +3828,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="p-2 bg-blue-600 text-white rounded-xl">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Tailoring Decision</h3>
+              <h3 className="text-lg font-semibold text-slate-900 tracking-tight">Tailoring Decision</h3>
             </div>
             <button onClick={() => setIsTailoringModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
               <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -3838,13 +3838,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div className="p-8 space-y-6">
             <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl">
               <div>
-                <h4 className="font-black text-slate-900 tracking-tight">{editingTailoring.knowledgeArea}</h4>
+                <h4 className="font-semibold text-slate-900 tracking-tight">{editingTailoring.knowledgeArea}</h4>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Knowledge Area</p>
               </div>
               <button 
                 onClick={() => setEditingTailoring({ ...editingTailoring, isTailoredOut: !editingTailoring.isTailoredOut })}
                 className={cn(
-                  "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  "px-6 py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
                   editingTailoring.isTailoredOut 
                     ? "bg-slate-200 text-slate-500" 
                     : "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
@@ -3855,7 +3855,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Justification</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Justification</label>
               <textarea 
                 value={editingTailoring.justification}
                 onChange={(e) => setEditingTailoring({ ...editingTailoring, justification: e.target.value })}
@@ -3868,13 +3868,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-3">
             <button 
               onClick={() => setIsTailoringModalOpen(false)}
-              className="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+              className="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-semibold uppercase tracking-widest hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
             <button 
               onClick={() => handleTailoringSave(editingTailoring)}
-              className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+              className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-semibold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
             >
               Save Decision
             </button>
@@ -3905,8 +3905,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           <div className="p-8 space-y-8">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">CCB Member Details</h3>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority & Responsibility Mapping</p>
+                <h3 className="text-xl font-semibold text-slate-900 tracking-tight">CCB Member Details</h3>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Authority & Responsibility Mapping</p>
               </div>
               <button onClick={() => setIsCCBModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                 <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -3915,7 +3915,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                 <input 
                   type="text"
                   value={editingCCBMember.name}
@@ -3926,7 +3926,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Role</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Role</label>
                 <input 
                   type="text"
                   value={editingCCBMember.role}
@@ -3937,7 +3937,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsibility</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Responsibility</label>
                 <textarea 
                   value={editingCCBMember.responsibility}
                   onChange={e => setEditingCCBMember({ ...editingCCBMember, responsibility: e.target.value })}
@@ -3947,14 +3947,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Authority Level</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Authority Level</label>
                 <div className="grid grid-cols-3 gap-3">
                   {(['High', 'Medium', 'Low'] as const).map((level) => (
                     <button
                       key={level}
                       onClick={() => setEditingCCBMember({ ...editingCCBMember, authority: level })}
                       className={cn(
-                        "py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                        "py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all border-2",
                         editingCCBMember.authority === level 
                           ? "bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-900/20" 
                           : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
@@ -4001,7 +4001,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8 text-red-600" />
             </div>
-            <h3 className="text-xl font-black text-slate-900">Admin Verification</h3>
+            <h3 className="text-xl font-semibold text-slate-900">Admin Verification</h3>
             <p className="text-xs font-medium text-slate-500">Enter Admin PIN to overwrite current baseline.</p>
           </div>
 
@@ -4009,7 +4009,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             type="password"
             value={adminPin}
             onChange={e => setAdminPin(e.target.value)}
-            className="w-full text-center text-3xl tracking-[1em] font-black py-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-4 focus:ring-red-500/10 transition-all"
+            className="w-full text-center text-3xl tracking-[1em] font-semibold py-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-4 focus:ring-red-500/10 transition-all"
             maxLength={4}
             autoFocus
           />
@@ -4869,8 +4869,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             >
               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Version History</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Change Management Plan</p>
+                  <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Version History</h3>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Change Management Plan</p>
                 </div>
                 <button onClick={() => setShowChangeHistory(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -4882,7 +4882,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
                     <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">v{v.version.toFixed(1)}</span>
+                        <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                         <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleString()}</span>
                       </div>
                       <p className="text-sm font-medium text-slate-700 italic">"{v.changeSummary}"</p>

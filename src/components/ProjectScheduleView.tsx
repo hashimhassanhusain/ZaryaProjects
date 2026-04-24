@@ -113,7 +113,7 @@ const SortableHeader: React.FC<{
       {...attributes}
       {...listeners}
       className={cn(
-        "px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest h-full flex items-center relative group cursor-grab active:cursor-grabbing hover:bg-slate-100/50 transition-colors",
+        "px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest h-full flex items-center relative group cursor-grab active:cursor-grabbing hover:bg-slate-100/50 transition-colors",
         align === 'right' ? "justify-end text-right" : "justify-center text-center"
       )}
     >
@@ -710,7 +710,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
               <span className="text-red-400 font-bold">Time: {timePct}%</span>
               <span className={cn("font-bold", spi >= 1 ? 'text-green-300' : 'text-red-300')}>SPI: {spi.toFixed(2)}</span>
             </div>
-            {isDelayed && <div className="text-amber-300 font-black animate-pulse flex items-center gap-1">
+            {isDelayed && <div className="text-amber-300 font-semibold animate-pulse flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               SCHEDULE IMPACT
             </div>}
@@ -1017,7 +1017,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs }}>
               {expandedSummary ? <ChevronDown className="w-4 h-4 text-slate-400 mr-2" /> : <ChevronRight className="w-4 h-4 text-slate-400 mr-2" />}
               <Target className="w-4 h-4 text-blue-400 mr-2" />
-              <span className="text-xs font-black uppercase tracking-widest truncate">{selectedProject?.name} (Task 0)</span>
+              <span className="text-xs font-semibold uppercase tracking-widest truncate">{selectedProject?.name} (Task 0)</span>
             </div>
             
             {columnOrder.map(colId => {
@@ -1035,7 +1035,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 case 'progress':
                   content = (
                     <div className="flex flex-col items-center justify-center w-full px-2 gap-0.5">
-                      <div className="flex justify-between w-full text-[8px] font-black uppercase tracking-tighter text-blue-400">
+                      <div className="flex justify-between w-full text-[8px] font-semibold uppercase tracking-tighter text-blue-400">
                         <span>{projectStats.costProgress}% COST</span>
                         <span className={cn(projectStats.spi >= 1 ? 'text-emerald-400' : 'text-rose-400')}>SPI {projectStats.spi.toFixed(2)}</span>
                       </div>
@@ -1676,7 +1676,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           <div className="absolute -left-20 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 whitespace-nowrap pr-2">
             {activity.startDate}
           </div>
-          <div className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-500 pointer-events-none">
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-semibold text-slate-500 pointer-events-none">
             {duration}d
           </div>
           <div className="absolute -right-20 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 whitespace-nowrap pl-2">
@@ -1695,7 +1695,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             style={{ width: `${progress}%` }}
           />
           {/* Progress Label */}
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-black text-white pointer-events-none">
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-semibold text-white pointer-events-none">
             {progress}%
           </div>
         </div>
@@ -1831,7 +1831,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             <div className="flex items-center h-full divide-x divide-slate-200">
               <div 
                 style={{ width: columnWidths.activityWbs }}
-                className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[300px] h-full flex items-center relative group"
+                className="px-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest min-w-[300px] h-full flex items-center relative group"
               >
                 Activity / WBS
                 <div 
@@ -1923,7 +1923,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                         )}
                       >
                         {showLabel && (
-                          <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">
+                          <div className="text-[8px] font-semibold text-slate-400 uppercase tracking-tighter">
                             {zoomLevel === 'month' ? day.toLocaleString('default', { month: 'short' }) : day.getDate()}
                           </div>
                         )}
@@ -2013,7 +2013,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       className="absolute inset-0 bg-red-600/20 blur-md -left-2 -right-2"
                     />
-                    <div className="sticky top-12 px-2 py-0.5 bg-red-600 text-[8px] font-black uppercase text-white rounded-r shadow-lg whitespace-nowrap">
+                    <div className="sticky top-12 px-2 py-0.5 bg-red-600 text-[8px] font-semibold uppercase text-white rounded-r shadow-lg whitespace-nowrap">
                       {t('today')}
                     </div>
                   </motion.div>
@@ -2085,7 +2085,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                           <Target className="w-6 h-6 sm:w-8 sm:h-8" />
                         </motion.div>
                         <div className="absolute -top-12 sm:-top-16 w-32 sm:w-40 text-center">
-                          <div className="text-[10px] sm:text-xs font-black text-slate-900 line-clamp-2 px-2">{m.description}</div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-slate-900 line-clamp-2 px-2">{m.description}</div>
                         </div>
                         <div className="absolute -bottom-12 sm:-bottom-16 w-32 sm:w-40 text-center">
                           <div className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
@@ -2665,7 +2665,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
                 
                 content = (
                   <div className="flex flex-col items-center w-full px-1 gap-0.5">
-                    <div className="flex justify-between w-full text-[9px] font-black uppercase tracking-tighter">
+                    <div className="flex justify-between w-full text-[9px] font-semibold uppercase tracking-tighter">
                       <span className="text-emerald-600">{costPct}% COST</span>
                       <span className={cn("px-1 rounded", spi >= 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600')}>
                         SPI {spi.toFixed(2)}

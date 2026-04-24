@@ -25,6 +25,8 @@ import { TasksView } from './components/TasksView';
 import { FileExplorer } from './components/FileExplorer';
 import { Login } from './components/Login';
 import { ProjectScheduleView } from './components/ProjectScheduleView';
+import { MeetingsArchiveView } from './components/MeetingsArchiveView';
+import { DailyReportView } from './components/DailyReportView';
 import { AssumptionConstraintView } from './components/AssumptionConstraintView';
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { SupplierMasterRegister } from './components/SupplierMasterRegister';
@@ -46,7 +48,7 @@ import { CompaniesView } from './components/CompaniesView';
 import { ResourcesView } from './components/ResourcesView';
 import { ContactsView } from './components/ContactsView';
 import { WorkPackagesView } from './components/WorkPackagesView';
-import { pages, users as mockUsersData } from './data';
+import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -116,16 +118,16 @@ const PageRenderer = () => {
           <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-6">
             <ShieldAlert className="w-10 h-10 text-rose-500" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('access_denied')}</h2>
           <p className="text-slate-500 max-w-md">
-            You do not have permission to access the <strong>{page.title}</strong> page. 
-            Please contact your administrator for access.
+            {t('no_permission_access')} <strong>{t(page.id) || page.title}</strong> {t('page')} 
+            {t('contact_admin_access')}
           </p>
           <button 
             onClick={() => window.history.back()}
             className="mt-8 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
           >
-            Go Back
+            {t('go_back')}
           </button>
         </div>
       );
@@ -177,13 +179,13 @@ const PageRenderer = () => {
 
   const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
   const isTasksPage = page.id === '2.6.21' || page.id === '3.6.21';
-  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22';
+  const isMeetingsPage = page.id === '2.6.22' || page.id === '3.6.22' || page.id === '3.5.2';
   const isFilesPage = page.id === 'files';
   const isBOQPage = page.id === '2.4.0';
   const isWBSPage = page.id === '2.2.9';
   const isWorkPackagesPage = page.id === '2.2.10';
   const isEVMPage = page.id === '4.2.2';
-  const isProgressReportPage = page.id === '3.3.3';
+  const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
   const isSchedulePage = page.id === '2.3' || page.id === 'sched' || [
     '1.3.1', '2.3.1', '2.3.2', '2.3.3', '3.5.1', '4.5.1', '4.5.2', '5.5.1', '3.3.2'
   ].includes(page.id);
@@ -232,7 +234,7 @@ const PageRenderer = () => {
       >
         <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
           <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
-            <h1 className="flex items-center flex-wrap gap-2 text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="flex items-center flex-wrap gap-2 text-2xl font-semibold text-slate-900 tracking-tight">
               {grandParent && (
                 <>
                   <span className="text-slate-400 font-medium text-lg">{grandParentTitle}</span>
@@ -253,6 +255,12 @@ const PageRenderer = () => {
         </div>
         {isTasksPage ? (
           <TasksView />
+        ) : isMeetingsPage ? (
+          <MeetingsArchiveView 
+            project={selectedProject!} 
+            onNewMeeting={() => {}} 
+            onViewMeeting={() => {}} 
+          />
         ) : isFilesPage ? (
           <FileExplorer projectId={selectedProject?.id || ''} />
         ) : isFinancePage ? (
@@ -272,7 +280,7 @@ const PageRenderer = () => {
         ) : isEVMPage ? (
           <EVMReportView page={page} />
         ) : isProgressReportPage ? (
-          <ProgressReportView page={page} />
+          <DailyReportView page={page} />
         ) : page.id === '1.3.1' ? (
           <ScheduleMilestoneOverview page={page} />
         ) : page.id === '2.3.1' ? (
@@ -334,12 +342,12 @@ const PageRenderer = () => {
 };
 
 const AppLayout = () => {
-  const { isRtl } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const { isSidebarOpen, closeSidebar, sidebarWidth, selectedDomain, selectedFocusArea, setSelectedFocusArea } = useUI();
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir="ltr">
+    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Mobile Sidebar Overlay - Only on mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -401,18 +409,18 @@ const AppLayout = () => {
                       <LayoutDashboard className="w-10 h-10" />
                     </div>
                     <div className="space-y-4">
-                       <h2 className="text-5xl font-black text-slate-900 tracking-tighter">PROJECT MATRIX</h2>
+                       <h2 className="text-5xl font-semibold text-slate-900 tracking-tighter uppercase">{t('project_matrix')}</h2>
                        <p className="text-slate-500 max-w-lg mx-auto text-xl font-medium">
-                          Select a Performance Domain from the sidebar to visualize project processes across the lifecycle.
+                          {t('select_domain_sidebar')}
                        </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto pt-12">
                       {PERFORMANCE_DOMAINS.map(d => (
-                        <div key={d.id} className="group p-8 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center gap-4 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-default">
+                        <div key={d.id} className="group p-8 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center gap-4 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-default text-center">
                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm ring-1 ring-slate-100 group-hover:ring-blue-100">
                              <d.icon className="w-6 h-6 transition-transform group-hover:scale-110" style={{ color: d.color }} />
                            </div>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">{d.title}</span>
+                           <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-slate-900">{t(d.id)}</span>
                         </div>
                       ))}
                     </div>
@@ -440,7 +448,8 @@ export default function App() {
         const usersRef = collection(db, 'users');
         const snapshot = await getDocs(usersRef);
         if (snapshot.empty) {
-          await Promise.all(mockUsersData.map(u => setDoc(doc(db, 'users', u.uid), u)));
+          const { users: mockUsers } = await import('./data');
+          await Promise.all(mockUsers.map(u => setDoc(doc(db, 'users', u.uid), u)));
           console.log('Mock users seeded successfully');
         }
       } catch (err) {

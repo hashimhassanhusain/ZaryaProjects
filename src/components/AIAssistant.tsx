@@ -117,15 +117,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
 
         {/* Text Content */}
         <div className="space-y-1 relative">
-          <h2 className={cn("font-black text-slate-900 tracking-tight relative z-10 uppercase text-xs tracking-[0.2em] opacity-40 mb-2", compact ? "" : "")}>
+          <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10 uppercase text-xs tracking-[0.2em] opacity-40 mb-2", compact ? "" : "")}>
             Zarya AI Assistant
           </h2>
-          <h2 className={cn("font-black text-slate-900 tracking-tight relative z-10", compact ? "text-lg" : "text-3xl md:text-4xl")}>
+          <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10", compact ? "text-lg" : "text-3xl md:text-4xl")}>
             Good morning, Director.
           </h2>
           {!compact && (
             <p className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto">
-              Zarya AI has analyzed 14 active workstreams. Schedule health is at <span className="text-emerald-500 font-black tracking-widest text-lg">94%</span>.
+              Zarya AI has analyzed 14 active workstreams. Schedule health is at <span className="text-emerald-500 font-semibold tracking-widest text-lg">94%</span>.
             </p>
           )}
         </div>

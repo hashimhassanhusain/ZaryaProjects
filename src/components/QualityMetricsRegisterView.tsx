@@ -347,11 +347,11 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50">
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">ID</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Item</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Metric</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">ID</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Item</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Metric</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
               <th className="px-8 py-5 w-20"></th>
             </tr>
           </thead>
@@ -359,12 +359,12 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
             {filteredMetrics.map((m) => (
               <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
                 <td className="px-8 py-6">
-                  <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{m.metricId}</span>
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{m.metricId}</span>
                 </td>
                 <td className="px-8 py-6">
                   <div>
                     <p className="text-sm font-bold text-slate-900">{m.item}</p>
-                    {m.masterFormatCode && <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DIV {m.masterFormatCode}</span>}
+                    {m.masterFormatCode && <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">DIV {m.masterFormatCode}</span>}
                   </div>
                 </td>
                 <td className="px-8 py-6">
@@ -376,7 +376,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                 <td className="px-8 py-6">
                   <div className="flex justify-center">
                     <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                      "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest flex items-center gap-1.5",
                       m.complianceStatus === 'Compliant' ? "bg-green-100 text-green-600" :
                       m.complianceStatus === 'Non-Compliant' ? "bg-red-100 text-red-600" :
                       "bg-amber-100 text-amber-600"
@@ -430,7 +430,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Quality Metric Standard</h3>
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{editingMetric.metricId}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">{editingMetric.metricId}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-all">
@@ -441,7 +441,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
               <div className="p-8 overflow-y-auto space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Item Description</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Item Description</label>
                     <input 
                       type="text"
                       value={editingMetric.item}
@@ -451,7 +451,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Divisions</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Divisions</label>
                     <select 
                       value={editingMetric.masterFormatCode}
                       onChange={(e) => setEditingMetric({ ...editingMetric, masterFormatCode: e.target.value })}
@@ -467,7 +467,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WBS Link</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">WBS Link</label>
                     <select 
                       value={editingMetric.wbsId}
                       onChange={(e) => setEditingMetric({ ...editingMetric, wbsId: e.target.value })}
@@ -480,7 +480,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Metric Threshold
                       <Tooltip text="Define the technical threshold for success (e.g., Slump test max 10cm)." />
                     </label>
@@ -496,7 +496,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Measurement Method
                       <Tooltip text="Specify the tool or standard used for verification." />
                     </label>
@@ -509,7 +509,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
                     <textarea 
                       value={editingMetric.acceptanceCriteria}
                       onChange={(e) => setEditingMetric({ ...editingMetric, acceptanceCriteria: e.target.value })}
@@ -527,7 +527,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Value</label>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Target Value</label>
                       <input 
                         type="number"
                         value={editingMetric.targetValue || ''}
@@ -536,7 +536,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Min Limit</label>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Min Limit</label>
                       <input 
                         type="number"
                         value={editingMetric.minValue || ''}
@@ -545,7 +545,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Max Limit</label>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Max Limit</label>
                       <input 
                         type="number"
                         value={editingMetric.maxValue || ''}
@@ -559,7 +559,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                 {/* Version History */}
                 {editingMetric.id && versions.length > 0 && (
                   <div className="pt-8 border-t border-slate-100">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                       <History className="w-4 h-4" />
                       Revision History
                     </h3>
@@ -567,13 +567,13 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
                       {versions.map(v => (
                         <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                           <div>
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
+                            <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
                             <p className="text-xs font-bold text-slate-900 mt-1">{v.changeSummary}</p>
                             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleString()}</p>
                           </div>
                           <button 
                             onClick={() => setEditingMetric(v.data as QualityMetricEntry)}
-                            className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                            className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
                           >
                             Restore
                           </button>
@@ -585,7 +585,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
               </div>
 
               <div className="p-8 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-white/40 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3 text-white/40 text-[10px] font-semibold uppercase tracking-widest">
                   <ShieldAlert className="w-4 h-4" />
                   Standard Definition Protection Active
                 </div>
@@ -638,13 +638,13 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={showPrompt.onConfirm}
-                  className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                  className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                 >
                   Yes, Link Standard
                 </button>
                 <button 
                   onClick={() => setShowPrompt(null)}
-                  className="w-full py-4 bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+                  className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
                 >
                   No, Skip Linking
                 </button>

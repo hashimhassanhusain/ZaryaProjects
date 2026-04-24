@@ -162,8 +162,8 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                        <BarChart3 className="w-6 h-6" />
                     </div>
                     <div>
-                       <h3 className="text-2xl font-black tracking-tight leading-none">GOVERNANCE ANALYTICS</h3>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Planned vs. Actual Performance</p>
+                       <h3 className="text-2xl font-semibold tracking-tight leading-none">GOVERNANCE ANALYTICS</h3>
+                       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mt-2">Planned vs. Actual Performance</p>
                     </div>
                  </div>
 
@@ -171,7 +171,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                     {data.governanceKPIs.map((kpi, idx) => (
                        <div key={idx} className="bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4 hover:bg-white/10 transition-all group">
                           <div className="flex items-center justify-between">
-                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-400">{kpi.name}</span>
+                             <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-500 group-hover:text-blue-400">{kpi.name}</span>
                              {kpi.actual > kpi.planned ? (
                                 <ArrowUpRight className="w-4 h-4 text-red-400" />
                              ) : (
@@ -179,7 +179,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                              )}
                           </div>
                           <div className="flex items-baseline gap-2">
-                             <span className="text-3xl font-black">{kpi.actual}</span>
+                             <span className="text-3xl font-semibold">{kpi.actual}</span>
                              <span className="text-xs text-slate-500 font-bold">{kpi.unit}</span>
                           </div>
                           <div className="flex items-center gap-3">
@@ -192,7 +192,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                                    style={{ width: `${Math.min(100, (kpi.actual / Math.max(kpi.planned, 1)) * 100)}%` }}
                                 />
                              </div>
-                             <span className="text-[9px] font-black text-slate-400">Target: {kpi.planned}</span>
+                             <span className="text-[9px] font-semibold text-slate-400">Target: {kpi.planned}</span>
                           </div>
                        </div>
                     ))}
@@ -201,31 +201,31 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
 
               <div className="w-full md:w-80 space-y-6">
                  <div className="bg-blue-600 rounded-[2rem] p-8 shadow-xl shadow-blue-900/40">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-6">Financial Health (EVM)</h4>
+                    <h4 className="text-[10px] font-semibold uppercase tracking-widest mb-6">Financial Health (EVM)</h4>
                     <div className="space-y-6">
                        <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-blue-100">SPI (Schedule)</span>
-                          <span className={cn("text-xl font-black", data.evmSnapshot.spi >= 1 ? "text-white" : "text-amber-200")}>
+                          <span className={cn("text-xl font-semibold", data.evmSnapshot.spi >= 1 ? "text-white" : "text-amber-200")}>
                              {data.evmSnapshot.spi.toFixed(2)}
                           </span>
                        </div>
                        <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-blue-100">CPI (Cost)</span>
-                          <span className={cn("text-xl font-black", data.evmSnapshot.cpi >= 1 ? "text-white" : "text-red-200")}>
+                          <span className={cn("text-xl font-semibold", data.evmSnapshot.cpi >= 1 ? "text-white" : "text-red-200")}>
                              {data.evmSnapshot.cpi.toFixed(2)}
                           </span>
                        </div>
                        <div className="pt-4 border-t border-white/20">
                           <div className="p-3 bg-white/10 rounded-xl flex items-center gap-2">
                              <AlertTriangle className="w-4 h-4 text-amber-300" />
-                             <span className="text-[10px] font-black uppercase tracking-widest">Action Required</span>
+                             <span className="text-[10px] font-semibold uppercase tracking-widest">Action Required</span>
                           </div>
                        </div>
                     </div>
                  </div>
 
                  <div className="bg-slate-800 rounded-[2rem] p-8 border border-white/5">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-4">Baseline Trend</h4>
+                    <h4 className="text-[10px] font-semibold uppercase tracking-widest mb-4">Baseline Trend</h4>
                     <div className="h-24 w-full">
                        <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={data.governanceKPIs}>
@@ -250,7 +250,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                        <Activity className="w-5 h-5" />
                     </div>
-                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Performance Summary</h4>
+                    <h4 className="text-lg font-semibold text-slate-900 tracking-tight">Performance Summary</h4>
                  </div>
                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
                     Governance performance is currently displaying a negative schedule variance in approval cycles. The average approval velocity is 4 days against a target of 2 days. Corrective actions must focus on streamlining the Integrated Change Control process.
@@ -258,7 +258,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
               </div>
               <div className="mt-8 flex items-center gap-3">
                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Awaiting Verification</span>
+                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Awaiting Verification</span>
               </div>
            </div>
 
@@ -267,7 +267,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                  <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white">
                     <Target className="w-5 h-5" />
                  </div>
-                 <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase tracking-widest">Critical Actions</h4>
+                 <h4 className="text-lg font-semibold text-slate-900 tracking-tight uppercase tracking-widest">Critical Actions</h4>
               </div>
               <div className="space-y-4">
                  {[

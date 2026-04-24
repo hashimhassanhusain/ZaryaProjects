@@ -146,7 +146,7 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">{t('ram_raci_matrix')}</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">{t('ram_raci_matrix')}</h2>
           <p className="text-sm text-slate-500">{t('intersection_wbs_personnel')}</p>
         </div>
         <button
@@ -162,9 +162,9 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
         <table className={cn("w-full border-collapse min-w-[1200px]", isRtl ? "text-right" : "text-left")}>
           <thead>
             <tr className="bg-slate-50/50 border-b border-slate-200">
-              <th className={cn("px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest sticky bg-slate-50 z-10 w-64", isRtl ? "right-0" : "left-0")}>{t('activity_wbs')}</th>
+              <th className={cn("px-6 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest sticky bg-slate-50 z-10 w-64", isRtl ? "right-0" : "left-0")}>{t('activity_wbs')}</th>
               {stakeholders.map(s => (
-                <th key={s.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center min-w-[120px]">
+                <th key={s.id} className="px-4 py-5 text-[10px] font-semibold text-slate-900 uppercase tracking-widest text-center min-w-[120px]">
                   <div className="flex flex-col items-center gap-1">
                     <span className="truncate max-w-[100px]">{s.name}</span>
                     <span className="text-[8px] text-slate-400 normal-case font-medium">{s.position}</span>
@@ -188,7 +188,7 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
                       value={raciData[wbs.id]?.[s.id] || ''}
                       onChange={(e) => handleRACIChange(wbs.id, s.id, e.target.value as RACIValue)}
                       className={cn(
-                        "w-12 h-12 rounded-xl text-sm font-black transition-all appearance-none text-center focus:outline-none focus:ring-2 focus:ring-slate-900/5",
+                        "w-12 h-12 rounded-xl text-sm font-semibold transition-all appearance-none text-center focus:outline-none focus:ring-2 focus:ring-slate-900/5",
                         raciData[wbs.id]?.[s.id] === 'R' ? "bg-blue-50 text-blue-600 border border-blue-100" :
                         raciData[wbs.id]?.[s.id] === 'A' ? "bg-slate-900 text-white border border-slate-900" :
                         raciData[wbs.id]?.[s.id] === 'C' ? "bg-amber-50 text-amber-600 border border-amber-100" :
@@ -213,19 +213,19 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs border border-blue-100">R</div>
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-xs border border-blue-100">R</div>
           <div className="text-xs font-bold text-slate-600">{t('responsible')}</div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-xs border border-slate-900">A</div>
+          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-semibold text-xs border border-slate-900">A</div>
           <div className="text-xs font-bold text-slate-600">{t('accountable')}</div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-black text-xs border border-amber-100">C</div>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-semibold text-xs border border-amber-100">C</div>
           <div className="text-xs font-bold text-slate-600">{t('consulted')}</div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-xs border border-emerald-100">I</div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-semibold text-xs border border-emerald-100">I</div>
           <div className="text-xs font-bold text-slate-600">{t('informed')}</div>
         </div>
         <div className={cn("flex items-center gap-2 text-slate-400", isRtl ? "mr-auto" : "ml-auto")}>

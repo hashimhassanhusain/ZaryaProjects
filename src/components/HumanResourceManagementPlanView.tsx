@@ -378,7 +378,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -394,7 +394,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -415,7 +415,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roles, Responsibilities, and Authority</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Roles, Responsibilities, and Authority</label>
               <div className="group relative">
                 <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
@@ -426,7 +426,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
             {isEditing && (
               <button 
                 onClick={handleAddRole}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-100 transition-all"
               >
                 <Plus className="w-3 h-3" />
                 Add Role
@@ -438,9 +438,9 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role & Name</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Role & Name</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Authority</th>
                   {isEditing && <th className="px-6 py-4 w-16"></th>}
                 </tr>
               </thead>
@@ -530,7 +530,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
 
         {/* Organizational Structure */}
         <section className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Organizational Structure</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Organizational Structure</label>
           <div className="w-full aspect-[21/9] bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-400 group hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer">
             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
               <Network className="w-8 h-8 text-slate-300 group-hover:text-blue-400" />
@@ -547,7 +547,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
         {/* Staffing Management Plan */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Acquisition</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Staff Acquisition</label>
             {isEditing ? (
               <textarea 
                 value={hrmp.staffAcquisition}
@@ -563,7 +563,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
             )}
           </section>
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Staff Release</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Staff Release</label>
             {isEditing ? (
               <textarea 
                 value={hrmp.staffRelease}
@@ -587,7 +587,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
           { label: 'Regulations, Standards, and Policy Compliance', key: 'policyCompliance', placeholder: 'Define compliance requirements...' }
         ].map((section) => (
           <section key={section.key} className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{section.label}</label>
             {isEditing ? (
               <textarea 
                 value={(hrmp as any)[section.key]}
@@ -606,7 +606,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Safety</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Safety</label>
             <div className="flex items-center gap-2 text-[10px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded">
               <Stethoscope className="w-3 h-3" />
               Linked to HSE Officer (Ivan)
@@ -666,15 +666,15 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

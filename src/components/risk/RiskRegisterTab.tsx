@@ -263,7 +263,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
         <div className="p-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk ID</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Risk ID</label>
               <input 
                 type="text"
                 value={formData.riskId}
@@ -272,7 +272,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Category</label>
               <select 
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
@@ -286,7 +286,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
               <select 
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -301,7 +301,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Statement</label>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Risk Statement</label>
             <textarea 
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -313,7 +313,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Probability (1-5)</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Probability (1-5)</label>
               <input 
                 type="number"
                 min="1"
@@ -324,7 +324,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Impact (1-5)</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Impact (1-5)</label>
               <input 
                 type="number"
                 min="1"
@@ -335,9 +335,9 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
               />
             </div>
             <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl border border-slate-100 p-4">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Score</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Risk Score</span>
               <span className={cn(
-                "text-2xl font-black px-4 py-1 rounded-lg border",
+                "text-2xl font-semibold px-4 py-1 rounded-lg border",
                 getScoreColor((formData.probability || 0) * (formData.impact || 0))
               )}>
                 {(formData.probability || 0) * (formData.impact || 0)}
@@ -350,7 +350,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
             <div className="space-y-6">
               <h4 className="text-sm font-bold text-slate-900">Response & Contingency</h4>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Response Strategy</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Response Strategy</label>
                 <select 
                   value={formData.strategy}
                   onChange={(e) => setFormData({ ...formData, strategy: e.target.value as any })}
@@ -364,7 +364,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Risk Owner (Employee or Stakeholder)</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Risk Owner (Employee or Stakeholder)</label>
                 <select 
                   value={formData.ownerId}
                   onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
@@ -384,7 +384,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contingency Plan</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contingency Plan</label>
                 <textarea 
                   value={formData.contingencyPlan}
                   onChange={(e) => setFormData({ ...formData, contingencyPlan: e.target.value })}
@@ -397,7 +397,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
             <div className="space-y-6">
               <h4 className="text-sm font-bold text-slate-900">Residual & Secondary</h4>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Residual Risk</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Residual Risk</label>
                 <textarea 
                   value={formData.residualRisk}
                   onChange={(e) => setFormData({ ...formData, residualRisk: e.target.value })}
@@ -407,7 +407,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fallback Plans</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Fallback Plans</label>
                 <textarea 
                   value={formData.fallbackPlans}
                   onChange={(e) => setFormData({ ...formData, fallbackPlans: e.target.value })}
@@ -504,13 +504,13 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
                   />
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Statement</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Score</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Owner</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Risk Statement</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Score</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Strategy</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Owner</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -543,7 +543,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-black text-red-600 bg-red-50 px-2 py-1 rounded-md">{risk.riskId}</span>
+                      <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-md">{risk.riskId}</span>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-900 font-bold line-clamp-1">{risk.description}</p>
@@ -551,7 +551,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={cn(
-                        "inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs font-black",
+                        "inline-flex items-center justify-center w-9 h-9 rounded-lg border text-xs font-semibold",
                         getScoreColor(risk.score)
                       )}>
                         {risk.score}
@@ -567,7 +567,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         risk.status === 'Closed' ? "bg-emerald-100 text-emerald-700" :
                         risk.status === 'Occurred' ? "bg-red-100 text-red-700" :
                         risk.status === 'Active' ? "bg-amber-100 text-amber-700" :

@@ -19,7 +19,7 @@ export const Login: React.FC = () => {
             <div className="flex flex-col items-center gap-4">
               <img src="https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7" alt="Zarya Logo" className="h-20 w-auto mb-2" referrerPolicy="no-referrer" />
               <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">ZARYA</h1>
+                <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">ZARYA</h1>
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-1">Construction Co.</p>
               </div>
             </div>

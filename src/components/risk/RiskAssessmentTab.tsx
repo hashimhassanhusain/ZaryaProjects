@@ -122,7 +122,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
         {/* Risk Selection List */}
         <div className="lg:col-span-1 space-y-4">
           <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-600" />
               Select Risk to Assess
             </h3>
@@ -131,7 +131,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
             {filteredRisks.length === 0 ? (
               <div className="py-10 text-center">
                 <AlertTriangle className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No risks found</p>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">No risks found</p>
               </div>
             ) : (
               filteredRisks.map(risk => (
@@ -147,13 +147,13 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className={cn(
-                      "text-[10px] font-black px-2 py-0.5 rounded-md",
+                      "text-[10px] font-semibold px-2 py-0.5 rounded-md",
                       selectedRiskId === risk.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
                     )}>
                       {risk.riskId}
                     </span>
                     <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest",
+                      "text-[10px] font-semibold uppercase tracking-widest",
                       selectedRiskId === risk.id ? "text-white/60" : "text-slate-400"
                     )}>
                       Score: {risk.score}
@@ -203,7 +203,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
 
               <div className="relative flex">
                 {/* Y-Axis Label (Impact) */}
-                <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">
+                <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">
                   Impact (Severity)
                 </div>
 
@@ -213,7 +213,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                     <div className="h-12"></div>
                     {/* X-Axis Labels (Probability) */}
                     {levels.slice().reverse().map(l => (
-                      <div key={l.value} className="h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-1">
+                      <div key={l.value} className="h-12 flex items-center justify-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center px-1">
                         {l.label}
                       </div>
                     ))}
@@ -222,7 +222,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                     {levels.map(imp => (
                       <React.Fragment key={imp.value}>
                         {/* Y-Axis Label */}
-                        <div className="h-24 flex items-center justify-end pr-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                        <div className="h-24 flex items-center justify-end pr-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">
                           {imp.label}
                         </div>
                         {/* Cells */}
@@ -238,7 +238,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                                 : "border-transparent"
                             )}
                           >
-                            <div className="absolute inset-0 flex items-center justify-center text-white/20 font-black text-2xl group-hover:text-white/40 transition-colors">
+                            <div className="absolute inset-0 flex items-center justify-center text-white/20 font-semibold text-2xl group-hover:text-white/40 transition-colors">
                               {prob.value * imp.value}
                             </div>
                             {selectedRisk.probability === prob.value && selectedRisk.impact === imp.value && (
@@ -254,7 +254,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                     ))}
                   </div>
                   {/* X-Axis Label */}
-                  <div className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                  <div className="text-center mt-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em]">
                     Probability (Likelihood)
                   </div>
                 </div>
@@ -284,7 +284,7 @@ export const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ risks, pro
                           key={val}
                           onClick={() => handleImpactUpdate(obj.id as any, val)}
                           className={cn(
-                            "flex-1 h-10 rounded-xl font-black text-xs transition-all",
+                            "flex-1 h-10 rounded-xl font-semibold text-xs transition-all",
                             (selectedRisk.impacts?.[obj.id as keyof typeof selectedRisk.impacts] || 1) === val
                               ? "bg-slate-900 text-white shadow-lg"
                               : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"

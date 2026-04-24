@@ -286,9 +286,9 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">App Column</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Mapping</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Your File Header</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">App Column</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Mapping</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Your File Header</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

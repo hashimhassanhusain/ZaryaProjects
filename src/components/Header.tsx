@@ -242,7 +242,7 @@ export const Header: React.FC = () => {
                     ) : (
                       <div className="p-8 text-center space-y-2">
                         <div className="text-slate-400 font-medium">{t('no_results_found')}</div>
-                        <div className="text-[10px] text-slate-300 uppercase tracking-widest">Try searching for domains like "Finance" or "Schedule"</div>
+                        <div className="text-[10px] text-slate-300 uppercase tracking-widest">{t('try_searching_hint')}</div>
                       </div>
                     )}
                   </div>
@@ -360,7 +360,7 @@ export const Header: React.FC = () => {
             title={t('favorites')}
           >
             <Star className={cn("w-4 h-4", favoritePagesData.length > 0 ? "fill-yellow-500 text-yellow-500" : "")} />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden xl:inline">{t('favorites')}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest hidden xl:inline">{t('favorites')}</span>
             {favoritePagesData.length > 0 && (
               <span className="min-w-[16px] h-4 px-1 bg-yellow-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {favoritePagesData.length}

@@ -464,7 +464,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -480,7 +480,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -501,7 +501,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         <div className="space-y-8">
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Authority</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Procurement Authority</label>
               <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">
                 <User className="w-3 h-3" />
                 Approver: Hashim Hassan
@@ -524,7 +524,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Manager Responsibilities</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Manager Responsibilities</label>
               {isEditing ? (
                 <div className="space-y-3">
                   {procPlan.pmResponsibilities.map((r, i) => (
@@ -553,7 +553,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   ))}
                   <button 
                     onClick={() => setProcPlan({ ...procPlan, pmResponsibilities: [...procPlan.pmResponsibilities, ''] })}
-                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
+                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-semibold text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
                   >
                     + Add Responsibility
                   </button>
@@ -573,7 +573,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               )}
             </section>
             <section className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Department Responsibilities</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Procurement Department Responsibilities</label>
               {isEditing ? (
                 <div className="space-y-3">
                   {procPlan.procurementResponsibilities.map((r, i) => (
@@ -602,7 +602,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   ))}
                   <button 
                     onClick={() => setProcPlan({ ...procPlan, procurementResponsibilities: [...procPlan.procurementResponsibilities, ''] })}
-                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
+                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-semibold text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
                   >
                     + Add Responsibility
                   </button>
@@ -624,7 +624,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           </div>
 
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Standard Procurement Documents</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Standard Procurement Documents</label>
             {isEditing ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {procPlan.standardDocuments.map((d, i) => (
@@ -653,7 +653,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                 ))}
                 <button 
                   onClick={() => setProcPlan({ ...procPlan, standardDocuments: [...procPlan.standardDocuments, ''] })}
-                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
+                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-semibold text-slate-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-500 transition-all"
                 >
                   <Plus className="w-3 h-3" />
                   Add Document
@@ -675,7 +675,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           </section>
 
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Type</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contract Type</label>
             {isEditing ? (
               <textarea 
                 value={procPlan.contractType}
@@ -695,7 +695,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         {/* Section 2: Requirements & Criteria */}
         <div className="space-y-8">
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bonding and Insurance Requirements</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Bonding and Insurance Requirements</label>
             {isEditing ? (
               <textarea 
                 value={procPlan.bondingInsurance}
@@ -714,9 +714,9 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Selection Criteria</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Selection Criteria</label>
                 <div className={cn(
-                  "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                  "px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest",
                   totalWeight === 100 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
                 )}>
                   Total: {totalWeight}% {totalWeight !== 100 && "(Must be 100%)"}
@@ -725,7 +725,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               {isEditing && (
                 <button 
                   onClick={handleAddCriteria}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-100 transition-all"
                 >
                   <Plus className="w-3 h-3" />
                   Add Criteria
@@ -737,8 +737,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Weight (%)</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criteria</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32">Weight (%)</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Criteria</th>
                     {isEditing && <th className="px-8 py-4 w-16"></th>}
                   </tr>
                 </thead>
@@ -793,7 +793,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
           </section>
 
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Procurement Assumptions and Constraints</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Procurement Assumptions and Constraints</label>
             {isEditing ? (
               <textarea 
                 value={procPlan.assumptionsConstraints}
@@ -813,7 +813,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         {/* Section 3: Integration & Performance */}
         <div className="space-y-8">
           <section className="space-y-6">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Integration Requirements</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Integration Requirements</label>
             <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white">
               <table className="w-full text-left border-collapse">
                 <tbody className="divide-y divide-slate-50">
@@ -850,11 +850,11 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
           <section className="space-y-6">
             <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Performance Metrics</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Performance Metrics</label>
               {isEditing && (
                 <button 
                   onClick={handleAddMetric}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-100 transition-all"
                 >
                   <Plus className="w-3 h-3" />
                   Add Metric
@@ -866,8 +866,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Domain</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Metric Measurement</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-1/3">Domain</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Metric Measurement</th>
                     {isEditing && <th className="px-8 py-4 w-16"></th>}
                   </tr>
                 </thead>
@@ -962,15 +962,15 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

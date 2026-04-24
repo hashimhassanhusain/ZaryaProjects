@@ -319,7 +319,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             Back to Register
           </button>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
               VERSION: v{(formData.version || 1.0).toFixed(1)}
             </span>
           </div>
@@ -329,7 +329,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
           <div className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                   Decision ID
                   <Tooltip text="Auto-generated unique ID (e.g., ZRY-DEC-001)" />
                 </label>
@@ -342,7 +342,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                   Category
                   <Tooltip text="Mandatory dropdown including Schedule, Cost/Price, Quantity, Quality, Scope" />
                 </label>
@@ -359,7 +359,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
                 <input 
                   type="date"
                   value={formData.date}
@@ -382,7 +382,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             )}
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                 Responsible Party
                 <Tooltip text="Responsible party for this decision" />
               </label>
@@ -400,7 +400,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                 Decision
                 <Tooltip text="Example: Approved using cement plaster for basement services to resist moisture" />
               </label>
@@ -414,7 +414,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comments</label>
+              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments</label>
               <textarea 
                 value={formData.comments}
                 onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
@@ -427,7 +427,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             {/* Version History */}
             {editingEntry && versions.length > 0 && (
               <div className="pt-10 border-t border-slate-100">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                   <History className="w-4 h-4" />
                   Version History
                 </h3>
@@ -436,18 +436,18 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                     <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                          <span className="text-[10px] font-black text-blue-600">v{v.version.toFixed(1)}</span>
+                          <span className="text-[10px] font-semibold text-blue-600">v{v.version.toFixed(1)}</span>
                         </div>
                         <div>
                           <div className="text-sm font-bold text-slate-900">{v.changeSummary}</div>
-                          <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">
                             {v.userName} • {new Date(v.timestamp).toLocaleString('en-US')}
                           </div>
                         </div>
                       </div>
                       <button 
                         onClick={() => setFormData(v.data as DecisionLogEntry)}
-                        className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                        className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
                       >
                         Restore
                       </button>
@@ -530,12 +530,12 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Decision</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible Party</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Decision</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible Party</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -554,11 +554,11 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
               ) : filteredEntries.map((entry) => (
                 <tr key={entry.id} className="group hover:bg-slate-50/50 transition-all">
                   <td className="px-8 py-5">
-                    <span className="text-sm font-black text-slate-900">{entry.decisionId}</span>
+                    <span className="text-sm font-semibold text-slate-900">{entry.decisionId}</span>
                   </td>
                   <td className="px-8 py-5">
                     <span className={cn(
-                      "px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest",
+                      "px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest",
                       entry.category === 'Cost/Price' ? "bg-red-50 text-red-600" :
                       entry.category === 'Schedule' ? "bg-amber-50 text-amber-600" :
                       "bg-slate-100 text-slate-600"
@@ -630,7 +630,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                   <ShieldCheck className="w-10 h-10 text-blue-600" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Domain Impact Detected</h3>
+                  <h3 className="text-xl font-semibold text-slate-900 uppercase tracking-tight">Domain Impact Detected</h3>
                   <p className="text-sm text-slate-500 font-medium leading-relaxed">
                     {showPrompt.message}
                   </p>
@@ -638,7 +638,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                 <div className="flex flex-col gap-3">
                   <button 
                     onClick={showPrompt.onConfirm}
-                    className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                    className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                   >
                     Yes, Propose Draft Link
                   </button>
@@ -647,7 +647,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                       setShowPrompt(null);
                       setView('list');
                     }}
-                    className="w-full py-4 bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-slate-200 transition-all"
+                    className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-slate-200 transition-all"
                   >
                     No, Save Only
                   </button>

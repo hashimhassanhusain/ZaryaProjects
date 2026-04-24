@@ -105,13 +105,13 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
               <UserPlus className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Resource Acquisition</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Resource Acquisition</h2>
               <p className="text-sm text-slate-500 font-medium">Securing and assigning project assets to specific activities.</p>
             </div>
           </div>
           <button 
             onClick={() => setIsAssigning(true)}
-            className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2"
+            className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2"
           >
             <Calendar className="w-4 h-4" />
             Book Resource
@@ -126,10 +126,10 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                exit={{ opacity: 0, scale: 0.95 }}
                className="bg-white border-2 border-emerald-100 p-8 rounded-[2.5rem] shadow-2xl space-y-6"
             >
-               <h3 className="text-lg font-black text-slate-900 italic">Booking Request</h3>
+               <h3 className="text-lg font-semibold text-slate-900 italic">Booking Request</h3>
                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="space-y-1">
-                     <label className="text-[9px] font-black uppercase text-slate-400">Resource</label>
+                     <label className="text-[9px] font-semibold uppercase text-slate-400">Resource</label>
                      <select 
                        value={newAssignment.resourceId}
                        onChange={e => setNewAssignment({...newAssignment, resourceId: e.target.value})}
@@ -140,7 +140,7 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                      </select>
                   </div>
                   <div className="space-y-1">
-                     <label className="text-[9px] font-black uppercase text-slate-400">Project Task</label>
+                     <label className="text-[9px] font-semibold uppercase text-slate-400">Project Task</label>
                      <select 
                        value={newAssignment.taskId}
                        onChange={e => setNewAssignment({...newAssignment, taskId: e.target.value})}
@@ -151,17 +151,17 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                      </select>
                   </div>
                   <div className="space-y-1">
-                     <label className="text-[9px] font-black uppercase text-slate-400">Start Date</label>
+                     <label className="text-[9px] font-semibold uppercase text-slate-400">Start Date</label>
                      <input type="date" value={newAssignment.startDate} onChange={e => setNewAssignment({...newAssignment, startDate: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold" />
                   </div>
                   <div className="space-y-1">
-                     <label className="text-[9px] font-black uppercase text-slate-400">End Date</label>
+                     <label className="text-[9px] font-semibold uppercase text-slate-400">End Date</label>
                      <input type="date" value={newAssignment.endDate} onChange={e => setNewAssignment({...newAssignment, endDate: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold" />
                   </div>
                </div>
                <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-                  <button onClick={() => setIsAssigning(false)} className="px-6 py-2 text-[10px] font-black uppercase text-slate-400">Cancel</button>
-                  <button onClick={handleAssign} className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20">Confirm Assignment</button>
+                  <button onClick={() => setIsAssigning(false)} className="px-6 py-2 text-[10px] font-semibold uppercase text-slate-400">Cancel</button>
+                  <button onClick={handleAssign} className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-600/20">Confirm Assignment</button>
                </div>
             </motion.div>
           )}
@@ -170,7 +170,7 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
            {/* Current Jobs */}
            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Active Assignments</h3>
+              <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Active Assignments</h3>
               <div className="space-y-4">
                  {assignments.filter(a => a.status === 'Assigned').map((asgn) => {
                    const res = resources.find(r => r.id === asgn.resourceId);
@@ -178,16 +178,16 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                    return (
                      <div key={asgn.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group hover:bg-emerald-50 transition-all">
                         <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-emerald-600 font-black shadow-sm group-hover:scale-110 transition-transform">
+                           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-emerald-600 font-semibold shadow-sm group-hover:scale-110 transition-transform">
                               {res?.name[0]}
                            </div>
                            <div>
-                              <p className="text-sm font-black text-slate-900">{res?.name}</p>
+                              <p className="text-sm font-semibold text-slate-900">{res?.name}</p>
                               <p className="text-[10px] font-bold text-slate-400 line-clamp-1">TASK: {tsk?.title}</p>
                            </div>
                         </div>
                         <div className="text-right">
-                           <p className="text-[9px] font-black text-slate-900 uppercase">{asgn.startDate}</p>
+                           <p className="text-[9px] font-semibold text-slate-900 uppercase">{asgn.startDate}</p>
                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">UNTIL {asgn.endDate}</p>
                         </div>
                      </div>
@@ -202,7 +202,7 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                  <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
                     <ShoppingCart className="w-7 h-7 text-emerald-400" />
                  </div>
-                 <h3 className="text-3xl font-black italic tracking-tighter leading-none">Internal vs External<br/>Acquisition</h3>
+                 <h3 className="text-3xl font-semibold italic tracking-tighter leading-none">Internal vs External<br/>Acquisition</h3>
                  <p className="text-sm text-slate-400 font-medium leading-relaxed">
                    Project "Zarya" automates the **Make-or-Buy** evaluation. If internal resources are busy, it automatically pulls external pricing from the Sourcing Strategy hub.
                  </p>
@@ -210,12 +210,12 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
 
               <div className="pt-10 flex gap-4 relative z-10">
                  <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <p className="text-[8px] font-black uppercase text-emerald-400 mb-1">Availability</p>
-                    <p className="text-xl font-black">74%</p>
+                    <p className="text-[8px] font-semibold uppercase text-emerald-400 mb-1">Availability</p>
+                    <p className="text-xl font-semibold">74%</p>
                  </div>
                  <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <p className="text-[8px] font-black uppercase text-emerald-400 mb-1">Acquisition Speed</p>
-                    <p className="text-xl font-black">2.4d</p>
+                    <p className="text-[8px] font-semibold uppercase text-emerald-400 mb-1">Acquisition Speed</p>
+                    <p className="text-xl font-semibold">2.4d</p>
                  </div>
               </div>
               

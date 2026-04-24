@@ -28,7 +28,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Flag } from 'lucide-react';
 
 export const WBSView: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const location = useLocation();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
@@ -141,7 +141,7 @@ export const WBSView: React.FC = () => {
         <div className="flex justify-end gap-2">
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
@@ -157,7 +157,7 @@ export const WBSView: React.FC = () => {
                 handleFirestoreError(error, OperationType.DELETE, 'wbs');
               }
             }}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
           >
             Delete All
           </button>
@@ -585,47 +585,47 @@ export const WBSView: React.FC = () => {
         return (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Search className="w-12 h-12 text-slate-200 mb-4" />
-            <h4 className="text-lg font-bold text-slate-900 mb-1">No Matches Found</h4>
-            <p className="text-sm text-slate-400">Try searching for a different term or code.</p>
+            <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_matches_found')}</h4>
+            <p className="text-sm text-slate-400">{t('try_searching_different')}</p>
           </div>
         );
       }
     }
 
     return (
-      <div className={cn("space-y-3", (depth > 0 || (depth === 0 && !parentId && !searchTerm)) && "ml-8 border-l-2 border-slate-100 pl-6")}>
+      <div className={cn("space-y-3", (depth > 0 || (depth === 0 && !parentId && !searchTerm)) && (isRtl ? "mr-8 border-r-2 pr-6 border-l-0 pl-0" : "ml-8 border-l-2 border-slate-100 pl-6"))}>
         {depth === 0 && !parentId && !searchTerm && (
-          <div className="-ml-8 mb-3">
-            <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/10">
-              <div className="flex items-center gap-3">
+          <div className={cn(isRtl ? "-mr-8" : "-ml-8", "mb-3")}>
+            <div className={cn("flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/10", isRtl && "flex-row-reverse")}>
+              <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   <Target className="w-5 h-5" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
-                    <div className="text-sm font-black text-white">{selectedProject.name} (Task 0)</div>
+                <div className={cn(isRtl && "text-right")}>
+                  <div className={cn("flex items-center gap-2", isRtl && "flex-row-reverse")}>
+                    <span className="text-[10px] font-semibold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
+                    <div className="text-sm font-semibold text-white">{selectedProject.name} ({t('page')} 0)</div>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-black">PROJECT SUMMARY</div>
+                  <div className={cn("flex items-center gap-3 mt-0.5", isRtl && "flex-row-reverse")}>
+                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-semibold">{t('project_summary')}</div>
                     <span className="text-slate-800">|</span>
-                    <div className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                    <div className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">
                       {formatCurrency(boqItems.reduce((sum, i) => sum + i.amount, 0))}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className={cn("flex items-center gap-4", isRtl && "flex-row-reverse")}>
                 <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
+                  <div className={cn("flex items-center gap-2", isRtl && "flex-row-reverse")}>
                     <div className="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                       <div className="h-full bg-blue-500" style={{ width: '100%' }} />
                     </div>
-                    <span className="text-[9px] font-black text-blue-400 uppercase">100% DISC.</span>
+                    <span className="text-[9px] font-semibold text-blue-400 uppercase">100% {t('disc')}</span>
                   </div>
                 </div>
-                <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-white uppercase tracking-widest">
-                  {wbsLevels.length} NODES
+                <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-[9px] font-semibold text-white uppercase tracking-widest">
+                  {wbsLevels.length} {t('nodes')}
                 </div>
               </div>
             </div>
@@ -639,11 +639,11 @@ export const WBSView: React.FC = () => {
             <div key={level.id} className="space-y-3">
               <div 
                 onClick={() => handleEditWbs(level)}
-                className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
+                className={cn("group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all cursor-pointer", isRtl && "flex-row-reverse")}
               >
-                <div className="flex items-center gap-4">
+                <div className={cn("flex items-center gap-4", isRtl && "flex-row-reverse")}>
                   <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm",
+                    "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold shadow-sm",
                     level.type === 'Zone' ? "bg-purple-100 text-purple-600" :
                     level.type === 'Area' ? "bg-blue-100 text-blue-600" :
                     level.type === 'Building' ? "bg-emerald-100 text-emerald-600" :
@@ -654,31 +654,31 @@ export const WBSView: React.FC = () => {
                   )}>
                     {getWbsIcon(level.type, "w-5 h-5", level.title)}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-widest">{level.code}</span>
-                      <div className="text-base font-bold text-slate-900">{level.title}</div>
+                  <div className={cn(isRtl && "text-right")}>
+                    <div className={cn("flex items-center gap-2", isRtl && "flex-row-reverse")}>
+                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-widest">{level.code}</span>
+                      <div className="text-base font-semibold text-slate-900">{level.title}</div>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{level.type}</div>
+                    <div className={cn("flex items-center gap-3 mt-0.5", isRtl && "flex-row-reverse")}>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">{t(level.type.toLowerCase().replace(' ', ''))}</div>
                       <span className="text-slate-200">|</span>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{formatCurrency(totalValue)}</div>
+                      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{formatCurrency(totalValue)}</div>
                       <span className="text-slate-200">|</span>
                       <span className={cn(
-                        "text-[9px] font-bold uppercase tracking-wider",
+                        "text-[9px] font-semibold uppercase tracking-wider",
                         level.status === 'Completed' ? "text-emerald-600" :
                         level.status === 'In Progress' ? "text-blue-600" :
                         level.status === 'Delayed' ? "text-red-600" :
                         "text-slate-400"
                       )}>
-                        {level.status || 'Not Started'}
+                        {level.status ? t(level.status.toLowerCase().replace(' ', '_')) : t('not_started')}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                    {items.length} Items
+                <div className={cn("flex items-center gap-2", isRtl && "flex-row-reverse")}>
+                  <div className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-semibold uppercase tracking-wider">
+                    {items.length} {t('items')}
                   </div>
                   <button 
                     onClick={(e) => {
@@ -719,16 +719,19 @@ export const WBSView: React.FC = () => {
           <div className="lg:col-span-12 space-y-6">
             <div className="flex items-center justify-between">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
                 <input 
                   type="text"
-                  placeholder="Search hierarchy..."
+                  placeholder={t('search_hierarchy')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                  className={cn(
+                    "w-full py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all",
+                    isRtl ? "pr-12 pl-4 text-right" : "pl-12 pr-4 text-left"
+                  )}
                 />
               </div>
-              <div className="flex items-center gap-3">
+              <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
                 <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
                   <input 
                     type="file" 
@@ -741,14 +744,14 @@ export const WBSView: React.FC = () => {
                   ) : (
                     <Sparkles className="w-4 h-4 text-blue-600" />
                   )}
-                  <span className="text-sm font-bold text-slate-700">AI Generate WBS</span>
+                  <span className="text-sm font-semibold text-slate-700">{t('ai_generate_wbs')}</span>
                 </label>
                 <button 
                   onClick={() => setShowAddWbs(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-md"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Level
+                  {t('add_level')}
                 </button>
               </div>
             </div>
@@ -759,8 +762,8 @@ export const WBSView: React.FC = () => {
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
                     <LayoutGrid className="w-8 h-8 text-slate-200" />
                   </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-1">No Hierarchy Defined</h4>
-                  <p className="text-sm text-slate-400 max-w-xs">Start by adding major project zones or sectors to build your WBS.</p>
+                  <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_hierarchy_defined')}</h4>
+                  <p className="text-sm text-slate-400 max-w-xs">{t('no_hierarchy_hint')}</p>
                 </div>
               ) : renderWbsTree()}
             </div>
@@ -770,8 +773,8 @@ export const WBSView: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-bold text-slate-900">Cost Accounts</h3>
-              <p className="text-slate-500">Manage project-specific cost accounts and budget divisions.</p>
+              <h3 className="text-2xl font-bold text-slate-900">{t('cost_accounts')}</h3>
+              <p className="text-slate-500">{t('manage_cost_accounts_desc')}</p>
             </div>
             <div className="flex items-center gap-3">
               {selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length > 0 && (
@@ -779,7 +782,7 @@ export const WBSView: React.FC = () => {
                   onClick={handleBulkDeleteWbs}
                   className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length})
+                  <Trash2 className="w-4 h-4" /> {t('delete_selected')} ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length})
                 </button>
               )}
               <button 
@@ -789,7 +792,7 @@ export const WBSView: React.FC = () => {
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
               >
                 <Plus className="w-4 h-4" />
-                Add Cost Account
+                {t('add_cost_account')}
               </button>
             </div>
           </div>
@@ -806,10 +809,10 @@ export const WBSView: React.FC = () => {
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Code</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Account Title</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Level</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('code')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('cost_account')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('parent_level')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -896,8 +899,8 @@ export const WBSView: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-bold text-slate-900">Work Packages</h3>
-              <p className="text-slate-500">Manage detailed work packages linked to WBS levels and Cost Accounts.</p>
+              <h3 className="text-2xl font-bold text-slate-900">{t('work_packages')}</h3>
+              <p className="text-slate-500">{t('manage_work_packages_desc')}</p>
             </div>
             <div className="flex items-center gap-3">
               {(selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length) > 0 && (
@@ -905,7 +908,7 @@ export const WBSView: React.FC = () => {
                   onClick={handleBulkDeletePackages}
                   className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length})
+                  <Trash2 className="w-4 h-4" /> {t('delete_selected')} ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length})
                 </button>
               )}
               <button 
@@ -913,7 +916,7 @@ export const WBSView: React.FC = () => {
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
               >
                 <Plus className="w-4 h-4" />
-                Add Work Package
+                {t('add_work_package')}
               </button>
             </div>
           </div>
@@ -926,19 +929,19 @@ export const WBSView: React.FC = () => {
                     <input 
                       type="checkbox" 
                       checked={
-                        (wbsLevels.filter(l => l.type === 'Work Package').length > 0) &&
-                        (selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length === 
-                         wbsLevels.filter(l => l.type === 'Work Package').length)
+                         (wbsLevels.filter(l => l.type === 'Work Package').length > 0) &&
+                         (selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length === 
+                          wbsLevels.filter(l => l.type === 'Work Package').length)
                       }
                       onChange={toggleSelectAllPackages}
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Code</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Title</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Account</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">WBS Level</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('code')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('title')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('cost_account')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('wbs_level')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

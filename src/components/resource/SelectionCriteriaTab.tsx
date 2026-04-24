@@ -200,7 +200,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-slate-900">Selection Criteria</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">Selection Criteria</h2>
             <p className="text-sm text-slate-500">Define weighted criteria for supplier evaluation.</p>
           </div>
           <div className="flex items-center gap-4">
@@ -210,8 +210,8 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
             )}>
               <Target className="w-5 h-5" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest">Total Weight</span>
-                <span className="text-lg font-black">{totalWeight}%</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Total Weight</span>
+                <span className="text-lg font-semibold">{totalWeight}%</span>
               </div>
               {totalWeight !== 100 && <AlertTriangle className="w-5 h-5 animate-pulse" />}
             </div>
@@ -253,8 +253,8 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                   </button>
                 </div>
               </div>
-              <h3 className="text-lg font-black text-slate-900 mb-1">{crit.criterion}</h3>
-              <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Weight: {crit.weight}%</div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">{crit.criterion}</h3>
+              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest mb-3">Weight: {crit.weight}%</div>
               <p className="text-xs text-slate-500 font-medium leading-relaxed">{crit.description}</p>
             </div>
           ))}
@@ -265,7 +265,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-slate-900">Supplier Evaluations</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">Supplier Evaluations</h2>
             <p className="text-sm text-slate-500">Multi-step evaluation and candidate scoring.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -290,14 +290,14 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Supplier</th>
                 {criteria.map(c => (
-                  <th key={c.id} className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                  <th key={c.id} className="px-4 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">
                     {c.criterion}
                   </th>
                 ))}
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Score</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Total Score</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -316,7 +316,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                     return (
                       <td key={c.id} className="px-4 py-5 text-center">
                         <div className="flex flex-col items-center">
-                          <span className="text-sm font-black text-slate-900">{score?.rating || '-'}</span>
+                          <span className="text-sm font-semibold text-slate-900">{score?.rating || '-'}</span>
                           <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">
                             Score: {score?.score.toFixed(2) || '0.00'}
                           </span>
@@ -326,8 +326,8 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                   })}
                   <td className="px-8 py-5 text-right">
                     <div className="flex flex-col items-end">
-                      <span className="text-xl font-black text-slate-900">{ev.totalScore.toFixed(2)}</span>
-                      <div className="flex items-center gap-1 text-[8px] font-black text-emerald-600 uppercase tracking-widest">
+                      <span className="text-xl font-semibold text-slate-900">{ev.totalScore.toFixed(2)}</span>
+                      <div className="flex items-center gap-1 text-[8px] font-semibold text-emerald-600 uppercase tracking-widest">
                         <Trophy className="w-2 h-2" />
                         Final Rank
                       </div>
@@ -373,7 +373,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Criterion' : 'Add New Criterion'}
                 </h2>
                 <button onClick={() => setIsAddingCriterion(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -383,7 +383,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Criterion Name</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Criterion Name</label>
                   <input
                     type="text"
                     value={criterionForm.criterion}
@@ -394,7 +394,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Weight (%)</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Weight (%)</label>
                   <input
                     type="number"
                     value={criterionForm.weight}
@@ -404,7 +404,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Description</label>
                   <textarea
                     value={criterionForm.description}
                     onChange={(e) => setCriterionForm({ ...criterionForm, description: e.target.value })}
@@ -444,7 +444,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Evaluation' : 'New Supplier Evaluation'}
                 </h2>
                 <button onClick={() => setIsAddingEvaluation(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -454,7 +454,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
 
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Supplier</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Select Supplier</label>
                   <select
                     value={evaluationForm.supplierId}
                     onChange={(e) => setEvaluationForm({ ...evaluationForm, supplierId: e.target.value })}
@@ -466,7 +466,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Criteria Scoring (Rating 1-10)</h3>
+                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest">Criteria Scoring (Rating 1-10)</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {criteria.map((crit) => {
                       const scoreObj = evaluationForm.criteriaScores?.find(s => s.criterionId === crit.id);
@@ -490,11 +490,11 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                                 const total = newScores.reduce((sum, s) => sum + s.score, 0);
                                 setEvaluationForm({ ...evaluationForm, criteriaScores: newScores, totalScore: total });
                               }}
-                              className="w-20 px-4 py-2 bg-white border border-slate-200 rounded-xl text-center font-black text-slate-900"
+                              className="w-20 px-4 py-2 bg-white border border-slate-200 rounded-xl text-center font-semibold text-slate-900"
                             />
                             <div className="w-24 text-right">
-                              <div className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Score</div>
-                              <div className="text-sm font-black text-blue-600">{scoreObj?.score.toFixed(2) || '0.00'}</div>
+                              <div className="text-[8px] text-slate-400 font-semibold uppercase tracking-widest">Score</div>
+                              <div className="text-sm font-semibold text-blue-600">{scoreObj?.score.toFixed(2) || '0.00'}</div>
                             </div>
                           </div>
                         </div>
@@ -506,15 +506,15 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                 <div className="p-6 bg-slate-900 rounded-[2rem] flex items-center justify-between text-white">
                   <div className="flex items-center gap-3">
                     <Trophy className="w-6 h-6 text-blue-400" />
-                    <span className="text-lg font-black">Aggregate Score</span>
+                    <span className="text-lg font-semibold">Aggregate Score</span>
                   </div>
-                  <div className="text-3xl font-black">
+                  <div className="text-3xl font-semibold">
                     {evaluationForm.totalScore?.toFixed(2) || '0.00'}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comments</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments</label>
                   <textarea
                     value={evaluationForm.comments}
                     onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })}

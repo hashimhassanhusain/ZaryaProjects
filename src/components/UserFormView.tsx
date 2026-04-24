@@ -271,7 +271,7 @@ export const UserFormView: React.FC = () => {
                   {page.title}
                 </span>
                 {page.type === 'hub' && (
-                  <span className="text-[9px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded ml-auto">HUB</span>
+                  <span className="text-[9px] font-semibold uppercase tracking-widest text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded ml-auto">HUB</span>
                 )}
               </label>
               {hasChildren && renderPageTree(page.id, depth + 1)}
@@ -390,13 +390,13 @@ export const UserFormView: React.FC = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setIsSelectingContact(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-200 transition-all"
                   >
                     <Search className="w-3.5 h-3.5" /> Select Contact
                   </button>
                   <button 
                     onClick={() => setIsAddingContact(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100"
                   >
                     <Plus className="w-3.5 h-3.5" /> New Contact
                   </button>
@@ -412,7 +412,7 @@ export const UserFormView: React.FC = () => {
                     <div>
                       <div className="font-bold text-slate-900">{formData.name}</div>
                       <div className="text-sm text-slate-500">{formData.email}</div>
-                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">{formData.companyName}</div>
+                      <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest mt-1">{formData.companyName}</div>
                     </div>
                   </div>
                   <button 
@@ -449,8 +449,8 @@ export const UserFormView: React.FC = () => {
                 >
                   <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">Select Contact</h2>
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">
+                      <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Select Contact</h2>
+                      <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest mt-1">
                         Showing {userType}s
                       </p>
                     </div>
@@ -491,7 +491,7 @@ export const UserFormView: React.FC = () => {
                               <div className="text-[10px] text-slate-400 mt-0.5">{contact.companyName}</div>
                             </div>
                           </div>
-                          <div className="px-3 py-1 bg-slate-100 group-hover:bg-blue-600 group-hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
+                          <div className="px-3 py-1 bg-slate-100 group-hover:bg-blue-600 group-hover:text-white rounded-lg text-[10px] font-semibold uppercase tracking-widest transition-all">
                             Select
                           </div>
                         </button>
@@ -523,7 +523,7 @@ export const UserFormView: React.FC = () => {
                     type="button"
                     onClick={() => handleUserTypeChange(type)}
                     className={cn(
-                      "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all text-center",
+                      "flex-1 py-4 rounded-2xl text-[10px] font-semibold uppercase tracking-widest border-2 transition-all text-center",
                       userType === type 
                         ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
                         : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
@@ -724,7 +724,7 @@ export const UserFormView: React.FC = () => {
                                             title="No Access"
                                           >
                                             <EyeOff className="w-3.5 h-3.5" />
-                                            {permission === 'none' && <span className="text-[9px] font-black uppercase tracking-widest px-1">None</span>}
+                                            {permission === 'none' && <span className="text-[9px] font-semibold uppercase tracking-widest px-1">None</span>}
                                           </button>
                                           <button
                                             onClick={() => setFolderPermission(folder.id, 'view')}
@@ -735,7 +735,7 @@ export const UserFormView: React.FC = () => {
                                             title="View Only"
                                           >
                                             <Eye className="w-3.5 h-3.5" />
-                                            {permission === 'view' && <span className="text-[9px] font-black uppercase tracking-widest px-1">View</span>}
+                                            {permission === 'view' && <span className="text-[9px] font-semibold uppercase tracking-widest px-1">View</span>}
                                           </button>
                                           <button
                                             onClick={() => setFolderPermission(folder.id, 'edit')}
@@ -746,7 +746,7 @@ export const UserFormView: React.FC = () => {
                                             title="Edit Access"
                                           >
                                             <Edit2 className="w-3.5 h-3.5" />
-                                            {permission === 'edit' && <span className="text-[9px] font-black uppercase tracking-widest px-1">Edit</span>}
+                                            {permission === 'edit' && <span className="text-[9px] font-semibold uppercase tracking-widest px-1">Edit</span>}
                                           </button>
                                         </div>
                                       </div>
@@ -862,8 +862,8 @@ export const UserFormView: React.FC = () => {
               <form onSubmit={handleCreateContact} className="flex flex-col h-full">
                 <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Add New Contact</h2>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Contact Registration</p>
+                    <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Add New Contact</h2>
+                    <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest mt-1">Contact Registration</p>
                   </div>
                   <button type="button" onClick={() => setIsAddingContact(false)} className="p-3 hover:bg-white rounded-2xl transition-colors">
                     <X className="w-6 h-6 text-slate-400" />
@@ -878,7 +878,7 @@ export const UserFormView: React.FC = () => {
                         type="button"
                         onClick={() => setNewContactData({ ...newContactData, type })}
                         className={cn(
-                          "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all",
+                          "py-4 rounded-2xl text-[10px] font-semibold uppercase tracking-widest border-2 transition-all",
                           newContactData.type === type 
                             ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
                             : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
@@ -891,7 +891,7 @@ export const UserFormView: React.FC = () => {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                       <input 
                         required
                         type="text" 
@@ -903,7 +903,7 @@ export const UserFormView: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company</label>
+                       <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Company</label>
                        <select 
                          required
                          value={newContactData.companyId}
@@ -918,7 +918,7 @@ export const UserFormView: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                       <input 
                         type="email" 
                         value={newContactData.email}
@@ -934,13 +934,13 @@ export const UserFormView: React.FC = () => {
                    <button 
                     type="button"
                     onClick={() => setIsAddingContact(false)}
-                    className="px-6 py-4 text-slate-500 font-black uppercase tracking-widest text-[10px] hover:bg-white rounded-2xl transition-all"
+                    className="px-6 py-4 text-slate-500 font-semibold uppercase tracking-widest text-[10px] hover:bg-white rounded-2xl transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
-                    className="px-10 py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+                    className="px-10 py-4 bg-slate-900 text-white font-semibold uppercase tracking-widest text-[10px] rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
                   >
                     Save Contact
                   </button>

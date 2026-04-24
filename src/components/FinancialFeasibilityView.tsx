@@ -25,7 +25,7 @@ export const FinancialFeasibilityView: React.FC<FinancialFeasibilityViewProps> =
             <Calculator className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Financial Feasibility</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Financial Feasibility</h2>
             <p className="text-sm text-slate-500 font-medium">Initial high-level evaluation of project viability and funding.</p>
           </div>
         </header>
@@ -36,8 +36,8 @@ export const FinancialFeasibilityView: React.FC<FinancialFeasibilityViewProps> =
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estimated NPV</p>
-              <p className="text-3xl font-black italic tracking-tighter text-teal-400">$2,450,000</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Estimated NPV</p>
+              <p className="text-3xl font-semibold italic tracking-tighter text-teal-400">$2,450,000</p>
             </div>
           </div>
 
@@ -46,8 +46,8 @@ export const FinancialFeasibilityView: React.FC<FinancialFeasibilityViewProps> =
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project IRR</p>
-              <p className="text-3xl font-black italic tracking-tighter text-slate-900">18.5%</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Project IRR</p>
+              <p className="text-3xl font-semibold italic tracking-tighter text-slate-900">18.5%</p>
             </div>
           </div>
 
@@ -56,14 +56,14 @@ export const FinancialFeasibilityView: React.FC<FinancialFeasibilityViewProps> =
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payback Period</p>
-              <p className="text-3xl font-black italic tracking-tighter text-slate-900">3.2 Years</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Payback Period</p>
+              <p className="text-3xl font-semibold italic tracking-tighter text-slate-900">3.2 Years</p>
             </div>
           </div>
         </div>
 
         <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-          <h3 className="text-lg font-black text-slate-900 tracking-tight italic">Funding Source Matrix</h3>
+          <h3 className="text-lg font-semibold text-slate-900 tracking-tight italic">Funding Source Matrix</h3>
           <div className="space-y-4">
             {[
               { source: 'Inter-company Loan', amount: '$5,000,000', allocation: '50%', risk: 'Low' },
@@ -72,17 +72,17 @@ export const FinancialFeasibilityView: React.FC<FinancialFeasibilityViewProps> =
             ].map((fund, i) => (
               <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl group hover:bg-teal-50 transition-colors cursor-pointer">
                 <div>
-                  <p className="text-sm font-black text-slate-900">{fund.source}</p>
+                  <p className="text-sm font-semibold text-slate-900">{fund.source}</p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{fund.amount}</p>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-clamp-1">Allocation</p>
-                    <p className="text-sm font-black text-slate-900 italic">{fund.allocation}</p>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest line-clamp-1">Allocation</p>
+                    <p className="text-sm font-semibold text-slate-900 italic">{fund.allocation}</p>
                   </div>
                   <div className="text-right min-w-[80px]">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-clamp-1">Risk Level</p>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest line-clamp-1">Risk Level</p>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${
                       fund.risk === 'Low' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                     }`}>
                       {fund.risk}

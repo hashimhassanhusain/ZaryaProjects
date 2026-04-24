@@ -519,10 +519,10 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
           <div className="p-10 space-y-12">
             {/* Header Info */}
             <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Header Information</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Header Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Name</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Name</label>
                   <input 
                     type="text"
                     value={formData.projectName}
@@ -531,7 +531,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
                   <input 
                     type="date"
                     value={formData.date}
@@ -540,7 +540,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PO Number</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">PO Number</label>
                   <input 
                     type="text"
                     value={formData.poNumber}
@@ -549,7 +549,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preparer</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Preparer</label>
                   <input 
                     type="text"
                     value={formData.preparer}
@@ -558,7 +558,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Number</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contract Number</label>
                   <input 
                     type="text"
                     value={formData.contractNumber}
@@ -567,7 +567,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contractor</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contractor</label>
                   <input 
                     type="text"
                     value={formData.contractor}
@@ -580,7 +580,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
             {/* Category Checkboxes */}
             <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Category of Change</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Category of Change</h3>
               <div className="flex flex-wrap gap-8">
                 {Object.entries(formData.categories || {}).map(([key, value]) => (
                   <button 
@@ -605,7 +605,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
             {/* Description & Justification */}
             <section className="space-y-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Description of Proposed Change</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Detailed Description of Proposed Change</label>
                 <textarea 
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -614,7 +614,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Justification for Proposed Change</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Justification for Proposed Change</label>
                 <textarea 
                   value={formData.justification}
                   onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
@@ -626,10 +626,10 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
             {/* Financial Summary */}
             <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Financial Summary</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Financial Summary</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Original Contract Value</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Original Contract Value</label>
                   <input 
                     type="number"
                     value={formData.financialSummary?.originalContractValue}
@@ -641,7 +641,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Previous Changes Value</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Previous Changes Value</label>
                   <input 
                     type="number"
                     value={formData.financialSummary?.previousChangesValue}
@@ -653,7 +653,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Change Value</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Current Change Value</label>
                   <input 
                     type="number"
                     value={formData.financialSummary?.currentChangeValue}
@@ -665,8 +665,8 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Contract Value</label>
-                  <div className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-black text-blue-400 flex items-center gap-2">
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Total Contract Value</label>
+                  <div className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-semibold text-blue-400 flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
                     {calculateTotal(formData.financialSummary).toLocaleString('en-US')}
                   </div>
@@ -676,7 +676,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
             {/* Impact Assessment */}
             <section className="space-y-6">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Impact Assessment</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Impact Assessment</h3>
               <div className="space-y-6">
                 {(Object.entries(formData.impact || {}) as [keyof ChangeRequest['impact'], { affected: boolean; details: string }][]).map(([key, value]) => (
                   <div key={key} className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
@@ -697,7 +697,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                       </button>
                     </div>
                     <div className="md:col-span-3 space-y-2">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Impact Details</label>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Impact Details</label>
                       <input 
                         type="text"
                         value={value.details}
@@ -798,12 +798,12 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Request ID</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Preparer</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contractor</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Request ID</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Preparer</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Contractor</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -835,7 +835,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                     className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                   >
                     <td className="px-8 py-6">
-                      <span className="text-xs font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{entry.requestId}</span>
+                      <span className="text-xs font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{entry.requestId}</span>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
@@ -854,7 +854,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                     </td>
                     <td className="px-8 py-6">
                       <span className={cn(
-                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest border",
                         getStatusColor(entry.status)
                       )}>
                         {entry.status}

@@ -177,13 +177,13 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                     <Zap className="w-6 h-6" />
                  </div>
                  <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Governance Decision Log</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Impact-Focused State Management</p>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Governance Decision Log</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mt-1">Impact-Focused State Management</p>
                  </div>
               </div>
               <button 
                  onClick={addDecision}
-                 className="px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2"
+                 className="px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2"
               >
                  <Plus className="w-4 h-4" />
                  Log Decision
@@ -194,10 +194,10 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
               <table className="w-full text-left border-collapse">
                  <thead>
                     <tr className="bg-slate-50">
-                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Decision Details</th>
-                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Strategic Impact</th>
-                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Status</th>
-                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 w-20"></th>
+                       <th className="px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100">Decision Details</th>
+                       <th className="px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100">Strategic Impact</th>
+                       <th className="px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100">Status</th>
+                       <th className="px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100 w-20"></th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -206,7 +206,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                           <td className="px-6 py-6">
                              <div className="space-y-2">
                                 <input 
-                                   className="text-sm font-black text-slate-900 bg-transparent outline-none w-full border-b border-transparent focus:border-blue-600 transition-all"
+                                   className="text-sm font-semibold text-slate-900 bg-transparent outline-none w-full border-b border-transparent focus:border-blue-600 transition-all"
                                    value={d.title}
                                    placeholder="Decision title..."
                                    onChange={(e) => {
@@ -249,7 +249,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                           <td className="px-6 py-6">
                              <select 
                                 className={cn(
-                                   "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all",
+                                   "px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-widest border transition-all",
                                    d.status === 'Open' ? "bg-amber-50 border-amber-200 text-amber-600" :
                                    d.status === 'Resolved' ? "bg-emerald-50 border-emerald-200 text-emerald-600" :
                                    "bg-red-50 border-red-200 text-red-600"
@@ -290,7 +290,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                  <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                 <h3 className="text-xl font-black text-slate-900 tracking-tight">Execution Quality Audit</h3>
+                 <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Execution Quality Audit</h3>
                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Consistency & Compliance Verification</p>
               </div>
            </div>
@@ -299,7 +299,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
               {data.auditItems.map((item, idx) => (
                  <div key={item.id} className="bg-white rounded-3xl p-6 border border-slate-200 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all">
                     <div className="flex items-center justify-between">
-                       <span className="text-sm font-black text-slate-900 tracking-tight">{item.check}</span>
+                       <span className="text-sm font-semibold text-slate-900 tracking-tight">{item.check}</span>
                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
                           {['Pass', 'Fail', 'N/A'].map(s => (
                              <button 
@@ -310,7 +310,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                                    setData({ ...data, auditItems: newAudit });
                                 }}
                                 className={cn(
-                                   "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                                   "px-3 py-1 rounded-lg text-[9px] font-semibold uppercase tracking-widest transition-all",
                                    item.status === s 
                                       ? s === 'Pass' ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" :
                                         s === 'Fail' ? "bg-red-600 text-white shadow-lg shadow-red-600/20" :
@@ -346,13 +346,13 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
                     <History className="w-6 h-6" />
                  </div>
                  <div>
-                    <h4 className="font-black text-lg tracking-tight leading-none">Last Audit: {versions[0]?.date ? new Date(versions[0].date).toLocaleDateString() : 'N/A'}</h4>
+                    <h4 className="font-semibold text-lg tracking-tight leading-none">Last Audit: {versions[0]?.date ? new Date(versions[0].date).toLocaleDateString() : 'N/A'}</h4>
                     <p className="text-xs text-blue-200 mt-1">Audit Score: { (data.auditItems.filter(i => i.status === 'Pass').length / data.auditItems.length * 100).toFixed(0)}% Compliance</p>
                  </div>
               </div>
               <button 
                  onClick={handleSave}
-                 className="px-8 py-3 bg-white text-blue-600 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
+                 className="px-8 py-3 bg-white text-blue-600 rounded-xl font-semibold uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
               >
                  Authorize Update
               </button>

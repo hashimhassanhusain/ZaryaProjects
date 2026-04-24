@@ -68,8 +68,8 @@ const QuickViewModal: React.FC<{
                      <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                     <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest leading-none mb-1">{id}</p>
-                     <h2 className="text-xl font-black text-slate-900">{stripNumericPrefix(title)}</h2>
+                    <p className="text-[10px] font-semibold uppercase text-blue-600 tracking-widest leading-none mb-1">{id}</p>
+                    <h2 className="text-xl font-semibold text-slate-900">{stripNumericPrefix(title)}</h2>
                   </div>
                </div>
                <button 
@@ -82,7 +82,7 @@ const QuickViewModal: React.FC<{
             
             <div className="flex-1 overflow-y-auto p-12 space-y-12">
                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Connected Data Extract</h3>
+                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Connected Data Extract</h3>
                   <p className="text-sm font-medium text-slate-600 leading-relaxed italic">
                     {linkedPage?.summary || `This is a quick-read snapshot of the approved ${stripNumericPrefix(title)}. The full interactive tool is available in the respective performance domain.`}
                   </p>
@@ -93,28 +93,28 @@ const QuickViewModal: React.FC<{
 
                <div className="grid grid-cols-2 gap-8">
                   <div className="p-8 bg-slate-50 rounded-[2rem] space-y-4">
-                     <h4 className="text-[9px] font-black uppercase text-slate-400">Governance Context</h4>
+                     <h4 className="text-[9px] font-semibold uppercase text-slate-400">Governance Context</h4>
                      <div className="space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                            <span className="text-xs font-bold text-slate-600">Domain</span>
-                           <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
+                           <span className="text-[10px] font-semibold text-slate-900 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
                         </div>
                         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                            <span className="text-xs font-bold text-slate-600">Focus Area</span>
-                           <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{linkedPage?.focusArea || 'N/A'}</span>
+                           <span className="text-[10px] font-semibold text-slate-900 uppercase tracking-widest">{linkedPage?.focusArea || 'N/A'}</span>
                         </div>
                         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                            <span className="text-xs font-bold text-slate-600">Status</span>
-                           <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">Baseline</span>
+                           <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg text-[8px] font-semibold uppercase tracking-widest">Baseline</span>
                         </div>
                      </div>
                   </div>
                   <div className="p-8 bg-blue-50 rounded-[2rem] space-y-4">
-                     <h4 className="text-[9px] font-black uppercase text-blue-600">Approval & Integration</h4>
+                     <h4 className="text-[9px] font-semibold uppercase text-blue-600">Approval & Integration</h4>
                      <div className="flex items-center gap-3">
                         <ShieldCheck className="w-10 h-10 text-blue-500" />
                         <div>
-                           <p className="text-sm font-black text-blue-900 leading-none italic uppercase">Digitally Verified</p>
+                           <p className="text-sm font-semibold text-blue-900 leading-none italic uppercase">Digitally Verified</p>
                            <p className="text-[9px] font-bold text-blue-600/60 uppercase mt-1">Cross-Process Link Active</p>
                         </div>
                      </div>
@@ -123,8 +123,8 @@ const QuickViewModal: React.FC<{
             </div>
 
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-               <p className="text-[10px] font-black text-slate-400 uppercase italic">Archived by Zarya Hub • {id}-V2.4</p>
-               <button className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+               <p className="text-[10px] font-semibold text-slate-400 uppercase italic">Archived by Zarya Hub • {id}-V2.4</p>
+               <button className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest">
                   View Source Process
                   <ChevronRight className="w-3 h-3" />
                </button>
@@ -174,7 +174,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
       <div className="bg-white border-b border-slate-100 px-10 py-8 print:hidden">
         <div className="flex items-center justify-between w-full">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                {grandParentPage && (
                  <>
                    <span>{stripNumericPrefix(grandParentPage.title)}</span>
@@ -190,13 +190,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                <span className="text-slate-900">{stripNumericPrefix(page.title)}</span>
             </div>
             <div className="flex items-center gap-4">
-               <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+               <h1 className="text-3xl font-semibold text-slate-900 tracking-tight flex items-center gap-3">
                  {stripNumericPrefix(page.title)}
                </h1>
                <div className="h-6 w-px bg-slate-200" />
                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg">
                   <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", driveSyncStatus === 'synced' ? 'bg-emerald-500' : 'bg-amber-500')} />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">
                      Drive Sync: {driveSyncStatus === 'synced' ? 'Live' : 'Uploading...'}
                   </span>
                </div>
@@ -206,7 +206,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           <div className="flex items-center gap-3">
              <button
                onClick={onPrint}
-               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
+               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[11px] font-semibold uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
              >
                <Printer className="w-4 h-4" />
                Generate PDF
@@ -214,7 +214,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
              <button
                onClick={handleManualSave}
                disabled={isSaving}
-               className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 disabled:opacity-50"
+               className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-semibold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 disabled:opacity-50"
              >
                {isSaving || driveSyncStatus === 'syncing' ? (
                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
@@ -235,7 +235,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         {/* ── BLOCK A: INPUT HUB (Left Sidebar) ── */}
         <aside className="col-span-3 space-y-6 print:hidden">
           <div className="flex items-center justify-between px-2">
-             <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                 <Box className="w-4 h-4 text-blue-500" />
                 Input Arsenal
              </h3>
@@ -250,12 +250,12 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                 className="group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">{input.id}</span>
+                  <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{input.id}</span>
                   <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                     <Eye className="w-4 h-4" />
                   </div>
                 </div>
-                <h4 className="text-[13px] font-black text-slate-900 leading-tight">
+                <h4 className="text-[13px] font-semibold text-slate-900 leading-tight">
                   {stripNumericPrefix(input.title)}
                 </h4>
               </div>
@@ -264,7 +264,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             {inputs.length === 0 && (
               <div className="p-10 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-3">
                 <FileText className="w-10 h-10 text-slate-200 mx-auto" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Initial Process State</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-300">Initial Process State</p>
               </div>
             )}
           </div>
@@ -272,7 +272,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           {/* Tools & Techniques Section */}
           <div className="pt-6 space-y-4">
              <div className="flex items-center justify-between px-2">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                    <Cpu className="w-4 h-4 text-amber-500" />
                    Tools & Logic
                 </h3>
@@ -302,29 +302,29 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                         <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-2">
                            <Box className="w-5 h-5 text-blue-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Input Arsenal</p>
+                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">Input Arsenal</p>
                      </div>
                      <ArrowRight className="w-6 h-6 text-white/10" />
                      <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-3xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mb-2 animate-pulse">
                            <Cpu className="w-6 h-6 text-amber-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest">Processing Logic</p>
+                        <p className="text-[10px] font-semibold text-white uppercase tracking-widest">Processing Logic</p>
                      </div>
                      <ArrowRight className="w-6 h-6 text-white/10" />
                      <div className="flex flex-col items-center">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center mb-2">
                            <Layers className="w-5 h-5 text-emerald-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Output Tier</p>
+                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">Output Tier</p>
                      </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 relative z-10">
                      <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center gap-3">
                         <ShieldCheck className="w-4 h-4 text-blue-400" />
-                        <span className="text-[11px] font-black text-white uppercase tracking-tighter italic">Enterprise Governance Protocol</span>
+                        <span className="text-[11px] font-semibold text-white uppercase tracking-tighter italic">Enterprise Governance Protocol</span>
                      </div>
-                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Source Context: {page.focusArea}</span>
+                     <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">Source Context: {page.focusArea}</span>
                   </div>
                </div>
 
@@ -352,11 +352,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                              <Cloud className="w-16 h-16 text-blue-400" />
                           </motion.div>
-                          <p className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
+                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
                        </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-2xl font-black text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
+                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
                       <p className="text-[12px] text-slate-400 font-bold uppercase tracking-widest px-6 py-2.5 bg-slate-100 rounded-full inline-block">
                         Ready for formal sign-off & archiving
                       </p>
@@ -375,27 +375,27 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                          <div className="flex items-center gap-4">
                             <div className="w-16 h-16 bg-slate-900 rounded-2xl" />
                             <div>
-                               <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Zarya</h1>
-                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Construction Management PMIS</p>
+                               <h1 className="text-4xl font-semibold tracking-tighter uppercase leading-none">Zarya</h1>
+                               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">Construction Management PMIS</p>
                             </div>
                          </div>
                       </div>
                       <div className="text-right space-y-2">
-                         <h2 className="text-2xl font-black uppercase tracking-tight italic">{stripNumericPrefix(page.title)}</h2>
-                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Project: {selectedProject?.name}</p>
-                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Code: {selectedProject?.code}</p>
+                         <h2 className="text-2xl font-semibold uppercase tracking-tight italic">{stripNumericPrefix(page.title)}</h2>
+                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Project: {selectedProject?.name}</p>
+                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Code: {selectedProject?.code}</p>
                       </div>
                    </header>
 
                    <main className="space-y-20">
                       <section className="grid grid-cols-2 gap-16 p-12 bg-slate-50 rounded-[3rem]">
                          <div className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Unique Record ID</h4>
-                            <p className="text-lg font-black italic">{selectedProject?.code}-{page.id}-V2.4</p>
+                            <h4 className="text-[10px] font-semibold uppercase text-slate-400 tracking-[0.2em]">Unique Record ID</h4>
+                            <p className="text-lg font-semibold italic">{selectedProject?.code}-{page.id}-V2.4</p>
                          </div>
                          <div className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Baseline Timestamp</h4>
-                            <p className="text-lg font-black italic">{new Date().toLocaleString()}</p>
+                            <h4 className="text-[10px] font-semibold uppercase text-slate-400 tracking-[0.2em]">Baseline Timestamp</h4>
+                            <p className="text-lg font-semibold italic">{new Date().toLocaleString()}</p>
                          </div>
                       </section>
                       
@@ -407,28 +407,28 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
                             <div>
-                               <p className="text-sm font-black uppercase">Prepared By</p>
+                               <p className="text-sm font-semibold uppercase">Prepared By</p>
                                <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Planning Unit</p>
                             </div>
                          </div>
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
                             <div>
-                               <p className="text-sm font-black uppercase">Reviewed By</p>
+                               <p className="text-sm font-semibold uppercase">Reviewed By</p>
                                <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Manager</p>
                             </div>
                          </div>
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
                             <div>
-                               <p className="text-sm font-black uppercase">Approved By</p>
+                               <p className="text-sm font-semibold uppercase">Approved By</p>
                                <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Sponsor</p>
                             </div>
                          </div>
                       </section>
                    </main>
 
-                   <footer className="mt-32 pt-16 border-t border-slate-100 flex items-center justify-between text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
+                   <footer className="mt-32 pt-16 border-t border-slate-100 flex items-center justify-between text-[10px] font-semibold text-slate-300 uppercase tracking-[0.3em]">
                       <span>© {new Date().getFullYear()} Zarya Construction Mgmt. All rights reserved.</span>
                       <span>SEC_PRT_{selectedProject?.code}_{page.id}_{stripNumericPrefix(page.title).toUpperCase().replace(/\s+/g, '_')}_V2.4</span>
                    </footer>
@@ -441,7 +441,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         <aside className="col-span-3 space-y-10 print:hidden">
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+               <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-500" />
                   Output Tier
                </h3>
@@ -458,19 +458,19 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
                           <FileText className="w-6 h-6" />
                        </div>
-                       <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                       <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
                           {output.status || 'Baseline'}
                        </div>
                     </div>
                     <div className="space-y-2">
-                       <h4 className="text-[15px] font-black text-slate-900 leading-tight">
+                       <h4 className="text-[15px] font-semibold text-slate-900 leading-tight">
                          {stripNumericPrefix(output.title)}
                        </h4>
-                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">{output.id}</p>
+                       <p className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{output.id}</p>
                     </div>
                     <button 
                       onClick={onPrint}
-                      className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
+                      className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
                     >
                       Export PDF Deliverable
                     </button>
@@ -481,8 +481,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                  <div className="p-12 bg-emerald-50/50 border border-emerald-100 rounded-[3.5rem] space-y-6 text-center">
                     <Printer className="w-12 h-12 text-emerald-500/20 mx-auto" />
                     <div className="space-y-1">
-                       <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Finalizing Resultant Artifact</p>
-                       <p className="text-[9px] font-black text-emerald-600/40 uppercase tracking-widest italic">Awaiting work completion</p>
+                       <p className="text-xs font-semibold text-emerald-900 uppercase tracking-tight">Finalizing Resultant Artifact</p>
+                       <p className="text-[9px] font-semibold text-emerald-600/40 uppercase tracking-widest italic">Awaiting work completion</p>
                     </div>
                  </div>
                )}
@@ -498,11 +498,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                 </div>
                 <div className="flex flex-col items-end">
                    <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,1)] mb-1" />
-                   <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">Enterprise Sync</span>
+                   <span className="text-[8px] font-semibold text-white/60 uppercase tracking-widest">Enterprise Sync</span>
                 </div>
              </div>
              <div className="space-y-4 relative z-10">
-                <h4 className="text-lg font-black text-white italic uppercase tracking-tight leading-tight">Automated Cloud Archival Plan</h4>
+                <h4 className="text-lg font-semibold text-white italic uppercase tracking-tight leading-tight">Automated Cloud Archival Plan</h4>
                 <p className="text-[12px] text-white/80 font-bold leading-relaxed">
                    Zarya creates a dedicated structure for this project: 
                    <span className="block mt-3 p-3 bg-black/20 rounded-2xl font-mono text-[10px] text-blue-200">

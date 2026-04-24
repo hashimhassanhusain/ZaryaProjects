@@ -432,27 +432,27 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
               <Icon className="w-5 h-5" />
            </div>
            <div>
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 leading-none">{page.title} Dashboard</h2>
-              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">Active Phase: {activeFocusArea}</p>
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-900 leading-none">{t(domainKey)} {t('dashboard')}</h2>
+              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">{t('active_phase')}: {t(activeFocusArea)}</p>
            </div>
         </div>
         <div className="flex items-center gap-2">
             <button 
               onClick={() => setActiveTab('overview')}
-              className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
+              className={cn("px-4 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-widest transition-all", 
                 activeTab === 'overview' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
             >
-              Overview
+              {t('overview')}
             </button>
             <div className="w-px h-4 bg-slate-200 mx-1" />
             {focusChildren.map(child => (
               <button 
                 key={child.id}
                 onClick={() => setActiveTab(child.id)}
-                className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
+                className={cn("px-4 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-widest transition-all", 
                   activeTab === child.id ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
               >
-                {stripNumericPrefix(child.title)}
+                {t(child.id)}
               </button>
             ))}
         </div>
@@ -476,9 +476,9 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                     <div className="relative z-10 space-y-4">
                        <div className="flex items-center gap-3">
                           <Activity className="w-4 h-4 text-blue-600" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Processes</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t('total_processes')}</span>
                        </div>
-                       <div className="text-5xl font-black text-slate-900">{focusChildren.length}</div>
+                       <div className="text-5xl font-semibold text-slate-900">{focusChildren.length}</div>
                     </div>
                  </div>
                  
@@ -487,12 +487,12 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                     <div className="relative z-10 space-y-4">
                        <div className="flex items-center gap-3">
                           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Baseline Status</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t('baseline_status')}</span>
                        </div>
-                       <div className="text-3xl font-black text-white">HEALTHY</div>
+                       <div className="text-3xl font-semibold text-white">{t('healthy')}</div>
                        <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold">
                           <Zap className="w-3 h-3" />
-                          98% COMPLIANCE
+                          98% {t('compliance')}
                        </div>
                     </div>
                  </div>
@@ -504,7 +504,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
               {/* Processes Grid */}
               <div className="space-y-6">
-                 <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest px-2">Processes for {activeFocusArea}</h3>
+                 <h3 className="text-xl font-semibold text-slate-900 tracking-tight uppercase tracking-widest px-2">{t('processes_for')} {t(activeFocusArea)}</h3>
                  {focusChildren.length === 0 ? (
                    <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
                       <p className="text-slate-400 font-bold uppercase tracking-widest">No terminal processes defined for this lifecycle stage.</p>
@@ -523,13 +523,13 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                                    <ChildIcon className="w-6 h-6" />
                                 </div>
-                                <div className="text-[10px] font-black text-slate-300 group-hover:text-blue-600 transition-colors">ID: {child.id}</div>
+                                <div className="text-[10px] font-semibold text-slate-300 group-hover:text-blue-600 transition-colors">ID: {child.id}</div>
                              </div>
-                             <h4 className="text-lg font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{stripNumericPrefix(child.title)}</h4>
-                             <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6">{child.summary || 'Detail view of process activities, inputs, and outputs.'}</p>
+                             <h4 className="text-lg font-semibold text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors rtl:text-right">{t(child.id)}</h4>
+                             <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6 rtl:text-right">{t(child.id + '_summary') !== (child.id + '_summary') ? t(child.id + '_summary') : child.summary || 'Detail view of process activities, inputs, and outputs.'}</p>
                              <div className="flex items-center justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">View Process</span>
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                                <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-400">{t('view_process')}</span>
+                                <ChevronRight className={cn("w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all", isRtl ? "rotate-180" : "")} />
                              </div>
                           </button>
                         );

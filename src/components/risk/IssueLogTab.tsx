@@ -236,7 +236,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Category</label>
               <input 
                 type="text"
                 value={formData.category}
@@ -246,7 +246,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Urgency</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Urgency</label>
               <select 
                 value={formData.urgency}
                 onChange={(e) => setFormData({ ...formData, urgency: e.target.value as any })}
@@ -260,7 +260,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
               <select 
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -275,7 +275,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Issue Description</label>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Issue Description</label>
             <textarea 
               value={formData.issue}
               onChange={(e) => setFormData({ ...formData, issue: e.target.value })}
@@ -287,7 +287,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Impact on Objectives</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Impact on Objectives</label>
               <textarea 
                 value={formData.impact}
                 onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
@@ -297,7 +297,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Actions Taken / Required</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Actions Taken / Required</label>
               <textarea 
                 value={formData.actions}
                 onChange={(e) => setFormData({ ...formData, actions: e.target.value })}
@@ -309,7 +309,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsible Party</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Responsible Party</label>
               <select 
                 value={formData.responsibleParty}
                 onChange={(e) => setFormData({ ...formData, responsibleParty: e.target.value })}
@@ -322,7 +322,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
               <input 
                 type="date"
                 value={formData.dueDate}
@@ -338,7 +338,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               animate={{ opacity: 1, height: 'auto' }}
               className="space-y-2 p-6 bg-emerald-50 rounded-2xl border border-emerald-100"
             >
-              <label className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">
+              <label className="flex items-center gap-2 text-[10px] font-semibold text-emerald-600 uppercase tracking-widest ml-1">
                 <MessageSquare className="w-3 h-3" />
                 Final Lesson Learned (Mandatory)
               </label>
@@ -426,13 +426,13 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
                   />
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Issue</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Urgency</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Issue</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Urgency</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Due Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -461,7 +461,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                      <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
                         ISS-{(idx + 1).toString().padStart(3, '0')}
                       </span>
                     </td>
@@ -471,7 +471,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         (issue.urgency === 'Critical' || issue.urgency === 'Urgent' || (issue as any).priority === 'Critical') ? "bg-red-100 text-red-700" :
                         (issue.urgency === 'High' || (issue as any).priority === 'High') ? "bg-orange-100 text-orange-700" :
                         (issue.urgency === 'Medium' || (issue as any).priority === 'Medium') ? "bg-amber-100 text-amber-700" :
@@ -487,7 +487,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         issue.status === 'Closed' ? "bg-emerald-100 text-emerald-700" :
                         issue.status === 'Resolved' ? "bg-blue-100 text-blue-700" :
                         issue.status === 'In Progress' ? "bg-amber-100 text-amber-700" :

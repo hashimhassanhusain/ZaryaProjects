@@ -311,7 +311,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
           <div className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-100">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Request ID</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Request ID</label>
                 <input 
                   type="text" 
                   value={formData.requestId}
@@ -320,7 +320,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</label>
                 <input 
                   type="date" 
                   value={formData.date}
@@ -329,7 +329,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Type</label>
                 <select 
                   value={formData.type}
                   onChange={(e) => setFormData({...formData, type: e.target.value as any})}
@@ -343,7 +343,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contractor</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Contractor</label>
                 <input 
                   type="text" 
                   value={formData.contractor}
@@ -357,7 +357,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <Info className="w-4 h-4 text-blue-600" />
                     Description of Change
                   </h3>
@@ -369,7 +369,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                   />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                     Justification
                   </h3>
@@ -384,10 +384,10 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
 
               <div className="space-y-8">
                 <div className="bg-slate-900 rounded-[2rem] p-8 text-white space-y-6">
-                  <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Financial Impact</h3>
+                  <h3 className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">Financial Impact</h3>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Original Value</label>
+                      <label className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">Original Value</label>
                       <input 
                         type="number"
                         value={formData.financials?.originalContractValue}
@@ -395,11 +395,11 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                           ...formData,
                           financials: { ...formData.financials!, originalContractValue: Number(e.target.value) }
                         })}
-                        className="w-full bg-transparent border-b border-white/10 text-lg font-black focus:border-blue-400 outline-none"
+                        className="w-full bg-transparent border-b border-white/10 text-lg font-semibold focus:border-blue-400 outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Net Impact</label>
+                      <label className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">Net Impact</label>
                       <input 
                         type="number"
                         value={formData.financials?.netImpact}
@@ -407,7 +407,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                           ...formData,
                           financials: { ...formData.financials!, netImpact: Number(e.target.value) }
                         })}
-                        className="w-full bg-transparent border-b border-white/10 text-lg font-black focus:border-blue-400 outline-none"
+                        className="w-full bg-transparent border-b border-white/10 text-lg font-semibold focus:border-blue-400 outline-none"
                       />
                     </div>
                   </div>
@@ -415,16 +415,16 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Time Impact (Days)</label>
+                    <label className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block mb-2">Time Impact (Days)</label>
                     <input 
                       type="number"
                       value={formData.timeImpactDays}
                       onChange={(e) => setFormData({...formData, timeImpactDays: Number(e.target.value)})}
-                      className="w-full bg-transparent border-none text-xl font-black text-slate-900 focus:ring-0 p-0"
+                      className="w-full bg-transparent border-none text-xl font-semibold text-slate-900 focus:ring-0 p-0"
                     />
                   </div>
                   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">PO Number</label>
+                    <label className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block mb-2">PO Number</label>
                     <input 
                       type="text"
                       value={formData.poNumber}
@@ -494,11 +494,11 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
             {/* Header Info */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-100">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Request ID</label>
-                <div className="text-lg font-black text-slate-900">{selectedRequest.requestId}</div>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Request ID</label>
+                <div className="text-lg font-semibold text-slate-900">{selectedRequest.requestId}</div>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</label>
                 {isEditing ? (
                   <input 
                     type="date" 
@@ -511,7 +511,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 )}
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</label>
                 {isEditing ? (
                   <select 
                     value={selectedRequest.status}
@@ -525,7 +525,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                   </select>
                 ) : (
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border block w-fit",
+                    "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest border block w-fit",
                     selectedRequest.status === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                     selectedRequest.status === 'Rejected' ? "bg-red-50 text-red-600 border-red-100" :
                     "bg-amber-50 text-amber-600 border-amber-100"
@@ -535,8 +535,8 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 )}
               </div>
               <div className="space-y-1 text-right">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</label>
-                <div className="text-lg font-black text-blue-600">v{selectedRequest.version.toFixed(1)}</div>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</label>
+                <div className="text-lg font-semibold text-blue-600">v{selectedRequest.version.toFixed(1)}</div>
               </div>
             </div>
 
@@ -544,7 +544,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <Info className="w-4 h-4 text-blue-600" />
                     Description of Change
                   </h3>
@@ -562,7 +562,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                     Justification
                   </h3>
@@ -583,18 +583,18 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
               <div className="space-y-8">
                 <div className="bg-slate-900 rounded-[2rem] p-8 text-white space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Financial Impact</h3>
+                    <h3 className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">Financial Impact</h3>
                     <Calculator className="w-4 h-4 text-blue-400" />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Original Value</span>
-                      <div className="text-lg font-black">{formatCurrency(selectedRequest.financials.originalContractValue)}</div>
+                      <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">Original Value</span>
+                      <div className="text-lg font-semibold">{formatCurrency(selectedRequest.financials.originalContractValue)}</div>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Net Impact</span>
+                      <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">Net Impact</span>
                       <div className={cn(
-                        "text-lg font-black",
+                        "text-lg font-semibold",
                         selectedRequest.financials.netImpact > 0 ? "text-red-400" : "text-emerald-400"
                       )}>
                         {formatCurrency(selectedRequest.financials.netImpact)}
@@ -602,18 +602,18 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                     </div>
                   </div>
                   <div className="pt-6 border-t border-white/10">
-                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">New Contract Total</span>
-                    <div className="text-2xl font-black text-blue-400">{formatCurrency(selectedRequest.financials.newContractTotal)}</div>
+                    <span className="text-[9px] font-semibold text-blue-400 uppercase tracking-widest">New Contract Total</span>
+                    <div className="text-2xl font-semibold text-blue-400">{formatCurrency(selectedRequest.financials.newContractTotal)}</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Time Impact</span>
-                    <div className="text-xl font-black text-slate-900">{selectedRequest.timeImpactDays} Days</div>
+                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block mb-2">Time Impact</span>
+                    <div className="text-xl font-semibold text-slate-900">{selectedRequest.timeImpactDays} Days</div>
                   </div>
                   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Contractor</span>
+                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block mb-2">Contractor</span>
                     <div className="text-sm font-bold text-slate-900 truncate">{selectedRequest.contractor}</div>
                   </div>
                 </div>
@@ -622,17 +622,17 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
 
             {/* Items Table */}
             <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Variation Items</h3>
+              <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest">Variation Items</h3>
               <div className="overflow-hidden border border-slate-100 rounded-2xl">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Old Qty</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">New Qty</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Rate</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Unit</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Old Qty</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">New Qty</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Rate</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -671,7 +671,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
       {/* Change Request Register Table */}
       <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between bg-slate-50/50 gap-4">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Change Request Register</h3>
+          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest">Change Request Register</h3>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -697,11 +697,11 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/30 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Impact</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Impact</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -719,7 +719,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                     className="hover:bg-slate-50 transition-colors cursor-pointer group"
                   >
                     <td className="px-8 py-5">
-                      <div className="text-sm font-black text-slate-900">{cr.requestId}</div>
+                      <div className="text-sm font-semibold text-slate-900">{cr.requestId}</div>
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">v{cr.version.toFixed(1)}</div>
                     </td>
                     <td className="px-8 py-5">
@@ -728,7 +728,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                     </td>
                     <td className="px-8 py-5">
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                        "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border",
                         cr.status === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                         cr.status === 'Pending' ? "bg-amber-50 text-amber-600 border-amber-100" :
                         "bg-blue-50 text-blue-600 border-blue-100"
@@ -738,7 +738,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
                     </td>
                     <td className="px-8 py-5">
                       <div className={cn(
-                        "text-sm font-black",
+                        "text-sm font-semibold",
                         (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
                       )}>
                         {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
@@ -770,7 +770,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
           <div className="space-y-4 max-w-2xl">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-8 h-8 text-blue-400" />
-              <h3 className="text-2xl font-black tracking-tight">Governance & Control</h3>
+              <h3 className="text-2xl font-semibold tracking-tight">Governance & Control</h3>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed">
               All changes must be assessed for impact on the project baselines. Approved variations will trigger a baseline update prompt to ensure the PO and Schedule domains remain synchronized.

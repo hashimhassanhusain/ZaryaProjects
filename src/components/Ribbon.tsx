@@ -48,8 +48,8 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                     <tab.icon className={cn("w-6 h-6", isActive ? "stroke-[2.5]" : "stroke-[1.5]")} />
                   </div>
                   <span className={cn(
-                    "text-[10px] font-black mt-1 uppercase tracking-tighter text-center leading-none whitespace-nowrap",
-                    isActive ? "text-blue-700 font-black" : "text-slate-400 group-hover:text-slate-600"
+                    "text-[10px] font-semibold mt-1 uppercase tracking-tighter text-center leading-none whitespace-nowrap",
+                    isActive ? "text-blue-700 font-semibold" : "text-slate-400 group-hover:text-slate-600"
                   )}>
                     {tab.label}
                   </span>
@@ -66,7 +66,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
             })}
           </div>
           {group.label && (
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] text-center pb-1.5 bg-slate-50/50 border-t border-slate-100 italic">
+            <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.25em] text-center pb-1.5 bg-slate-50/50 border-t border-slate-100 italic">
               {group.label}
             </div>
           )}

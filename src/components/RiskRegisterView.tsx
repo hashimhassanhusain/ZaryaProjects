@@ -129,14 +129,14 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Risk Defense Matrix</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Risk Defense Matrix</h2>
               <p className="text-sm text-slate-500 font-medium tracking-tight">Quantify uncertainty and link ownership to project breakdown structures.</p>
             </div>
           </div>
           <button 
             onClick={() => setIsAdding(!isAdding)}
             className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+              "px-6 py-3 rounded-2xl text-[10px] font-semibold uppercase tracking-widest transition-all flex items-center gap-2",
               isAdding ? "bg-rose-100 text-rose-600 border border-rose-200" : "bg-slate-900 text-white shadow-xl shadow-slate-900/10"
             )}
           >
@@ -156,7 +156,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-6">
                       <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-slate-400 italic">Risk Identification</label>
+                         <label className="text-[10px] font-semibold uppercase text-slate-400 italic">Risk Identification</label>
                          <input 
                            placeholder="e.g. Delay in custom marble delivery from Italy"
                            value={newRisk.title}
@@ -166,7 +166,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-400">Category</label>
+                            <label className="text-[10px] font-semibold uppercase text-slate-400">Category</label>
                             <select 
                               value={newRisk.category}
                               onChange={e => setNewRisk({...newRisk, category: e.target.value})}
@@ -176,7 +176,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                             </select>
                          </div>
                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-400">Response Strategy</label>
+                            <label className="text-[10px] font-semibold uppercase text-slate-400">Response Strategy</label>
                             <select 
                               value={newRisk.responseStrategy}
                               onChange={e => setNewRisk({...newRisk, responseStrategy: e.target.value})}
@@ -191,13 +191,13 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                    <div className="space-y-6 bg-slate-50 p-8 rounded-3xl">
                       <div className="grid grid-cols-2 gap-8">
                          <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-slate-400 block">Probability (1-5)</label>
+                            <label className="text-[10px] font-semibold uppercase text-slate-400 block">Probability (1-5)</label>
                             <div className="flex justify-between items-center bg-white p-2 rounded-xl">
                                {[1,2,3,4,5].map(v => (
                                  <button 
                                    key={v}
                                    onClick={() => setNewRisk({...newRisk, probability: v})}
-                                   className={`w-10 h-10 rounded-lg text-xs font-black transition-all ${newRisk.probability === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                                   className={`w-10 h-10 rounded-lg text-xs font-semibold transition-all ${newRisk.probability === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
                                  >
                                    {v}
                                  </button>
@@ -205,13 +205,13 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                             </div>
                          </div>
                          <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-slate-400 block">Impact (1-5)</label>
+                            <label className="text-[10px] font-semibold uppercase text-slate-400 block">Impact (1-5)</label>
                             <div className="flex justify-between items-center bg-white p-2 rounded-xl">
                                {[1,2,3,4,5].map(v => (
                                  <button 
                                    key={v}
                                    onClick={() => setNewRisk({...newRisk, impact: v})}
-                                   className={`w-10 h-10 rounded-lg text-xs font-black transition-all ${newRisk.impact === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                                   className={`w-10 h-10 rounded-lg text-xs font-semibold transition-all ${newRisk.impact === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
                                  >
                                    {v}
                                  </button>
@@ -220,8 +220,8 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                          </div>
                       </div>
                       <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
-                         <p className="text-[10px] font-black uppercase text-slate-400">Risk Score (P × I)</p>
-                         <div className={`px-4 py-1.5 rounded-full text-xs font-black ${(newRisk.probability || 0) * (newRisk.impact || 0) >= 12 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                         <p className="text-[10px] font-semibold uppercase text-slate-400">Risk Score (P × I)</p>
+                         <div className={`px-4 py-1.5 rounded-full text-xs font-semibold ${(newRisk.probability || 0) * (newRisk.impact || 0) >= 12 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
                             {(newRisk.probability || 0) * (newRisk.impact || 0)}
                          </div>
                       </div>
@@ -230,7 +230,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-slate-400">Linked Risk Owner (Resources)</label>
+                      <label className="text-[10px] font-semibold uppercase text-slate-400">Linked Risk Owner (Resources)</label>
                       <select 
                         value={newRisk.ownerId}
                         onChange={e => setNewRisk({...newRisk, ownerId: e.target.value})}
@@ -241,7 +241,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                       </select>
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-slate-400">Linked WBS ID (Scope Domain)</label>
+                      <label className="text-[10px] font-semibold uppercase text-slate-400">Linked WBS ID (Scope Domain)</label>
                       <input 
                         placeholder="e.g. 2.2.1.2 Finishes"
                         value={newRisk.wbsId}
@@ -252,8 +252,8 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                   <button onClick={() => setIsAdding(false)} className="px-8 py-3 text-[10px] font-black uppercase text-slate-400">Discard</button>
-                   <button onClick={handleCreate} className="px-10 py-3 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-600/20">Commit to Register</button>
+                   <button onClick={() => setIsAdding(false)} className="px-8 py-3 text-[10px] font-semibold uppercase text-slate-400">Discard</button>
+                   <button onClick={handleCreate} className="px-10 py-3 bg-rose-600 text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest shadow-xl shadow-rose-600/20">Commit to Register</button>
                 </div>
              </motion.div>
            )}
@@ -263,11 +263,11 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
            <table className="w-full text-left">
               <thead>
                  <tr className="bg-slate-50/50">
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Risk Description</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Score</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Owner / WBS</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Strategy</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Risk Description</th>
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Score</th>
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Owner / WBS</th>
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Strategy</th>
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Status</th>
                     <th className="px-8 py-6"></th>
                  </tr>
               </thead>
@@ -277,11 +277,11 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                     return (
                       <tr key={risk.id} className="hover:bg-slate-50/50 transition-all group">
                          <td className="px-8 py-6 max-w-md">
-                            <p className="text-sm font-black text-slate-900 italic leading-tight mb-1">{risk.title}</p>
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-500 rounded">{risk.category}</span>
+                            <p className="text-sm font-semibold text-slate-900 italic leading-tight mb-1">{risk.title}</p>
+                            <span className="text-[9px] font-semibold uppercase px-2 py-0.5 bg-slate-100 text-slate-500 rounded">{risk.category}</span>
                          </td>
                          <td className="px-8 py-6 text-center">
-                            <div className={`w-10 h-10 inline-flex items-center justify-center rounded-xl font-black text-xs shadow-sm group-hover:scale-110 transition-transform ${getScoreColor(risk.probability, risk.impact)}`}>
+                            <div className={`w-10 h-10 inline-flex items-center justify-center rounded-xl font-semibold text-xs shadow-sm group-hover:scale-110 transition-transform ${getScoreColor(risk.probability, risk.impact)}`}>
                                {risk.probability * risk.impact}
                             </div>
                          </td>
@@ -300,11 +300,11 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                          <td className="px-8 py-6">
                             <div className="flex items-center gap-2">
                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                               <p className="text-[10px] font-black uppercase text-slate-900">{risk.responseStrategy}</p>
+                               <p className="text-[10px] font-semibold uppercase text-slate-900">{risk.responseStrategy}</p>
                             </div>
                          </td>
                          <td className="px-8 py-6 text-center">
-                             <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                             <span className={`text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full ${
                                risk.status === 'Open' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
                                risk.status === 'Mitigated' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'
                              }`}>
@@ -331,7 +331,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
               <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center">
                  <Zap className="w-7 h-7 text-rose-400" />
               </div>
-              <h3 className="text-3xl font-black italic tracking-tighter leading-none">Automated<br/>Escalation Engine</h3>
+              <h3 className="text-3xl font-semibold italic tracking-tighter leading-none">Automated<br/>Escalation Engine</h3>
               <p className="text-slate-400 font-medium leading-relaxed max-w-xl text-sm">
                  Risks with a score above **15** are automatically escalated to the Project Sponsor. Zarya calculates the **EMV (Expected Monetary Value)** for each threat and pulls it into the Finance Domain's Reserve Analysis.
               </p>
@@ -339,14 +339,14 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
            
            <div className="flex-none grid grid-cols-2 gap-4 relative z-10">
               <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-center">
-                 <p className="text-[9px] font-black uppercase text-rose-400 mb-2">High Exposure</p>
-                 <p className="text-3xl font-black tracking-tighter">
+                 <p className="text-[9px] font-semibold uppercase text-rose-400 mb-2">High Exposure</p>
+                 <p className="text-3xl font-semibold tracking-tighter">
                     {risks.filter(r => r.probability * r.impact >= 12).length}
                  </p>
               </div>
               <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-center">
-                 <p className="text-[9px] font-black uppercase text-rose-400 mb-2">Escalated</p>
-                 <p className="text-3xl font-black tracking-tighter">
+                 <p className="text-[9px] font-semibold uppercase text-rose-400 mb-2">Escalated</p>
+                 <p className="text-3xl font-semibold tracking-tighter">
                     {risks.filter(r => r.probability * r.impact >= 16).length}
                  </p>
               </div>

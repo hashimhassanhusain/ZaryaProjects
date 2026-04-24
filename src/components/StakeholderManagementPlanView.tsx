@@ -347,7 +347,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -363,7 +363,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -383,7 +383,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
         {/* Engagement Matrix */}
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Engagement Assessment Matrix</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Engagement Assessment Matrix</h3>
             {isEditing && (
               <button onClick={addStakeholder} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
                 <Plus className="w-3 h-3" />
@@ -395,11 +395,11 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder</th>
                   {levels.map(l => (
-                    <th key={l} className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{l}</th>
+                    <th key={l} className="px-4 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">{l}</th>
                   ))}
-                  {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
+                  {isEditing && <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -437,7 +437,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
                               setSmp({ ...smp, engagements: newEng });
                             }}
                             className={cn(
-                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
+                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-semibold transition-all",
                               eng.current === l ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200",
                               !isEditing && "cursor-default"
                             )}
@@ -453,7 +453,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
                               setSmp({ ...smp, engagements: newEng });
                             }}
                             className={cn(
-                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all",
+                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-semibold transition-all",
                               eng.desired === l ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200",
                               !isEditing && "cursor-default"
                             )}
@@ -482,22 +482,22 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
             </table>
           </div>
           <div className="flex items-center gap-4 text-[10px] text-slate-400 font-medium italic px-4 py-2 bg-slate-50 rounded-xl w-fit">
-            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-600 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">C</span> Current Level</div>
-            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-amber-500 rounded flex items-center justify-center text-[8px] text-white not-italic font-black">D</span> Desired Level</div>
+            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-600 rounded flex items-center justify-center text-[8px] text-white not-italic font-semibold">C</span> Current Level</div>
+            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-amber-500 rounded flex items-center justify-center text-[8px] text-white not-italic font-semibold">D</span> Desired Level</div>
           </div>
         </section>
 
         {/* Communication Needs */}
         <section className="space-y-6">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Needs</h3>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Needs</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Needs</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method/Medium</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Communication Needs</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method/Medium</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Timing/Frequency</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -568,7 +568,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
         </section>
 
         <section className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pending Stakeholder Changes</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Pending Stakeholder Changes</label>
           {isEditing ? (
             <textarea 
               value={smp.pendingChanges}
@@ -585,7 +585,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
         </section>
 
         <section className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stakeholder Relationships</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Stakeholder Relationships</label>
           {isEditing ? (
             <textarea 
               value={smp.relationships}
@@ -602,13 +602,13 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
         </section>
 
         <section className="space-y-6">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Stakeholder Engagement Approach</h3>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Stakeholder Engagement Approach</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Approach</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Stakeholder</th>
+                  <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Approach</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -620,7 +620,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-slate-900">{eng.stakeholderName || 'N/A'}</span>
                           {isRequired && (
-                            <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest mt-1">Required: Gap Detected</span>
+                            <span className="text-[8px] font-semibold text-amber-600 uppercase tracking-widest mt-1">Required: Gap Detected</span>
                           )}
                         </div>
                       </td>
@@ -698,15 +698,15 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

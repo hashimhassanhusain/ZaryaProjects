@@ -1041,12 +1041,12 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
                         return (
                           <div className="flex flex-col gap-0.5 mt-1">
-                            <div className="flex justify-between text-[8px] font-black uppercase text-slate-400 px-1">
+                            <div className="flex justify-between text-[8px] font-semibold uppercase text-slate-400 px-1">
                               <span>Time: {timePct}%</span>
                               <span className={cn(spi >= 1 ? 'text-emerald-500' : 'text-rose-500')}>SPI {spi.toFixed(2)}</span>
                             </div>
                             {isSevere && (
-                              <div className="text-[8px] font-black text-rose-600 animate-pulse bg-rose-50 px-1 rounded flex items-center gap-0.5">
+                              <div className="text-[8px] font-semibold text-rose-600 animate-pulse bg-rose-50 px-1 rounded flex items-center gap-0.5">
                                 <AlertTriangle className="w-2.5 h-2.5" />
                                 IMPACT
                               </div>

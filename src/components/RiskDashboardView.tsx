@@ -97,7 +97,7 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
             <TrendingDown className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Contingency Burn-down</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Contingency Burn-down</h2>
             <p className="text-sm text-slate-500 font-medium">Tracking reserve depletion against emergent project uncertainty.</p>
           </div>
         </header>
@@ -109,8 +109,8 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                  <AlertCircle className="w-6 h-6" />
               </div>
               <div>
-                 <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Critical Risks</p>
-                 <p className="text-xl font-black text-slate-900">{stats.high}</p>
+                 <p className="text-[9px] font-semibold uppercase text-slate-400 tracking-widest mb-0.5">Critical Risks</p>
+                 <p className="text-xl font-semibold text-slate-900">{stats.high}</p>
               </div>
            </div>
            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
@@ -118,8 +118,8 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                  <Zap className="w-6 h-6" />
               </div>
               <div>
-                 <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Total Exposure (EMV)</p>
-                 <p className="text-xl font-black text-slate-900">{formatCurrency(stats.emv)}</p>
+                 <p className="text-[9px] font-semibold uppercase text-slate-400 tracking-widest mb-0.5">Total Exposure (EMV)</p>
+                 <p className="text-xl font-semibold text-slate-900">{formatCurrency(stats.emv)}</p>
               </div>
            </div>
            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
@@ -127,8 +127,8 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                  <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                 <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Retired Risks</p>
-                 <p className="text-xl font-black text-slate-900">{stats.closed}</p>
+                 <p className="text-[9px] font-semibold uppercase text-slate-400 tracking-widest mb-0.5">Retired Risks</p>
+                 <p className="text-xl font-semibold text-slate-900">{stats.closed}</p>
               </div>
            </div>
            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
@@ -136,8 +136,8 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                  <Activity className="w-6 h-6" />
               </div>
               <div>
-                 <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Alert Level</p>
-                 <p className="text-xl font-black text-slate-900">{stats.high > 10 ? 'CRITICAL' : stats.high > 5 ? 'ELEVATED' : 'STABLE'}</p>
+                 <p className="text-[9px] font-semibold uppercase text-slate-400 tracking-widest mb-0.5">Alert Level</p>
+                 <p className="text-xl font-semibold text-slate-900">{stats.high > 10 ? 'CRITICAL' : stats.high > 5 ? 'ELEVATED' : 'STABLE'}</p>
               </div>
            </div>
         </div>
@@ -146,15 +146,15 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
            {/* Burn-down Chart */}
            <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
               <div className="flex items-center justify-between">
-                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Financial Safety Monitor</h3>
+                 <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Financial Safety Monitor</h3>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
                        <div className="w-2 h-2 rounded-full bg-rose-500" />
-                       <span className="text-[8px] font-black text-slate-400 uppercase">Exposure</span>
+                       <span className="text-[8px] font-semibold text-slate-400 uppercase">Exposure</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                        <div className="w-2 h-2 rounded-full bg-slate-200" />
-                       <span className="text-[8px] font-black text-slate-400 uppercase">Reserve</span>
+                       <span className="text-[8px] font-semibold text-slate-400 uppercase">Reserve</span>
                     </div>
                  </div>
               </div>
@@ -188,11 +188,11 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                     <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
                        <Activity className="w-6 h-6 text-rose-400" />
                     </div>
-                    <h3 className="text-2xl font-black italic tracking-tighter leading-none">Risk Sensitivity<br/>Trend Analysis</h3>
+                    <h3 className="text-2xl font-semibold italic tracking-tighter leading-none">Risk Sensitivity<br/>Trend Analysis</h3>
                     <p className="text-sm text-slate-400 font-medium leading-relaxed">
                        Zarya AI detects an increasing trend in **Supply Chain** risks. Historical data suggests a 14% chance of cost escalation in Q4 due to regional logistics volatility.
                     </p>
-                    <button className="flex items-center gap-2 group text-[9px] font-black uppercase text-rose-400 tracking-widest pt-4">
+                    <button className="flex items-center gap-2 group text-[9px] font-semibold uppercase text-rose-400 tracking-widest pt-4">
                        Deep Scan Analysis
                        <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </button>
@@ -203,7 +203,7 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
               </div>
 
               <div className="bg-white border border-slate-100 rounded-[3rem] p-10 shadow-sm space-y-6 text-center">
-                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Portfolio Distribution</h3>
+                 <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Portfolio Distribution</h3>
                  <div className="h-[200px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                        <PieChart>
@@ -227,7 +227,7 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                     {categoryData.map((c, i) => (
                       <div key={c.name} className="flex items-center gap-2">
                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                         <span className="text-[8px] font-black text-slate-500 uppercase truncate">{c.name}</span>
+                         <span className="text-[8px] font-semibold text-slate-500 uppercase truncate">{c.name}</span>
                       </div>
                     ))}
                  </div>

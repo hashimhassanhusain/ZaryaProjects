@@ -343,7 +343,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black tracking-tight">Interactive Meeting Minutes</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">Interactive Meeting Minutes</h1>
                 <p className="text-slate-400 text-sm font-medium">Where decisions turn into actions.</p>
               </div>
             </div>
@@ -351,7 +351,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-4 border-t border-slate-800">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Meeting Title</label>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Meeting Title</label>
               <input 
                 type="text"
                 value={formData.title}
@@ -361,7 +361,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Date & Time</label>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Date & Time</label>
               <div className="flex gap-2">
                 <input 
                   type="date"
@@ -378,7 +378,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Location (Geo-Linked)</label>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Location (Geo-Linked)</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input 
@@ -391,7 +391,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Meeting Type</label>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Meeting Type</label>
               <select 
                 value={formData.type}
                 onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
@@ -419,14 +419,14 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <Users className="w-5 h-5 text-blue-600" />
                 Attendance / الحضور
               </h2>
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{formData.attendeeIds?.length || 0} Present</span>
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-semibold uppercase tracking-widest">{formData.attendeeIds?.length || 0} Present</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Internal / Zarya Employees */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Zarya Employees / موظفي زريا</h3>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Zarya Employees / موظفي زريا</h3>
                 </div>
                 
                 <div className="relative">
@@ -507,7 +507,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               {/* External / Stakeholders */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Stakeholders / الستيك هولدر</h3>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Stakeholders / الستيك هولدر</h3>
                 </div>
 
                 <div className="relative">
@@ -689,7 +689,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   </button>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Decision / Action Item</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Decision / Action Item</label>
                     <textarea 
                       value={dec.decision}
                       onChange={e => {
@@ -705,7 +705,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</label>
                       <select 
                         value={dec.category}
                         onChange={e => {
@@ -724,7 +724,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible / المسؤول</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible / المسؤول</label>
                       <select 
                         value={dec.responsibleParty}
                         onChange={e => {
@@ -744,7 +744,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                         {language === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'}
                       </label>
                       <input 
@@ -773,7 +773,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
           <section className="p-8 bg-slate-900 text-white rounded-3xl shadow-xl space-y-6">
             <div className="flex items-center gap-3 text-blue-400">
               <Shield className="w-6 h-6" />
-              <h3 className="text-sm font-black uppercase tracking-widest">The Logic Hub</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-widest">The Logic Hub</h3>
             </div>
             <div className="space-y-4">
               <div className="flex items-start gap-4">
@@ -872,7 +872,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                     <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight leading-none mb-1">
+                    <h3 className="text-2xl font-semibold tracking-tight leading-none mb-1">
                       {isRtl ? 'تم حفظ التقرير بنجاح' : 'Report Saved Successfully'}
                     </h3>
                     <p className="text-blue-100 text-sm font-medium italic">
@@ -897,11 +897,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-slate-500">
                       <HardDrive className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">PDF Preview</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest">PDF Preview</span>
                     </div>
                     <button 
                       onClick={handleShareLink}
-                      className="text-blue-600 text-[10px] font-black uppercase tracking-widest hover:underline flex items-center gap-1"
+                      className="text-blue-600 text-[10px] font-semibold uppercase tracking-widest hover:underline flex items-center gap-1"
                     >
                       <ExternalLink className="w-3 h-3" />
                       {isRtl ? 'فتح في نافذة جديدة' : 'Open in New Tab'}
@@ -928,7 +928,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 text-blue-600">
                       <Cloud className="w-5 h-5 fill-blue-50" />
-                      <h4 className="text-base font-black tracking-tight">Save to Cloud</h4>
+                      <h4 className="text-base font-semibold tracking-tight">Save to Cloud</h4>
                     </div>
                     <p className="text-sm text-slate-500 leading-relaxed font-medium">
                       Upload this PDF report directly to the project's site operations folder in Google Drive.
@@ -936,7 +936,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                     <button
                       onClick={uploadToDrive}
                       disabled={isUploadingToDrive}
-                      className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 group"
+                      className="w-full h-16 bg-blue-600 text-white rounded-2xl font-semibold text-lg flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 group"
                     >
                       {isUploadingToDrive ? (
                         <RefreshCw className="w-6 h-6 animate-spin" />
@@ -953,7 +953,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-slate-100"></div>
                     </div>
-                    <span className="relative px-4 bg-white text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">OR</span>
+                    <span className="relative px-4 bg-white text-[10px] font-semibold text-slate-300 uppercase tracking-[0.2em]">OR</span>
                   </div>
 
                   <div className="space-y-4">

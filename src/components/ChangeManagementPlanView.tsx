@@ -328,7 +328,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -344,7 +344,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -362,7 +362,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
 
       {/* Approach */}
       <section className="space-y-4">
-        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Change Management Approach</label>
+        <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Change Management Approach</label>
         {isEditing ? (
           <textarea 
             value={cmp.approach}
@@ -380,7 +380,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
 
       {/* Definitions of Change */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Definitions of Change (Thresholds)</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Definitions of Change (Thresholds)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             { label: 'Schedule Change', key: 'schedule' },
@@ -389,7 +389,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
             { label: 'Project Document Changes', key: 'documents' }
           ].map((def) => (
             <div key={def.key} className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{def.label}</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{def.label}</label>
               {isEditing ? (
                 <input 
                   type="text"
@@ -411,7 +411,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       {/* CCB */}
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Change Control Board (CCB)</h3>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Change Control Board (CCB)</h3>
           {isEditing && (
             <button onClick={addMember} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] hover:bg-blue-100 transition-all">
               <UserPlus className="w-3 h-3" />
@@ -423,11 +423,11 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibility</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Authority</th>
-                {isEditing && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>}
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Name</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Role</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Authority</th>
+                {isEditing && <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -491,7 +491,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
                           newMembers[idx].authority = e.target.value as any;
                           setCmp({ ...cmp, ccbMembers: newMembers });
                         }}
-                        className="bg-transparent border-none focus:ring-0 text-xs font-black uppercase tracking-widest text-blue-600"
+                        className="bg-transparent border-none focus:ring-0 text-xs font-semibold uppercase tracking-widest text-blue-600"
                       >
                         <option value="High">High</option>
                         <option value="Medium">Medium</option>
@@ -499,7 +499,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
                       </select>
                     ) : (
                       <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded",
+                        "text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded",
                         member.authority === 'High' ? "bg-red-50 text-red-600" :
                         member.authority === 'Medium' ? "bg-amber-50 text-amber-600" :
                         "bg-blue-50 text-blue-600"
@@ -532,7 +532,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
 
       {/* Process */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Change Control Process</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Change Control Process</h3>
         <div className="space-y-4">
           {[
             { label: 'Submittal', key: 'submittal' },
@@ -541,7 +541,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
             { label: 'Disposition', key: 'disposition' }
           ].map((row) => (
             <div key={row.key} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">{row.label}</label>
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-3">{row.label}</label>
               {isEditing ? (
                 <textarea 
                   value={(cmp.process as any)[row.key]}
