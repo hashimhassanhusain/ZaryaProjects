@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -61,13 +61,13 @@ import { StakeholdersHubView } from './components/StakeholdersHubView';
 import { ResourcesHubView } from './components/ResourcesHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
 import { PERFORMANCE_DOMAINS } from './constants/navigation';
-import { FocusAreaBar } from './components/FocusAreaBar';
 import { MatrixDashboard } from './components/MatrixDashboard';
-import { Loader2, ShieldAlert, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Loader2, ShieldAlert, ChevronRight, LayoutDashboard, TrendingUp } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
 import { DriveFolderView } from './components/DriveFolderView';
+import { Breadcrumbs } from './components/Breadcrumbs';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -134,6 +134,17 @@ const PageRenderer = () => {
     }
   }
 
+  // If it's a schedule page, always use ScheduleHubView or the direct view
+  const isSchedulePage = page.domain === 'schedule' || page.id === 'sched';
+
+  if (isSchedulePage) {
+    return (
+      <div className="w-full">
+        <ScheduleHubView page={page} />
+      </div>
+    );
+  }
+
   // Handle Hub pages (Focus Areas and Domains)
   if (page.type === 'hub') {
     const allChildren = pages.filter(p => p.parentId === page.id || (page.domain && p.domain === page.domain && p.id !== page.id));
@@ -186,9 +197,6 @@ const PageRenderer = () => {
   const isWorkPackagesPage = page.id === '2.2.7';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
-  const isSchedulePage = page.id === '2.3' || page.id === 'sched' || [
-    '1.3.1', '2.3.1', '2.3.2', '2.3.3', '3.5.1', '4.5.1', '4.5.2', '5.5.1', '3.3.2'
-  ].includes(page.id);
   const isAssumptionLogPage = page.id === '2.1.5';
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
@@ -234,23 +242,7 @@ const PageRenderer = () => {
       >
         <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
           <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
-            <h1 className="flex items-center flex-wrap gap-2 text-2xl font-semibold text-slate-900 tracking-tight">
-              {grandParent && (
-                <>
-                  <span className="text-slate-400 font-medium text-lg">{grandParentTitle}</span>
-                  <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
-                </>
-              )}
-              {parent && (
-                <>
-                  <span className="text-slate-400 font-medium text-lg">{parentTitle}</span>
-                  <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
-                </>
-              )}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {pageTitle}
-              </span>
-            </h1>
+            <Breadcrumbs currentPageId={page.id} />
           </div>
         </div>
         {isTasksPage ? (
@@ -341,6 +333,8 @@ const PageRenderer = () => {
   );
 };
 
+import { AIAssistant } from './components/AIAssistant';
+
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
   const { isSidebarOpen, closeSidebar, sidebarWidth, selectedDomain, selectedFocusArea, setSelectedFocusArea } = useUI();
@@ -361,26 +355,8 @@ const AppLayout = () => {
         )}
       </AnimatePresence>
 
-      {/* Sidebar Container */}
-      <motion.div
-        initial={false}
-        animate={{ 
-          width: isSidebarOpen ? sidebarWidth : 0,
-        }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className={cn(
-          "fixed inset-y-0 left-0 z-[60] lg:relative lg:z-0 bg-white border-r border-slate-200 overflow-hidden transition-transform duration-300 ease-in-out",
-          isSidebarOpen ? "translate-x-0 opacity-100" : "-translate-x-full lg:translate-x-0 opacity-0 lg:opacity-0"
-        )}
-      >
-        <div style={{ width: sidebarWidth }} className="h-full shrink-0">
-          <Sidebar />
-        </div>
-      </motion.div>
-
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
-        <FocusAreaBar />
         
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
@@ -400,33 +376,158 @@ const AppLayout = () => {
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={
-              selectedDomain ? (
-                <MatrixDashboard domainId={selectedDomain} focusAreaId={selectedFocusArea} />
-              ) : (
-                <div className="p-8 max-w-7xl mx-auto space-y-8">
-                  <div className="bg-white rounded-[3rem] p-16 border border-slate-100 shadow-sm text-center space-y-8">
-                    <div className="w-24 h-24 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto text-blue-600 shadow-inner">
-                      <LayoutDashboard className="w-10 h-10" />
-                    </div>
-                    <div className="space-y-4">
-                       <h2 className="text-5xl font-semibold text-slate-900 tracking-tighter uppercase">{t('project_matrix')}</h2>
-                       <p className="text-slate-500 max-w-lg mx-auto text-xl font-medium">
-                          {t('select_domain_sidebar')}
-                       </p>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto pt-12">
-                      {PERFORMANCE_DOMAINS.map(d => (
-                        <div key={d.id} className="group p-8 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center gap-4 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-default text-center">
-                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm ring-1 ring-slate-100 group-hover:ring-blue-100">
-                             <d.icon className="w-6 h-6 transition-transform group-hover:scale-110" style={{ color: d.color }} />
+              <div className="min-h-full bg-slate-50 p-6 lg:p-10 space-y-10">
+                {/* AI Assistant Section - Expanded */}
+                <div className="max-w-full mx-auto">
+                  <AIAssistant />
+                </div>
+
+                {/* Dashboard Grid - Real KPIs */}
+                <div className="max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+                   {/* Progress Tracker */}
+                   <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm space-y-6">
+                      <div className="flex items-center justify-between">
+                         <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Project Health Index</h3>
+                         <div className="flex gap-2">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold">On Schedule</span>
+                            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold">In Budget</span>
+                         </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                         {[
+                           { label: 'Overall Progress', value: '68%', color: 'blue' },
+                           { label: 'Schedule Variance', value: '+4 Days', color: 'emerald' },
+                           { label: 'Cost Variance', value: '-12%', color: 'emerald' },
+                           { label: 'Quality Index', value: '98.5%', color: 'indigo' }
+                         ].map(stat => (
+                           <div key={stat.label} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</div>
+                              <div className={`text-xl font-black text-${stat.color}-600 tracking-tighter`}>{stat.value}</div>
                            </div>
-                           <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-slate-900">{t(d.id)}</span>
-                        </div>
-                      ))}
+                         ))}
+                      </div>
+
+                      <div className="h-48 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-center relative overflow-hidden">
+                         <div className="absolute inset-x-8 bottom-12 h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '68%' }}
+                              className="h-full bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]" 
+                            />
+                         </div>
+                         <div className="text-4xl font-black text-slate-900 italic tracking-tighter opacity-10">ZARYA PERFORMANCE ENGINE</div>
+                      </div>
+                   </div>
+
+                   {/* Quick Actions / Recent Activity */}
+                   <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl -mr-24 -mt-24" />
+                      <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-blue-400">Critical Alerts</h3>
+                      <div className="space-y-4">
+                         {[
+                           { msg: '3 POs awaiting approval', type: 'warning' },
+                           { msg: 'Daily report missing for Zone A', type: 'error' },
+                           { msg: 'New blueprint uploaded (Div 05)', type: 'info' }
+                         ].map((alert, i) => (
+                           <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3">
+                              <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                alert.type === 'error' ? 'bg-rose-500 animate-pulse' :
+                                alert.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                              )} />
+                              <span className="text-[11px] font-bold text-slate-300">{alert.msg}</span>
+                           </div>
+                         ))}
+                      </div>
+                      <button className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all">
+                        View Audit Log
+                      </button>
+                   </div>
+                </div>
+
+                {/* Performance Domains Grid */}
+                <div className="max-w-full mx-auto space-y-8">
+                  <div className="flex items-center justify-between px-2">
+                    <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
+                    <div className="flex gap-2">
+                      <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold uppercase tracking-widest border border-blue-100">
+                        8 Active Domains
+                      </div>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {PERFORMANCE_DOMAINS.map(d => {
+                      const hubId = {
+                        'governance': 'gov',
+                        'delivery': 'scope',
+                        'schedule': 'sched',
+                        'finance': 'fin',
+                        'stakeholders': 'stak',
+                        'resources': 'res',
+                        'risk': 'risk'
+                      }[d.id] || 'gov';
+                      
+                      return (
+                        <Link 
+                          key={d.id} 
+                          to={`/page/${hubId}`}
+                          className="group bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left flex flex-col justify-between h-[220px]"
+                        >
+                           <div className="flex justify-between items-start">
+                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 shadow-inner group-hover:bg-blue-50 transition-colors">
+                               <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-blue-600 text-slate-400" />
+                             </div>
+                             <div className="p-1 bg-emerald-50 text-emerald-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                               <TrendingUp className="w-4 h-4" />
+                             </div>
+                           </div>
+                           <div className="space-y-1">
+                             <h3 className="text-xl font-bold text-slate-900 tracking-tight transition-colors group-hover:text-blue-600">{t(d.id)}</h3>
+                             <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2">
+                               {t(d.id + '_desc') || 'Standardized performance management and reporting.'}
+                             </p>
+                           </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              )
+
+                {/* Quick Stats Banner */}
+                <div className="max-w-7xl mx-auto">
+                   <div className="bg-slate-900 rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-slate-900/20 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                      
+                      <div className="text-center space-y-1 relative z-10">
+                        <div className="text-3xl font-bold text-white tracking-tighter italic">94.2%</div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('utilization')}</div>
+                      </div>
+                      
+                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+
+                      <div className="text-center space-y-1 relative z-10">
+                        <div className="text-3xl font-bold text-emerald-400 tracking-tighter italic">0.98 <span className="text-xs font-normal text-slate-500 not-italic ml-1">CPI</span></div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('efficiency')}</div>
+                      </div>
+
+                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+
+                      <div className="text-center space-y-1 relative z-10">
+                        <div className="text-3xl font-bold text-blue-400 tracking-tighter italic">12 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Days</span></div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('milestones_ahead')}</div>
+                      </div>
+
+                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+
+                      <div className="text-center space-y-1 relative z-10">
+                        <div className="text-3xl font-bold text-amber-400 tracking-tighter italic">0 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Issues</span></div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('critical')}</div>
+                      </div>
+                   </div>
+                </div>
+              </div>
             } />
           </Routes>
         </main>

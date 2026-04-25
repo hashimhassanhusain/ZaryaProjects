@@ -52,18 +52,6 @@ export const ScheduleMilestoneOverview: React.FC<ScheduleMilestoneOverviewProps>
       ]}
     >
       <div className="space-y-8">
-        <header className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <Flag className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Milestone Alignment Hub</h2>
-              <p className="text-sm text-slate-500 font-medium">Synchronizing Project Charter constraints with the Schedule Baseline.</p>
-            </div>
-          </div>
-        </header>
-
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full translate-x-10 -translate-y-10 blur-2xl group-hover:bg-blue-500/20 transition-all" />

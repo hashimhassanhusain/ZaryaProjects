@@ -37,6 +37,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { cn, formatCurrency, stripNumericPrefix } from '../lib/utils';
 import { rollupToParent } from '../services/rollupService';
+import { HelpTooltip } from './HelpTooltip';
 
 import { useLanguage } from '../context/LanguageContext';
 import { loadArabicFont } from '../lib/pdfUtils';
@@ -196,7 +197,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   const [showImportModal, setShowImportModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const { t, isRtl, language } = useLanguage();
+  const { t, th, isRtl, language } = useLanguage();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showColumnsMenu, setShowColumnsMenu] = useState(false);
 
@@ -792,17 +793,17 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       const division = masterFormatDivisions.find(d => d.id === divId);
       const divActivitiesMap = groups[divId];
       const divActivities = Object.values(divActivitiesMap).flat() as Activity[];
-      const divKey = `${parentKey}-${divId}`;
+      const divKey = `div-${parentKey}-${divId}`;
       const isDivExpanded = expandedWbs[divKey] ?? true;
       const divProgress = calculateCostAccountProgress(divActivities);
       const divStatus = deriveStatusFromActivities(divActivities);
       const wpTitles = Object.keys(divActivitiesMap).sort();
 
       return (
-        <React.Fragment key={divKey}>
+        <React.Fragment key={`hier-div-${parentKey}-${divId}`}>
           <div 
             className="h-10 flex items-center bg-slate-50/30 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100"
-            onClick={() => toggleWbs(divKey)}
+            onClick={() => toggleWbs(`div-${parentKey}-${divId}`)}
           >
             <div className="flex items-center h-full divide-x divide-slate-200">
               <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(level + 1) * 16}px` }}>
@@ -860,17 +861,17 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           
           {isDivExpanded && wpTitles.map(wpTitle => {
             const wpActivities = divActivitiesMap[wpTitle];
-            const wpKey = `${parentKey}-${divId}-${wpTitle}`;
+            const wpKey = `wp-${parentKey}-${divId}-${wpTitle}`;
             const isWpExpanded = expandedWbs[wpKey] ?? true;
             const wpProgress = calculateCostAccountProgress(wpActivities);
             const wpStatus = deriveStatusFromActivities(wpActivities);
             const wpDetails = workPackages.find(p => p.title === wpTitle);
 
             return (
-              <React.Fragment key={wpKey}>
+              <React.Fragment key={`hier-wp-${parentKey}-${divId}-${wpTitle}`}>
                 <div 
                   className="h-9 flex items-center bg-slate-50/10 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-50"
-                  onClick={() => toggleWbs(wpKey)}
+                  onClick={() => toggleWbs(`wp-${parentKey}-${divId}-${wpTitle}`)}
                 >
                   <div className="flex items-center h-full divide-x divide-slate-200">
                     <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(level + 2) * 16}px` }}>
@@ -926,7 +927,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 </div>
                 {isWpExpanded && wpActivities.map(act => (
                   <ActivityRow 
-                    key={act.id}
+                    key={`act-row-hier-${act.id}`}
                     act={act}
                     wbsLevel={level + 2}
                     columnWidths={columnWidths}
@@ -1070,7 +1071,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
         {expandedSummary && wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
           <WbsRow 
-            key={wbs.id}
+            key={`wbs-${wbs.id}`}
             wbs={wbs}
             allWbs={wbsLevels}
             activities={activities}
@@ -1136,7 +1137,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     return sortedDivs.map(divId => {
       const divActivitiesMap = groups[divId];
       const divActivities = Object.values(divActivitiesMap).flat() as Activity[];
-      const divKey = `${parentKey}-${divId}`;
+      const divKey = `gantt-div-${parentKey}-${divId}`;
       const isDivExpanded = expandedWbs[divKey] ?? true;
 
       const divPlannedStart = divActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '');
@@ -1145,14 +1146,14 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       const wpTitles = Object.keys(divActivitiesMap).sort();
 
       return (
-        <React.Fragment key={divKey}>
+        <React.Fragment key={`gantt-div-frag-${parentKey}-${divId}`}>
           <div className="h-10 border-b border-slate-100 bg-slate-50/10">
             {renderSummaryBar(divPlannedStart, divPlannedFinish, divProgress)}
           </div>
           
           {isDivExpanded && wpTitles.map(wpTitle => {
             const wpActivities = divActivitiesMap[wpTitle];
-            const wpKey = `${parentKey}-${divId}-${wpTitle}`;
+            const wpKey = `gantt-wp-${parentKey}-${divId}-${wpTitle}`;
             const isWpExpanded = expandedWbs[wpKey] ?? true;
 
             const wpPlannedStart = wpActivities.reduce((min, a) => !min || (a.startDate && a.startDate < min) ? a.startDate : min, '');
@@ -1160,7 +1161,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             const wpProgress = wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0;
 
             return (
-              <React.Fragment key={wpKey}>
+              <React.Fragment key={`gantt-wp-frag-${parentKey}-${divId}-${wpTitle}`}>
                 <div className="h-9 border-b border-slate-50 bg-emerald-50/5">
                   {renderSummaryBar(wpPlannedStart, wpPlannedFinish, wpProgress)}
                 </div>
@@ -1170,7 +1171,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                   const linkedPO = purchaseOrders.find(po => po.id === act.poId);
 
                   return (
-                    <React.Fragment key={act.id}>
+                    <React.Fragment key={`gantt-act-container-${act.id}`}>
                       <div 
                         ref={el => { if (el) rowRefs.current.set(`gantt-${act.id}`, el); }}
                         className="h-10 flex items-center bg-white relative border-b border-slate-100"
@@ -1178,12 +1179,12 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                         {renderBar(act)}
                       </div>
                       {isActExpanded && linkedPO && (
-                        <div className="bg-slate-50/30">
+                        <div key={`gantt-expanded-po-${act.id}`} className="bg-slate-50/30">
                           {(viewLevel === 'po' || viewLevel === 'poitem') && (
-                            <div className="h-9 border-b border-blue-50/50" />
+                            <div key={`gantt-po-spacer-${act.id}`} className="h-9 border-b border-blue-50/50" />
                           )}
                           {linkedPO.lineItems?.map(li => (
-                            <div key={li.id} className="h-8 border-b border-slate-50/50" />
+                            <div key={`gantt-li-row-${li.id}-${act.id}`} className="h-8 border-b border-slate-50/50" />
                           ))}
                         </div>
                       )}
@@ -1227,7 +1228,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
         {expandedSummary && wbsLevels.filter(wbs => !wbs.parentId).map(wbs => (
           <GanttRow 
-            key={wbs.id}
+            key={`gantt-wbs-${wbs.id}`}
             wbs={wbs}
             allWbs={wbsLevels}
             activities={activities}
@@ -1712,107 +1713,118 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           {/* Toolbar */}
           <div className="bg-white px-4 py-2 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder={t('search_activities')} 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-48 lg:w-64 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-xs focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                />
-              </div>
+              <HelpTooltip text={th('search_items_summary')} position="bottom">
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder={t('search_activities')} 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-48 lg:w-64 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-xs focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </div>
+              </HelpTooltip>
               
               <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                 {(['day', 'week', 'month', 'quarter'] as ZoomLevel[]).map(level => (
-                  <button 
-                    key={level}
-                    onClick={() => setZoomLevel(level)}
-                    className={cn("px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all", zoomLevel === level ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                  >
-                    {t(level)}
-                  </button>
+                  <HelpTooltip key={level} text={th(level === 'day' || level === 'week' ? 'zoom_in_summary' : 'zoom_out_summary')} position="bottom">
+                    <button 
+                      onClick={() => setZoomLevel(level)}
+                      className={cn("px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all", zoomLevel === level ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                    >
+                      {t(level)}
+                    </button>
+                  </HelpTooltip>
                 ))}
               </div>
 
-              <button 
-                onClick={() => {
-                  const today = new Date();
-                  const container = rightPanelRef.current;
-                  if (container) {
-                    const diff = Math.floor((today.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
-                    container.scrollLeft = diff * dayWidth - container.clientWidth / 2;
-                  }
-                }}
-                className="px-2.5 py-1.5 bg-slate-50 text-slate-600 rounded-lg font-bold text-[9px] hover:bg-slate-100 transition-all flex items-center gap-1.5 border border-slate-200"
-              >
-                <Target className="w-3.5 h-3.5" />
-                {t('today')}
-              </button>
+              <HelpTooltip text={th('zoom_in_summary')} position="bottom">
+                <button 
+                  onClick={() => {
+                    const today = new Date();
+                    const container = rightPanelRef.current;
+                    if (container) {
+                      const diff = Math.floor((today.getTime() - projectDates.start.getTime()) / (1000 * 60 * 60 * 24));
+                      container.scrollLeft = diff * dayWidth - container.clientWidth / 2;
+                    }
+                  }}
+                  className="px-2.5 py-1.5 bg-slate-50 text-slate-600 rounded-lg font-bold text-[9px] hover:bg-slate-100 transition-all flex items-center gap-1.5 border border-slate-200"
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  {t('today')}
+                </button>
+              </HelpTooltip>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="h-4 w-px bg-slate-200 mx-1" />
 
-              <button 
-                onClick={() => setShowImportModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-xs hover:bg-blue-100 transition-all border border-blue-100"
-              >
-                {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                <span className="hidden lg:inline">{isImporting ? 'Importing...' : 'Import'}</span>
-              </button>
-
-              <button 
-                onClick={() => setEditingActivity({
-                  id: crypto.randomUUID(),
-                  projectId: selectedProject!.id,
-                  wbsId: '',
-                  divisionId: '',
-                  workPackage: '',
-                  description: '',
-                  unit: 'LS',
-                  quantity: 1,
-                  rate: 0,
-                  amount: 0,
-                  status: 'Not Started',
-                  percentComplete: 0
-                })}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-all shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{t('add_activity')}</span>
-              </button>
-
-              <div className="relative">
+              <HelpTooltip text={th('import_data_summary')} position="bottom">
                 <button 
-                  onClick={() => setShowColumnsMenu(!showColumnsMenu)}
-                  className={cn(
-                    "p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg transition-all border border-slate-100",
-                    showColumnsMenu && "bg-blue-50 text-blue-600 border-blue-100"
-                  )}
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-xs hover:bg-blue-100 transition-all border border-blue-100"
                 >
-                  <Filter className="w-4 h-4" />
+                  {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  <span className="hidden lg:inline">{isImporting ? 'Importing...' : 'Import'}</span>
                 </button>
-                
-                {showColumnsMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowColumnsMenu(false)} />
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
-                      {Object.keys(visibleColumns).map(col => (
-                        <label key={col} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={visibleColumns[col]} 
-                            onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-[10px] font-medium text-slate-600 capitalize">{col.replace(/([A-Z])/g, ' $1')}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+              </HelpTooltip>
+
+              <HelpTooltip text={th('add_activity_summary')} position="bottom">
+                <button 
+                  onClick={() => setEditingActivity({
+                    id: crypto.randomUUID(),
+                    projectId: selectedProject!.id,
+                    wbsId: '',
+                    divisionId: '',
+                    workPackage: '',
+                    description: '',
+                    unit: 'LS',
+                    quantity: 1,
+                    rate: 0,
+                    amount: 0,
+                    status: 'Not Started',
+                    percentComplete: 0
+                  })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-all shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">{t('add_activity')}</span>
+                </button>
+              </HelpTooltip>
+
+              <HelpTooltip text={th('column_settings_summary')} position="bottom">
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowColumnsMenu(!showColumnsMenu)}
+                    className={cn(
+                      "p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg transition-all border border-slate-100",
+                      showColumnsMenu && "bg-blue-50 text-blue-600 border-blue-100"
+                    )}
+                  >
+                    <Filter className="w-4 h-4" />
+                  </button>
+                  
+                  {showColumnsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowColumnsMenu(false)} />
+                      <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
+                        {Object.keys(visibleColumns).map(col => (
+                          <label key={col} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={visibleColumns[col]} 
+                              onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))}
+                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] font-medium text-slate-600 capitalize">{col.replace(/([A-Z])/g, ' $1')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </HelpTooltip>
             </div>
           </div>
 
@@ -2240,7 +2252,7 @@ const PoRow: React.FC<{
   viewLevel: ViewLevel;
 }> = ({ po, wbsLevel, columnWidths, visibleColumns, columnOrder, formatAmount, baseCurrency, getPoActualCost, navigate, isExpanded, onToggle, viewLevel }) => {
   return (
-    <React.Fragment key={po.id}>
+    <React.Fragment key={`po-row-${po.id}`}>
       <div 
         className="h-9 flex items-center bg-blue-50/10 hover:bg-blue-50/30 transition-colors border-l-2 border-blue-400/50 cursor-pointer border-b border-slate-100"
         onClick={onToggle}
@@ -2290,7 +2302,7 @@ const PoRow: React.FC<{
         </div>
       </div>
       {isExpanded && po.lineItems?.map(li => (
-        <div key={li.id} className="h-8 flex items-center bg-slate-50/30 border-b border-slate-50">
+        <div key={`li-${li.id}`} className="h-8 flex items-center bg-slate-50/30 border-b border-slate-50">
           <div className="flex items-center h-full divide-x divide-slate-200 opacity-70">
             <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(wbsLevel + 2) * 16}px` }}>
               <Package className="w-2.5 h-2.5 text-slate-400 mr-2" />
@@ -2348,7 +2360,7 @@ const ActivityRow: React.FC<{
   const isMilestone = act.duration === 0;
 
   return (
-    <React.Fragment key={act.id}>
+    <React.Fragment key={`act-row-${act.id}`}>
       <div 
         ref={el => { if (el) rowRefs.current.set(act.id, el); }}
         className="h-10 flex items-center bg-white hover:bg-blue-50/30 transition-colors border-l-2 border-transparent hover:border-blue-500 cursor-pointer border-b border-slate-100"
@@ -2493,10 +2505,10 @@ const ActivityRow: React.FC<{
       </div>
 
       {isActExpanded && linkedPOs.length > 0 && linkedPOs.map(po => (
-        <div key={po.id} className="bg-slate-50/50 border-l-2 border-blue-200 ml-4">
+        <div key={`act-po-list-${act.id}-${po.id}`} className="bg-slate-50/50 border-l-2 border-blue-200 ml-4">
           {/* PO Header Row if in PO view */}
           {(viewLevel === 'po' || viewLevel === 'poitem') && (
-            <div className="h-9 flex items-center bg-blue-50/20 border-b border-blue-100">
+            <div key={`act-po-header-${po.id}`} className="h-9 flex items-center bg-blue-50/20 border-b border-blue-100">
               <div className="flex items-center h-full divide-x divide-slate-200">
                 <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs - 16, paddingLeft: `${(wbsLevel + 2) * 16}px` }}>
                   <ShoppingCart className="w-3 h-3 text-blue-500 mr-2" />
@@ -2527,7 +2539,7 @@ const ActivityRow: React.FC<{
           {/* PO Line Items */}
           {po.lineItems?.map((li) => (
             <div 
-              key={li.id} 
+              key={`act-li-row-${act.id}-${po.id}-${li.id}`} 
               className="h-8 flex items-center px-4 text-[10px] text-slate-500 hover:bg-slate-100 transition-colors border-b border-slate-50"
             >
               <div className="flex items-center h-full divide-x divide-slate-200">
@@ -2723,7 +2735,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
         <>
           {children.map(child => (
             <WbsRow 
-              key={child.id} 
+              key={`wbs-${child.id}`} 
               wbs={child} 
               allWbs={allWbs} 
               activities={activities} 
@@ -2774,11 +2786,11 @@ const WbsRow: React.FC<WbsRowProps> = ({
               const wpDirectPOs = purchaseOrders.filter(p => !p.activityId && (p.workPackageId === wpDetails?.id || p.workPackageId === wpTitle));
 
               return (
-                <React.Fragment key={wpKey}>
-                  <div 
-                    className="h-9 flex items-center bg-slate-50/10 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-50"
-                    onClick={() => onToggle(wpKey)}
-                  >
+              <React.Fragment key={`wbs-wp-frag-${wbs.id}-${wpTitle}`}>
+                <div 
+                  className="h-9 flex items-center bg-slate-50/10 hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-50"
+                  onClick={() => onToggle(wpKey)}
+                >
                     <div className="flex items-center h-full divide-x divide-slate-200">
                       <div className="flex items-center px-4 min-w-[300px] h-full" style={{ width: columnWidths.activityWbs, paddingLeft: `${(wbs.level + 1) * 16}px` }}>
                         {(wpActivities.length > 0 || wpDirectPOs.length > 0) ? (
@@ -2830,7 +2842,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
                     <>
                       {wpActivities.map(act => (
                         <ActivityRow 
-                          key={act.id}
+                          key={`wp-act-${wbs.id}-${wpTitle}-${act.id}`}
                           act={act}
                           wbsLevel={wbs.level + 1}
                           columnWidths={columnWidths}
@@ -2854,7 +2866,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
                       ))}
                       {wpDirectPOs.map(po => (
                         <PoRow 
-                          key={po.id}
+                          key={`wp-po-${wbs.id}-${wpTitle}-${po.id}`}
                           po={po}
                           wbsLevel={wbs.level + 1}
                           columnWidths={columnWidths}
@@ -2878,7 +2890,7 @@ const WbsRow: React.FC<WbsRowProps> = ({
           {/* Direct WBS POs */}
           {directWbsPOs.map(po => (
             <PoRow 
-              key={po.id}
+              key={`wbs-po-${po.id}`}
               po={po}
               wbsLevel={wbs.level}
               columnWidths={columnWidths}
@@ -2997,7 +3009,7 @@ const GanttRow: React.FC<GanttRowProps> = ({
                     const linkedPO = purchaseOrders.find(po => po.id === act.poId);
 
                     return (
-                      <React.Fragment key={act.id}>
+                      <React.Fragment key={`gantt-act-frag-${act.id}`}>
                         <div 
                           ref={el => { if (el) rowRefs.current.set(`gantt-${act.id}`, el); }}
                           className="h-10 flex items-center bg-white relative border-b border-slate-100"
@@ -3005,12 +3017,12 @@ const GanttRow: React.FC<GanttRowProps> = ({
                           {renderBar(act)}
                         </div>
                         {isActExpanded && linkedPO && (
-                          <div className="bg-slate-50/30">
+                          <div key={`gantt-po-expand-${act.id}`} className="bg-slate-50/30">
                             {(viewLevel === 'po' || viewLevel === 'poitem') && (
-                              <div className="h-9 border-b border-blue-50/50" />
+                              <div key={`gantt-po-head-${linkedPO.id}`} className="h-9 border-b border-blue-50/50" />
                             )}
                             {linkedPO.lineItems?.map(li => (
-                              <div key={li.id} className="h-8 border-b border-slate-50/50" />
+                              <div key={`gantt-li-line-${li.id}`} className="h-8 border-b border-slate-50/50" />
                             ))}
                           </div>
                         )}

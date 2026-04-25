@@ -26,6 +26,7 @@ import { AddWBSLevelModal } from './AddWBSLevelModal';
 import { DataImportModal } from './DataImportModal';
 
 import { Ribbon, RibbonGroup } from './Ribbon';
+import { HelpTooltip } from './HelpTooltip';
 
 export const BOQView: React.FC = () => {
   const { t, language, isRtl } = useLanguage();
@@ -682,17 +683,6 @@ export const BOQView: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                   <div className={cn("flex items-center gap-4 flex-1", isRtl && "flex-row-reverse")}>
-                    <div className={cn(isRtl && "text-right")}>
-                      <div className={cn("flex items-center gap-2 mb-1", isRtl && "flex-row-reverse")}>
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-widest">
-                          {t('project')}
-                        </span>
-                        <h3 className="text-xl font-bold text-slate-900">
-                          {t('master_boq')}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-slate-500 font-medium">Managing all BOQ items for the entire project.</p>
-                    </div>
                     {selectedItemIds.length > 0 && (
                       <motion.div 
                         initial={{ opacity: 0, x: -20 }}
@@ -700,13 +690,14 @@ export const BOQView: React.FC = () => {
                         className={cn("flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl", isRtl && "flex-row-reverse")}
                       >
                         <span className="text-[10px] font-bold text-red-600">{selectedItemIds.length} {t('selected')}</span>
-                        <button 
-                          onClick={handleBulkDelete}
-                          className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
-                          title={t('delete_selected')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <HelpTooltip text={th('delete_selected_summary')} position="bottom">
+                          <button 
+                            onClick={handleBulkDelete}
+                            className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </HelpTooltip>
                       </motion.div>
                     )}
                   </div>
@@ -726,21 +717,25 @@ export const BOQView: React.FC = () => {
                   </div>
 
                   <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
-                    <button 
-                      onClick={() => setShowImportModal(true)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
-                    >
-                      {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      {isAnalyzing ? t('importing') : t('import_data')}
-                    </button>
+                    <HelpTooltip text={th('import_data_summary')} position="bottom">
+                      <button 
+                        onClick={() => setShowImportModal(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
+                      >
+                        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {isAnalyzing ? t('importing') : t('import_data')}
+                      </button>
+                    </HelpTooltip>
                     
-                    <button 
-                      onClick={() => setShowAddItem(true)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {t('add_item')}
-                    </button>
+                    <HelpTooltip text={th('add_item_summary')} position="bottom">
+                      <button 
+                        onClick={() => setShowAddItem(true)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {t('add_item')}
+                      </button>
+                    </HelpTooltip>
                   </div>
                 </div>
 

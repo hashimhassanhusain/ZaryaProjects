@@ -118,7 +118,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
-    icon: 'Users', 
+    icon: 'UserSearch', 
     summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
     details: {
       inputs: ['business-case', 'project-charter', 'governance-framework', 'org-structure'],
@@ -132,7 +132,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
-    icon: 'Search', 
+    icon: 'Layout', 
     summary: 'Systematically gather and analyze stakeholders interests, expectations, and influence.',
     details: {
       inputs: ['stakeholder-register', 'stakeholder-list'],
@@ -342,7 +342,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
-    icon: 'Landmark', 
+    icon: 'Coins', 
     summary: 'Coordinate fund disbursements and monitor project cash flow.',
     details: {
       inputs: ['project-budget', 'funding-strategy-plan', 'cash-flow-forecast'],
@@ -356,7 +356,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
-    icon: 'FilePlus', 
+    icon: 'Receipt', 
     summary: 'Maintain accurate ledgers of all project expenses and actual resource usage costs.',
     details: {
       inputs: ['actual-performance-data', 'res-usage-data', 'fin-transactions-log'],
@@ -748,7 +748,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Executing', 
-    icon: 'Play', 
+    icon: 'ClipboardList', 
     summary: 'Directly manage the production of deliverables based on work package definitions.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'scope-baseline'],
