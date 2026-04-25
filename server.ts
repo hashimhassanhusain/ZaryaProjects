@@ -22,8 +22,8 @@ app.use(cors());
 const getDriveClient = () => {
   const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
   
-  if (!envCreds) {
-    return { error: 'Secret GOOGLE_DRIVE_CREDENTIALS is missing or empty in the Secrets panel.' };
+  if (!envCreds || envCreds.trim() === '') {
+    return { error: 'DRIVE_NOT_CONFIGURED' };
   }
 
   try {
@@ -325,7 +325,10 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
 app.post('/api/drive/create-metadata', async (req: any, res: any) => {
   const { name, parents, description } = req.body;
   const { drive, error } = getDriveClient();
-  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+  if (error || !drive) {
+    const statusCode = error === 'DRIVE_NOT_CONFIGURED' ? 503 : 500;
+    return res.status(statusCode).json({ error: error || 'DRIVE_ERROR' });
+  }
 
   try {
     const resDrive = await drive.files.create({
@@ -351,7 +354,10 @@ app.post('/api/drive/create-metadata', async (req: any, res: any) => {
 app.post('/api/projects/init-drive', async (req: any, res: any) => {
   const { projectName, projectCode, charterData, userEmail } = req.body;
   const { drive, error } = getDriveClient();
-  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+  if (error || !drive) {
+    const statusCode = error === 'DRIVE_NOT_CONFIGURED' ? 503 : 500;
+    return res.status(statusCode).json({ error: error || 'DRIVE_ERROR' });
+  }
 
   try {
     const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
@@ -616,7 +622,10 @@ app.post('/api/upload', upload.single('file'), async (req: any, res: any) => {
 app.get('/api/drive/folders-recursive/:folderId', async (req: any, res: any) => {
   const { folderId } = req.params;
   const { drive, error } = getDriveClient();
-  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+  if (error || !drive) {
+    const statusCode = error === 'DRIVE_NOT_CONFIGURED' ? 503 : 500;
+    return res.status(statusCode).json({ error: error || 'DRIVE_ERROR' });
+  }
 
   try {
     const folders: any[] = [];
@@ -650,7 +659,10 @@ app.get('/api/drive/folders-recursive/:folderId', async (req: any, res: any) => 
 app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   const { folderId } = req.params;
   const { drive, error } = getDriveClient();
-  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+  if (error || !drive) {
+    const statusCode = error === 'DRIVE_NOT_CONFIGURED' ? 503 : 500;
+    return res.status(statusCode).json({ error: error || 'DRIVE_ERROR' });
+  }
 
   try {
     const response = await drive.files.list({
