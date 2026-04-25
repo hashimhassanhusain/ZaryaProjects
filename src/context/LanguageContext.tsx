@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'en' | 'ar' | 'ku';
+type Language = 'en' | 'ar';
 
 interface LanguageContextType {
   language: Language;
@@ -230,7 +230,6 @@ const translations: Record<Language, Record<string, string>> = {
     'boq_manager': 'BOQ Manager',
     'export_reports': 'Export Reports',
     'import_data': 'Import Data',
-    'boq_summary': 'BOQ Summary',
     'completion': 'Completion %',
     'master_boq': 'Master Bill of Quantities',
     'search_items_placeholder': 'Search items...',
@@ -271,6 +270,8 @@ const translations: Record<Language, Record<string, string>> = {
     'invalid_email': 'Invalid email address',
     'password_mismatch': 'Passwords do not match',
     'save_success': 'Saved successfully',
+    'added_to_favorites': 'Added to favorites',
+    'removed_from_favorites': 'Removed from favorites',
     'delete_success': 'Deleted successfully',
     'update_success': 'Updated successfully',
     'error_message': 'Something went wrong. Please try again.',
@@ -719,7 +720,7 @@ const translations: Record<Language, Record<string, string>> = {
     'push_baseline_summary': 'Update the project baseline with current data.',
     'drive_explorer_summary': 'Manage project documents in the secure cloud folder.',
     'admin_settings_summary': 'Configure users, roles, and enterprise-level settings.',
-    'change_language_summary': 'Switch interface guidance between English, Arabic, and Kurdish.',
+    'change_language_summary': 'Switch interface guidance between English and Arabic.',
     'search_summary': 'Quickly find any page or project record.',
     'user_profile_summary': 'Manage your personal profile and account settings.',
     'project_selector_summary': 'Switch between different projects in your portfolio.',
@@ -745,6 +746,15 @@ const translations: Record<Language, Record<string, string>> = {
     'stakeholders_summary': 'Manage registry and engagement of project parties.',
     'resources_summary': 'Optimize manpower, equipment, and materials.',
     'risk_summary': 'Identify and mitigate project uncertainties.',
+    '2.4.1_summary': 'Manage the detailed Bill of Quantities, units, and rates.',
+    '3.3.3_summary': 'Generate and track project progress reports.',
+    '3.6.4_summary': 'Log meeting minutes, agendas, and decisions.',
+    '3.6.3_summary': 'Interactive task board for team collaboration.',
+    '2.3.3_summary': 'Master project schedule and Gantt chart view.',
+    '2.7.5_summary': 'Registry of project risks, impacts, and responses.',
+    '3.1.3_summary': 'Formal record of project decisions and authorizations.',
+    '3.3.2_summary': 'Monitor actual progress against the project baseline.',
+    'daily-reports_summary': 'Daily site construction logs and activity tracking.',
   },
   ar: {
     'task_instructions': 'اضغط ضغطاً مزدوجاً لفتح المهمة وتعديلها، أو اسحبها وأسقطها لتغيير حالتها.',
@@ -758,7 +768,7 @@ const translations: Record<Language, Record<string, string>> = {
     'push_baseline_summary': 'تحديث خط الأساس للمشروع بالبيانات الحالية.',
     'drive_explorer_summary': 'إدارة مستندات المشروع في المجلد السحابي الآمن.',
     'admin_settings_summary': 'تكوين المستخدمين والأدوار وإعدادات المؤسسة.',
-    'change_language_summary': 'تبديل لغة التعليمات بين الإنجليزية والعربية والكردية.',
+    'change_language_summary': 'تبديل لغة التعليمات بين الإنجليزية والعربية.',
     'search_summary': 'البحث السريع عن أي صفحة أو سجل في المشروع.',
     'user_profile_summary': 'إدارة ملفك الشخصي وإعدادات الحساب.',
     'project_selector_summary': 'التنقل بين المشاريع المختلفة في محفظة أعمالك.',
@@ -1014,6 +1024,8 @@ const translations: Record<Language, Record<string, string>> = {
     'invalid_email': 'بريد إلكتروني غير صالح',
     'password_mismatch': 'كلمات المرور غير متطابقة',
     'save_success': 'تم الحفظ بنجاح',
+    'added_to_favorites': 'تمت الإضافة إلى المفضلة',
+    'removed_from_favorites': 'تمت الإزالة من المفضلة',
     'delete_success': 'تم الحذف بنجاح',
     'update_success': 'تم التحديث بنجاح',
     'error_message': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
@@ -1449,114 +1461,6 @@ const translations: Record<Language, Record<string, string>> = {
     'Executing': 'التنفيذ',
     'Monitoring & Controlling': 'المراقبة والتحكم',
     'Closing': 'الإغلاق',
-    'kurdish_sorani': 'کوردی (سۆرانی)',
-    'task_instructions': 'اضغط ضغطاً مزدوجاً لفتح المهمة وتعديلها، أو اسحبها وأسقطها لتغيير حالتها.',
-    'initiating_summary': 'تحديد رؤية المشروع والبدء الرسمي المصرح به.',
-    'planning_summary': 'بناء خارطة الطريق الكاملة والخطوط الأساسية للمشروع.',
-    'executing_summary': 'قيادة أنشطة العمل وفقاً للخطة الموضوعة.',
-    'monitoring_summary': 'تتبع ومراجعة وتنظيم التقدم والأداء.',
-    'closing_summary': 'إنهاء جميع الأنشطة والتسليم الرسمي للمشروع.',
-    'favorites_summary': 'الوصول السريع إلى الصفحات الأكثر استخداماً.',
-    'generate_pdf_summary': 'إنشاء تقرير PDF احترافي وحفظه في Google Drive.',
-    'push_baseline_summary': 'تحديث الخط الأساسي للمشروع بالبيانات الحالية.',
-    'drive_explorer_summary': 'إدارة مستندات المشروع في المجلد السحابي الآمن.',
-    'admin_settings_summary': 'تكوين المستخدمين والأدوار وإعدادات مستوى المؤسسة.',
-    'change_language_summary': 'تبديل التوجيه بين الإنجليزية والعربية والكردية.',
-    'search_summary': 'ابحث بسرعة عن أي صفحة أو سجل مشروع.',
-    'user_profile_summary': 'إدارة ملفك الشخصي وإعدادات حسابك.',
-    'project_selector_summary': 'تبديل بين المشاريع المختلفة في محفظتك.',
-    'overview_summary': 'العودة إلى لوحة تحكم النطاق للحصول على نظرة عامة عالية المستوى على الأداء.',
-    'boq_manager_summary': 'افتح جدول الكميات الرئيسي لإدارة النطاق والتكاليف.',
-    'boq_summary': 'قائمة كاملة بجميع العناصر والكميات الخاصة بالمشروع.',
-    'export_summary': 'إنشاء وتنزيل تقارير ومستندات المشروع الاحترافية.',
-    'import_data_summary': 'استيراد عناصر BOQ من Excel أو PDF. يمكن للذكاء الاصطناعي لدينا استخراج التفاصيل تلقائياً من المستندات الفنية.',
-    'add_item_summary': 'أضف عنصراً جديداً يدوياً إلى جدول الكميات. يمكنك تحديد الكمية والوحدة والسعر المحلي.',
-    'add_activity_summary': 'إنشاء نشاط مشروع جديد. حدد المدة والميزانية والارتباطات بهيكل تقسيم العمل.',
-    'delete_selected_summary': 'قم بإزالة العناصر المحددة من قاعدة البيانات. تحذير: لا يمكن التراجع عن هذا الإجراء.',
-    'search_items_summary': 'قم بتصفية القائمة حسب الوصف أو حساب التكلفة أو الموقع للعثور على حزم عمل محددة بسرعة.',
-    'export_reports_summary': 'قم بإنشاء ملف PDF احترافي لجدول الكميات الحالي، بتنسيق مناسب للتقديم.',
-    'generate_schedule_summary': 'إنشاء قائمة الأنشطة تلقائياً من عناصر BOQ. ترث الأنشطة الأوصاف والميزانيات.',
-    'add_milestone_summary': 'أضف حدثاً بمدة صفرية لتتبع نقاط التفتيش الحرجة في المشروع أو الالتزامات التعاقدية.',
-    'zoom_in_summary': 'زيادة دقة المخطط لعرض التفاصيل يوماً بيوم.',
-    'zoom_out_summary': 'تقليل الدقة لرؤية الأشهر أو الأرباع في عرض واحد.',
-    'column_settings_summary': 'اختر حقول البيانات التي تريد عرضها في جدول المهام (مثل التواريخ، SPI، التكلفة).',
-    'governance_summary': 'إدارة السياسات والمواثيق وخطط الإدارة.',
-    'scope_summary': 'تحديد المتطلبات وWBS وحزم العمل.',
-    'schedule_summary': 'تتبع الجداول الزمنية والأنشطة ومخططات غانت.',
-    'finance_summary': 'التحكم في الميزانيات وجداول الكميات والمدفوعات.',
-    'stakeholders_summary': 'إدارة السجل ومشاركة أطراف المشروع.',
-    'resources_summary': 'تحسين القوى العاملة والمعدات والمواد.',
-    'risk_summary': 'تحديد وتخفيف حالات عدم اليقين في المشروع.',
-  },
-  ku: {
-    'task_instructions': 'دووجار کلیک بکە بۆ کردنەوە و دەستکاریکردنی ئەرکەکە، یان رایبکێشە و دایبنێ بۆ گۆڕینی بارودۆخەکەی.',
-    'initiating_summary': 'دیاریکردنی دیدگای پڕۆژەکە و دەستپێکردنی فەرمی.',
-    'planning_summary': 'داڕشتنی پلانی گشتگیر و هێڵە بنەڕەتییەکانی پڕۆژەکە.',
-    'executing_summary': 'بەڕێوەبردنی چالاکییەکانی کار بەپێی پلانەکە.',
-    'monitoring_summary': 'بەدواداچوون و پێداچوونەوە و ڕێکخستنی کارەکان و ئەنجامەکان.',
-    'closing_summary': 'کۆتاییهێنان بە هەموو چالاکییەکان و ڕادەستکردنی فەرمی پڕۆژەکە.',
-    'favorites_summary': 'دەستگەیشتنی خێرا بەو لاپەڕانەی کە زۆرترین بەکارهێنانیان هەیە.',
-    'generate_pdf_summary': 'دروستکردنی ڕاپۆرتی PDFی پرۆفیشناڵ و پاشەکەوتکردنی لە گووگڵ درایڤ.',
-    'push_baseline_summary': 'نوێکردنەوەی هێڵی بنەڕەتی پڕۆژەکە بە داتای ئێستا.',
-    'drive_explorer_summary': 'بەڕێوەبردنی بەڵگەنامەکانی پڕۆژە لە فۆڵدەری هەوری پارێزراودا.',
-    'admin_settings_summary': 'ڕێکخستنی بەکارهێنەران، ڕۆڵەکان و ڕێکخستنەکانی ئاستی دامەزراوە.',
-    'change_language_summary': 'گۆڕینی لانی ڕێنمایی نێوان ئینگلیزی، عەرەبی و کوردی.',
-    'search_summary': 'بەدوای هەر لاپەڕەیەک یان تۆمارێکی پڕۆژەکەدا بگەڕێ بە خێرایی.',
-    'user_profile_summary': 'بەڕێوەبردنی پرۆفایلی کەسی و ڕێکخستنەکانی ئەکاونت.',
-    'project_selector_summary': 'گۆڕینی نێوان پڕۆژە جیاوازەکان لە پۆرتفۆلیۆکەتدا.',
-    'overview_summary': 'گەڕانەوە بۆ داشبۆردی بوارەکە بۆ بینینی دیمەنێکی گشتی ئاستی ئەنجامدان.',
-    'boq_manager_summary': 'کردنەوەی خشتەی بنەڕەتی بڕەکان بۆ بەڕێوەبردنی مەودا و تێچووەکان.',
-    'boq_summary': 'لیستی تەواوی هەموو بڕگەکان و بڕەکان بۆ پڕۆژەکە.',
-    'export_summary': 'دروستکردن و داگرتنی ڕاپۆرت و بەڵگەنامە پرۆفیشناڵەکانی پڕۆژە.',
-    'import_data_summary': 'هێنانی بڕگەکانی BOQ لە ئەکسێل یان PDF. ژیری دەستکردمان دەتوانێت وردەکارییەکان بە شێوەیەکی خۆکار لە بەڵگەنامە تەکنیکییەکان دەربهێنێت.',
-    'add_item_summary': 'خۆت بڕگەیەکی نوێ بۆ خشتەی بڕەکان زیاد بکە. دەتوانیت بڕ، یەکە، و نرخی ناوخۆیی دیاری بکەیت.',
-    'add_activity_summary': 'چالاکییەکی نوێی پڕۆژە دروست بکە. ماوە، بودجە و پەیوەندییەکان بە هەیکەلی کار دیاری بکە.',
-    'delete_selected_summary': 'بڕگە دیاریکراوەکان لە بنکەی زانیاری بسڕەوە. ئاگاداری: ئەم کارە ناگەڕێتەوە.',
-    'search_items_summary': 'خشتەکە بپاڵێوە بەپێی وەسف، ئەژمار، یان شوێن بۆ دۆزینەوەی گورزەی کارەکان بە خێرایی.',
-    'export_reports_summary': 'دروستکردنی فایلی PDFی پرۆفیشناڵ بۆ خشتەی بڕەکان، کە ئامادەیە بۆ پێشکەشکردن.',
-    'generate_schedule_summary': 'دروستکردنی لیستی چالاکییەکان بە شێوەیەکی خۆکار لە بڕگەکانی BOQ. چالاکییەکان وەسف و بودجەکان وەردەگرن.',
-    'add_milestone_summary': 'زیادکردنی ڕووداوێکی بێ ماوە بۆ بەدواداچوونی خاڵە پشکنینە گرنگەکان یان پابەندییە گرێبەستییەکان.',
-    'zoom_in_summary': 'زیادکردنی ڕوونی خشتەکە بۆ بینینی وردەکارییەکانی ڕۆژ بە ڕۆژ.',
-    'zoom_out_summary': 'کەمکردنەوەی ڕوونی بۆ بینینی مانگەکان یان وەرزەکان لە یەک بینیندا.',
-    'column_settings_summary': 'هەڵبژاردنی ئەو کێڵگانەی داتا کە دەتەوێت نیشان بدرێن لە خشتەی ئەرکەکاندا.',
-    'governance_summary': 'بەڕێوەبردنی سیاسەتەکان، میساقەکان و پلانەکانی بەڕێوەبردن.',
-    'scope_summary': 'دیاریکردنی پێویستییەکان، هەیکەلی کار، و حەزمەکانی کار.',
-    'schedule_summary': 'بەدواداچوونی کاتەکان، چالاکییەکان و خشتەکانی گانت.',
-    'finance_summary': 'کۆنتڕۆڵکردنی بودجەکان، خشتەی بڕەکان و پارەدانەکان.',
-    'stakeholders_summary': 'بەڕێوەبردنی تۆمار و بەشداری لایەنەکانی پڕۆژەکە.',
-    'resources_summary': 'باشترکردنی هێزی کار، ئامێرەکان و کەرەستەکان.',
-    'risk_summary': 'دیاریکردن و کەمکردنەوەی نادڵنیاییەکانی پڕۆژەکە.',
-    'dashboard': 'داشبۆرد',
-    'core_data': 'داتای سەرەکی',
-    'finance': 'داریی',
-    'governance': 'حوکمڕانی',
-    'utilities': 'ئامرازەکان',
-    'project_management_plan': 'پلانی بەڕێوەبردنی پڕۆژە',
-    'resources_optimization': 'سەرچاوەکان و باشترکردن',
-    'stakeholder_register': 'تۆماری خاوەن پشکەکان',
-    'assumptions_log': 'تۆماری گریمانەکان',
-    'decision_log': 'تۆماری بڕیارەکان',
-    'lessons_learned': 'وانە فێربووەکان',
-    'gantt_chart': 'خشتەی گانت',
-    'wbs': 'هەیکەلی کار',
-    'boq': 'خشتەی بڕەکان',
-    'po_management': 'داواکاری کڕین',
-    'payment_certificate': 'بەڵگەی وەرگرتنی پارە',
-    'earned_value_report': 'ڕاپۆرتی بەهای بەدەستهاتوو',
-    'progress_reports': 'ڕاپۆرتی پێشکەوتن',
-    'task_management': 'بەڕێوەبردنی ئەرکەکان',
-    'risk_opportunity_hub': 'سەنتەری مەترسی و دەرفەتەکان',
-    'change_management': 'بەڕێوەبردنی گۆڕانکاری',
-    'meeting_management': 'بەڕێوەبردنی کۆبوونەوەکان',
-    'project_files': 'فایلەکانی پڕۆژە',
-    'settings': 'ڕێکخستنەکان',
-    'admin_settings': 'ڕێکخستنی سەرپەرشتیار',
-    'users': 'بەکارھێنەران',
-    'contacts': 'پەیوەندییەکان',
-    'companies': 'کۆمپانیاکان',
-    'english': 'English',
-    'arabic': 'العربية',
-    'kurdish_sorani': 'کوردی (سۆرانی)',
   },
 };
 
@@ -1575,18 +1479,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.dir = 'ltr';
   }, [language]);
 
-  // t function now strictly uses English for UI
+  // t function strictly uses English for the main UI as requested
   const t = (key: string) => {
     return translations['en'][key] || key;
   };
 
-  // th function (translate help) uses selected language
+  // th function (translate help/summary) uses selected language
   const th = (key: string) => {
     return translations[language][key] || translations['en'][key] || key;
   };
 
   const isRtl = false;
-  const isHelpRtl = language === 'ar' || language === 'ku';
+  const isHelpRtl = language === 'ar';
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>

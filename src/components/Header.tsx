@@ -50,9 +50,29 @@ export const Header: React.FC = () => {
   const projectMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const favoritesRef = useRef<HTMLDivElement>(null);
 
   const activePage = location.pathname.split('/').pop() || '';
   const currentDomain = PERFORMANCE_DOMAINS.find(d => activePage && (activePage === d.id || activePage.startsWith(d.id + '-')));
+
+  // Favorites state
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('zarya_favorites');
+    return saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1']; // Default favorites
+  });
+
+  useEffect(() => {
+    const syncFavorites = () => {
+      const saved = localStorage.getItem('zarya_favorites');
+      if (saved) setFavorites(JSON.parse(saved));
+    };
+    window.addEventListener('storage', syncFavorites);
+    return () => window.removeEventListener('storage', syncFavorites);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('zarya_favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -76,6 +96,12 @@ export const Header: React.FC = () => {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+      if (favoritesRef.current && !favoritesRef.current.contains(event.target as Node)) {
+        setIsFavoritesOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -121,14 +147,59 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-2 ml-auto shrink-0 pr-4">
            {/* Action Buttons requested by user */}
            <div className="flex items-center gap-1 bg-slate-900 border border-slate-700 px-2 py-1 rounded-[1.25rem] mr-2">
-             <HelpTooltip text={th('favorites_summary')} position="bottom">
-               <button 
-                 onClick={() => setIsFavoritesOpen(true)} 
-                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" 
-               >
-                  <Star className="w-4 h-4 text-amber-400" />
-               </button>
-             </HelpTooltip>
+             <div className="relative" ref={favoritesRef}>
+               <HelpTooltip text={th('favorites_summary')} position="bottom">
+                 <button 
+                   onClick={() => setIsFavoritesOpen(!isFavoritesOpen)} 
+                   className={cn("p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all", isFavoritesOpen && "text-white bg-slate-800")} 
+                 >
+                    <Star className={cn("w-4 h-4", favorites.length > 0 ? "fill-amber-400 text-amber-400" : "text-slate-400")} />
+                 </button>
+               </HelpTooltip>
+
+               <AnimatePresence>
+                 {isFavoritesOpen && (
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                     animate={{ opacity: 1, scale: 1, y: 0 }}
+                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                     className="absolute top-full left-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-2"
+                   >
+                     <div className="px-3 py-2 border-b border-slate-700/50 mb-1">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('favorites')}</span>
+                     </div>
+                     <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                        {favorites.length === 0 ? (
+                          <div className="p-4 text-center">
+                            <Star className="w-8 h-8 text-slate-700 mx-auto mb-2 opacity-20" />
+                            <p className="text-[10px] text-slate-500">{t('no_favorites')}</p>
+                          </div>
+                        ) : (
+                          favorites.map(favId => {
+                            const p = allPages.find(page => page.id === favId);
+                            if (!p) return null;
+                            return (
+                              <button
+                                key={favId}
+                                onClick={() => {
+                                  navigate(`/page/${favId}`);
+                                  setIsFavoritesOpen(false);
+                                }}
+                                className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-[10px] text-slate-300 flex items-center gap-3 transition-colors group"
+                              >
+                                <div className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-slate-500 group-hover:text-blue-400 transition-colors">
+                                  {favId}
+                                </div>
+                                <span className="font-medium truncate">{stripNumericPrefix(t(favId) || p.title)}</span>
+                              </button>
+                            );
+                          })
+                        )}
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+             </div>
              <HelpTooltip text={th('generate_pdf_summary')} position="bottom">
                <button 
                  onClick={() => toast.success(t('pdf_saved_to_drive'))} 
@@ -181,7 +252,7 @@ export const Header: React.FC = () => {
              <HelpTooltip text={th('change_language_summary')} position="bottom">
                <button 
                  onClick={() => {
-                   const cycle: Record<string, 'en' | 'ar' | 'ku'> = { en: 'ar', ar: 'ku', ku: 'en' };
+                   const cycle: Record<string, 'en' | 'ar'> = { en: 'ar', ar: 'en' };
                    setLanguage(cycle[language]);
                  }} 
                  className="p-2 text-slate-400 hover:text-white transition-colors relative group" 

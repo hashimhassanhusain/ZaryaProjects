@@ -29,7 +29,7 @@ import { Ribbon, RibbonGroup } from './Ribbon';
 import { HelpTooltip } from './HelpTooltip';
 
 export const BOQView: React.FC = () => {
-  const { t, language, isRtl } = useLanguage();
+  const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();

@@ -20,10 +20,19 @@ app.use(cors());
 
 // Google Drive Auth
 const getDriveClient = () => {
-  const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
+  let envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
   
+  // Fallback: Check for a local service-account.json if env var is missing
   if (!envCreds) {
-    return { error: 'Secret GOOGLE_DRIVE_CREDENTIALS is missing or empty in the Secrets panel.' };
+    const credsPath = path.join(process.cwd(), 'service-account.json');
+    if (fs.existsSync(credsPath)) {
+      console.log('Using local service-account.json file...');
+      envCreds = fs.readFileSync(credsPath, 'utf8');
+    }
+  }
+
+  if (!envCreds) {
+    return { error: 'Google Drive Credentials Missing: Please set the GOOGLE_DRIVE_CREDENTIALS environment variable OR upload "service-account.json" to the server root.' };
   }
 
   try {

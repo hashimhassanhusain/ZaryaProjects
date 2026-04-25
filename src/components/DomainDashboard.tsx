@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -123,7 +123,7 @@ const ICON_MAP: Record<string, any> = {
 import { Ribbon, RibbonGroup } from './Ribbon';
 
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
-  const { t, isRtl } = useLanguage();
+  const { t, th, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
@@ -191,15 +191,8 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           id: 'overview', 
           label: t('overview'), 
           icon: Icon,
-          description: t('domain_overview_desc'),
+          description: th('overview_summary'),
           size: 'large'
-        },
-        {
-          id: 'favorites',
-          label: t('favorites'),
-          icon: Star,
-          description: t('your_pinned_processes'),
-          size: 'small'
         }
       ]
     }
@@ -215,7 +208,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           id: child.id,
           label: stripNumericPrefix(t(child.id)) || child.title,
           icon: ICON_MAP[child.icon || 'FileText'] || FileText,
-          description: child.summary,
+          description: th(child.id + '_summary') || child.summary,
           focusArea: area,
           size: highUsageIds.includes(child.id) ? 'large' : 'small'
         }))
@@ -223,23 +216,40 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     }
   });
 
-  // Add Tools Group
-  ribbonGroups.push({
-    id: 'tools',
-    label: t('project_tools'),
-    tabs: [
-      { id: 'explorer', label: t('files'), icon: FolderOpen, size: 'large', description: t('browse_project_files') },
-      { id: 'generate-pdf', label: t('export_pdf'), icon: Printer, size: 'small', description: t('generate_full_project_report') },
-      { id: 'push-baseline', label: t('baseline'), icon: Zap, size: 'small', description: t('save_current_project_baseline') },
-      { id: 'admin', label: t('admin'), icon: Shield, size: 'small', description: t('access_system_administration') }
-    ]
-  });
-
   // Auto-select overview when domain changes
   React.useEffect(() => {
     setActiveTab('overview');
   }, [page.id]);
 
+  const [isFavorite, setIsFavorite] = useState(() => {
+    const saved = localStorage.getItem('zarya_favorites');
+    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    return favs.includes(page.id);
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('zarya_favorites');
+    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    setIsFavorite(favs.includes(page.id));
+  }, [page.id]);
+
+  const toggleFavorite = () => {
+    const saved = localStorage.getItem('zarya_favorites');
+    let favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    
+    if (favs.includes(page.id)) {
+      favs = favs.filter((id: string) => id !== page.id);
+      setIsFavorite(false);
+      toast.success(t('removed_from_favorites'));
+    } else {
+      favs.push(page.id);
+      setIsFavorite(true);
+      toast.success(t('added_to_favorites'));
+    }
+    
+    localStorage.setItem('zarya_favorites', JSON.stringify(favs));
+    window.dispatchEvent(new Event('storage'));
+  };
   // Risk Data State
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
@@ -552,7 +562,18 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                          <Icon className="w-10 h-10" strokeWidth={1} />
                       </div>
                       <div className="space-y-1">
-                         <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                         <div className="flex items-center gap-3">
+                           <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                           <button 
+                             onClick={toggleFavorite}
+                             className={cn(
+                               "p-2 rounded-xl transition-all shadow-sm",
+                               isFavorite ? "bg-amber-50 text-amber-500" : "bg-white border border-slate-200 text-slate-300 hover:text-slate-400"
+                             )}
+                           >
+                             <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
+                           </button>
+                         </div>
                          <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
                            {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
                          </p>
