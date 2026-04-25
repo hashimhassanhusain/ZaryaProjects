@@ -335,8 +335,8 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
 
         <div className="flex items-center gap-4">
           <div className="bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">Team Morale Avg</span>
-            <span className="text-xl font-black text-emerald-700">{calculateTeamMorale()} / 10</span>
+            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-widest block">Team Morale Avg</span>
+            <span className="text-xl font-semibold text-emerald-700">{calculateTeamMorale()} / 10</span>
           </div>
           <button 
             onClick={activeView === 'performance' ? handleAddAssessment : handleAddStatus}
@@ -358,7 +358,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                   <p className="text-xs text-slate-500 font-medium">{a.memberRole}</p>
                 </div>
                 <span className={cn(
-                  "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
+                  "px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-widest",
                   a.overallRating === 'Exceeds' ? "bg-emerald-50 text-emerald-600" :
                   a.overallRating === 'Meets' ? "bg-blue-50 text-blue-600" :
                   "bg-red-50 text-red-600"
@@ -392,11 +392,11 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Member</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Accomplished</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Variance</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Member</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Accomplished</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Variance</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -417,12 +417,12 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                   </td>
                   <td className="px-8 py-6 text-center">
                     {isVarianceHigh(r.fundsSpent, r.fundsPlanned) ? (
-                      <div className="flex items-center justify-center gap-1 text-red-600 font-black text-[10px] uppercase tracking-widest">
+                      <div className="flex items-center justify-center gap-1 text-red-600 font-semibold text-[10px] uppercase tracking-widest">
                         <AlertTriangle className="w-3 h-3" />
                         High Variance
                       </div>
                     ) : (
-                      <span className="text-emerald-600 font-black text-[10px] uppercase tracking-widest">Normal</span>
+                      <span className="text-emerald-600 font-semibold text-[10px] uppercase tracking-widest">Normal</span>
                     )}
                   </td>
                   <td className="px-8 py-6 text-right">
@@ -467,7 +467,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                 {/* Common Header */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Member</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Team Member</label>
                     <select 
                       value={activeView === 'performance' ? perfData.memberId : statusData.memberId}
                       onChange={(e) => activeView === 'performance' ? setPerfData({ ...perfData, memberId: e.target.value }) : setStatusData({ ...statusData, memberId: e.target.value })}
@@ -478,7 +478,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
                     <input 
                       type="date"
                       value={activeView === 'performance' ? perfData.date : statusData.date}
@@ -492,14 +492,14 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                   <div className="space-y-10">
                     {/* Technical Performance */}
                     <section className="space-y-6">
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                      <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-blue-600" />
                         Technical Performance
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {['scope', 'quality', 'schedule', 'cost'].map((field) => (
                           <div key={field} className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{field}</label>
+                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{field}</label>
                             <select 
                               value={(perfData.technicalPerformance as any)[field]}
                               onChange={(e) => setPerfData({
@@ -519,14 +519,14 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
 
                     {/* Interpersonal */}
                     <section className="space-y-6">
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                      <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                         <Users className="w-4 h-4 text-purple-600" />
                         Interpersonal Competency
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {['communication', 'collaboration', 'leadership'].map((field) => (
                           <div key={field} className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{field}</label>
+                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">{field}</label>
                             <select 
                               value={(perfData.interpersonalCompetency as any)[field]}
                               onChange={(e) => setPerfData({
@@ -546,7 +546,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Team Morale Score (1-10)</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Team Morale Score (1-10)</label>
                         <input 
                           type="range" min="1" max="10"
                           value={perfData.moraleScore}
@@ -555,16 +555,16 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                         />
                         <div className="flex justify-between text-[10px] font-bold text-slate-400">
                           <span>1 (Low)</span>
-                          <span className="text-emerald-600 font-black text-sm">{perfData.moraleScore}</span>
+                          <span className="text-emerald-600 font-semibold text-sm">{perfData.moraleScore}</span>
                           <span>10 (High)</span>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Overall Rating</label>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Overall Rating</label>
                         <select 
                           value={perfData.overallRating}
                           onChange={(e) => setPerfData({ ...perfData, overallRating: e.target.value as any })}
-                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black focus:ring-4 focus:ring-blue-500/10 outline-none uppercase tracking-widest"
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-blue-500/10 outline-none uppercase tracking-widest"
                         >
                           <option value="Exceeds">Exceeds Expectations</option>
                           <option value="Meets">Meets Expectations</option>
@@ -578,7 +578,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                     {/* Activities */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                       <section className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                           <ActivityIcon className="w-4 h-4 text-blue-600" />
                           Activities Accomplished
                         </h4>
@@ -604,7 +604,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                       </section>
 
                       <section className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-amber-600" />
                           Root Cause of Variance
                         </h4>
@@ -621,13 +621,13 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                     {/* Finance */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                       <section className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-emerald-600" />
                           Financial Tracking
                         </h4>
                         <div className="grid grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Funds Planned (IQD)</label>
+                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Funds Planned (IQD)</label>
                             <input 
                               type="number"
                               value={statusData.fundsPlanned}
@@ -636,7 +636,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Funds Spent (IQD)</label>
+                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Funds Spent (IQD)</label>
                             <input 
                               type="number"
                               value={statusData.fundsSpent}
@@ -651,7 +651,7 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                       </section>
 
                       <section className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                           Planned Corrective Actions
                         </h4>

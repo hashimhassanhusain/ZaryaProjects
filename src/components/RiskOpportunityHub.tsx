@@ -41,7 +41,7 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
                 <AlertTriangle className="w-8 h-8" />
              </div>
-             <p className="text-xs font-black uppercase text-slate-400 tracking-widest italic">Issue Log & Response Execution coming soon...</p>
+             <p className="text-xs font-semibold uppercase text-slate-400 tracking-widest italic">Issue Log & Response Execution coming soon...</p>
           </div>
         );
       default:
@@ -70,7 +70,7 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
                 )}
               >
                 <Icon className={cn("w-4 h-4 transition-transform group-hover:scale-110", isActive ? "text-rose-400" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">{tab.label}</span>
                 {isActive && (
                   <motion.div 
                     layoutId="activeTabRisk" 

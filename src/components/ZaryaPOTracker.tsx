@@ -53,7 +53,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     // 3,000,000 or less: Green
     // 15,000,000 or more: Red
     if (amount <= 3000000) return 'text-emerald-600';
-    if (amount >= 15000000) return 'text-rose-600 font-black';
+    if (amount >= 15000000) return 'text-rose-600 font-semibold';
     
     // Gradient logic: Green -> Amber -> Orange -> Red
     if (amount < 6000000) return 'text-green-600';
@@ -889,7 +889,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             >
               <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="col-span-full mb-2">
-                   <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                   <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                      <Sparkles className="w-4 h-4" />
                      Define New Activity under {wbsLevels.find(l => l.id === newPO.workPackageId)?.title}
                    </h4>
@@ -1145,7 +1145,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               <ShieldCheck className={cn("w-5 h-5", requiresContract ? "text-rose-500" : "text-blue-500")} />
               <h4 className="text-sm font-bold text-slate-900">Contract & Documentation</h4>
               {requiresContract && (
-                <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black uppercase rounded animate-pulse">
+                <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-semibold uppercase rounded animate-pulse">
                   Contract Required
                 </span>
               )}
@@ -1459,16 +1459,16 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               <ShieldCheck className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest">Global Project Limit</h4>
+              <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Global Project Limit</h4>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight">${globalLimit.toLocaleString('en-US')}</span>
+                <span className="text-2xl font-semibold tracking-tight">${globalLimit.toLocaleString('en-US')}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">USD (Synced from PMP)</span>
               </div>
             </div>
           </div>
           
           <div className="flex-1 max-w-md w-full">
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+            <div className="flex justify-between text-[10px] font-semibold uppercase tracking-widest mb-2">
               <span className="text-slate-400">Budget Utilization</span>
               <span className={cn(utilizationPercent > 90 ? "text-rose-400" : "text-blue-400")}>
                 {utilizationPercent.toFixed(1)}%
@@ -1487,8 +1487,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           </div>
 
         <div className="text-right">
-          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Committed</h4>
-          <div className="text-2xl font-black tracking-tight text-emerald-400">
+          <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Committed</h4>
+          <div className="text-2xl font-semibold tracking-tight text-emerald-400">
             {formatAmount(totalCommitted, baseCurrency)}
           </div>
         </div>
@@ -1581,7 +1581,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
               <div className="space-y-6">
                 <div>
                   <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Committed (POs)</div>
-                  <div className="text-2xl font-black text-blue-400">
+                  <div className="text-2xl font-semibold text-blue-400">
                     {formatAmount(totalCommitted, baseCurrency)}
                   </div>
                 </div>
@@ -1876,7 +1876,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">AI Analysis Preview</h3>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">AI Analysis Preview</h3>
                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted Purchase Orders before importing</p>
                   </div>
                 </div>
@@ -1895,25 +1895,25 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                       <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
                         <div className="flex gap-4">
                           <div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PO Number</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PO Number</div>
                             <div className="text-sm font-bold text-blue-600">{po.id}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('supplier')}</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier')}</div>
                             <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost Account</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Cost Account</div>
                             <div className="text-sm font-bold text-slate-700">{po.masterFormat}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</div>
-                          <div className="text-lg font-black text-slate-900">{formatAmount(po.amount, baseCurrency)}</div>
+                          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Total Amount</div>
+                          <div className="text-lg font-semibold text-slate-900">{formatAmount(po.amount, baseCurrency)}</div>
                         </div>
                       </div>
                       <table className="w-full text-left text-[11px]">
-                        <thead className="bg-white border-b border-slate-100 text-slate-400 font-black uppercase tracking-widest">
+                        <thead className="bg-white border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-widest">
                           <tr>
                             <th className="px-4 py-3">Description</th>
                             <th className="px-4 py-3 text-right">Qty</th>
@@ -1929,7 +1929,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                               <td className="px-4 py-3 text-right font-bold">{li.quantity.toLocaleString()}</td>
                               <td className="px-4 py-3 text-slate-500 uppercase font-bold">{li.unit}</td>
                               <td className="px-4 py-3 text-right font-bold">{formatAmount(li.rate, baseCurrency)}</td>
-                              <td className="px-4 py-3 text-right font-black text-blue-600">{formatAmount(li.amount, baseCurrency)}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatAmount(li.amount, baseCurrency)}</td>
                             </tr>
                           ))}
                         </tbody>

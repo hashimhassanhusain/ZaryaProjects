@@ -59,15 +59,15 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
     return matchesSearch && matchesType && matchesDate;
   });
 
-  const meetingTypes = ['All', 'Risk Management', 'Technical Review', 'Owner Meeting', 'General', 'Kick-off', 'Progress'];
+  const meetingTypes = ['all', 'risk_management', 'technical_review', 'owner_meeting', 'general', 'kick_off', 'progress'];
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'Risk Management': return 'bg-rose-500';
-      case 'Technical Review': return 'bg-blue-500';
-      case 'Owner Meeting': return 'bg-amber-500';
-      case 'Kick-off': return 'bg-emerald-500';
-      case 'Progress': return 'bg-indigo-500';
+      case 'risk_management': return 'bg-rose-500';
+      case 'technical_review': return 'bg-blue-500';
+      case 'owner_meeting': return 'bg-amber-500';
+      case 'kick_off': return 'bg-emerald-500';
+      case 'progress': return 'bg-indigo-500';
       default: return 'bg-slate-500';
     }
   };
@@ -77,11 +77,11 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <h1 className={cn("text-3xl font-semibold text-slate-900 tracking-tight flex items-center gap-3", isRtl && "flex-row-reverse")}>
             <Calendar className="w-8 h-8 text-blue-600" />
-            Meetings Archive <span className="text-slate-300 font-light">|</span> <span className="text-blue-600">أرشيف الاجتماعات</span>
+            {t('meetings')} <span className="text-slate-300 font-light">|</span> <span className="text-blue-600">{t('archive')}</span>
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">The institutional memory of the project.</p>
+          <p className={cn("text-slate-500 mt-1 font-medium", isRtl && "text-right")}>{t('meetings_desc')}</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -96,7 +96,7 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
             className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
           >
             <Plus className="w-5 h-5" />
-            New Meeting
+            {t('new_meeting')}
           </button>
         </div>
       </div>
@@ -108,35 +108,35 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text"
-              placeholder="Search by keyword (e.g. 'HVAC', 'Concrete')..."
+              placeholder={t('search_meetings_placeholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium"
             />
           </div>
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
-            {meetingTypes.map(type => (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
-                  filterType === type 
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" 
-                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                )}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+                {meetingTypes.map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setFilterType(type)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all",
+                      filterType === type 
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" 
+                        : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                    )}
+                  >
+                    {t(type)}
+                  </button>
+                ))}
+              </div>
         </div>
 
         {/* Mini Timeline View */}
-        <div className="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar border-t border-slate-50 pt-6">
-          <div className="flex items-center gap-2 shrink-0 pr-4 border-r border-slate-100">
+        <div className={cn("flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar border-t border-slate-50 pt-6", isRtl && "flex-row-reverse")}>
+          <div className={cn("flex items-center gap-2 shrink-0 px-4", isRtl ? "border-l border-slate-100" : "border-r border-slate-100")}>
             <Clock className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Timeline</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('timeline')}</span>
           </div>
           {Array.from({ length: 14 }).map((_, i) => {
             const date = new Date();
@@ -153,8 +153,8 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
                   hasMeeting && !selectedDate && "relative after:absolute after:bottom-1 after:w-1 after:h-1 after:bg-blue-500 after:rounded-full"
                 )}
               >
-                <span className="text-[10px] font-bold text-slate-400">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                <span className="text-sm font-black text-slate-700">{date.getDate()}</span>
+                <span className="text-[10px] font-bold text-slate-400">{date.toLocaleDateString(isRtl ? 'ar-SA' : 'en-US', { weekday: 'short' })}</span>
+                <span className="text-sm font-semibold text-slate-700">{date.getDate()}</span>
               </button>
             );
           })}
@@ -179,10 +179,10 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
               <div className="p-6 space-y-4 flex-1">
                 <div className="flex items-start justify-between">
                   <div className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white",
+                    "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest text-white",
                     getTypeColor(meeting.type)
                   )}>
-                    {meeting.type}
+                    {t(meeting.type)}
                   </div>
                   <div className="flex items-center gap-1 text-slate-400">
                     <Clock className="w-3.5 h-3.5" />
@@ -196,7 +196,7 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
                   </h3>
                   <div className="flex items-center gap-2 mt-1 text-slate-500">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span className="text-xs font-medium">{new Date(meeting.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span className="text-xs font-medium">{new Date(meeting.date).toLocaleDateString(isRtl ? 'ar-SA' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   </div>
                 </div>
 
@@ -211,8 +211,8 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-500 line-clamp-2 font-medium leading-relaxed">
-                  {meeting.notes || 'No summary notes provided for this meeting.'}
+                <p className={cn("text-xs text-slate-500 line-clamp-2 font-medium leading-relaxed", isRtl && "text-right")}>
+                  {meeting.notes || t('no_notes_provided')}
                 </p>
 
                 {/* Meeting Health Indicator */}
@@ -220,9 +220,9 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meeting Health</span>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('meeting_health')}</span>
                     </div>
-                    <span className="text-[10px] font-black text-blue-600">{meeting.meetingHealth || 0}%</span>
+                    <span className="text-[10px] font-semibold text-blue-600">{meeting.meetingHealth || 0}%</span>
                   </div>
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div 
@@ -252,7 +252,7 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
                   <button className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
                     <Download className="w-4 h-4" />
                   </button>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                  <ChevronRight className={cn("w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all", isRtl && "rotate-180")} />
                 </div>
               </div>
             </motion.div>
@@ -262,8 +262,8 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
         {filteredMeetings.length === 0 && (
           <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
             <Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-slate-900">No meetings found</h3>
-            <p className="text-slate-500 max-w-xs mx-auto mt-1">Adjust your filters or search terms to find what you're looking for.</p>
+            <h3 className="text-lg font-bold text-slate-900">{t('no_meetings_found')}</h3>
+            <p className="text-slate-500 max-w-xs mx-auto mt-1">{t('adjust_filters_hint')}</p>
           </div>
         )}
       </div>

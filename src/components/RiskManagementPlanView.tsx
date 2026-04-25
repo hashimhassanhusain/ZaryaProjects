@@ -457,7 +457,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
         <div className="p-10 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
               {isEditing ? (
                 <input 
                   type="text"
@@ -473,7 +473,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
               {isEditing ? (
                 <input 
                   type="date"
@@ -623,7 +623,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               {isEditing && (
                 <button 
                   onClick={() => setRiskPlan({ ...riskPlan, tolerances: [...riskPlan.tolerances, { stakeholderId: '', tolerance: '' }] })}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-100 transition-all"
                 >
                   <Plus className="w-3 h-3" />
                   Add Tolerance
@@ -723,8 +723,8 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Level</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32">Level</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -763,11 +763,11 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Level</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Scope</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quality</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cost</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">Level</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Scope</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Quality</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Time</th>
+                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Cost</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -827,11 +827,11 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-8">
                 <div className="flex flex-col items-center gap-2 -rotate-90 origin-center w-0">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Probability</span>
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em]">Probability</span>
                 </div>
                 <div className="flex flex-col gap-2">
                   {['V. High', 'High', 'Medium', 'Low', 'V. Low'].map((label) => (
-                    <div key={label} className="h-16 flex items-center justify-end pr-4 text-[10px] font-black text-slate-400 uppercase w-16">
+                    <div key={label} className="h-16 flex items-center justify-end pr-4 text-[10px] font-semibold text-slate-400 uppercase w-16">
                       {label}
                     </div>
                   ))}
@@ -855,13 +855,13 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               </div>
               <div className="flex items-center gap-2 mt-4 ml-32">
                 {['V. Low', 'Low', 'Medium', 'High', 'V. High'].map((label) => (
-                  <div key={label} className="w-16 text-center text-[10px] font-black text-slate-400 uppercase">
+                  <div key={label} className="w-16 text-center text-[10px] font-semibold text-slate-400 uppercase">
                     {label}
                   </div>
                 ))}
               </div>
               <div className="mt-8 ml-32">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Impact</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em]">Impact</span>
               </div>
             </div>
           </section>
@@ -938,15 +938,15 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

@@ -87,7 +87,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
       page={page}
       inputs={[
         { id: '2.1.9', title: 'Scope Management Plan', status: 'Approved' },
-        { id: '2.2.9', title: 'WBS', status: 'Approved' }
+        { id: '2.2.5', title: 'WBS', status: 'Approved' }
       ]}
       outputs={[
         { id: '2.6.5-OUT', title: 'Project RACI Chart', status: 'Locked' }
@@ -99,7 +99,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
             <Grid className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Interactive RACI Matrix</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Interactive RACI Matrix</h2>
             <p className="text-sm text-slate-500 font-medium">Assign Responsibility (R), Accountability (A), Consultation (C), and Information (I) roles.</p>
           </div>
         </header>
@@ -109,15 +109,15 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 sticky left-0 bg-white z-10 w-64">
+                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest border-b border-slate-100 sticky left-0 bg-white z-10 w-64">
                       Work Package / Task
                     </th>
                     {teamMembers.map(m => (
-                      <th key={m.id} className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 text-center min-w-[120px]">
+                      <th key={m.id} className="px-6 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest border-b border-slate-100 text-center min-w-[120px]">
                         {m.name}
                       </th>
                     ))}
-                    <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 text-center">
+                    <th className="px-6 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest border-b border-slate-100 text-center">
                        Integrity
                     </th>
                   </tr>
@@ -130,7 +130,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
                     return (
                       <tr key={row.id} className="hover:bg-slate-50/30 transition-colors">
                         <td className="px-8 py-6 border-r border-slate-50 sticky left-0 bg-white z-10">
-                           <p className="text-xs font-black text-slate-900 italic">{row.taskTitle}</p>
+                           <p className="text-xs font-semibold text-slate-900 italic">{row.taskTitle}</p>
                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">ID: {row.id.substring(0, 8)}</p>
                         </td>
                         {teamMembers.map(m => (
@@ -139,7 +139,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
                                 <select 
                                   value={row.assignments[m.id] || ''}
                                   onChange={(e) => updateRACI(row.id, m.id, (e.target.value || null) as any)}
-                                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black appearance-none text-center cursor-pointer transition-all hover:scale-110 ${getRoleColor(row.assignments[m.id] || null)}`}
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-semibold appearance-none text-center cursor-pointer transition-all hover:scale-110 ${getRoleColor(row.assignments[m.id] || null)}`}
                                 >
                                    <option value="">-</option>
                                    <option value="R">R</option>
@@ -178,7 +178,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
              <div key={item.role} className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
                    <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-900">{item.role}</p>
+                   <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-900">{item.role}</p>
                 </div>
                 <p className="text-[11px] font-medium text-slate-500">{item.desc}</p>
              </div>
@@ -190,7 +190,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
               <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
                  <ShieldCheck className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-2xl font-black italic tracking-tighter">Governance Enforcement</h3>
+              <h3 className="text-2xl font-semibold italic tracking-tighter">Governance Enforcement</h3>
               <p className="text-slate-400 font-medium leading-relaxed">
                  Zarya's smart matrix ensures project integrity by enforcing the **"Golden Rule"**: Every task MUST have exactly one Accountable (A) role. Any deviation will alert the PMO and block final schedule baseline approval.
               </p>

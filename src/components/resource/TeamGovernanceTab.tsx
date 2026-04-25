@@ -216,7 +216,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
             {/* Values */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   Team Values & Principles
                 </h4>
@@ -246,7 +246,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
                     Meeting Guidelines
                   </h4>
@@ -273,7 +273,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
 
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-purple-600" />
                     Communication Guidelines
                   </h4>
@@ -302,7 +302,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
             {/* Processes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <section className="space-y-4">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600" />
                   Decision-Making Process
                 </h4>
@@ -316,7 +316,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
               </section>
 
               <section className="space-y-4">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                   <Gavel className="w-4 h-4 text-rose-600" />
                   Conflict Management Approach
                 </h4>
@@ -336,19 +336,19 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
           <div className="p-8 border-b border-slate-100 bg-slate-50/50">
             <h3 className="text-xl font-bold text-slate-900">Responsibility Assignment Matrix (RACI)</h3>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              <span className="font-black text-slate-900">R</span>: Responsible | 
-              <span className="font-black text-slate-900 ml-2">A</span>: Accountable | 
-              <span className="font-black text-slate-900 ml-2">C</span>: Consulted | 
-              <span className="font-black text-slate-900 ml-2">I</span>: Informed
+              <span className="font-semibold text-slate-900">R</span>: Responsible | 
+              <span className="font-semibold text-slate-900 ml-2">A</span>: Accountable | 
+              <span className="font-semibold text-slate-900 ml-2">C</span>: Consulted | 
+              <span className="font-semibold text-slate-900 ml-2">I</span>: Informed
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50/50 z-10">Work Package / Activity</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50/50 z-10">Work Package / Activity</th>
                   {members.map(m => (
-                    <th key={m.id} className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center border-l border-slate-100 min-w-[120px]">
+                    <th key={m.id} className="px-6 py-5 text-[10px] font-semibold text-slate-900 uppercase tracking-widest text-center border-l border-slate-100 min-w-[120px]">
                       {m.name}
                       <div className="text-[8px] text-slate-400 font-medium mt-1">{m.role}</div>
                     </th>
@@ -368,7 +368,7 @@ export const TeamGovernanceTab: React.FC<TeamGovernanceTabProps> = ({ projectId 
                           value={raciData[wp.id]?.[m.id] || ''}
                           onChange={(e) => handleRaciUpdate(wp.id, m.id, e.target.value as any)}
                           className={cn(
-                            "w-10 h-10 rounded-lg text-xs font-black transition-all outline-none appearance-none text-center cursor-pointer",
+                            "w-10 h-10 rounded-lg text-xs font-semibold transition-all outline-none appearance-none text-center cursor-pointer",
                             raciData[wp.id]?.[m.id] === 'R' ? "bg-blue-600 text-white" :
                             raciData[wp.id]?.[m.id] === 'A' ? "bg-red-600 text-white" :
                             raciData[wp.id]?.[m.id] === 'C' ? "bg-amber-500 text-white" :

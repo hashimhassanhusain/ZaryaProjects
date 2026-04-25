@@ -270,13 +270,13 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50 border-bottom border-slate-200">
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Resource</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Qty</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Rate</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Resource</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Type</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Qty</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Rate</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Amount</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -304,7 +304,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                 </td>
                 <td className="px-8 py-5">
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                    "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
                     req.resourceType === 'Labor' ? "bg-blue-50 text-blue-600" :
                     req.resourceType === 'Material' ? "bg-amber-50 text-amber-600" :
                     "bg-purple-50 text-purple-600"
@@ -323,7 +323,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                 </td>
                 <td className="px-8 py-5">
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                    "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
                     req.status === 'Approved' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
                   )}>
                     {req.status}
@@ -366,7 +366,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Requirement' : 'Add New Requirement'}
                 </h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -378,7 +378,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                 {/* WBS Picker */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Zone</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Zone</label>
                     <select
                       value={selectedZone}
                       onChange={(e) => {
@@ -394,7 +394,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Area</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Area</label>
                     <select
                       value={selectedArea}
                       onChange={(e) => {
@@ -410,7 +410,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Building</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Building</label>
                     <select
                       value={selectedBuilding}
                       onChange={(e) => {
@@ -425,7 +425,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Floor</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Floor</label>
                     <select
                       value={selectedFloor}
                       onChange={(e) => setSelectedFloor(e.target.value)}
@@ -439,7 +439,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Activity</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Activity</label>
                   <select
                     value={formData.activityId}
                     onChange={(e) => setFormData({ ...formData, activityId: e.target.value })}
@@ -453,7 +453,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Name</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Resource Name</label>
                     <input
                       type="text"
                       value={formData.resourceName}
@@ -462,7 +462,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Type</label>
                     <select
                       value={formData.resourceType}
                       onChange={(e) => setFormData({ ...formData, resourceType: e.target.value as any })}
@@ -477,7 +477,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Quantity</label>
                     <input
                       type="number"
                       value={formData.quantity}
@@ -486,7 +486,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unit</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Unit</label>
                     <input
                       type="text"
                       value={formData.unit}
@@ -495,7 +495,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Rate</label>
                     <input
                       type="number"
                       value={formData.rate}
@@ -507,7 +507,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Optimistic (tO)
                     </label>
                     <input
@@ -519,7 +519,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Most Likely (tM)
                     </label>
                     <input
@@ -531,7 +531,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Pessimistic (tP)
                     </label>
                     <input
@@ -548,7 +548,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider">Beta Estimated Duration (tE)</span>
                   </div>
-                  <div className="text-lg font-black">
+                  <div className="text-lg font-semibold">
                     {calculateEstimatedDuration(
                       formData.optimisticDuration || 0,
                       formData.mostLikelyDuration || 0,
@@ -562,7 +562,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                     <DollarSign className="w-5 h-5 text-blue-400" />
                     <span className="text-sm font-bold">Total Amount</span>
                   </div>
-                  <div className="text-xl font-black">
+                  <div className="text-xl font-semibold">
                     {((formData.quantity || 0) * (formData.rate || 0)).toLocaleString()} IQD
                   </div>
                 </div>
@@ -581,7 +581,7 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                       {versions.filter(v => v.requirementId === editingId).map((v) => (
                         <div key={v.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
                           <div className="space-y-1">
-                            <div className="text-[10px] font-black text-slate-900 uppercase">Version {v.version}</div>
+                            <div className="text-[10px] font-semibold text-slate-900 uppercase">Version {v.version}</div>
                             <div className="text-[10px] text-slate-500">{v.userName} • {new Date(v.timestamp).toLocaleString()}</div>
                           </div>
                           <button 

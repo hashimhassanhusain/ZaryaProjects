@@ -139,7 +139,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
               <Brain className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Relationships & Sentiment</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Relationships & Sentiment</h2>
               <p className="text-sm text-slate-500 font-medium">Measuring relationship health through AI-powered sentiment logs.</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                 <button
                   key={t}
                   onClick={() => setActiveSubTab(t as any)}
-                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  className={`px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all ${
                     activeSubTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -161,7 +161,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
         {activeSubTab === 'engagement' && (
           <section className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden">
              <div className="p-8 border-b border-slate-50 bg-slate-50/30">
-               <h3 className="text-lg font-black text-slate-900 italic">Engagement Matrix (C vs D)</h3>
+               <h3 className="text-lg font-semibold text-slate-900 italic">Engagement Matrix (C vs D)</h3>
              </div>
              <table className="w-full text-left">
                 <thead>
@@ -182,18 +182,18 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                               {sh.name[0]}
                            </div>
                            <div>
-                              <p className="text-sm font-black text-slate-900">{sh.name}</p>
+                              <p className="text-sm font-semibold text-slate-900">{sh.name}</p>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sh.role}</p>
                            </div>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-3 py-1 rounded-lg uppercase">
+                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg uppercase">
                            {sh.currentEngagement || 'Unaware'}
                         </span>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg uppercase">
+                        <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-3 py-1 rounded-lg uppercase">
                            {sh.desiredEngagement || 'Supportive'}
                         </span>
                       </td>
@@ -204,13 +204,13 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                            ) : (
                              <AlertTriangle className="w-3 h-3" />
                            )}
-                           <span className="text-[9px] font-black uppercase tracking-widest">
+                           <span className="text-[9px] font-semibold uppercase tracking-widest">
                               {getEngagementColor(sh.currentEngagement, sh.desiredEngagement).includes('emerald') ? 'Aligned' : 'Gap Detected'}
                            </span>
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <button className="text-[10px] font-black text-purple-600 uppercase tracking-widest hover:underline transition-all">
+                        <button className="text-[10px] font-semibold text-purple-600 uppercase tracking-widest hover:underline transition-all">
                            View Mitigation Plan
                         </button>
                       </td>
@@ -225,10 +225,10 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
              <div className="space-y-6">
                 <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-                   <h3 className="text-lg font-black text-slate-900 italic">Submit Interaction Log</h3>
+                   <h3 className="text-lg font-semibold text-slate-900 italic">Submit Interaction Log</h3>
                    <div className="space-y-4">
                       <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stakeholder</label>
+                         <label className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Stakeholder</label>
                          <select 
                            value={selectedSh}
                            onChange={(e) => setSelectedSh(e.target.value)}
@@ -239,7 +239,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                          </select>
                       </div>
                       <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Log / Observation Content</label>
+                         <label className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Log / Observation Content</label>
                          <textarea 
                            rows={4}
                            placeholder="Type observation based on meeting minutes or conversation..."
@@ -251,7 +251,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                       <button 
                         onClick={handleAnalyzeSentiment}
                         disabled={isAnalyzing}
-                        className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-purple-700 transition-all shadow-xl shadow-purple-600/20 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-purple-600 text-white rounded-2xl font-semibold text-[11px] uppercase tracking-widest hover:bg-purple-700 transition-all shadow-xl shadow-purple-600/20 flex items-center justify-center gap-2"
                       >
                          {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
                          {isAnalyzing ? 'Analyzing Sentiment...' : 'Analyze & Log Interaction'}
@@ -260,7 +260,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                 </div>
 
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-4 shadow-xl shadow-purple-900/10">
-                   <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-400">AI Logic Indicator</h4>
+                   <h4 className="text-[10px] font-semibold uppercase tracking-widest text-purple-400">AI Logic Indicator</h4>
                    <p className="text-sm font-medium leading-relaxed italic text-slate-400">
                      "Zarya uses NLP to detect conflict levels. Stakeholders tagged as 'Critical' will be automatically flagged in the Risk Register."
                    </p>
@@ -268,7 +268,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
              </div>
 
              <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6 flex flex-col h-[700px]">
-                <h3 className="text-lg font-black text-slate-900 italic">Sentiment Feed</h3>
+                <h3 className="text-lg font-semibold text-slate-900 italic">Sentiment Feed</h3>
                 <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
                    {logs.map((log) => {
                      const sh = stakeholders.find(s => s.id === log.stakeholderId);
@@ -285,8 +285,8 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                           }`} />
                           <div className="flex items-center justify-between mb-2">
                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-slate-900 uppercase">{sh?.name || 'Unknown'}</span>
-                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
+                                <span className="text-[10px] font-semibold text-slate-900 uppercase">{sh?.name || 'Unknown'}</span>
+                                <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded uppercase ${
                                    log.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600' : 
                                    log.sentiment === 'Negative' || log.sentiment === 'Conflict' ? 'bg-rose-50 text-rose-600' : 'bg-slate-200 text-slate-600'
                                 }`}>
@@ -306,7 +306,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                    {logs.length === 0 && (
                      <div className="flex flex-col items-center justify-center h-full text-center py-20 grayscale">
                         <MessageSquare className="w-12 h-12 text-slate-200 mb-4" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Logs Found</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">No Logs Found</p>
                      </div>
                    )}
                 </div>

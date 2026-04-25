@@ -33,16 +33,16 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
             <MessageSquare className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Communications Management Plan</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Communications Management Plan</h2>
             <p className="text-sm text-slate-500 font-medium">Establish a structured framework for all project-related communications.</p>
           </div>
         </header>
 
         <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-8">
            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-900 italic">Communication Matrix</h3>
+              <h3 className="text-lg font-semibold text-slate-900 italic">Communication Matrix</h3>
               <div className="flex gap-2">
-                 <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+                 <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-100 transition-all">
                     <Share2 className="w-3.5 h-3.5" />
                     Share Portal
                  </button>
@@ -59,24 +59,24 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
                              c.method.includes('Email') ? <Mail className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                          </div>
                          <div>
-                            <p className="text-sm font-black text-slate-900 italic line-clamp-1">{c.topic}</p>
+                            <p className="text-sm font-semibold text-slate-900 italic line-clamp-1">{c.topic}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.id}</p>
                          </div>
                       </div>
 
                       <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 flex-1">
                          <div className="space-y-1">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Audience</p>
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Audience</p>
                             <p className="text-xs font-bold text-slate-700">{c.audience}</p>
                          </div>
                          <div className="space-y-1">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Frequency</p>
-                            <span className="text-[9px] font-black bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase">
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Frequency</p>
+                            <span className="text-[9px] font-semibold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase">
                                {c.frequency}
                             </span>
                          </div>
                          <div className="space-y-1 hidden lg:block">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Responsibility</p>
+                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</p>
                             <p className="text-xs font-bold text-slate-700">{c.owner}</p>
                          </div>
                       </div>
@@ -97,14 +97,14 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
                  <ClipboardList className="w-6 h-6 text-blue-400" />
               </div>
-              <h4 className="text-xl font-black italic tracking-tight">Information Security</h4>
+              <h4 className="text-xl font-semibold italic tracking-tight">Information Security</h4>
               <p className="text-sm text-slate-400 font-medium leading-relaxed">
                  All external project reports are marked with **"Restricted - Project Team Only"** as per the Governance and IP protection protocols defined in Project Charter.
               </p>
            </div>
 
            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Technical Protocol</h4>
+              <h4 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Technical Protocol</h4>
               <p className="text-xs text-slate-600 font-bold leading-relaxed">
                  Zarya API automatically parses "Meeting Minutes" to create tasks in Domain Execute for any decision marked with "Action Required".
               </p>

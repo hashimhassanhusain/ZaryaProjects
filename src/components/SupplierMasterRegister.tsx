@@ -253,14 +253,14 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('supplier_code')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('supplier_name')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('discipline')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('po_total')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('paid')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('balance')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t('status')}</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t('actions')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier_code')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier_name')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('discipline')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('po_total')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('paid')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('balance')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">{t('status')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -282,7 +282,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col">
-                        <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">{supplier.name}</span>
+                        <span className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{supplier.name}</span>
                         <span className="text-[10px] text-slate-400 font-medium">{supplier.contactDetails.email}</span>
                       </div>
                     </td>
@@ -302,7 +302,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className={cn(
-                        "text-[9px] font-black px-2 py-1 uppercase tracking-tighter",
+                        "text-[9px] font-semibold px-2 py-1 uppercase tracking-tighter",
                         supplier.status === 'Active' ? "bg-emerald-100 text-emerald-700" :
                         supplier.status === 'Suspended' ? "bg-amber-100 text-amber-700" :
                         "bg-slate-200 text-slate-600"
@@ -356,7 +356,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               style={{ borderRadius: '0px' }}
             >
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">{t('supplier_profile')}</h3>
+                <h3 className="text-lg font-semibold text-slate-900 uppercase tracking-tighter">{t('supplier_profile')}</h3>
                 <button onClick={() => setSelectedSupplier(null)} className="p-2 hover:bg-slate-200 transition-all">
                   <X className="w-5 h-5 text-slate-500" />
                 </button>
@@ -364,8 +364,8 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               
               <div className="flex-1 overflow-y-auto p-8 space-y-8">
                 <div className="space-y-2">
-                  <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{t('supplier_details')}</div>
-                  <h4 className="text-2xl font-black text-slate-900 uppercase leading-tight">{selectedSupplier.name}</h4>
+                  <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-[0.2em]">{t('supplier_details')}</div>
+                  <h4 className="text-2xl font-semibold text-slate-900 uppercase leading-tight">{selectedSupplier.name}</h4>
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-400">
                     <Briefcase className="w-3 h-3" /> {selectedSupplier.vendorCode}
                   </div>
@@ -389,17 +389,17 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                 </div>
 
                 <div className="space-y-4">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Financial Summary</div>
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Financial Summary</div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-blue-50 border border-blue-100">
-                      <div className="text-[9px] font-black text-blue-400 uppercase mb-1">{t('po_total')}</div>
-                      <div className="text-lg font-black text-blue-700">
+                      <div className="text-[9px] font-semibold text-blue-400 uppercase mb-1">{t('po_total')}</div>
+                      <div className="text-lg font-semibold text-blue-700">
                         {formatCurrency(supplierStats.find(s => s.supplierId === selectedSupplier.id)?.totalPOAmount || 0)}
                       </div>
                     </div>
                     <div className="p-4 bg-emerald-50 border border-emerald-100">
-                      <div className="text-[9px] font-black text-emerald-400 uppercase mb-1">{t('paid')}</div>
-                      <div className="text-lg font-black text-emerald-700">
+                      <div className="text-[9px] font-semibold text-emerald-400 uppercase mb-1">{t('paid')}</div>
+                      <div className="text-lg font-semibold text-emerald-700">
                         {formatCurrency(supplierStats.find(s => s.supplierId === selectedSupplier.id)?.totalPayments || 0)}
                       </div>
                     </div>
@@ -407,17 +407,17 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                 </div>
 
                 <div className="space-y-4">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Linked Purchase Orders</div>
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Linked Purchase Orders</div>
                   <div className="space-y-3">
                     {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.pos.map(po => (
                       <div key={po.id} className="p-4 border border-slate-100 hover:border-blue-200 transition-all group">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase">{po.id}</div>
-                          <span className="text-[9px] font-black px-1.5 py-0.5 bg-slate-100 text-slate-500 uppercase">{po.status}</span>
+                          <div className="text-xs font-semibold text-slate-900 group-hover:text-blue-600 transition-colors uppercase">{po.id}</div>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-500 uppercase">{po.status}</span>
                         </div>
                         <div className="flex justify-between items-end">
                           <div className="text-[10px] font-bold text-slate-400">{po.date}</div>
-                          <div className="text-xs font-black text-slate-900">{formatCurrency(po.amount)}</div>
+                          <div className="text-xs font-semibold text-slate-900">{formatCurrency(po.amount)}</div>
                         </div>
                       </div>
                     ))}
@@ -432,7 +432,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
               <div className="p-6 border-t border-slate-100 bg-slate-50">
                 <button 
-                  className="w-full py-4 bg-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all"
+                  className="w-full py-4 bg-slate-900 text-white font-semibold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all"
                   style={{ borderRadius: '0px' }}
                 >
                   {t('download_statement')}

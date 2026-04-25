@@ -43,7 +43,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           <div className="p-2 bg-slate-900 rounded-xl">
             <Users className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Resource & Optimization Hub</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Resource & Optimization Hub</h1>
           <ChevronRight className="w-5 h-5 text-slate-300" />
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
             {tabs.find(t => t.id === activeTab)?.label}

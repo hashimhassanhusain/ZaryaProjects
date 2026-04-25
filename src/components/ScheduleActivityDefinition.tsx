@@ -120,8 +120,8 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
     <StandardProcessPage
       page={page}
       inputs={[
-        { id: '2.2.9', title: 'WBS', status: 'Approved' },
-        { id: '2.2.10', title: 'Work Packages', status: 'Ready' }
+        { id: '2.2.5', title: 'WBS', status: 'Approved' },
+        { id: '2.2.7', title: 'Work Packages', status: 'Ready' }
       ]}
       outputs={[
         { id: '2.3.1-OUT', title: 'Activity List', status: 'Draft' }
@@ -141,12 +141,12 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                 <Calendar className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Gantt Chart Tool</h3>
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-widest">Gantt Chart Tool</h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Interactive Schedule Visualization</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">
+              <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">
                 {showGantt ? 'Hide Tool' : 'Launch Tool'}
               </span>
               <ChevronRight className={cn("w-4 h-4 text-slate-400 transition-transform", showGantt && "rotate-90")} />
@@ -170,10 +170,10 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
         <header className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/10 text-xl font-black italic">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/10 text-xl font-semibold italic">
                 A
               </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Define Activities</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Define Activities</h2>
             </div>
             <p className="text-sm text-slate-500 font-medium ml-13">Breaking down Work Packages into executable tasks.</p>
           </div>
@@ -191,7 +191,7 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
             </div>
             <button
                onClick={addActivity}
-               className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+               className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
             >
                <Plus className="w-4 h-4" />
                New Activity
@@ -204,7 +204,7 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
           <div className="col-span-4 space-y-4">
             <div className="flex items-center gap-2 px-2">
               <Layers className="w-4 h-4 text-slate-400" />
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Work Packages</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Work Packages</h3>
             </div>
             
             <div className="space-y-2 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
@@ -220,12 +220,12 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={cn("text-[8px] font-black uppercase tracking-widest", selectedWbsId === wp.id ? "text-blue-400" : "text-slate-400")}>
+                    <span className={cn("text-[8px] font-semibold uppercase tracking-widest", selectedWbsId === wp.id ? "text-blue-400" : "text-slate-400")}>
                       {wp.code}
                     </span>
                     {selectedWbsId === wp.id && <CheckCircle2 className="w-3 h-3 text-blue-400" />}
                   </div>
-                  <h4 className="text-sm font-black truncate">{stripNumericPrefix(wp.title)}</h4>
+                  <h4 className="text-sm font-semibold truncate">{stripNumericPrefix(wp.title)}</h4>
                   <div className="flex items-center gap-2 mt-3">
                     <div className={cn("w-1.5 h-1.5 rounded-full", selectedWbsId === wp.id ? "bg-blue-400 animate-pulse" : "bg-slate-200")} />
                     <span className={cn("text-[9px] font-bold uppercase", selectedWbsId === wp.id ? "text-slate-400" : "text-slate-400")}>
@@ -254,7 +254,7 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-2">
                     <Settings className="w-4 h-4 text-blue-500" />
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900">Activity Breakdown</h3>
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900">Activity Breakdown</h3>
                   </div>
                   <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-tighter">
                     {filteredActivities.length} FOUND
@@ -278,29 +278,29 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                             type="text"
                             value={act.description}
                             onChange={(e) => updateActivity(act.id, { description: e.target.value })}
-                            className="text-lg font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-full"
+                            className="text-lg font-semibold text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-full"
                           />
-                          <span className="text-[9px] font-black text-slate-300 uppercase shrink-0">{act.id}</span>
+                          <span className="text-[9px] font-semibold text-slate-300 uppercase shrink-0">{act.id}</span>
                         </div>
                         
                         <div className="flex items-center gap-6">
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration:</span>
+                            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Duration:</span>
                             <input 
                               type="number"
                               value={act.duration}
                               onChange={(e) => updateActivity(act.id, { duration: parseInt(e.target.value) || 0 })}
-                              className="w-12 h-7 bg-slate-50 border border-slate-100 rounded-lg text-xs font-black text-center focus:ring-1 focus:ring-blue-500"
+                              className="w-12 h-7 bg-slate-50 border border-slate-100 rounded-lg text-xs font-semibold text-center focus:ring-1 focus:ring-blue-500"
                             />
                             <span className="text-[9px] font-bold text-slate-400 uppercase">Days</span>
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status:</span>
+                            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Status:</span>
                             <select 
                               value={act.status}
                               onChange={(e) => updateActivity(act.id, { status: e.target.value as any })}
-                              className="h-7 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-black uppercase focus:ring-1 focus:ring-blue-500"
+                              className="h-7 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-semibold uppercase focus:ring-1 focus:ring-blue-500"
                             >
                               <option>Not Started</option>
                               <option>In Progress</option>
@@ -326,7 +326,7 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                           <p className="text-slate-900 font-bold italic">No activities yet.</p>
                           <button 
                             onClick={addActivity}
-                            className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline"
+                            className="text-[10px] font-semibold uppercase tracking-widest text-blue-600 hover:underline"
                           >
                             Click to add your first activity
                           </button>
@@ -345,17 +345,17 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                  <Settings className="w-7 h-7" />
               </div>
               <div className="space-y-1">
-                 <h4 className="text-xl font-black tracking-tight">Consolidation Phase</h4>
+                 <h4 className="text-xl font-semibold tracking-tight">Consolidation Phase</h4>
                  <p className="text-sm text-slate-400 font-medium">Once all activities are defined, link them in the <span className="text-white underline underline-offset-4 font-bold">Sequence & Estimate</span> tool.</p>
               </div>
            </div>
            
            <div className="flex items-center gap-8">
               <div className="text-right">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Project Tasks</p>
-                 <p className="text-3xl font-black italic tracking-tighter">{activities.length}</p>
+                 <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Total Project Tasks</p>
+                 <p className="text-3xl font-semibold italic tracking-tighter">{activities.length}</p>
               </div>
-              <button className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all">
+              <button className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl text-[11px] font-semibold uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all">
                  Link Logic Ties
                  <ChevronRight className="w-4 h-4" />
               </button>

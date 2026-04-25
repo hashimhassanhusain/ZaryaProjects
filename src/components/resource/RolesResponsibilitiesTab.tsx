@@ -194,7 +194,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
                   <Briefcase className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900">{role.position}</h3>
+                  <h3 className="text-xl font-semibold text-slate-900">{role.position}</h3>
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Position Description</div>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
 
             <div className="space-y-6">
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                   <Shield className="w-3 h-3" />
                   Authority
                 </div>
@@ -230,7 +230,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                   <FileText className="w-3 h-3" />
                   Responsibility
                 </div>
@@ -240,7 +240,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                   <Award className="w-3 h-3" />
                   Qualifications
                 </div>
@@ -264,7 +264,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Position' : 'Define New Position'}
                 </h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -274,7 +274,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Position Title</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Position Title</label>
                   <input
                     type="text"
                     value={formData.position}
@@ -285,7 +285,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Authority</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Authority</label>
                   <textarea
                     value={formData.authority}
                     onChange={(e) => setFormData({ ...formData, authority: e.target.value })}
@@ -295,7 +295,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsibility</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Responsibility</label>
                   <textarea
                     value={formData.responsibility}
                     onChange={(e) => setFormData({ ...formData, responsibility: e.target.value })}
@@ -305,7 +305,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Qualifications</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Qualifications</label>
                   <textarea
                     value={formData.qualifications}
                     onChange={(e) => setFormData({ ...formData, qualifications: e.target.value })}
@@ -328,7 +328,7 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
                       {versions.filter(v => v.roleId === editingId).map((v) => (
                         <div key={v.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
                           <div className="space-y-1">
-                            <div className="text-[10px] font-black text-slate-900 uppercase">Version {v.version}</div>
+                            <div className="text-[10px] font-semibold text-slate-900 uppercase">Version {v.version}</div>
                             <div className="text-[10px] text-slate-500">{v.userName} • {new Date(v.timestamp).toLocaleString()}</div>
                           </div>
                           <button 

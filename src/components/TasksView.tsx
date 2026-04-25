@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   DndContext, 
   closestCorners, 
@@ -29,7 +30,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+import { HelpTooltip } from './HelpTooltip';
+
 export const TasksView: React.FC = () => {
+  const { t, th, isRtl, isHelpRtl } = useLanguage();
   const { selectedProject } = useProject();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [dbUsers, setDbUsers] = useState<UserType[]>([]);
@@ -168,6 +172,21 @@ export const TasksView: React.FC = () => {
   );
 
   const columns: TaskStatus[] = ['TO DO', 'PLANNING', 'RFP', 'TENDERING', 'IN PROGRESS', 'AT RISK', 'UPDATE REQUIRED', 'COMPLETED'];
+
+  const translateStatus = (status: string) => {
+    const keyMap: { [key: string]: string } = {
+       'TO DO': 'todo',
+       'PLANNING': 'planning_status',
+       'RFP': 'rfp',
+       'TENDERING': 'tendering',
+       'IN PROGRESS': 'in_progress',
+       'AT RISK': 'at_risk',
+       'UPDATE REQUIRED': 'update_required',
+       'COMPLETED': 'completed'
+    };
+    const key = keyMap[status];
+    return key ? t(key) : status;
+  };
 
   const handleAddTask = async () => {
     if (!newTask.title || !selectedProject) return;
@@ -435,14 +454,16 @@ export const TasksView: React.FC = () => {
     };
 
     return (
-      <div 
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        onClick={() => setSelectedTaskId(task.id)}
-        className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-grab active:cursor-grabbing relative"
-      >
+      <HelpTooltip text={th('task_instructions')} position="top">
+        <div 
+          ref={setNodeRef}
+          style={style}
+          {...attributes}
+          {...listeners}
+          onDoubleClick={() => setSelectedTaskId(task.id)}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-grab active:cursor-grabbing relative"
+        >
+
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2">
             <span className={cn(
@@ -450,24 +471,24 @@ export const TasksView: React.FC = () => {
               task.priority === 'High' ? "bg-red-50 text-red-600" :
               task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
             )}>
-              {task.priority}
+              {t(task.priority.toLowerCase())}
             </span>
             {task.sourceType === 'assumption_constraint' && (
               <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                A&C
+                {t('ac_short')}
               </span>
             )}
             {task.sourceType === 'issue' && (
               <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
-                Issue
+                {t('issue_label')}
               </span>
             )}
             {task.sourceType === 'meeting' && (
               <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                Meeting
+                {t('meeting_label')}
               </span>
             )}
           </div>
@@ -498,6 +519,7 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
       </div>
+    </HelpTooltip>
     );
   };
 
@@ -539,7 +561,7 @@ export const TasksView: React.FC = () => {
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", getStatusStyle(status).dot)}></div>
-            <h3 className="font-bold text-slate-700 text-sm">{status}</h3>
+            <h3 className="font-bold text-slate-700 text-sm">{translateStatus(status)}</h3>
             <span className="bg-white text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-slate-200">
               {tasks.length}
             </span>
@@ -577,7 +599,7 @@ export const TasksView: React.FC = () => {
             className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
-            Manage Statuses
+            {t('manage_statuses')}
           </button>
           <button 
             onClick={() => setShowOnlyMyTasks(!showOnlyMyTasks)}
@@ -586,11 +608,12 @@ export const TasksView: React.FC = () => {
               showOnlyMyTasks ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
             )}
           >
-            {showOnlyMyTasks ? "All Tasks" : "My Tasks"}
+            {showOnlyMyTasks ? t('all_tasks') : t('my_tasks')}
           </button>
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button 
               onClick={() => setViewMode('kanban')}
+              title={t('kanban_view')}
               className={cn(
                 "p-2 rounded-lg transition-all",
                 viewMode === 'kanban' ? "bg-white shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
@@ -600,6 +623,7 @@ export const TasksView: React.FC = () => {
             </button>
             <button 
               onClick={() => setViewMode('list')}
+              title={t('list_view')}
               className={cn(
                 "p-2 rounded-lg transition-all",
                 viewMode === 'list' ? "bg-white shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
@@ -613,7 +637,7 @@ export const TasksView: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
           >
             <Plus className="w-4 h-4" />
-            Add Task
+            {t('add_task')}
           </button>
         </div>
       </div>
@@ -638,10 +662,10 @@ export const TasksView: React.FC = () => {
             onChange={(e) => setFilterType(e.target.value as any)}
             className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
           >
-            <option value="all">All Tasks</option>
-            <option value="assumption_constraint">Assumption & Constraint</option>
-            <option value="issue">Issues</option>
-            <option value="meeting">Meeting Actions</option>
+            <option value="all">{t('all_tasks')}</option>
+            <option value="assumption_constraint">{t('assumption_constraint')}</option>
+            <option value="issue">{t('issues')}</option>
+            <option value="meeting">{t('meeting_actions')}</option>
           </select>
         </div>
         <div className="h-6 w-[1px] bg-slate-200 hidden md:block"></div>
@@ -649,7 +673,7 @@ export const TasksView: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search tasks..."
+            placeholder={t('search_tasks')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -682,7 +706,7 @@ export const TasksView: React.FC = () => {
                     type="text" 
                     value={newStatusName}
                     onChange={(e) => setNewStatusName(e.target.value)}
-                    placeholder="Status Name..."
+                    placeholder={t('status_name_placeholder')}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500/20"
                     onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
                   />
@@ -691,13 +715,13 @@ export const TasksView: React.FC = () => {
                       onClick={handleAddStatus}
                       className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
                     >
-                      Add
+                      {t('add')}
                     </button>
                     <button 
                       onClick={() => setIsAddingStatus(false)}
                       className="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
                     >
-                      Cancel
+                      {t('cancel')}
                     </button>
                   </div>
                 </div>
@@ -707,7 +731,7 @@ export const TasksView: React.FC = () => {
                   className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Status
+                  {t('add_status')}
                 </button>
               )}
             </div>
@@ -738,19 +762,19 @@ export const TasksView: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Task</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assignee</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
-              </tr>
+          <tr className="bg-slate-50 border-b border-slate-100">
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('task_label')}</th>
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('status_label')}</th>
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('assignee_label')}</th>
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('priority_label')}</th>
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('due_date_label')}</th>
+          </tr>
             </thead>
             <tbody>
               {filteredTasks.map(task => (
                 <tr 
                   key={task.id} 
-                  onClick={() => setSelectedTaskId(task.id)}
+                  onDoubleClick={() => setSelectedTaskId(task.id)}
                   className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
@@ -785,7 +809,7 @@ export const TasksView: React.FC = () => {
                       getStatusStyle(task.status).badge
                     )}>
                       {React.createElement(getStatusStyle(task.status).icon, { className: "w-3 h-3" })}
-                      {task.status}
+                      {translateStatus(task.status)}
                     </div>
                   </td>
                   <td className="px-6 py-4">

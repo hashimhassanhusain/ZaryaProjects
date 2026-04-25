@@ -395,7 +395,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -411,7 +411,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date Prepared</label>
           {isEditing ? (
             <input 
               type="date"
@@ -430,7 +430,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       {/* Project Life Cycle */}
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Project Life Cycle</h3>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Project Life Cycle</h3>
           {isEditing && (
             <button onClick={addPhase} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
               <Plus className="w-4 h-4" />
@@ -449,7 +449,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                 </button>
               )}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phase</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Phase</label>
                 {isEditing ? (
                   <input 
                     type="text" 
@@ -467,7 +467,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Deliverables</label>
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Key Deliverables</label>
                 {isEditing ? (
                   <input 
                     type="text" 
@@ -491,14 +491,14 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
       {/* Tailoring Decisions */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Processes and Tailoring Decisions</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Processes and Tailoring Decisions</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">Knowledge Area</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processes</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tailoring Decisions</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-48">Knowledge Area</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Processes</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Tailoring Decisions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -547,7 +547,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
       {/* Tools and Techniques */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Process Tools and Techniques</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Process Tools and Techniques</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {pmp.tools.map((t, idx) => (
             <div key={t.knowledgeArea} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
@@ -574,11 +574,11 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
       {/* Baselines */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Variances and Baseline Management</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Variances and Baseline Management</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Variance</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Variance</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.scopeVariance}
@@ -591,7 +591,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Variance</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Schedule Variance</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.scheduleVariance}
@@ -604,7 +604,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Variance</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Cost Variance</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.costVariance}
@@ -620,7 +620,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
           </div>
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Management</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Management</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.scopeManagement}
@@ -633,7 +633,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline Management</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Schedule Baseline Management</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.scheduleManagement}
@@ -646,7 +646,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost Baseline Management</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Cost Baseline Management</label>
               {isEditing ? (
                 <textarea 
                   value={pmp.baselines.costManagement}
@@ -664,7 +664,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
       {/* Project Reviews */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Project Reviews</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Project Reviews</h3>
         {isEditing ? (
           <textarea 
             value={pmp.projectReviews}

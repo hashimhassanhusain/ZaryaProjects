@@ -97,7 +97,7 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
               <Banknote className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Financial Close-Out</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Financial Close-Out</h2>
               <p className="text-sm text-slate-500 font-medium">Reconciling final accounts and verifying all project liabilities are settled.</p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
              <button 
               onClick={handlePrintCertificate}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-700 transition-all shadow-xl shadow-teal-100"
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-2xl font-semibold text-[10px] uppercase tracking-widest hover:bg-teal-700 transition-all shadow-xl shadow-teal-100"
              >
                 <Printer className="w-4 h-4" />
                 Issue Closure Certificate
@@ -116,17 +116,17 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <div className={`p-8 rounded-[2.5rem] border ${allClosed ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'} space-y-6 transition-all`}>
               <div className="flex items-center justify-between">
-                 <h3 className="text-lg font-black text-slate-900 italic">Closure Readiness</h3>
+                 <h3 className="text-lg font-semibold text-slate-900 italic">Closure Readiness</h3>
                  {allClosed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <AlertCircle className="w-6 h-6 text-rose-500" />}
               </div>
               <div className="space-y-4">
                  <div className="flex items-center justify-between p-4 bg-white/50 rounded-2xl">
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Open Purchase Orders</span>
-                    <span className={`text-xl font-black italic ${openPOs.length > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{openPOs.length}</span>
+                    <span className={`text-xl font-semibold italic ${openPOs.length > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{openPOs.length}</span>
                  </div>
                  <div className="flex items-center justify-between p-4 bg-white/50 rounded-2xl">
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Total Project Spend</span>
-                    <span className="text-xl font-black italic text-slate-900">{formatCurrency(totalSpent)}</span>
+                    <span className="text-xl font-semibold italic text-slate-900">{formatCurrency(totalSpent)}</span>
                  </div>
               </div>
               {!allClosed && (
@@ -137,18 +137,18 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
            </div>
 
            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Next Action</h3>
+              <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Next Action</h3>
               <div className="space-y-4">
                  <div className="group p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-teal-600 hover:text-white transition-all">
                     <div>
-                        <p className="text-sm font-black italic">Audit PO History</p>
+                        <p className="text-sm font-semibold italic">Audit PO History</p>
                         <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Verify all deliverables received</p>
                     </div>
                     <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-all" />
                  </div>
                  <div className="group p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-teal-600 hover:text-white transition-all">
                     <div>
-                        <p className="text-sm font-black italic">Reconcile Reserves</p>
+                        <p className="text-sm font-semibold italic">Reconcile Reserves</p>
                         <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Release unused budget to company</p>
                     </div>
                     <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-all" />
@@ -160,31 +160,31 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
         <section className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm">
             <div className="p-8 border-b border-slate-50 flex items-center gap-3">
                <FileCheck className="w-5 h-5 text-teal-600" />
-               <h3 className="text-lg font-black text-slate-900 tracking-tight italic">Liability Audit Table</h3>
+               <h3 className="text-lg font-semibold text-slate-900 tracking-tight italic">Liability Audit Table</h3>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                    <thead className="bg-slate-50/50">
                       <tr>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">PO Ref</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Supplier</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
-                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Value</th>
+                        <th className="px-8 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400">PO Ref</th>
+                        <th className="px-8 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Supplier</th>
+                        <th className="px-8 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400 text-center">Status</th>
+                        <th className="px-8 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400 text-right">Value</th>
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-50">
                       {purchaseOrders.map(po => (
                         <tr key={po.id} className="hover:bg-slate-50/30 transition-colors">
-                           <td className="px-8 py-6 text-sm font-black text-slate-900">{po.id}</td>
+                           <td className="px-8 py-6 text-sm font-semibold text-slate-900">{po.id}</td>
                            <td className="px-8 py-6 text-sm font-medium text-slate-600">{po.supplier}</td>
                            <td className="px-8 py-6 text-center">
-                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                              <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase ${
                                  ['Closed', 'Paid'].includes(po.status || '') ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
                               }`}>
                                  {po.status}
                               </span>
                            </td>
-                           <td className="px-8 py-6 text-sm font-black text-slate-900 text-right">{formatCurrency(po.amount)}</td>
+                           <td className="px-8 py-6 text-sm font-semibold text-slate-900 text-right">{formatCurrency(po.amount)}</td>
                         </tr>
                       ))}
                       {purchaseOrders.length === 0 && (

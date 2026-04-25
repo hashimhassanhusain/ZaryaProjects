@@ -71,7 +71,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
           <div className="min-w-[800px]">
             <div className="relative flex">
               {/* Y-Axis Label (Impact) */}
-              <div className="absolute -left-16 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">
+              <div className="absolute -left-16 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">
                 Impact (Severity)
               </div>
 
@@ -81,7 +81,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
                   <div className="h-12"></div>
                   {/* X-Axis Labels (Probability) */}
                   {labels.slice().reverse().map((label, i) => (
-                    <div key={label} className="h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-1">
+                    <div key={label} className="h-12 flex items-center justify-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center px-1">
                       {label}
                     </div>
                   ))}
@@ -90,7 +90,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
                   {levels.map((imp, impIdx) => (
                     <React.Fragment key={imp}>
                       {/* Y-Axis Label */}
-                      <div className="h-32 flex items-center justify-end pr-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                      <div className="h-32 flex items-center justify-end pr-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">
                         {labels[impIdx]}
                       </div>
                       {/* Cells */}
@@ -110,7 +110,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
                                   key={risk.id}
                                   onClick={() => setSelectedRisk(risk)}
                                   className={cn(
-                                    "px-2 py-1 rounded-md text-[9px] font-black transition-all shadow-sm",
+                                    "px-2 py-1 rounded-md text-[9px] font-semibold transition-all shadow-sm",
                                     risk.score >= 15 ? "bg-red-600 text-white" :
                                     risk.score >= 8 ? "bg-amber-500 text-white" :
                                     "bg-emerald-600 text-white"
@@ -127,7 +127,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
                   ))}
                 </div>
                 {/* X-Axis Label */}
-                <div className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                <div className="text-center mt-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em]">
                   Probability (Likelihood)
                 </div>
               </div>
@@ -138,7 +138,7 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
         {/* Legend & Details */}
         <div className="space-y-6">
           <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200">
-            <h4 className="text-sm font-black uppercase tracking-widest mb-6 text-white/40">Risk Levels</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-widest mb-6 text-white/40">Risk Levels</h4>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded bg-red-500" />
@@ -176,21 +176,21 @@ export const RiskMatrixTab: React.FC<RiskMatrixTabProps> = ({ risks }) => {
                   <X className="w-4 h-4 text-slate-400" />
                 </button>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-md">
+                  <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-md">
                     {selectedRisk.riskId}
                   </span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                     Score: {selectedRisk.score}
                   </span>
                 </div>
                 <h4 className="text-sm font-bold text-slate-900 mb-2">{selectedRisk.description}</h4>
                 <div className="space-y-3 mt-4 pt-4 border-t border-slate-50">
                   <div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Strategy</div>
+                    <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Strategy</div>
                     <div className="text-xs font-bold text-slate-700">{selectedRisk.strategy}</div>
                   </div>
                   <div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</div>
+                    <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Status</div>
                     <div className="text-xs font-bold text-slate-700">{selectedRisk.status}</div>
                   </div>
                 </div>

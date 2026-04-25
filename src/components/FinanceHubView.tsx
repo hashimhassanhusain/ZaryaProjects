@@ -8,13 +8,15 @@ import {
   TrendingUp, 
   Package, 
   Banknote,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
+import { DomainDashboard } from './DomainDashboard';
 
 // Sub-views
 import { FinancialFeasibilityView } from './FinancialFeasibilityView';
@@ -29,44 +31,66 @@ interface FinanceHubViewProps {
   page: Page;
 }
 
-type TabType = 'feasibility' | 'plan' | 'budget' | 'reserves' | 'evm' | 'pos' | 'closing';
+const ICON_MAP: Record<string, any> = {
+  'feasibility': Calculator,
+  'plan': Settings,
+  'budget': FileText,
+  'reserves': ShieldCheck,
+  'evm': TrendingUp,
+  'pos': Package,
+  'closing': Banknote,
+};
 
 export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('evm');
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
   const ribbonGroups: RibbonGroup[] = [
     {
-      id: 'planning',
-      label: 'Financial Planning',
+      id: 'domain-overview',
+      label: t('navigation'),
       tabs: [
-        { id: 'feasibility', label: 'Feasibility', icon: Calculator },
-        { id: 'plan', label: 'Cost Plan', icon: Settings },
-        { id: 'budget', label: 'Budgeting (BOQ)', icon: FileText },
-        { id: 'reserves', label: 'Reserves', icon: ShieldCheck },
+        { 
+          id: 'overview', 
+          label: t('overview'), 
+          icon: Banknote, // Finance Domain Icon
+          description: t('domain_overview_desc'),
+          size: 'large'
+        }
       ]
     },
     {
-      id: 'monitoring',
-      label: 'Performance Tracking',
+      id: 'planning',
+      label: t('Planning'),
       tabs: [
-        { id: 'evm', label: 'EVM Dashboard', icon: TrendingUp },
-        { id: 'pos', label: 'PO Tracking', icon: Package },
+        { id: 'feasibility', label: t('feasibility'), icon: Calculator, size: 'small', focusArea: 'Planning' },
+        { id: 'plan', label: t('plan'), icon: Settings, size: 'small', focusArea: 'Planning' },
+        { id: 'budget', label: t('budget'), icon: FileText, size: 'large', focusArea: 'Planning' },
+        { id: 'reserves', label: t('reserves'), icon: ShieldCheck, size: 'small', focusArea: 'Planning' },
+      ]
+    },
+    {
+      id: 'execution',
+      label: t('Executing'),
+      tabs: [
+        { id: 'evm', label: t('evm'), icon: TrendingUp, size: 'large', focusArea: 'Executing' },
+        { id: 'pos', label: t('pos'), icon: Package, size: 'large', focusArea: 'Executing' },
       ]
     },
     {
       id: 'closing',
-      label: 'Closure',
+      label: t('Closing'),
       tabs: [
-        { id: 'closing', label: 'Final Close-out', icon: Banknote },
+        { id: 'closing', label: t('closing'), icon: Banknote, size: 'small', focusArea: 'Closing' },
       ]
     }
   ];
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'finance')} initialTab="overview" />;
       case 'feasibility': return <FinancialFeasibilityView page={page} />;
       case 'plan': return <CostManagementPlanView page={page} />;
       case 'budget': return <BOQView />;
@@ -82,12 +106,12 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
     <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
       <div className="bg-white border-b border-slate-100 px-8 py-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
              <span>{page.domain}</span>
              <ChevronRight className="w-3 h-3" />
              <span className="text-slate-900">{page.focusArea}</span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
             {parentPage && (
               <>
                 <span className="text-slate-400 font-medium">{stripNumericPrefix(parentPage.title)}</span>
@@ -102,7 +126,7 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}
-        onTabChange={(id) => setActiveTab(id as TabType)}
+        onTabChange={(id) => setActiveTab(id as string)}
       />
 
       <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">

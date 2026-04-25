@@ -268,7 +268,7 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-end">
                       <span className="text-sm font-bold text-slate-700">SPI (Schedule)</span>
-                      <span className={`text-2xl font-black ${evmMetrics.spi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className={`text-2xl font-semibold ${evmMetrics.spi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {formatIndex(evmMetrics.spi)}
                       </span>
                     </div>
@@ -283,7 +283,7 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-end">
                       <span className="text-sm font-bold text-slate-700">CPI (Cost)</span>
-                      <span className={`text-2xl font-black ${evmMetrics.cpi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className={`text-2xl font-semibold ${evmMetrics.cpi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {formatIndex(evmMetrics.cpi)}
                       </span>
                     </div>
@@ -307,7 +307,7 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
                 <TrendingUp className="w-5 h-5 text-blue-600" />
                 <h3 className="text-lg font-bold text-slate-900 italic uppercase">Cost Baseline S-Curve</h3>
               </div>
-              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-widest">
                 <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-300 rounded-full" /> PV</div>
                 <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-500 rounded-full" /> EV</div>
                 <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-500 rounded-full" /> AC</div>

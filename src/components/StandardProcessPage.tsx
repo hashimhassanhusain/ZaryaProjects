@@ -30,6 +30,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
@@ -334,6 +335,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   onPrint,
   isSaving = false
 }) => {
+  const { t, language, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const [quickView, setQuickView] = useState<{ isOpen: boolean; title: string, id: string }>({ isOpen: false, title: '', id: '' });
   const [driveSyncStatus, setDriveSyncStatus] = useState<'synced' | 'syncing' | 'idle'>('synced');
@@ -358,93 +360,37 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         id={quickView.id}
       />
 
-      {/* ── HEADER & BREADCRUMBS ── */}
-      <div className="bg-white border-b border-slate-100 px-10 py-8 print:hidden">
-        <div className="flex items-center justify-between w-full">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-               {grandParentPage && (
-                 <>
-                   <span>{stripNumericPrefix(grandParentPage.title)}</span>
-                   <ChevronRight className="w-3 h-3" />
-                 </>
-               )}
-               {parentPage && (
-                 <>
-                   <span>{stripNumericPrefix(parentPage.title)}</span>
-                   <ChevronRight className="w-3 h-3" />
-                 </>
-               )}
-               <span className="text-slate-900">{stripNumericPrefix(page.title)}</span>
-            </div>
-            <div className="flex items-center gap-4">
-               <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                 {stripNumericPrefix(page.title)}
-               </h1>
-               <div className="h-6 w-px bg-slate-200" />
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg">
-                  <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", driveSyncStatus === 'synced' ? 'bg-emerald-500' : 'bg-amber-500')} />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                     Drive Sync: {driveSyncStatus === 'synced' ? 'Live' : 'Uploading...'}
-                  </span>
-               </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             <button
-               onClick={onPrint}
-               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
-             >
-               <Printer className="w-4 h-4" />
-               Generate PDF
-             </button>
-             <button
-               onClick={handleManualSave}
-               disabled={isSaving}
-               className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 disabled:opacity-50"
-             >
-               {isSaving || driveSyncStatus === 'syncing' ? (
-                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                   <Settings className="w-4 h-4" />
-                 </motion.div>
-               ) : (
-                 <Save className="w-4 h-4" />
-               )}
-               Push to Baseline
-             </button>
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1 w-full px-4 md:px-10 py-8 print:block print:p-0">
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-10">
         
         {/* ── BLOCK A: INPUT HUB (Left Sidebar) ── */}
         <aside className="col-span-3 space-y-6 print:hidden">
           <div className="flex items-center justify-between px-2">
-             <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                 <Box className="w-4 h-4 text-blue-500" />
-                Input Arsenal
+                {t('input_arsenal')}
              </h3>
-             <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{inputs.length} Items</span>
+             <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{inputs.length} {t('items')}</span>
           </div>
           
           <div className="space-y-3">
             {inputs.map((input) => (
               <div 
                 key={input.id}
-                onClick={() => setQuickView({ isOpen: true, title: input.title, id: input.id })}
-                className="group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]"
+                onClick={() => setQuickView({ isOpen: true, title: t(input.id) || input.title, id: input.id })}
+                className={cn(
+                  "group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]",
+                  isRtl && "border-l-0 border-r-4 border-r-blue-500"
+                )}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">{input.id}</span>
+                  <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{input.id}</span>
                   <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                     <Eye className="w-4 h-4" />
                   </div>
                 </div>
-                <h4 className="text-[13px] font-black text-slate-900 leading-tight">
-                  {stripNumericPrefix(input.title)}
+                <h4 className={cn("text-[13px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
+                  {stripNumericPrefix(t(input.id) || input.title)}
                 </h4>
               </div>
             ))}
@@ -452,7 +398,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             {inputs.length === 0 && (
               <div className="p-10 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-3">
                 <FileText className="w-10 h-10 text-slate-200 mx-auto" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Initial Process State</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-300">{t('initial_process_state')}</p>
               </div>
             )}
           </div>
@@ -460,20 +406,20 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           {/* Tools & Techniques Section */}
           <div className="pt-6 space-y-4">
              <div className="flex items-center justify-between px-2">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                    <Cpu className="w-4 h-4 text-amber-500" />
-                   Tools & Logic
+                   {t('tools_logic')}
                 </h3>
              </div>
              <div className="space-y-2">
                 {tools.map((tool) => (
                   <div key={tool.id} className="px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 group hover:border-amber-200 transition-colors">
                      <div className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
-                     <span className="text-xs font-bold text-slate-600 truncate">{tool.title}</span>
+                     <span className="text-xs font-bold text-slate-600 truncate">{t(tool.id) || tool.title}</span>
                   </div>
                 ))}
                 {tools.length === 0 && (
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center py-4">Standard Processing Only</p>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center py-4">{t('standard_processing_only')}</p>
                 )}
              </div>
           </div>
@@ -485,34 +431,34 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                {/* Workflow Visualization Header */}
                <div className="bg-slate-900 p-10 flex items-center justify-between print:hidden overflow-hidden relative">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-                  <div className="flex items-center gap-8 relative z-10">
+                  <div className={cn("flex items-center gap-8 relative z-10", isRtl && "flex-row-reverse")}>
                      <div className="flex flex-col items-center">
                         <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-2">
                            <Box className="w-5 h-5 text-blue-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Input Arsenal</p>
+                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">{t('input_arsenal')}</p>
                      </div>
-                     <ArrowRight className="w-6 h-6 text-white/10" />
+                     <ArrowRight className={cn("w-6 h-6 text-white/10", isRtl && "rotate-180")} />
                      <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-3xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mb-2 animate-pulse">
                            <Cpu className="w-6 h-6 text-amber-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest">Processing Logic</p>
+                        <p className="text-[10px] font-semibold text-white uppercase tracking-widest">{t('processing_logic')}</p>
                      </div>
-                     <ArrowRight className="w-6 h-6 text-white/10" />
+                     <ArrowRight className={cn("w-6 h-6 text-white/10", isRtl && "rotate-180")} />
                      <div className="flex flex-col items-center">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center mb-2">
                            <Layers className="w-5 h-5 text-emerald-400" />
                         </div>
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Output Tier</p>
+                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">{t('output_tier')}</p>
                      </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2 relative z-10">
+                  <div className={cn("flex flex-col items-end gap-2 relative z-10", isRtl && "items-start")}>
                      <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center gap-3">
                         <ShieldCheck className="w-4 h-4 text-blue-400" />
-                        <span className="text-[11px] font-black text-white uppercase tracking-tighter italic">Enterprise Governance Protocol</span>
+                        <span className="text-[11px] font-semibold text-white uppercase tracking-tighter italic">{t('enterprise_governance_protocol')}</span>
                      </div>
-                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Source Context: {page.focusArea}</span>
+                     <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">{t('source_context')}: {page.focusArea}</span>
                   </div>
                </div>
 
@@ -540,11 +486,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                              <Cloud className="w-16 h-16 text-blue-400" />
                           </motion.div>
-                          <p className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
+                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
                        </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-2xl font-black text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
+                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
                       <p className="text-[12px] text-slate-400 font-bold uppercase tracking-widest px-6 py-2.5 bg-slate-100 rounded-full inline-block">
                         Ready for formal sign-off & archiving
                       </p>
@@ -558,32 +504,35 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
                 {/* Print Content (Only visible when printing) */}
                 <div className="hidden print:block print:w-full print:mx-auto">
-                   <header className="flex items-center justify-between border-b-4 border-slate-900 pb-10 mb-16">
+                   <header className={cn("flex items-center justify-between border-b-4 border-slate-900 pb-10 mb-16", isRtl && "flex-row-reverse")}>
                       <div className="space-y-6">
-                         <div className="flex items-center gap-4">
+                         <div className={cn("flex items-center gap-4", isRtl && "flex-row-reverse")}>
                             <div className="w-16 h-16 bg-slate-900 rounded-2xl" />
-                            <div>
-                               <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Zarya</h1>
-                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Construction Management PMIS</p>
+                            <div className={cn(isRtl && "text-right")}>
+                               <h1 className="text-4xl font-semibold tracking-tighter uppercase leading-none">Zarya</h1>
+                               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">{t('project_management_pmis')}</p>
                             </div>
                          </div>
                       </div>
-                      <div className="text-right space-y-2">
-                         <h2 className="text-2xl font-black uppercase tracking-tight italic">{stripNumericPrefix(page.title)}</h2>
-                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Project: {selectedProject?.name}</p>
-                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Code: {selectedProject?.code}</p>
+                      <div className={cn("text-right space-y-2", isRtl && "text-left")}>
+                         <h2 className="text-2xl font-semibold uppercase tracking-tight italic">
+                           {parentPage && `${stripNumericPrefix(t(parentPage.id) || parentPage.title)} › `}
+                           {stripNumericPrefix(t(page.id) || page.title)}
+                         </h2>
+                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('project')}: {selectedProject?.name}</p>
+                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('code')}: {selectedProject?.code}</p>
                       </div>
                    </header>
 
                    <main className="space-y-20">
-                      <section className="grid grid-cols-2 gap-16 p-12 bg-slate-50 rounded-[3rem]">
+                      <section className={cn("grid grid-cols-2 gap-16 p-12 bg-slate-50 rounded-[3rem]", isRtl && "text-right")}>
                          <div className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Unique Record ID</h4>
-                            <p className="text-lg font-black italic">{selectedProject?.code}-{page.id}-V2.4</p>
+                            <h4 className="text-[10px] font-semibold uppercase text-slate-400 tracking-[0.2em]">{t('unique_record_id')}</h4>
+                            <p className="text-lg font-semibold italic">{selectedProject?.code}-{page.id}-V2.4</p>
                          </div>
                          <div className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Baseline Timestamp</h4>
-                            <p className="text-lg font-black italic">{new Date().toLocaleString()}</p>
+                            <h4 className="text-[10px] font-semibold uppercase text-slate-400 tracking-[0.2em]">{t('baseline_timestamp')}</h4>
+                            <p className="text-lg font-semibold italic">{new Date().toLocaleString(language === 'ar' ? 'ar-IQ' : 'en-US')}</p>
                          </div>
                       </section>
                       
@@ -594,31 +543,31 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                       <section className="pt-32 mt-32 border-t-2 border-slate-200 grid grid-cols-3 gap-20">
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
-                            <div>
-                               <p className="text-sm font-black uppercase">Prepared By</p>
+                            <div className={cn(isRtl && "text-right")}>
+                               <p className="text-sm font-semibold uppercase">{t('prepared_by')}</p>
                                <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Planning Unit</p>
                             </div>
                          </div>
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
-                            <div>
-                               <p className="text-sm font-black uppercase">Reviewed By</p>
-                               <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Manager</p>
+                            <div className={cn(isRtl && "text-right")}>
+                               <p className="text-sm font-semibold uppercase">{t('reviewed_by')}</p>
+                               <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">{t('project_manager')}</p>
                             </div>
                          </div>
                          <div className="space-y-12">
                             <div className="h-1.5 bg-slate-900 w-full" />
-                            <div>
-                               <p className="text-sm font-black uppercase">Approved By</p>
-                               <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">Project Sponsor</p>
+                            <div className={cn(isRtl && "text-right")}>
+                               <p className="text-sm font-semibold uppercase">{t('approved_by')}</p>
+                               <p className="text-[11px] text-slate-400 font-bold uppercase mt-2">{t('project_sponsor')}</p>
                             </div>
                          </div>
                       </section>
                    </main>
 
-                   <footer className="mt-32 pt-16 border-t border-slate-100 flex items-center justify-between text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
-                      <span>© {new Date().getFullYear()} Zarya Construction Mgmt. All rights reserved.</span>
-                      <span>SEC_PRT_{selectedProject?.code}_{page.id}_{stripNumericPrefix(page.title).toUpperCase().replace(/\s+/g, '_')}_V2.4</span>
+                   <footer className={cn("mt-32 pt-16 border-t border-slate-100 flex items-center justify-between text-[10px] font-semibold text-slate-300 uppercase tracking-[0.3em]", isRtl && "flex-row-reverse")}>
+                      <span>© {new Date().getFullYear()} Zarya Construction Mgmt. {t('all_rights_reserved')}</span>
+                      <span dir="ltr">SEC_PRT_{selectedProject?.code}_{page.id}_{stripNumericPrefix(page.title).toUpperCase().replace(/\s+/g, '_')}_V2.4</span>
                    </footer>
                 </div>
               </div>
@@ -629,38 +578,41 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         <aside className="col-span-3 space-y-10 print:hidden">
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+               <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-500" />
-                  Output Tier
+                  {t('output_tier')}
                </h3>
-               <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Archive Ready</span>
+               <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">{t('archive_ready')}</span>
             </div>
             
             <div className="space-y-5">
                {outputs.map((output) => (
                  <div 
                    key={output.id}
-                   className="group p-8 bg-white border border-emerald-100 rounded-[3rem] space-y-6 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all border-r-8 border-r-emerald-500 active:scale-[0.98]"
+                   className={cn(
+                     "group p-8 bg-white border border-emerald-100 rounded-[3rem] space-y-6 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all border-r-8 border-r-emerald-500 active:scale-[0.98]",
+                     isRtl && "border-r-0 border-l-8 border-l-emerald-500"
+                   )}
                  >
                     <div className="flex items-center justify-between">
                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
                           <FileText className="w-6 h-6" />
                        </div>
-                       <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
-                          {output.status || 'Baseline'}
+                       <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                          {t(output.status?.toLowerCase() || 'baseline')}
                        </div>
                     </div>
                     <div className="space-y-2">
-                       <h4 className="text-[15px] font-black text-slate-900 leading-tight">
-                         {stripNumericPrefix(output.title)}
+                       <h4 className={cn("text-[15px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
+                         {stripNumericPrefix(t(output.id) || output.title)}
                        </h4>
-                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">{output.id}</p>
+                       <p className={cn("text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic", isRtl && "text-right")}>{output.id}</p>
                     </div>
                     <button 
                       onClick={onPrint}
-                      className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
+                      className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
                     >
-                      Export PDF Deliverable
+                      {t('export_pdf_deliverable')}
                     </button>
                  </div>
                ))}
@@ -669,8 +621,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                  <div className="p-12 bg-emerald-50/50 border border-emerald-100 rounded-[3.5rem] space-y-6 text-center">
                     <Printer className="w-12 h-12 text-emerald-500/20 mx-auto" />
                     <div className="space-y-1">
-                       <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Finalizing Resultant Artifact</p>
-                       <p className="text-[9px] font-black text-emerald-600/40 uppercase tracking-widest italic">Awaiting work completion</p>
+                       <p className="text-xs font-semibold text-emerald-900 uppercase tracking-tight">{t('finalizing_resultant_artifact')}</p>
+                       <p className="text-[9px] font-semibold text-emerald-600/40 uppercase tracking-widest italic">{t('awaiting_work_completion')}</p>
                     </div>
                  </div>
                )}
@@ -680,20 +632,20 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           {/* ── Google Drive Integration Card ── */}
           <div className="p-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] shadow-2xl shadow-blue-600/30 space-y-8 relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-1000" />
-             <div className="flex items-center justify-between relative z-10">
+             <div className={cn("flex items-center justify-between relative z-10", isRtl && "flex-row-reverse")}>
                 <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md border border-white/20">
                    <Cloud className="w-7 h-7" />
                 </div>
-                <div className="flex flex-col items-end">
+                <div className={cn("flex flex-col items-end", isRtl && "items-start")}>
                    <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,1)] mb-1" />
-                   <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">Enterprise Sync</span>
+                   <span className="text-[8px] font-semibold text-white/60 uppercase tracking-widest">{t('enterprise_sync')}</span>
                 </div>
              </div>
              <div className="space-y-4 relative z-10">
-                <h4 className="text-lg font-black text-white italic uppercase tracking-tight leading-tight">Automated Cloud Archival Plan</h4>
-                <p className="text-[12px] text-white/80 font-bold leading-relaxed">
-                   Zarya creates a dedicated structure for this project: 
-                   <span className="block mt-3 p-3 bg-black/20 rounded-2xl font-mono text-[10px] text-blue-200">
+                <h4 className={cn("text-lg font-semibold text-white italic uppercase tracking-tight leading-tight", isRtl && "text-right")}>{t('automated_cloud_archival_plan')}</h4>
+                <p className={cn("text-[12px] text-white/80 font-bold leading-relaxed", isRtl && "text-right")}>
+                   {t('zarya_creates_structure')} 
+                   <span className="block mt-3 p-3 bg-black/20 rounded-2xl font-mono text-[10px] text-blue-200" dir="ltr">
                      /Drive/ZARYA/{page.domain}/{page.focusArea}/
                    </span>
                 </p>

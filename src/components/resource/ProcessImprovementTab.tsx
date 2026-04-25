@@ -99,7 +99,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">Process Improvement Log</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">Process Improvement Log</h2>
           <p className="text-sm text-slate-500">Workflow optimization for PMO "Gold Standard" scalability.</p>
         </div>
         <button
@@ -123,10 +123,10 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
                   <Zap className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900">{imp.workflowName}</h3>
+                  <h3 className="text-xl font-semibold text-slate-900">{imp.workflowName}</h3>
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
+                      "px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-widest",
                       imp.status === 'Approved' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
                     )}>
                       {imp.status}
@@ -170,7 +170,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <AlertCircle className="w-3 h-3" />
                   Current Process
                 </div>
@@ -179,7 +179,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
                 </div>
               </div>
               <div className="space-y-4">
-                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-[10px] font-semibold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
                   <CheckCircle2 className="w-3 h-3" />
                   Improved Process
                 </div>
@@ -190,7 +190,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
             </div>
 
             <div className="mt-8 pt-8 border-t border-slate-100">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Justification & Expected Impact</div>
+              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Justification & Expected Impact</div>
               <p className="text-sm text-slate-500 font-medium italic">"{imp.justification}"</p>
             </div>
           </div>
@@ -208,7 +208,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Improvement' : 'Log Process Improvement'}
                 </h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -218,7 +218,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Workflow Name</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Workflow Name</label>
                   <input
                     type="text"
                     value={formData.workflowName}
@@ -230,7 +230,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Process</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Current Process</label>
                     <textarea
                       value={formData.currentProcess}
                       onChange={(e) => setFormData({ ...formData, currentProcess: e.target.value })}
@@ -239,7 +239,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Improved Process</label>
+                    <label className="text-[10px] font-semibold text-emerald-600 uppercase tracking-widest ml-1">Improved Process</label>
                     <textarea
                       value={formData.improvedProcess}
                       onChange={(e) => setFormData({ ...formData, improvedProcess: e.target.value })}
@@ -250,7 +250,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Justification</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Justification</label>
                   <textarea
                     value={formData.justification}
                     onChange={(e) => setFormData({ ...formData, justification: e.target.value })}

@@ -352,7 +352,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
           <div className="p-10 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Category</label>
                 <select 
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
@@ -363,7 +363,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
                 <select 
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -378,7 +378,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Description</label>
               <textarea 
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -390,7 +390,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsible Party</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Responsible Party</label>
                 <select 
                   value={formData.responsiblePartyId}
                   onChange={(e) => setFormData({ ...formData, responsiblePartyId: e.target.value })}
@@ -403,7 +403,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
                 <input 
                   type="date"
                   value={formData.dueDate}
@@ -414,7 +414,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Actions Required</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Actions Required</label>
               <textarea 
                 value={formData.actions}
                 onChange={(e) => setFormData({ ...formData, actions: e.target.value })}
@@ -425,7 +425,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comments</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments</label>
               <textarea 
                 value={formData.comments}
                 onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
@@ -522,7 +522,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
             {versions.map((v) => (
               <div key={v.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-6">
-                  <div className="text-2xl font-black text-blue-400">v{v.version.toFixed(1)}</div>
+                  <div className="text-2xl font-semibold text-blue-400">v{v.version.toFixed(1)}</div>
                   <div>
                     <div className="text-sm font-bold">{v.actionType}</div>
                     <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">
@@ -544,12 +544,12 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Due Date</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -582,7 +582,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                   >
                     <td className="px-8 py-6">
                       <span className={cn(
-                        "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         entry.category === 'Assumption' ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
                       )}>
                         {entry.category}
@@ -606,7 +606,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                     </td>
                     <td className="px-8 py-6">
                       <span className={cn(
-                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         entry.status === 'Validated' || entry.status === 'Closed' ? "bg-emerald-100 text-emerald-700" :
                         entry.status === 'Open' ? "bg-amber-100 text-amber-700" :
                         "bg-slate-100 text-slate-700"

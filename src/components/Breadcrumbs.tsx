@@ -63,22 +63,15 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
 
   return (
     <div className="space-y-2 mb-4">
-      <nav className={cn("flex items-center text-xs text-slate-400", isRtl ? "space-x-reverse space-x-2" : "space-x-2")}>
-        {/* Dashboard link removed */}
-        
+      <nav className={cn("flex items-center text-xs text-slate-400 mb-1", isRtl ? "space-x-reverse space-x-2" : "space-x-2")}>
         {crumbs.map((crumb, index) => {
-          // Skip focus areas if they are top level hubs like 1.0, 2.0 etc to keep it clean
-          if (crumb.type === 'hub' && !crumb.parentId) return null;
-          
-          // Don't show the last crumb here as we show it larger below
           if (index === crumbs.length - 1) return null;
-
           return (
             <React.Fragment key={crumb.id}>
-              <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 mx-1", isRtl && "rotate-180")} />
+              {index > 0 && <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 mx-1", isRtl && "rotate-180")} />}
               <Link
                 to={`/page/${crumb.id}`}
-                className="hover:text-slate-600 transition-colors"
+                className="hover:text-slate-600 transition-colors font-medium"
               >
                 {stripNumericPrefix(t(crumb.id) || crumb.title)}
               </Link>
@@ -86,6 +79,17 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
           );
         })}
       </nav>
+
+      {/* Main Large Header with Parent > Child relation */}
+      <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+        {crumbs.length > 1 && (
+          <>
+            <span className="text-slate-400 font-bold opacity-80">{stripNumericPrefix(t(crumbs[crumbs.length - 2].id) || crumbs[crumbs.length - 2].title)}</span>
+            <ChevronRight className={cn("w-6 h-6 text-slate-200 stroke-[3px]", isRtl && "rotate-180")} />
+          </>
+        )}
+        <span>{stripNumericPrefix(t(currentPageId) || currentPage?.title || '')}</span>
+      </h1>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { jsPDF } from 'jspdf';
 import { Readable } from 'stream';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
@@ -20,8 +20,17 @@ app.use(cors());
 
 // Google Drive Auth
 const getDriveClient = () => {
-  const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
+  let envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
   
+  // Fallback: Check for a local service-account.json if env var is missing
+  if (!envCreds) {
+    const credsPath = path.join(process.cwd(), 'service-account.json');
+    if (fs.existsSync(credsPath)) {
+      console.log('Using local service-account.json file...');
+      envCreds = fs.readFileSync(credsPath, 'utf8');
+    }
+  }
+
   if (!envCreds || envCreds.trim() === '') {
     return { error: 'DRIVE_NOT_CONFIGURED' };
   }
@@ -191,13 +200,13 @@ function generateProjectCharterPDF(projectName: string, projectCode: string, cha
   return Buffer.from(doc.output('arraybuffer'));
 }
 
-async function findFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
+async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
   let currentParentId = rootFolderId;
-  console.log(`Searching for path: ${pathParts.join('/')} starting from root: ${rootFolderId}`);
+  console.log(`Ensuring path: ${pathParts.join('/')} starting from root: ${rootFolderId}`);
   
   for (const part of pathParts) {
     const response = await drive.files.list({
-      q: `name = '${part}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      q: `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
       fields: 'files(id, name)',
       spaces: 'drive',
       supportsAllDrives: true,
@@ -205,11 +214,27 @@ async function findFolderByPath(drive: any, rootFolderId: string, pathParts: str
     });
     const files = response.data.files;
     if (!files || files.length === 0) {
-      console.warn(`Folder part not found: "${part}" in parent: ${currentParentId}`);
-      return null;
+      console.log(`Folder part not found: "${part}". Creating in parent: ${currentParentId}`);
+      try {
+        const newFolder = await drive.files.create({
+          requestBody: {
+            name: part,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [currentParentId],
+          },
+          supportsAllDrives: true,
+        });
+        currentParentId = newFolder.data.id || '';
+        if (!currentParentId) return null;
+        console.log(`Created folder: "${part}" with ID: ${currentParentId}`);
+      } catch (err: any) {
+        console.error(`Error creating folder "${part}":`, err.message);
+        return null;
+      }
+    } else {
+      currentParentId = files[0].id;
+      console.log(`Found folder: "${part}" with ID: ${currentParentId}`);
     }
-    currentParentId = files[0].id;
-    console.log(`Found folder: "${part}" with ID: ${currentParentId}`);
   }
   return currentParentId;
 }
@@ -276,11 +301,11 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
 
   try {
     const pathParts = path.split('/').filter((p: string) => p.length > 0);
-    const targetFolderId = await findFolderByPath(drive, projectRootId, pathParts);
+    const targetFolderId = await findOrCreateFolderByPath(drive, projectRootId, pathParts);
     
     if (!targetFolderId) {
-      console.error(`Folder path not found: ${path} in project: ${projectRootId}`);
-      return res.status(404).json({ error: `The folder path "${path}" was not found in your Google Drive workspace. Please ensure the project was initialized correctly.` });
+      console.error(`Folder path creation failed: ${path} in project: ${projectRootId}`);
+      return res.status(500).json({ error: `Could not navigate or create the folder path "${path}". Please check Google Drive permissions.` });
     }
 
     // Archive existing file if it exists
@@ -712,7 +737,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}`);
     
     // Test Drive Connection asynchronously after server is up

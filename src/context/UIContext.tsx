@@ -18,7 +18,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
-  const [sidebarWidth, setSidebarWidth] = useState(120);
+  const [sidebarWidth, setSidebarWidth] = useState(80);
   const [selectedDomain, setSelectedDomain] = useState<DomainId | null>(null);
   const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
 

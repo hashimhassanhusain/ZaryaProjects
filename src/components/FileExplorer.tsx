@@ -1,19 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, File, Upload, ChevronRight, ChevronDown, Loader2, HardDrive, Search, Filter, MoreVertical, Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, Plus, Clock, User } from 'lucide-react';
+import { 
+  Folder, File, Upload, ChevronRight, ChevronDown, 
+  Loader2, HardDrive, Search, Filter, MoreVertical, 
+  Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, 
+  Plus, Clock, User 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storage, db } from '../firebase';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc } from 'firebase/firestore';
 import { Project } from '../types';
 import { useAuth } from '../context/UserContext';
 import { generateZaryaFileName, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
-
 import { useLanguage } from '../context/LanguageContext';
 
 interface FileExplorerProps {
   projectId: string;
 }
+
+interface FolderTreeItemProps {
+  folder: any;
+  level?: number;
+  allFolders: any[];
+  currentFolderId: string | null;
+  navigateToFolder: (id: string, name: string) => void;
+}
+
+const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ 
+  folder, 
+  level = 0, 
+  allFolders, 
+  currentFolderId, 
+  navigateToFolder 
+}) => {
+  const isSelected = currentFolderId === folder.id;
+  const children = allFolders.filter(f => f.parentId === folder.id);
+  const hasChildren = children.length > 0;
+  const [isOpen, setIsOpen] = useState(isSelected || level < 1);
+  
+  return (
+    <div className="select-none">
+      <div 
+        onClick={() => {
+          navigateToFolder(folder.id, folder.name);
+          setIsOpen(!isOpen);
+        }}
+        className={cn(
+          "flex items-center gap-2 py-1 px-2 rounded-lg cursor-pointer transition-all text-[11px] font-bold uppercase tracking-wider group",
+          isSelected ? "bg-slate-900 text-white shadow-xl shadow-slate-200" : "text-slate-500 hover:bg-slate-100",
+          level > 0 ? "ml-4" : ""
+        )}
+      >
+        <div className="flex items-center gap-1">
+          {hasChildren ? (
+            isOpen ? <ChevronDown className="w-3 h-3 text-slate-400" /> : <ChevronRight className="w-3 h-3 text-slate-400" />
+          ) : (
+            <div className="w-3 h-3" />
+          )}
+          <Folder className={cn("w-4 h-4", isSelected ? "text-blue-400 fill-blue-400/20" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
+        </div>
+        <span className="truncate">{folder.name}</span>
+      </div>
+      
+      {isOpen && hasChildren && (
+        <div className="mt-0.5">
+          {children.map(child => (
+            <FolderTreeItem 
+              key={child.id} 
+              folder={child} 
+              level={level + 1} 
+              allFolders={allFolders}
+              currentFolderId={currentFolderId}
+              navigateToFolder={navigateToFolder}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const { t, isRtl } = useLanguage();
@@ -24,8 +89,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<{ id: string, name: string }[]>([]);
-  const [activeTab, setActiveTab] = useState<'browse' | 'upload'>('browse');
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const [uploadMetadata, setUploadMetadata] = useState({
     category: 'Management',
     dept: 'INIT',
@@ -36,7 +103,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
-  const [allFolders, setAllFolders] = useState<{ id: string, name: string, path: string }[]>([]);
+  const [allFolders, setAllFolders] = useState<{ id: string, name: string, path: string, parentId?: string }[]>([]);
 
   useEffect(() => {
     fetchProjects();
@@ -48,30 +115,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     }
   }, [selectedProjectId]);
 
-  const [driveStatus, setDriveStatus] = useState<{ isConfigured: boolean, hasParentFolder: boolean, parentFolderId?: string } | null>(null);
-
-  useEffect(() => {
-    checkDriveStatus();
-  }, []);
-
-  const checkDriveStatus = async () => {
-    try {
-      const res = await fetch('/api/admin/drive-status');
-      if (res.ok) {
-        const data = await res.json();
-        setDriveStatus(data);
-      }
-    } catch (error) {
-      console.error('Failed to check drive status:', error);
-    }
-  };
-
   const fetchProjects = async () => {
     const { collection, getDocs } = await import('firebase/firestore');
     const querySnapshot = await getDocs(collection(db, 'projects'));
     let projectsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
     
-    // Permission Filter
     if (!isAdmin && userProfile) {
       projectsList = projectsList.filter(p => userProfile.accessibleProjects?.includes(p.id));
     }
@@ -80,20 +128,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     if (!selectedProjectId && projectsList.length > 0) {
       setSelectedProjectId(projectsList[0].id);
     }
-  };
-
-  const navigateToFolder = (folderId: string, folderName: string) => {
-    setCurrentFolderId(folderId);
-    setBreadcrumbs(prev => [...prev, { id: folderId, name: folderName }]);
-    fetchFiles(folderId);
-  };
-
-  const navigateBack = (index: number) => {
-    const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
-    const target = newBreadcrumbs[newBreadcrumbs.length - 1];
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(target.id);
-    fetchFiles(target.id);
   };
 
   const fetchProject = async (id: string) => {
@@ -136,15 +170,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         const data = await res.json();
         let filesList = data.files || [];
         
-        // Granular Permission Filter for folders
         if (!isAdmin && userProfile) {
           filesList = filesList.filter((f: any) => {
             if (f.mimeType === 'application/vnd.google-apps.folder') {
-              // Check if folder is explicitly allowed or if it's the root project folder
               const permission = userProfile.folderPermissions?.[f.id];
               return permission && permission !== 'none';
             }
-            return true; // Files in an allowed folder are visible
+            return true;
           });
         }
 
@@ -157,17 +189,35 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     }
   };
 
-  const handleFileUpload = async () => {
+  const navigateToFolder = (folderId: string, folderName: string) => {
+    setCurrentFolderId(folderId);
+    setBreadcrumbs(prev => {
+      const existingIndex = prev.findIndex(b => b.id === folderId);
+      if (existingIndex !== -1) {
+        return prev.slice(0, existingIndex + 1);
+      }
+      return [...prev, { id: folderId, name: folderName }];
+    });
+    fetchFiles(folderId);
+  };
+
+  const handleFileUploadRaw = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFile(file);
+      setShowUploadModal(true);
+    }
+  };
+
+  const executeUpload = async () => {
     if (!pendingFile || !project || !selectedProjectId) return;
 
     setUploading(true);
     try {
-      // 1. Get files in target path to determine version
       const targetPath = uploadMetadata.path === '/' ? '' : uploadMetadata.path;
       const resFiles = await fetch(`/api/drive/files-by-path?rootId=${project.driveFolderId}&path=${targetPath}`);
       const existingFiles = resFiles.ok ? (await resFiles.json()).files : [];
       
-      // 2. Generate name and check for version
       let version = 1;
       const baseName = generateZaryaFileName({
         projectCode: project.code,
@@ -181,9 +231,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const extension = pendingFile.name.split('.').pop();
       let finalName = `${baseName}.${extension}`;
 
-      // Simple version increment logic
       const baseNameNoVersion = baseName.split('-V')[0];
-      const sameFiles = existingFiles.filter((f: any) => f.name.startsWith(baseNameNoVersion));
+      const sameFiles = existingFiles?.filter((f: any) => f.name.startsWith(baseNameNoVersion)) || [];
       if (sameFiles.length > 0) {
         version = sameFiles.length + 1;
         const newBaseName = generateZaryaFileName({
@@ -211,7 +260,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         toast.success(`File uploaded as ${finalName}`);
         setPendingFile(null);
         setUploadMetadata(prev => ({ ...prev, description: '' }));
-        setActiveTab('browse');
+        setShowUploadModal(false);
         if (currentFolderId) fetchFiles(currentFolderId);
       } else {
         const err = await res.json();
@@ -224,11 +273,34 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     }
   };
 
+  const formatSize = (bytes: string | number) => {
+    const b = typeof bytes === 'string' ? parseInt(bytes) : bytes;
+    if (!b) return '---';
+    const kb = b / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '---';
+    return new Date(dateStr).toLocaleDateString(isRtl ? 'ar-EG' : 'en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const filteredFiles = files.filter(f => 
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const categories = ['Management', 'Engineering', 'Procurement', 'Finance', 'Legal'];
   const depts = ['INIT', 'PLAN', 'EXEC', 'MON', 'CLS'];
   const types = ['FRM', 'PLN', 'RPT', 'LOG', 'DRW', 'SPC', 'MS'];
 
-  const generatedName = project ? generateZaryaFileName({
+  const generatedNamePreview = project ? generateZaryaFileName({
     projectCode: project.code,
     category: uploadMetadata.category,
     dept: uploadMetadata.dept,
@@ -237,279 +309,332 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     version: '1'
   }) : '';
 
-  const isEditAllowed = isAdmin || (() => {
-    if (!userProfile) return false;
-    if (!currentFolderId) return false;
-    const permission = userProfile.folderPermissions?.[currentFolderId];
-    return permission === 'edit' || project?.driveFolderId === currentFolderId; // Root folder usually allowed if project is accessible
-  })();
+  const getFileTypeColor = (name: string) => {
+    const ext = name.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'pdf': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'xlsx': case 'xls': case 'csv': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'docx': case 'doc': return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'pptx': case 'ppt': return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'jpg': case 'jpeg': case 'png': case 'svg': return 'bg-purple-50 text-purple-600 border-purple-100';
+      case 'zip': case 'rar': return 'bg-slate-100 text-slate-600 border-slate-200';
+      default: return 'bg-slate-50 text-slate-500 border-slate-100';
+    }
+  };
+
+  const getFileTypeName = (file: any) => {
+    if (file.mimeType === 'application/vnd.google-apps.folder') return 'Folder';
+    const ext = file.name.split('.').pop()?.toUpperCase();
+    return ext || 'Document';
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Main Header with Large Icon */}
-      <div className="flex items-center gap-4 px-2">
-        <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
-          <HardDrive className="w-8 h-8 text-slate-900" />
-        </div>
-        <h1 className="text-2xl font-semibold text-slate-900 uppercase tracking-tight">
-          {t('drive')}
-        </h1>
-      </div>
-
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden flex flex-col h-[850px]">
-        <header className="p-8 border-b border-slate-100 bg-slate-50/50">
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-5">
-              <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-slate-200">
-                <Folder className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 uppercase tracking-tight">{t('project_files')}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <select 
-                    value={selectedProjectId} 
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  >
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+    <div className="flex flex-col h-[850px] bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden relative font-sans">
+      {/* ── Toolbar ── */}
+      <header className="p-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+        <div className="flex items-center gap-8">
+          {/* Project Selector */}
+          <div className="flex items-center gap-3 pr-6 border-r border-slate-200">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl">
+              <HardDrive className="w-5 h-5" />
             </div>
-          
-          <div className="flex bg-slate-200/50 p-1.5 rounded-2xl">
-            <button 
-              onClick={() => setActiveTab('browse')}
-              className={cn(
-                "px-6 py-3 rounded-xl text-sm font-semibold uppercase tracking-wider transition-all",
-                activeTab === 'browse' ? "bg-white text-blue-600 shadow-md" : "text-slate-500 hover:text-slate-700"
-              )}
+            <select 
+              value={selectedProjectId} 
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="text-sm border-none bg-transparent font-bold text-slate-800 focus:ring-0 cursor-pointer max-w-[200px] uppercase tracking-tight"
             >
-              Browse
-            </button>
-            <button 
-              onClick={() => {
-                if (!isEditAllowed) {
-                  toast.error("You don't have permission to upload to this folder");
-                  return;
-                }
-                setActiveTab('upload');
-              }}
-              className={cn(
-                "px-6 py-3 rounded-xl text-sm font-semibold uppercase tracking-wider transition-all",
-                activeTab === 'upload' ? "bg-white text-blue-600 shadow-md" : "text-slate-500 hover:text-slate-700",
-                !isEditAllowed && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              Upload
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-800 transition-all cursor-pointer shadow-xl active:scale-95 shadow-slate-200">
+              <Upload className="w-4 h-4 text-blue-400" />
+              {t('upload_file')}
+              <input type="file" className="hidden" onChange={handleFileUploadRaw} />
+            </label>
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+              <Plus className="w-4 h-4 text-slate-400" />
+              {t('new_folder')}
             </button>
           </div>
         </div>
 
-        {activeTab === 'browse' && (
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium uppercase tracking-widest bg-white/50 p-3 rounded-xl border border-slate-100">
-            {breadcrumbs.map((bc, i) => (
-              <React.Fragment key={bc.id}>
-                <span 
-                  className={cn(
-                    "hover:text-blue-600 cursor-pointer transition-colors",
-                    i === breadcrumbs.length - 1 ? "text-slate-900" : ""
-                  )}
-                  onClick={() => navigateBack(i)}
-                >
-                  {bc.name}
-                </span>
-                {i < breadcrumbs.length - 1 && <ChevronRight className="w-4 h-4 text-slate-300" />}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+           {/* Search */}
+           <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              <input 
+                type="text" 
+                placeholder={t('search_files')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-64 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none font-medium"
+              />
+           </div>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-8">
-        <AnimatePresence mode="wait">
-          {activeTab === 'browse' ? (
+      {/* ── Breadcrumbs ── */}
+      <div className="px-8 py-3 border-b border-slate-50 bg-slate-50/30 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] overflow-x-auto no-scrollbar">
+          {breadcrumbs.map((bc, i) => (
+            <React.Fragment key={bc.id}>
+              <span 
+                className={cn(
+                  "hover:text-blue-600 cursor-pointer transition-colors whitespace-nowrap px-1",
+                  i === breadcrumbs.length - 1 ? "text-slate-900" : ""
+                )}
+                onClick={() => navigateToFolder(bc.id, bc.name)}
+              >
+                {bc.name}
+              </span>
+              {i < breadcrumbs.length - 1 && <ChevronRight className="w-3 h-3 text-slate-300 shrink-0" />}
+            </React.Fragment>
+          ))}
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* ── Sidebar: Folder Tree ── */}
+        <aside className="w-[300px] border-r border-slate-100 overflow-y-auto no-scrollbar p-5 bg-white">
+          <div className="flex items-center gap-2 mb-4 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+             <ChevronDown className="w-3.5 h-3.5" />
+             Quick Access
+          </div>
+          <div className="space-y-1">
+            {project?.driveFolderId && (
+              <FolderTreeItem 
+                folder={{ id: project.driveFolderId, name: project.name }} 
+                allFolders={allFolders}
+                currentFolderId={currentFolderId}
+                navigateToFolder={navigateToFolder}
+              />
+            )}
+          </div>
+        </aside>
+
+        {/* ── Main Area: Details View ── */}
+        <main className="flex-1 overflow-y-auto no-scrollbar bg-white">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
+              <Loader2 className="w-10 h-10 animate-spin text-blue-500/30" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{t('syncing_files')}...</span>
+            </div>
+          ) : filteredFiles.length > 0 ? (
+            <div className="w-full">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-white z-10 shadow-sm shadow-slate-100">
+                  <tr className="border-b border-slate-100">
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">{t('name')}</th>
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">{t('date_modified')}</th>
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">{t('modified_by')}</th>
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">{t('type')}</th>
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">{t('size')}</th>
+                    <th className="px-8 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredFiles.map((file) => {
+                    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+                    return (
+                      <tr 
+                        key={file.id} 
+                        onClick={() => isFolder && navigateToFolder(file.id, file.name)}
+                        className={cn(
+                          "group hover:bg-slate-50/80 transition-colors cursor-pointer",
+                          isFolder ? "" : "cursor-default"
+                        )}
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            {isFolder ? (
+                              <Folder className="w-6 h-6 text-amber-400 fill-amber-400/10" />
+                            ) : (
+                              <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center group-hover:bg-white transition-colors">
+                                 <File className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                               <span className="text-sm font-bold text-slate-700 truncate max-w-[300px] tracking-tight">{file.name}</span>
+                               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{isFolder ? 'Directory' : 'File Asset'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 whitespace-nowrap">
+                            <Clock className="w-3.5 h-3.5 opacity-40" />
+                            {formatDate(file.modifiedTime)}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2">
+                             <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-white shadow-sm">
+                                {file.lastModifyingUser?.photoLink ? (
+                                  <img src={file.lastModifyingUser.photoLink} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <User className="w-3.5 h-3.5 text-slate-400" />
+                                )}
+                             </div>
+                             <span className="text-xs text-slate-600 font-bold whitespace-nowrap truncate max-w-[120px]">{file.lastModifyingUser?.displayName || '---'}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider",
+                            getFileTypeColor(file.name)
+                          )}>
+                            {getFileTypeName(file)}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{isFolder ? '--' : formatSize(file.size)}</span>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                             {!isFolder && (
+                               <a 
+                                 href={file.webViewLink} 
+                                 target="_blank" 
+                                 rel="noreferrer" 
+                                 className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                               >
+                                 <ExternalLink className="w-4.5 h-4.5" />
+                               </a>
+                             )}
+                             <button className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                               <Trash2 className="w-4.5 h-4.5" />
+                             </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-12 space-y-4">
+              <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center shadow-inner">
+                <Search className="w-10 h-10 text-slate-200" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('no_files_found')}</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em]">{t('try_different_search_or_folder')}</p>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* ── Naming Wizard Modal ── */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowUploadModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
             <motion.div
-              key="browse"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="space-y-8"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
             >
-              {/* Folders Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {files.filter(f => f.mimeType === 'application/vnd.google-apps.folder').map(folder => (
-                  <motion.div 
-                    key={folder.id} 
-                    whileHover={{ y: -4 }}
-                    onClick={() => navigateToFolder(folder.id, folder.name)}
-                    className="p-6 bg-white border border-slate-200 rounded-[2rem] hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-blue-50 rounded-2xl group-hover:bg-blue-100 transition-colors">
-                        <Folder className="w-10 h-10 text-blue-500 fill-blue-500/10" />
-                      </div>
-                      <MoreVertical className="w-5 h-5 text-slate-300 group-hover:text-slate-400" />
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
+                 <div className="flex items-center gap-5">
+                    <div className="p-4 bg-slate-900 rounded-2xl text-white shadow-2xl shadow-slate-900/20">
+                      <CloudUpload className="w-7 h-7 text-blue-400" />
                     </div>
-                    <p className="text-sm font-semibold text-slate-900 truncate uppercase tracking-tight">{folder.name}</p>
-                    <p className="text-[10px] text-slate-400 mt-1 font-medium uppercase tracking-widest">Directory</p>
-                  </motion.div>
-                ))}
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900 uppercase tracking-tighter">Zarya Naming Wizard</h2>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">{t('standardization_enforced')}</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setShowUploadModal(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                   <ChevronDown className="w-6 h-6" />
+                 </button>
               </div>
 
-              {/* Files Table */}
-              {files.some(f => f.mimeType !== 'application/vnd.google-apps.folder') ? (
-                <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 border-b border-slate-100">
-                        <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">File Name</th>
-                        <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder').map((file) => (
-                        <tr key={file.id} className="hover:bg-slate-50/30 transition-colors group">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-white transition-colors">
-                                <File className="w-5 h-5 text-slate-400 group-hover:text-blue-500" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-slate-700 block">{file.name}</span>
-                                <span className="text-[10px] text-slate-400 uppercase font-medium tracking-widest">Document</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <a 
-                                href={file.webViewLink} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                title="View in Drive"
-                              >
-                                <ExternalLink className="w-5 h-5" />
-                              </a>
-                              <button className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Download">
-                                <Download className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-3 shadow-inner">
+                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Source Asset</div>
+                   <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100">
+                      <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                        <File className="w-6 h-6 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-slate-700 truncate block text-lg tracking-tight -mb-1">{pendingFile?.name}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{formatSize(pendingFile?.size || 0)}</span>
+                      </div>
+                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                  <CloudUpload className="w-20 h-20 text-slate-200 mb-6" />
-                  <p className="text-slate-400 font-medium uppercase tracking-widest">No files in this directory</p>
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="upload"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="max-w-3xl mx-auto space-y-10"
-            >
-              <div className="space-y-8 bg-slate-50 p-10 rounded-[3rem] border border-slate-100 shadow-inner">
-                <div className="space-y-6">
-                  <label className="block">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] ml-2">1. Select Resource</span>
-                    <div className="mt-3 flex justify-center px-10 pt-10 pb-12 border-2 border-slate-200 border-dashed rounded-[2rem] bg-white hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/5 transition-all cursor-pointer group relative overflow-hidden">
-                      <div className="space-y-2 text-center relative z-10">
-                        <Upload className="mx-auto h-14 w-14 text-slate-300 group-hover:text-blue-500 transition-all duration-500 group-hover:scale-110" />
-                        <div className="flex flex-col text-sm text-slate-600">
-                          <span className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {pendingFile ? pendingFile.name : 'Drop file here or click to browse'}
-                          </span>
-                          <span className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-1">PDF, DOCX, XLSX up to 10MB</span>
-                        </div>
-                      </div>
-                      <input type="file" className="sr-only" onChange={(e) => setPendingFile(e.target.files?.[0] || null)} />
-                    </div>
-                  </label>
 
-                  <div className="space-y-6">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] ml-2">2. Naming Wizard (Zarya FNC)</span>
-                    
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Category</label>
-                        <select 
-                          value={uploadMetadata.category}
-                          onChange={(e) => setUploadMetadata(prev => ({ ...prev, category: e.target.value }))}
-                          className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                        >
-                          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Department</label>
-                        <select 
-                          value={uploadMetadata.dept}
-                          onChange={(e) => setUploadMetadata(prev => ({ ...prev, dept: e.target.value }))}
-                          className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                        >
-                          {depts.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Type</label>
-                        <select 
-                          value={uploadMetadata.type}
-                          onChange={(e) => setUploadMetadata(prev => ({ ...prev, type: e.target.value }))}
-                          className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                        >
-                          {types.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Target Path</label>
-                        <select 
-                          value={uploadMetadata.path}
-                          onChange={(e) => setUploadMetadata(prev => ({ ...prev, path: e.target.value }))}
-                          className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                        >
-                          <option value="/">Project Root</option>
-                          {allFolders.map(f => <option key={f.id} value={f.path}>{f.path}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
+                <div className="space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Description</label>
-                      <input 
-                        type="text"
-                        value={uploadMetadata.description}
-                        onChange={(e) => setUploadMetadata(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="e.g. SITE_SURVEY_REPORT"
-                        className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-300"
-                      />
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Category</label>
+                      <select 
+                        value={uploadMetadata.category}
+                        onChange={(e) => setUploadMetadata(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Department</label>
+                      <select 
+                        value={uploadMetadata.dept}
+                        onChange={(e) => setUploadMetadata(prev => ({ ...prev, dept: e.target.value }))}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        {depts.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Type</label>
+                      <select 
+                        value={uploadMetadata.type}
+                        onChange={(e) => setUploadMetadata(prev => ({ ...prev, type: e.target.value }))}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        {types.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Auto-Routed Path</label>
+                      <div className="px-6 py-4 bg-slate-200/50 border border-slate-200 rounded-2xl text-[11px] font-bold text-slate-500 italic truncate tracking-wide">
+                        {breadcrumbs.map(b => b.name).join(' / ')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Asset Description</label>
+                    <input 
+                      type="text"
+                      value={uploadMetadata.description}
+                      onChange={(e) => setUploadMetadata(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="e.g. PROGRESS_VALIDATION_Q4"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-300 placeholder:italic"
+                    />
                   </div>
                 </div>
 
-                <div className="p-8 bg-slate-900 rounded-[2rem] text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <ShieldAlert className="w-20 h-20" />
-                  </div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-blue-400 mb-3">Final Zarya Compliant Filename</p>
-                  <div className="flex flex-wrap items-center gap-1 font-mono text-sm break-all">
-                    {generatedName.split('-').map((part, i) => (
+                <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-blue-400 mb-4 opacity-80">Zarya Compliant Sequence</p>
+                  <div className="flex flex-wrap items-center gap-1 font-mono text-base break-all font-bold tracking-tighter">
+                    {generatedNamePreview.split('-').map((part, i) => (
                       <span key={i} className={cn(
-                        "px-1.5 py-0.5 rounded",
                         i === 0 ? "text-white" :
                         i === 1 ? "text-slate-500" :
                         i === 2 ? "text-emerald-400" :
@@ -517,30 +642,40 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                         i === 4 ? "text-purple-400" :
                         "text-blue-400"
                       )}>
-                        {part}{i < generatedName.split('-').length - 1 ? '-' : ''}
+                        {part}{i < generatedNamePreview.split('-').length - 1 ? '-' : ''}
                       </span>
                     ))}
-                    <span className="text-slate-500">
+                    <span className="text-slate-500 italic">
                       {pendingFile ? `.${pendingFile.name.split('.').pop()}` : '.pdf'}
                     </span>
                   </div>
-                  <p className="text-[9px] text-slate-500 mt-4 font-medium uppercase tracking-widest">System will automatically increment version if file exists</p>
+                  <div className="flex items-center gap-2 mt-6">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Version control auto-increments if asset exists in target path</p>
+                  </div>
                 </div>
+              </div>
 
+              <div className="p-8 border-t border-slate-100 flex gap-4 bg-slate-50/50">
                 <button 
-                  onClick={handleFileUpload}
-                  disabled={uploading || !pendingFile || !uploadMetadata.description}
-                  className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-semibold uppercase tracking-[0.2em] text-sm shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-[1.02] transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:scale-100"
+                  onClick={() => setShowUploadModal(false)}
+                  className="flex-1 py-5 bg-white border border-slate-200 text-slate-500 rounded-[1.5rem] font-bold uppercase tracking-widest hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm"
                 >
-                  {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <CloudUpload className="w-6 h-6" />}
-                  {uploading ? 'Processing Architecture...' : 'Rename & Upload to Drive'}
+                  {t('abort')}
+                </button>
+                <button 
+                  onClick={executeUpload}
+                  disabled={uploading || !uploadMetadata.description}
+                  className="flex-[2] py-5 bg-slate-900 text-white rounded-[1.5rem] font-bold uppercase tracking-[0.2em] hover:bg-slate-800 shadow-2xl shadow-slate-900/30 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group"
+                >
+                  {uploading ? <Loader2 className="w-6 h-6 animate-spin text-blue-400" /> : <CloudUpload className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />}
+                  {uploading ? 'Processing Data Pipeline...' : 'Commit & Sync to Drive'}
                 </button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
-  </div>
   );
 };

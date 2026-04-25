@@ -274,7 +274,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
           {isEditing ? (
             <input 
               type="text"
@@ -290,7 +290,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
           )}
         </div>
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
           {isEditing ? (
             <input 
               type="date"
@@ -310,7 +310,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
         {/* Section 1 */}
         <div className="space-y-8">
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Statement Development</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Statement Development</label>
             {isEditing ? (
               <textarea 
                 value={scope.scopeStatement}
@@ -327,7 +327,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
           </section>
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WBS Structure</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">WBS Structure</label>
               <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
                 <Layers className="w-3 h-3" />
                 Mandatory Hierarchy for Reports
@@ -349,7 +349,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
           </section>
           <section className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">WBS Dictionary</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest">WBS Dictionary</label>
               <div className="group relative">
                 <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
@@ -380,7 +380,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
         {/* Section 2 */}
         <div className="pt-8 border-t border-slate-100 space-y-8">
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Maintenance</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Baseline Maintenance</label>
             {isEditing ? (
               <textarea 
                 value={scope.baselineMaintenance}
@@ -396,7 +396,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
             )}
           </section>
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope Change</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope Change</label>
             {isEditing ? (
               <textarea 
                 value={scope.scopeChange}
@@ -413,7 +413,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
           </section>
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deliverable Acceptance</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Deliverable Acceptance</label>
               <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">
                 <ShieldCheck className="w-3 h-3" />
                 Connected to QC Approach
@@ -434,7 +434,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
             )}
           </section>
           <section className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Scope and Requirements Integration</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Scope and Requirements Integration</label>
             {isEditing ? (
               <textarea 
                 value={scope.requirementsIntegration}
@@ -490,15 +490,15 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
 
       {/* Version History */}
       <section className="space-y-6">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Revision History</h3>
         <div className="overflow-hidden rounded-2xl border border-slate-100">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

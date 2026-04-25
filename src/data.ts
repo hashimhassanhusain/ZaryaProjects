@@ -118,7 +118,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
-    icon: 'Users', 
+    icon: 'UserSearch', 
     summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
     details: {
       inputs: ['business-case', 'project-charter', 'governance-framework', 'org-structure'],
@@ -132,7 +132,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
-    icon: 'Search', 
+    icon: 'Layout', 
     summary: 'Systematically gather and analyze stakeholders interests, expectations, and influence.',
     details: {
       inputs: ['stakeholder-register', 'stakeholder-list'],
@@ -281,7 +281,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.0', 
+    id: '2.4.1', 
     title: 'Bill of Quantities (BOQ)', 
     type: 'terminal', 
     domain: 'finance', 
@@ -295,7 +295,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.1', 
+    id: '2.4.2', 
     title: 'Develop Cost Estimates', 
     type: 'terminal', 
     domain: 'finance', 
@@ -309,7 +309,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.2', 
+    id: '2.4.3', 
     title: 'Develop Project Budget', 
     type: 'terminal', 
     domain: 'finance', 
@@ -323,7 +323,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.3', 
+    id: '2.4.4', 
     title: 'Define Financial Control Framework', 
     type: 'terminal', 
     domain: 'finance', 
@@ -342,7 +342,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
-    icon: 'Landmark', 
+    icon: 'Coins', 
     summary: 'Coordinate fund disbursements and monitor project cash flow.',
     details: {
       inputs: ['project-budget', 'funding-strategy-plan', 'cash-flow-forecast'],
@@ -356,7 +356,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
-    icon: 'FilePlus', 
+    icon: 'Receipt', 
     summary: 'Maintain accurate ledgers of all project expenses and actual resource usage costs.',
     details: {
       inputs: ['actual-performance-data', 'res-usage-data', 'fin-transactions-log'],
@@ -715,7 +715,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.2.9', 
+    id: '2.2.5', 
     title: 'WBS Explorer (Zones/Areas)', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -729,7 +729,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.2.10', 
+    id: '2.2.7', 
     title: 'Work Package Definitions', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -748,7 +748,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Executing', 
-    icon: 'Play', 
+    icon: 'ClipboardList', 
     summary: 'Directly manage the production of deliverables based on work package definitions.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'scope-baseline'],
@@ -1039,7 +1039,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.6.21', 
+    id: '3.6.3', 
     title: 'Project Task Manager', 
     type: 'terminal', 
     domain: 'resources', 
@@ -1053,7 +1053,7 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.6.22', 
+    id: '3.6.4', 
     title: 'Meetings & Minutes', 
     type: 'terminal', 
     domain: 'resources', 

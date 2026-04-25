@@ -488,13 +488,13 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         {/* Project Canvas Hub */}
         <section className="space-y-8">
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Project Canvas Hub</h2>
-              <p className="text-xs text-slate-500 font-medium tracking-wide border-l-2 border-blue-500 pl-3">Interactive Workspace: Defining the project core logic.</p>
+            <div className={cn("space-y-1", isRtl && "text-right")}>
+              <h2 className="text-xl font-semibold text-slate-900 tracking-tight">{t('project_canvas_hub')}</h2>
+              <p className={cn("text-xs text-slate-500 font-medium tracking-wide border-l-2 border-blue-500 pl-3", isRtl && "border-l-0 border-r-2 pr-3")}>{t('interactive_workspace')}</p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+            <div className={cn("flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100", isRtl && "flex-row-reverse")}>
                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Smart Integration Active</span>
+               <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">{t('smart_integration_active')}</span>
             </div>
           </div>
 
@@ -505,40 +505,38 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
                     <Briefcase className="w-6 h-6" />
                  </div>
-                 <div className="space-y-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Project Title</label>
+                       <label className={cn("text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1 block", isRtl && "text-right")}>{t('project_title')}</label>
                        <input 
                          type="text"
                          value={charter.projectTitle}
                          onChange={(e) => setCharter({ ...charter, projectTitle: e.target.value })}
-                         className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                         placeholder="Enter Project Title"
+                         className={cn("w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none", isRtl && "text-right")}
+                         placeholder={t('project_title')}
                        />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Sponsor</label>
+                       <label className={cn("text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1 block", isRtl && "text-right")}>{t('project_sponsor')}</label>
                        <input 
                          type="text"
                          value={charter.projectSponsor}
                          onChange={(e) => setCharter({ ...charter, projectSponsor: e.target.value })}
-                         className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                         placeholder="Sponsor Name"
+                         className={cn("w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none", isRtl && "text-right")}
+                         placeholder={t('project_sponsor')}
                        />
                     </div>
                  </div>
-              </div>
 
               <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-6 shadow-2xl shadow-slate-900/20">
                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400 backdrop-blur-md">
                     <Target className="w-6 h-6" />
                  </div>
                  <div className="space-y-4">
-                    <h3 className="text-xl font-black tracking-tight leading-none">CORE OBJECTIVES</h3>
+                    <h3 className={cn("text-xl font-semibold tracking-tight leading-none", isRtl && "text-right")}>{t('core_objectives')}</h3>
                     <div className="space-y-3">
                        <textarea 
-                         placeholder="Primary Project Objectives..." 
-                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                         placeholder={t('objectives_desc')} 
+                         className={cn("w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all", isRtl && "text-right")}
                          rows={4}
                          value={charter.purpose}
                          onChange={(e) => setCharter({ ...charter, purpose: e.target.value })}
@@ -551,17 +549,17 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
             {/* Column 2: Scope & Quality */}
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 space-y-6 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all">
-                  <div className="flex items-center justify-between">
+                  <div className={cn("flex items-center justify-between", isRtl && "flex-row-reverse")}>
                      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                         <Box className="w-5 h-5" />
                      </div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Initial Scope</span>
+                     <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t('project_boundaries')}</span>
                   </div>
                   <div className="space-y-4">
-                     <h3 className="text-lg font-black text-slate-900">Project Boundaries</h3>
+                     <h3 className={cn("text-lg font-semibold text-slate-900", isRtl && "text-right")}>{t('project_boundaries')}</h3>
                      <textarea 
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                        placeholder="What's included and excluded?"
+                        className={cn("w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none", isRtl && "text-right")}
+                        placeholder={t('boundaries_desc')}
                         rows={6}
                         value={charter.description}
                         onChange={(e) => setCharter({ ...charter, description: e.target.value })}
@@ -570,17 +568,17 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                </div>
 
                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 space-y-6 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all">
-                  <div className="flex items-center justify-between">
+                  <div className={cn("flex items-center justify-between", isRtl && "flex-row-reverse")}>
                      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <CheckCircle2 className="w-5 h-5" />
                      </div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quality Assurance</span>
+                     <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t('quality_assurance')}</span>
                   </div>
                   <div className="space-y-4">
-                     <h3 className="text-lg font-black text-slate-900">Success Criteria</h3>
+                     <h3 className={cn("text-lg font-semibold text-slate-900", isRtl && "text-right")}>{t('success_criteria')}</h3>
                      <textarea 
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                        placeholder="How is project success measured?"
+                        className={cn("w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none", isRtl && "text-right")}
+                        placeholder={t('success_criteria_desc')}
                         rows={6}
                         value={charter.requirements}
                         onChange={(e) => setCharter({ ...charter, requirements: e.target.value })}
@@ -590,33 +588,33 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
                {/* RAM Table Integrated Here */}
                <div className="col-span-full bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between mb-8">
-                     <div className="flex items-center gap-4">
+                  <div className={cn("flex items-center justify-between mb-8", isRtl && "flex-row-reverse")}>
+                     <div className={cn("flex items-center gap-4", isRtl && "flex-row-reverse")}>
                         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                            <LayoutDashboard className="w-6 h-6" />
                         </div>
-                        <div>
-                           <h3 className="text-xl font-black text-slate-900">Responsibility Assignment (RAM)</h3>
-                           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Matrix Structure: RACI Logic</p>
+                        <div className={cn(isRtl && "text-right")}>
+                           <h3 className="text-xl font-semibold text-slate-900">{t('ram_raci_matrix')}</h3>
+                           <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest mt-1">{t('matrix_structure_raci')}</p>
                         </div>
                      </div>
                      <button 
                         onClick={addStakeholder}
-                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10"
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-semibold uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10"
                      >
                         <Plus className="w-4 h-4" />
-                        Add Node
+                        {t('add_node')}
                      </button>
                   </div>
 
                   <div className="overflow-x-auto rounded-2xl border border-slate-100">
-                     <table className="w-full text-left border-collapse">
+                     <table className={cn("w-full text-left border-collapse", isRtl && "text-right")}>
                         <thead>
                            <tr className="bg-slate-50">
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Role / Entity</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Responsibility</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Accountability</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Action</th>
+                              <th className={cn("px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100", isRtl && "text-right")}>{t('role_entity')}</th>
+                              <th className={cn("px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100", isRtl && "text-right")}>{t('responsibility')}</th>
+                              <th className={cn("px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100", isRtl && "text-right")}>{t('accountability')}</th>
+                              <th className={cn("px-6 py-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500 border-b border-slate-100", isRtl && "text-right")}>{t('actions')}</th>
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -624,35 +622,35 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                               <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors">
                                  <td className="px-6 py-4">
                                     <input 
-                                       placeholder="Principal Role" 
-                                       className="bg-transparent font-bold text-slate-900 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all"
+                                       placeholder={t('principal_role')} 
+                                       className={cn("bg-transparent font-semibold text-slate-900 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all", isRtl && "text-right")}
                                        value={s.role}
                                        onChange={(e) => {
-                                          const newS = [...charter.stakeholders];
-                                          newS[idx].role = e.target.value;
-                                          setCharter({...charter, stakeholders: newS});
+                                           const newS = [...charter.stakeholders];
+                                           newS[idx].role = e.target.value;
+                                           setCharter({...charter, stakeholders: newS});
                                        }}
                                     />
                                  </td>
                                  <td className="px-6 py-4">
                                     <input 
-                                       placeholder="Assigned To" 
-                                       className="bg-transparent text-sm text-slate-600 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all"
+                                       placeholder={t('assigned_to')} 
+                                       className={cn("bg-transparent text-sm text-slate-600 outline-none w-full border-b border-transparent focus:border-indigo-500 transition-all", isRtl && "text-right")}
                                        value={s.name}
                                        onChange={(e) => {
-                                          const newS = [...charter.stakeholders];
-                                          newS[idx].name = e.target.value;
-                                          setCharter({...charter, stakeholders: newS});
+                                           const newS = [...charter.stakeholders];
+                                           newS[idx].name = e.target.value;
+                                           setCharter({...charter, stakeholders: newS});
                                        }}
                                     />
                                  </td>
                                  <td className="px-6 py-4">
-                                    <div className="flex gap-2">
+                                    <div className={cn("flex gap-2", isRtl && "flex-row-reverse")}>
                                        {['R', 'A', 'C', 'I'].map(type => (
                                           <button 
                                              key={type}
                                              className={cn(
-                                                "w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center border",
+                                                "w-7 h-7 rounded-lg text-[10px] font-semibold transition-all flex items-center justify-center border",
                                                 idx % 4 === ['R', 'A', 'C', 'I'].indexOf(type) 
                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" 
                                                    : "bg-white border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600"
@@ -663,7 +661,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                                        ))}
                                     </div>
                                  </td>
-                                 <td className="px-6 py-4">
+                                 <td className="px-6 py-4 text-center">
                                     <button 
                                        onClick={() => removeStakeholder(s.id)}
                                        className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
@@ -676,13 +674,13 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                         </tbody>
                      </table>
                   </div>
-                  <div className="mt-4 flex items-center gap-6">
+                  <div className={cn("mt-4 flex items-center gap-6", isRtl && "flex-row-reverse")}>
                      <button 
                         onClick={pullStakeholdersFromPolicies}
-                        className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-900 transition-all flex items-center gap-2"
+                        className={cn("text-[10px] font-semibold uppercase tracking-widest text-indigo-600 hover:text-indigo-900 transition-all flex items-center gap-2", isRtl && "flex-row-reverse")}
                      >
                         <History className="w-4 h-4" />
-                        Repopulate from Project Database
+                        {t('repopulate_from_db')}
                      </button>
                   </div>
                </div>
@@ -693,38 +691,38 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         {/* Approvals & Budget Management */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-12 border-t border-slate-100">
            <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 space-y-8">
-              <div className="flex items-center gap-4">
+              <div className={cn("flex items-center gap-4", isRtl && "flex-row-reverse")}>
                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-900 shadow-sm">
                     <DollarSign className="w-6 h-6" />
                  </div>
-                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">Financial Framework</h3>
+                 <h3 className="text-lg font-semibold text-slate-900 uppercase tracking-widest">{t('financial_framework')}</h3>
               </div>
               <div className="space-y-6">
                  <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full translate-x-12 -translate-y-12 blur-2xl group-hover:bg-blue-500/10 transition-all" />
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">High-Level Budget Estimate (IQD)</label>
-                    <div className="flex items-baseline gap-2">
-                       <span className="text-slate-400 font-bold">IQD</span>
+                    <label className={cn("text-[10px] font-semibold text-slate-400 uppercase tracking-widest block mb-1", isRtl && "text-right")}>{t('budget_estimate_iqd')}</label>
+                    <div className={cn("flex items-baseline gap-2", isRtl && "flex-row-reverse")}>
+                       <span className="text-slate-400 font-semibold">IQD</span>
                        <input 
                          type="number"
                          value={charter.estimatedBudget}
                          onChange={(e) => setCharter({ ...charter, estimatedBudget: Number(e.target.value) })}
-                         className="bg-transparent border-none p-0 text-3xl font-black text-slate-900 outline-none w-full"
+                         className={cn("bg-transparent border-none p-0 text-3xl font-semibold text-slate-900 outline-none w-full", isRtl && "text-right")}
                        />
                     </div>
-                    <div className="mt-4 flex items-center justify-between text-[11px] font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                       <span>Exchange Rate: (1,310)</span>
+                    <div className={cn("mt-4 flex items-center justify-between text-[11px] font-semibold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100", isRtl && "flex-row-reverse")}>
+                       <span>{t('exchange_rate')}: (1,310)</span>
                        <span className="text-blue-600">${(charter.estimatedBudget / 1310).toLocaleString()}</span>
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Budget Authority Details</label>
+                    <label className={cn("text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1 block", isRtl && "text-right")}>{t('budget_authority_details')}</label>
                     <textarea 
                       value={charter.budgetManagement}
                       onChange={(e) => setCharter({ ...charter, budgetManagement: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-3xl px-6 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                      className={cn("w-full bg-white border border-slate-200 rounded-3xl px-6 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all", isRtl && "text-right")}
                       rows={3}
-                      placeholder="Define budget limits and approval steps."
+                      placeholder={t('budget_limits_desc')}
                     />
                  </div>
               </div>
@@ -732,49 +730,49 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
            <div className="space-y-6">
               <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100">
-                 <div className="flex items-center gap-4 mb-8">
+                 <div className={cn("flex items-center gap-4 mb-8", isRtl && "flex-row-reverse")}>
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-900 shadow-sm">
                        <ShieldAlert className="w-6 h-6" />
                     </div>
-                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">Formal Approvals</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 uppercase tracking-widest">{t('formal_approvals')}</h3>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-4 p-6 bg-white rounded-3xl border border-slate-100">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 block mb-4">Project Manager</span>
+                       <span className={cn("text-[10px] font-semibold uppercase tracking-widest text-blue-600 block mb-4", isRtl && "text-right")}>{t('project_manager')}</span>
                        <input 
-                          placeholder="Print Name" 
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold mb-2 outline-none focus:ring-2 focus:ring-blue-500/10"
+                          placeholder={t('print_name')} 
+                          className={cn("w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-semibold mb-2 outline-none focus:ring-2 focus:ring-blue-500/10", isRtl && "text-right")}
                           value={charter.approvals.pmName}
                           onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, pmName: e.target.value}})}
                        />
                        <input 
                           type="date"
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10"
+                          className={cn("w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10", isRtl && "text-right")}
                           value={charter.approvals.pmDate}
                           onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, pmDate: e.target.value}})}
                        />
                     </div>
                     <div className="space-y-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm border-t-4 border-t-amber-500">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 block mb-4">Project Sponsor</span>
+                       <span className={cn("text-[10px] font-semibold uppercase tracking-widest text-amber-600 block mb-4", isRtl && "text-right")}>{t('project_sponsor')}</span>
                        <input 
-                          placeholder="Print Name" 
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold mb-2 outline-none focus:ring-2 focus:ring-amber-500/10"
+                          placeholder={t('print_name')} 
+                          className={cn("w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-semibold mb-2 outline-none focus:ring-2 focus:ring-amber-500/10", isRtl && "text-right")}
                           value={charter.approvals.sponsorName}
                           onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, sponsorName: e.target.value}})}
                        />
                        <input 
                           type="date"
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500/10"
+                          className={cn("w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500/10", isRtl && "text-right")}
                           value={charter.approvals.sponsorDate}
                           onChange={(e) => setCharter({...charter, approvals: {...charter.approvals, sponsorDate: e.target.value}})}
                        />
                     </div>
                  </div>
               </div>
-              <div className="p-8 bg-blue-600 rounded-[2.5rem] text-white flex items-center justify-between">
-                 <div>
-                    <h4 className="font-black text-xl tracking-tight">Generate Final Charter</h4>
-                    <p className="text-xs text-blue-100 font-medium">Auto-populates data to PMBOK Standard PDF</p>
+              <div className={cn("p-8 bg-blue-600 rounded-[2.5rem] text-white flex items-center justify-between", isRtl && "flex-row-reverse")}>
+                 <div className={cn(isRtl && "text-right")}>
+                    <h4 className="font-semibold text-xl tracking-tight">{t('generate_final_charter')}</h4>
+                    <p className="text-xs text-blue-100 font-medium">{t('auto_populate_desc')}</p>
                  </div>
                  <button 
                    onClick={generatePDF}

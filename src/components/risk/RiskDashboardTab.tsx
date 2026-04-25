@@ -56,8 +56,8 @@ export const RiskDashboardTab: React.FC<RiskDashboardTabProps> = ({ risks, issue
             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4", stat.bg)}>
               <stat.icon className={cn("w-6 h-6", stat.color)} />
             </div>
-            <div className="text-2xl font-black text-slate-900 mb-1">{stat.value}</div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</div>
+            <div className="text-2xl font-semibold text-slate-900 mb-1">{stat.value}</div>
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -107,15 +107,15 @@ export const RiskDashboardTab: React.FC<RiskDashboardTabProps> = ({ risks, issue
             {highRisks.slice(0, 5).map((risk) => (
               <div key={risk.id} className="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-red-400 bg-red-400/10 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-semibold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-md">
                     {risk.riskId}
                   </span>
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
                     Score: {risk.score}
                   </span>
                 </div>
                 <p className="text-xs font-bold text-white line-clamp-2 mb-2">{risk.description}</p>
-                <div className="flex items-center gap-2 text-[9px] font-black text-white/30 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[9px] font-semibold text-white/30 uppercase tracking-widest">
                   <Clock className="w-3 h-3" />
                   {risk.status}
                 </div>

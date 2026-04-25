@@ -135,8 +135,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   </div>
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
                 </div>
-                {(isAdmin || userProfile?.accessiblePages?.includes('2.4.0')) && (
-                  <Link to="/page/2.4.0" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                {(isAdmin || userProfile?.accessiblePages?.includes('2.4.1')) && (
+                  <Link to="/page/2.4.1" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                     {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}

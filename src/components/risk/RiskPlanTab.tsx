@@ -132,7 +132,7 @@ Risk status will be reported in weekly progress meetings.`);
 
         <div className="space-y-6">
           <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200">
-            <h4 className="text-sm font-black uppercase tracking-widest mb-6 text-white/40 flex items-center gap-2">
+            <h4 className="text-sm font-semibold uppercase tracking-widest mb-6 text-white/40 flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Plan Sections
             </h4>

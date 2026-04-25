@@ -156,14 +156,14 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
                  <GitBranch className="w-6 h-6" />
               </div>
               <div>
-                 <h3 className="text-xl font-black text-slate-900 tracking-tight">Integration Command Hub</h3>
+                 <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Integration Command Hub</h3>
                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">PMBOK Standard: Plan Alignment</p>
               </div>
            </div>
 
            <div className="space-y-6">
               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Integration Strategy</label>
+                 <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1">Integration Strategy</label>
                  <textarea 
                     value={data.integrationStrategy}
                     onChange={(e) => setData({ ...data, integrationStrategy: e.target.value })}
@@ -173,7 +173,7 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
                  />
               </div>
               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Cross-Domain Dependency Mapping</label>
+                 <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1">Cross-Domain Dependency Mapping</label>
                  <textarea 
                     value={data.dependencyMapping}
                     onChange={(e) => setData({ ...data, dependencyMapping: e.target.value })}
@@ -191,7 +191,7 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
               <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
                  <Box className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Scope Baseline</h4>
+              <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4">Scope Baseline</h4>
               <textarea 
                 value={data.baselines.scope}
                 onChange={(e) => setData({ ...data, baselines: { ...data.baselines, scope: e.target.value }})}
@@ -204,7 +204,7 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
               <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 transition-transform">
                  <Activity className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Schedule Baseline</h4>
+              <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4">Schedule Baseline</h4>
               <textarea 
                 value={data.baselines.schedule}
                 onChange={(e) => setData({ ...data, baselines: { ...data.baselines, schedule: e.target.value }})}
@@ -217,7 +217,7 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
                  <DollarSign className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Cost Baseline</h4>
+              <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4">Cost Baseline</h4>
               <textarea 
                 value={data.baselines.cost}
                 onChange={(e) => setData({ ...data, baselines: { ...data.baselines, cost: e.target.value }})}
@@ -236,13 +236,13 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
                     <Layers className="w-6 h-6" />
                  </div>
                  <div>
-                    <h3 className="text-xl font-black tracking-tight leading-none">SUBSIDIARY COMPONENT MATRIX</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Inventory of 13 Management Components</p>
+                    <h3 className="text-xl font-semibold tracking-tight leading-none">SUBSIDIARY COMPONENT MATRIX</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mt-2">Inventory of 13 Management Components</p>
                  </div>
               </div>
               <button 
                  onClick={handleSave}
-                 className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-2"
+                 className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-2"
               >
                  <History className="w-4 h-4" />
                  Refresh Status
@@ -253,11 +253,11 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
               {data.subsidiaryPlans.map((plan, idx) => (
                  <div key={idx} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all cursor-pointer">
                     <div className="flex items-center gap-4">
-                       <span className="text-[10px] font-black text-slate-500 group-hover:text-blue-400 transition-colors uppercase tracking-widest">{idx + 1}</span>
+                       <span className="text-[10px] font-semibold text-slate-500 group-hover:text-blue-400 transition-colors uppercase tracking-widest">{idx + 1}</span>
                        <span className="text-sm font-bold tracking-tight">{plan.title}</span>
                     </div>
                     <div className={cn(
-                       "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                       "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest",
                        plan.status === 'Baselined' ? "bg-emerald-500/20 text-emerald-400" :
                        plan.status === 'Pending' ? "bg-amber-500/20 text-amber-400" : "bg-blue-500/20 text-blue-400"
                     )}>

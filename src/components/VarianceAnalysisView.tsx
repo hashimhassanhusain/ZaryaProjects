@@ -479,7 +479,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">VARIANCE ANALYSIS</h1>
+          <h1 className="text-4xl font-semibold text-slate-900 tracking-tight">VARIANCE ANALYSIS</h1>
           <p className="text-slate-500 font-medium">Project: {project.name} | {project.code}</p>
         </div>
         <div className="flex gap-4">
@@ -624,12 +624,12 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">WBS Element</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Planned Cost</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actual Cost</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Planned Days</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actual Days</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">WBS Element</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Planned Cost</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Actual Cost</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Planned Days</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Actual Days</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Performance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -643,8 +643,8 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
                       <div>
                         <p className="text-sm font-bold">{project.name}</p>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{project.code}</span>
-                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-white/10 text-white">
+                          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{project.code}</span>
+                          <span className="px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest bg-white/10 text-white">
                             PROJECT SUMMARY
                           </span>
                         </div>
@@ -680,7 +680,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
                           style={{ width: `${stats.overallProgress}%` }}
                         />
                       </div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">
                         {stats.overallProgress}% OVERALL PROGRESS
                       </span>
                     </div>
@@ -918,11 +918,11 @@ const VarianceCard = ({ label, value, subValue, icon, status = 'info' }: {
   return (
     <div className={cn("p-8 bg-white border rounded-3xl space-y-4", colors[status])}>
       <div className="flex justify-between items-start">
-        <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{label}</label>
+        <label className="text-[10px] font-semibold text-slate-400 tracking-widest uppercase">{label}</label>
         {icon && <div className="text-slate-300">{icon}</div>}
       </div>
       <div className="space-y-1">
-        <h3 className="text-4xl font-black tabular-nums">{value}</h3>
+        <h3 className="text-4xl font-semibold tabular-nums">{value}</h3>
         {subValue && <p className="text-sm font-bold opacity-80 uppercase">{subValue}</p>}
       </div>
     </div>
@@ -1011,9 +1011,9 @@ const renderWBSRow = (
             <div>
               <p className="text-sm font-bold text-slate-800">{node.title}</p>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{node.code}</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{node.code}</span>
                 <span className={cn(
-                  "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                  "px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest",
                   node.type === 'Cost Account' ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"
                 )}>
                   {node.type}
@@ -1042,7 +1042,7 @@ const renderWBSRow = (
         </td>
         <td className="px-6 py-4 text-center">
           <div className="flex flex-col items-center gap-1">
-            <div className="flex justify-between w-full text-[8px] font-black uppercase text-slate-400">
+            <div className="flex justify-between w-full text-[8px] font-semibold uppercase text-slate-400">
               <span className="text-emerald-600">{totals.costProgress}% COST</span>
               <span className={cn(totals.spi >= 1 ? 'text-emerald-500' : 'text-rose-500')}>SPI {totals.spi.toFixed(2)}</span>
             </div>

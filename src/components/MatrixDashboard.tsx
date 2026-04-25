@@ -2,6 +2,7 @@ import React from 'react';
 import { Page } from '../types';
 import { pages } from '../data';
 import { DomainId, FocusAreaId, PERFORMANCE_DOMAINS, FOCUS_AREAS } from '../constants/navigation';
+import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import * as LucideIcons from 'lucide-react';
@@ -13,6 +14,7 @@ interface MatrixDashboardProps {
 }
 
 export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focusAreaId }) => {
+  const { t, isRtl } = useLanguage();
   const domain = PERFORMANCE_DOMAINS.find(d => d.id === domainId);
   const area = FOCUS_AREAS.find(a => a.id === focusAreaId);
   
@@ -35,21 +37,21 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
-                {domain.title}
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
+                {t(domain.id)}
               </span>
-              <LucideIcons.ChevronRight className="w-3 h-3 text-slate-300" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">
-                {area.title}
+              <LucideIcons.ChevronRight className={cn("w-3 h-3 text-slate-300", isRtl ? "rotate-180" : "")} />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-900">
+                {t(area.id)}
               </span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mt-1">
-              Process Hub
+            <h1 className="text-4xl font-semibold text-slate-900 tracking-tight mt-1">
+              {t('process_hub')}
             </h1>
           </div>
         </div>
         <p className="text-slate-500 max-w-2xl text-lg font-medium leading-relaxed">
-          {domain.description} This intersection focuses on <span className="text-slate-900 font-bold underline decoration-blue-500/30 underline-offset-4">{area.title}</span> activities within the project lifecycle.
+          {t(domain.id + '_desc') || domain.description} {isRtl ? 'يركز هذا التقاطع على' : 'This intersection focuses on'} <span className="text-slate-900 font-bold underline decoration-blue-500/30 underline-offset-4">{t(area.id)}</span> {isRtl ? 'ضمن دورة حياة المشروع.' : 'activities within the project lifecycle.'}
         </p>
       </div>
 
@@ -68,12 +70,12 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                 className="group relative flex flex-col h-full bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300"
               >
                 {/* Status Badge */}
-                <div className="absolute top-6 right-6">
+                <div className={cn("absolute top-6", isRtl ? "left-6" : "right-6")}>
                    <div className={cn(
                      "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-tighter",
                      page.status === 'Completed' ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
                    )}>
-                     {page.status || 'Draft'}
+                     {page.status ? t(page.status.toLowerCase()) : t('draft')}
                    </div>
                 </div>
 
@@ -83,17 +85,17 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
 
                 <div className="space-y-2 flex-1">
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{page.id}</div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
-                    {stripNumericPrefix(page.title)}
+                  <h3 className="text-xl font-semibold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors rtl:text-right">
+                    {t(page.id) || stripNumericPrefix(page.title)}
                   </h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">
-                    {page.summary || `Execute and manage ${page.title} processes.`}
+                  <p className="text-sm text-slate-500 line-clamp-2 rtl:text-right">
+                    {t(page.id + '_summary') || page.summary}
                   </p>
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Open Process</span>
-                  <LucideIcons.ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('open_process')}</span>
+                  <LucideIcons.ArrowRight className={cn("w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all", isRtl ? "rotate-180" : "")} />
                 </div>
               </Link>
             </motion.div>
@@ -104,9 +106,9 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                <LucideIcons.SearchX className="w-10 h-10 text-slate-200" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">No processes at this intersection</h3>
+              <h3 className="text-xl font-bold text-slate-900">{t('no_processes_intersection')}</h3>
               <p className="text-slate-500 max-w-sm mx-auto text-sm">
-                Try selecting a different Focus Area or Domain to find the project management tool you're looking for.
+                {t('try_different_focus')}
               </p>
             </div>
           </div>
@@ -120,17 +122,17 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
             <div className="relative z-10 space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-md border border-white/10">
                 <LucideIcons.Info className="w-4 h-4 text-blue-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Domain Insights</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">{t('domain_insights')}</span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight leading-tight">
-                Governance & <br/> Compliance Checks
+              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
+                {t('governance')} & <br/> {t('compliance_checks')}
               </h2>
               <p className="text-slate-400 text-lg">
-                Ensure all initiating processes have signed-off charters before moving to detailed planning.
+                {isRtl ? 'تأكد من توقيع جميع مواثيق عمليات البدء قبل الانتقال إلى التخطيط التفصيلي.' : 'Ensure all initiating processes have signed-off charters before moving to detailed planning.'}
               </p>
-              <button className="flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-blue-500 hover:text-white transition-all">
-                Run Compliance Check
-                <LucideIcons.ChevronRight className="w-4 h-4" />
+              <button className="flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-semibold uppercase tracking-widest text-[11px] hover:bg-blue-500 hover:text-white transition-all">
+                {t('run_compliance_check')}
+                <LucideIcons.ChevronRight className={cn("w-4 h-4", isRtl ? "rotate-180" : "")} />
               </button>
             </div>
          </div>
@@ -140,14 +142,14 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
             <div className="relative z-10 space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-md border border-white/10">
                 <LucideIcons.BarChart3 className="w-4 h-4 text-white" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Quick View</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">{t('quick_view')}</span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight leading-tight">
-                Process <br/> Completion
+              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
+                {t('total_progress')}
               </h2>
               <div className="flex items-end gap-2">
-                 <span className="text-6xl font-black tracking-tighter">64%</span>
-                 <span className="text-blue-100 font-bold uppercase tracking-widest text-xs mb-2">Total Progress</span>
+                 <span className="text-6xl font-semibold tracking-tighter">64%</span>
+                 <span className="text-blue-100 font-bold uppercase tracking-widest text-xs mb-2">{t('overall_progress')}</span>
               </div>
               <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
                  <div className="h-full bg-white rounded-full" style={{ width: '64%' }} />

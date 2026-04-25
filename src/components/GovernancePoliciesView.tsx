@@ -350,7 +350,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[600px]">
         <div className="p-10 space-y-12">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Title</label>
             {isEditing ? (
               <input 
                 type="text"
@@ -367,7 +367,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
           {/* Revision History */}
           <section className="space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Revision History</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Revision History</h3>
               {isEditing && (
                 <button onClick={addRevision} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
                   <Plus className="w-4 h-4" />
@@ -377,7 +377,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
             <div className="space-y-4">
               {policies.revisionHistory.map((rev, idx) => (
                 <div key={rev.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-black text-blue-600 flex items-center">
+                  <div className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-semibold text-blue-600 flex items-center">
                     {rev.version}
                   </div>
                   {isEditing ? (
@@ -431,7 +431,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
           {/* Governance Roles */}
           <section className="space-y-6 pt-12 border-t border-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Governance Roles</h3>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Governance Roles</h3>
               {isEditing && (
                 <button onClick={addRole} className="p-1 hover:bg-slate-100 rounded-md text-blue-600 transition-all">
                   <Plus className="w-4 h-4" />
@@ -454,7 +454,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Name</label>
                       {isEditing ? (
                         <input 
                           type="text" 
@@ -471,7 +471,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                       )}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</label>
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Title</label>
                       {isEditing ? (
                         <input 
                           type="text" 
@@ -489,7 +489,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsibilities</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibilities</label>
                     {isEditing ? (
                       <textarea 
                         value={role.responsibilities}
@@ -506,7 +506,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission Level</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Permission Level</label>
                     {isEditing ? (
                       <select 
                         value={role.permissionLevel}
@@ -515,14 +515,14 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                           newRoles[idx].permissionLevel = e.target.value as any;
                           setPolicies({ ...policies, governanceRoles: newRoles });
                         }}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-blue-600 outline-none"
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-semibold uppercase tracking-widest text-blue-600 outline-none"
                       >
                         <option value="Financial/Technical Approver">Financial/Technical Approver</option>
                         <option value="Field/Schedule Supervisor">Field/Schedule Supervisor</option>
                         <option value="Standard User">Standard User</option>
                       </select>
                     ) : (
-                      <div className="text-xs font-black uppercase tracking-widest text-blue-600">{role.permissionLevel}</div>
+                      <div className="text-xs font-semibold uppercase tracking-widest text-blue-600">{role.permissionLevel}</div>
                     )}
                   </div>
                 </div>
@@ -532,9 +532,9 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
 
           {/* Communication Protocols */}
           <section className="space-y-6 pt-12 border-t border-slate-100">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Protocols</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Communication Protocols</h3>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Weekly Meetings & Formal Communication</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Weekly Meetings & Formal Communication</label>
               {isEditing ? (
                 <textarea 
                   value={policies.communicationProtocols} 
@@ -551,10 +551,10 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
 
           {/* Archiving & Naming */}
           <section className="space-y-6 pt-12 border-t border-slate-100">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Archiving & Naming Protocols</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Archiving & Naming Protocols</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Naming Standard (Zarya FNC)</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Naming Standard (Zarya FNC)</label>
                 {isEditing ? (
                   <input 
                     type="text" 
@@ -567,7 +567,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                 )}
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Master Folder Structure</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Master Folder Structure</label>
                 {isEditing ? (
                   <textarea 
                     value={policies.folderStructure} 
@@ -584,10 +584,10 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
 
           {/* Standards & Code */}
           <section className="space-y-6 pt-12 border-t border-slate-100">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Technical Standards & Disciplinary Code</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Technical Standards & Disciplinary Code</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical & Procurement Standards</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Technical & Procurement Standards</label>
                 {isEditing ? (
                   <textarea 
                     value={policies.technicalStandards} 
@@ -600,7 +600,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                 )}
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disciplinary Code & Ethics</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Disciplinary Code & Ethics</label>
                 {isEditing ? (
                   <textarea 
                     value={policies.disciplinaryCode} 
@@ -629,10 +629,10 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">Version</th>
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest">Author</th>
-                <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-white/40 uppercase tracking-widest">Version</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-white/40 uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-white/40 uppercase tracking-widest">Author</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-white/40 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -644,7 +644,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                 versions.map((v) => (
                   <tr key={v.version} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="text-blue-400 font-black">v{v.version.toFixed(1)}</span>
+                      <span className="text-blue-400 font-semibold">v{v.version.toFixed(1)}</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-white/60">
                       {new Date(v.date).toLocaleString()}
@@ -655,7 +655,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                     <td className="px-6 py-4 text-right">
                       <button 
                         onClick={() => setPolicies(v.data as unknown as PolicyData)}
-                        className="text-xs font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest"
+                        className="text-xs font-semibold text-blue-400 hover:text-blue-300 uppercase tracking-widest"
                       >
                         Restore
                       </button>

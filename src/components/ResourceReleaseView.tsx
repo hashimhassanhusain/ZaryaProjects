@@ -61,7 +61,7 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Resource Release Hub</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Resource Release Hub</h2>
             <p className="text-sm text-slate-500 font-medium">Verify completion and formally release human and physical assets.</p>
           </div>
         </header>
@@ -69,7 +69,7 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
            <div className="lg:col-span-2 space-y-6">
               <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Pending Release Assignments</h3>
+                 <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Pending Release Assignments</h3>
                  <div className="space-y-4">
                     {assignments.filter(a => a.status === 'Assigned').map((a) => (
                       <div key={a.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between hover:bg-white hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-900/5 transition-all group">
@@ -78,13 +78,13 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
                                <UserMinus className="w-6 h-6" />
                             </div>
                             <div>
-                               <p className="text-sm font-black text-slate-900 uppercase">Resource ID: {a.resourceId.substring(0,8)}</p>
+                               <p className="text-sm font-semibold text-slate-900 uppercase">Resource ID: {a.resourceId.substring(0,8)}</p>
                                <p className="text-[10px] font-bold text-slate-400">ASSIGNMENT ID: {a.id}</p>
                             </div>
                          </div>
                          <button 
                            onClick={() => handleRelease(a)}
-                           className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                           className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
                          >
                             Approve Release
                          </button>
@@ -93,7 +93,7 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
                     {assignments.filter(a => a.status === 'Assigned').length === 0 && (
                       <div className="text-center py-20 grayscale opacity-30">
                          <CheckCircle className="w-12 h-12 mx-auto mb-4" />
-                         <p className="text-[10px] font-black uppercase tracking-widest">All Resources Released</p>
+                         <p className="text-[10px] font-semibold uppercase tracking-widest">All Resources Released</p>
                       </div>
                     )}
                  </div>
@@ -105,7 +105,7 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
                     <FileText className="w-6 h-6 text-emerald-400" />
                  </div>
-                 <h3 className="text-xl font-black italic tracking-tighter">Release Protocols</h3>
+                 <h3 className="text-xl font-semibold italic tracking-tighter">Release Protocols</h3>
                  <p className="text-sm text-slate-400 font-medium leading-relaxed">
                    Releasing a resource triggers two automated workflows:
                    <br/><br/>
@@ -116,18 +116,18 @@ export const ResourceReleaseView: React.FC<ResourceReleaseViewProps> = ({ page }
               </div>
 
               <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
-                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Certificate Status</h3>
+                 <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Certificate Status</h3>
                  <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                       <span className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Staff Evaluations</span>
+                       <span className="text-[10px] font-semibold uppercase text-slate-900 tracking-widest">Staff Evaluations</span>
                        <CheckCircle className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 opacity-50">
-                       <span className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Equip. Handover</span>
+                       <span className="text-[10px] font-semibold uppercase text-slate-900 tracking-widest">Equip. Handover</span>
                        <AlertCircle className="w-4 h-4 text-rose-500" />
                     </div>
                  </div>
-                 <button className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-black text-[11px] uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                 <button className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-semibold text-[11px] uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
                     <Download className="w-4 h-4" />
                     Generate Certificate
                  </button>

@@ -344,11 +344,11 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50">
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">ID</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Requirement</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criteria</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">ID</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Requirement</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Criteria</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</th>
+              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
               <th className="px-8 py-5 w-20"></th>
             </tr>
           </thead>
@@ -356,7 +356,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
             {filteredAcceptances.map((a) => (
               <tr key={a.id} className="group hover:bg-slate-50/30 transition-all cursor-pointer" onClick={() => { setEditingEntry(a); setIsFormOpen(true); }}>
                 <td className="px-8 py-6">
-                  <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{a.acceptanceId}</span>
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{a.acceptanceId}</span>
                 </td>
                 <td className="px-8 py-6">
                   <p className="text-sm font-bold text-slate-900">{a.requirement}</p>
@@ -370,7 +370,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                 <td className="px-8 py-6">
                   <div className="flex justify-center">
                     <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                      "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest flex items-center gap-1.5",
                       a.status === 'Accepted' ? "bg-green-100 text-green-600" :
                       a.status === 'Rejected' ? "bg-red-100 text-red-600" :
                       a.status === 'In Progress' ? "bg-blue-100 text-blue-600" :
@@ -422,7 +422,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Formal Acceptance Sign-off</h3>
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{editingEntry.acceptanceId}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">{editingEntry.acceptanceId}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-all">
@@ -433,7 +433,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
               <div className="p-8 overflow-y-auto space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
                       Requirement
                       <Tooltip text="Formal Acceptance is the final gateway before project handover or payment release." />
                     </label>
@@ -451,7 +451,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
                     <textarea 
                       value={editingEntry.acceptanceCriteria}
                       onChange={(e) => setEditingEntry({ ...editingEntry, acceptanceCriteria: e.target.value })}
@@ -464,7 +464,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Validation Method</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Validation Method</label>
                     <select 
                       value={editingEntry.validationMethod}
                       onChange={(e) => setEditingEntry({ ...editingEntry, validationMethod: e.target.value })}
@@ -480,7 +480,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sign-off Authority</label>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Sign-off Authority</label>
                     <select 
                       value={editingEntry.signoffBy}
                       onChange={(e) => setEditingEntry({ ...editingEntry, signoffBy: e.target.value })}
@@ -496,7 +496,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comments / Observations</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments / Observations</label>
                   <textarea 
                     value={editingEntry.comments}
                     onChange={(e) => setEditingEntry({ ...editingEntry, comments: e.target.value })}
@@ -507,14 +507,14 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acceptance Status</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Status</label>
                   <div className="flex gap-2">
                     {['Pending', 'In Progress', 'Accepted', 'Rejected'].map((status) => (
                       <button 
                         key={status}
                         onClick={() => setEditingEntry({ ...editingEntry, status: status as any })}
                         className={cn(
-                          "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                          "flex-1 py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest border transition-all",
                           editingEntry.status === status 
                             ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200" 
                             : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
@@ -529,7 +529,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                 {/* Version History */}
                 {editingEntry.id && versions.length > 0 && (
                   <div className="pt-8 border-t border-slate-100">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                       <History className="w-4 h-4" />
                       Revision History
                     </h3>
@@ -537,13 +537,13 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                       {versions.map(v => (
                         <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                           <div>
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
+                            <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
                             <p className="text-xs font-bold text-slate-900 mt-1">{v.changeSummary}</p>
                             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleString()}</p>
                           </div>
                           <button 
                             onClick={() => setEditingEntry(v.data as FormalAcceptanceEntry)}
-                            className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                            className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
                           >
                             Restore
                           </button>
@@ -555,7 +555,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
               </div>
 
               <div className="p-8 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-white/40 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3 text-white/40 text-[10px] font-semibold uppercase tracking-widest">
                   <ShieldAlert className="w-4 h-4" />
                   Governance Protection Active
                 </div>
@@ -608,13 +608,13 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={showPrompt.onConfirm}
-                  className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                  className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                 >
                   Yes, Propose Update
                 </button>
                 <button 
                   onClick={() => setShowPrompt(null)}
-                  className="w-full py-4 bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+                  className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
                 >
                   No, Keep Protected
                 </button>

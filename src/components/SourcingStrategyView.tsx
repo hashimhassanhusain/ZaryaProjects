@@ -148,8 +148,8 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
                     <Truck className="w-6 h-6" />
                  </div>
                  <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Main Sourcing Method</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Make vs. Buy Logic</p>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Main Sourcing Method</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mt-1">Make vs. Buy Logic</p>
                  </div>
               </div>
 
@@ -184,7 +184,7 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                        <FileSearch className="w-5 h-5" />
                     </div>
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Market Analysis</h4>
+                    <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-widest">Market Analysis</h4>
                  </div>
                  <textarea 
                     value={data.marketAnalysis}
@@ -200,7 +200,7 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
                  <div className="relative z-10 space-y-6">
                     <div className="flex items-center gap-4">
                        <ShieldCheck className="w-6 h-6 text-blue-400" />
-                       <h4 className="text-lg font-black tracking-tight">Sourcing Risk Mitigation</h4>
+                       <h4 className="text-lg font-semibold tracking-tight">Sourcing Risk Mitigation</h4>
                     </div>
                     <textarea 
                        value={data.riskMitigation}
@@ -222,11 +222,11 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
                     <BadgeCheck className="w-6 h-6" />
                  </div>
                  <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Vendor Selection Framework</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Weighted Criteria Matrix</p>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Vendor Selection Framework</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mt-1">Weighted Criteria Matrix</p>
                  </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-600">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
                  <Gavel className="w-4 h-4 text-slate-400" />
                  Legal Compliance Required
               </div>
@@ -234,7 +234,7 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Selection Logic</label>
+                 <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1">Selection Logic</label>
                  <textarea 
                     value={data.vendorCriteria}
                     onChange={(e) => setData({ ...data, vendorCriteria: e.target.value })}
@@ -245,7 +245,7 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
               </div>
 
               <div className="space-y-6">
-                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contract Type Preference</h4>
+                 <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-1">Contract Type Preference</h4>
                  <div className="space-y-3">
                     {data.contractTypes.map((ct, idx) => (
                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-6">
@@ -264,9 +264,9 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
                                 newCT[idx].pref = Number(e.target.value);
                                 setData({ ...data, contractTypes: newCT });
                              }}
-                             className="w-12 bg-white border border-slate-200 rounded-lg text-center text-xs font-black p-1 outline-none focus:ring-2 focus:ring-blue-500/20"
+                             className="w-12 bg-white border border-slate-200 rounded-lg text-center text-xs font-semibold p-1 outline-none focus:ring-2 focus:ring-blue-500/20"
                           />
-                          <span className="text-[10px] font-black text-slate-400">%</span>
+                          <span className="text-[10px] font-semibold text-slate-400">%</span>
                        </div>
                     ))}
                  </div>

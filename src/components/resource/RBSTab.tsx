@@ -179,7 +179,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">Resource Breakdown Structure (RBS)</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">Resource Breakdown Structure (RBS)</h2>
           <p className="text-sm text-slate-500">Authoritative hierarchical library for project resources.</p>
         </div>
         <button
@@ -215,7 +215,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden"
             >
               <div className="px-8 py-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {editingId ? 'Edit Node' : 'Add New Node'}
                 </h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -225,7 +225,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Type</label>
                   <div className="flex gap-2">
                     {['Category', 'Resource'].map((t) => (
                       <button
@@ -244,7 +244,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
 
                 {formData.type === 'Resource' && (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Type</label>
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Resource Type</label>
                     <select
                       value={formData.resourceType}
                       onChange={(e) => setFormData({ ...formData, resourceType: e.target.value as any })}
@@ -258,7 +258,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Title</label>
                   <input
                     type="text"
                     value={formData.title}
@@ -269,7 +269,7 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}

@@ -306,7 +306,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
           <div className="p-10 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lesson ID</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Lesson ID</label>
                 <input 
                   type="text"
                   value={formData.lessonId}
@@ -315,7 +315,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Category</label>
                 <select 
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
@@ -330,7 +330,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
                 <select 
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -344,7 +344,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description of Lesson</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Description of Lesson</label>
               <textarea 
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -355,7 +355,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Recommendation</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Recommendation</label>
               <textarea 
                 value={formData.recommendation}
                 onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
@@ -367,12 +367,12 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Impact</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Impact</label>
                 <select 
                   value={formData.impact}
                   onChange={(e) => setFormData({ ...formData, impact: e.target.value as any })}
                   className={cn(
-                    "w-full px-6 py-4 border rounded-2xl text-sm font-black focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase tracking-widest",
+                    "w-full px-6 py-4 border rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase tracking-widest",
                     formData.impact === 'Positive' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
                   )}
                 >
@@ -381,7 +381,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Owner / Contributor</label>
+                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Owner / Contributor</label>
                 <select 
                   value={formData.ownerId}
                   onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
@@ -484,7 +484,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
             {versions.map((v) => (
               <div key={v.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-6">
-                  <div className="text-2xl font-black text-emerald-400">v{v.version.toFixed(1)}</div>
+                  <div className="text-2xl font-semibold text-emerald-400">v{v.version.toFixed(1)}</div>
                   <div>
                     <div className="text-sm font-bold">{v.actionType}</div>
                     <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">
@@ -506,13 +506,13 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Impact</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Owner</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Impact</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Owner</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -544,7 +544,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                     className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                   >
                     <td className="px-8 py-6">
-                      <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{entry.lessonId}</span>
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{entry.lessonId}</span>
                     </td>
                     <td className="px-8 py-6">
                       <div className="text-sm font-medium text-slate-600">{entry.category}</div>
@@ -555,7 +555,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                     </td>
                     <td className="px-8 py-6">
                       <span className={cn(
-                        "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         entry.impact === 'Positive' ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
                       )}>
                         {entry.impact}
@@ -568,7 +568,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                     </td>
                     <td className="px-8 py-6">
                       <span className={cn(
-                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest",
                         entry.status === 'Published' ? "bg-emerald-100 text-emerald-700" :
                         entry.status === 'Archived' ? "bg-slate-100 text-slate-700" :
                         "bg-amber-100 text-amber-700"

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { 
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
   DollarSign, Users, ShieldAlert, Target, Info,
@@ -12,7 +14,11 @@ import {
   Flag, BookOpen, ClipboardList, BarChart3, List, Table,
   LayoutGrid, Layers, Briefcase, User, Users2,
   ShieldCheck, Award, ShoppingCart, GitBranch, MessageSquare,
-  ListChecks, Grid, Building2, CheckSquare, ListChecks as TableAlt
+  ListChecks, Grid, Building2, CheckSquare, ListChecks as TableAlt,
+  UserSearch, Layout, Coins, Receipt, Wallet, Landmark, Eye, MessageCircleWarning,
+  Smile, Archive, Calculator, Lock, FilePlus, History, CalendarDays,
+  Play, Gauge, Settings2, Library, Network, Search, UserPlus, Handshake, MessagesSquare,
+  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle, Star, FolderOpen, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType } from '../types';
@@ -107,11 +113,17 @@ const ICON_MAP: Record<string, any> = {
   Zap, Activity, Flag, BookOpen, ClipboardList, BarChart3,
   List, Table, LayoutGrid, Layers, Briefcase, User, Users2,
   ShieldCheck, Award, ShoppingCart, GitBranch, MessageSquare,
-  ListChecks, Grid, Building2, CheckSquare, TableAlt
+  ListChecks, Grid, Building2, CheckSquare, TableAlt,
+  UserSearch, Layout, Coins, Receipt, Wallet, Landmark, Eye, MessageCircleWarning,
+  Smile, Archive, Calculator, Lock, FilePlus, History, CalendarDays,
+  Play, Gauge, Settings2, Library, Network, Search, UserPlus, Handshake, MessagesSquare,
+  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle
 };
 
+import { Ribbon, RibbonGroup } from './Ribbon';
+
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
-  const { t, isRtl } = useLanguage();
+  const { t, th, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
@@ -119,6 +131,36 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const domainKey = page.domain || 'governance';
   const { selectedFocusArea } = useUI();
   const activeFocusArea = selectedFocusArea;
+  const navigate = useNavigate();
+
+  const handleTabChange = (id: string) => {
+    if (id === 'generate-pdf') {
+      toast.success(t('pdf_saved_to_drive'));
+      return;
+    }
+    if (id === 'push-baseline') {
+      toast.success(t('update_success'));
+      return;
+    }
+    if (id === 'explorer') {
+      navigate('/explorer/root');
+      return;
+    }
+    if (id === 'admin') {
+      navigate('/admin/users');
+      return;
+    }
+    setActiveTab(id);
+  };
+
+  // Focus area colors for indicators
+  const focusAreaColors: Record<string, string> = {
+    'Initiating': 'bg-blue-400',
+    'Planning': 'bg-amber-400',
+    'Executing': 'bg-emerald-400',
+    'Monitoring & Controlling': 'bg-indigo-400',
+    'Closing': 'bg-slate-400'
+  };
 
   // Filter children based on permissions
   const filteredChildren = childrenPages.filter(child => {
@@ -127,20 +169,87 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     return userProfile.accessiblePages?.includes(child.id);
   });
 
-  const focusChildren = filteredChildren.filter(child =>
-    child.focusArea?.includes(activeFocusArea)
-  );
-
-  // Auto-select overview when domain or focus area changes, unless we are specifically on a terminal tab
-  React.useEffect(() => {
-    // If the active tab is not one of the children for the new focus area, go to overview
-    if (activeTab !== 'overview' && !focusChildren.some(c => c.id === activeTab)) {
-      setActiveTab('overview');
-    }
-  }, [activeFocusArea, page.id]);
-
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
+  // Group processes by focus area for the ribbon
+  const areas = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
+  
+  // Define high-usage processes for large icons
+  const highUsageIds = [
+    '2.6.21', '3.3.3', '3.6.4', 
+    'daily-reports', '3.6.3', '3.1.3',
+    '2.4.1', '5.2.1', '3.1.1',
+    '2.7.5', '2.1.6', '2.3.3', '3.3.2'
+  ];
+
+  // Prepare ribbon groups
+  const ribbonGroups: RibbonGroup[] = [
+    {
+      id: 'general',
+      tabs: [
+        { 
+          id: 'overview', 
+          label: t('overview'), 
+          icon: Icon,
+          description: th('overview_summary'),
+          size: 'large'
+        }
+      ]
+    }
+  ];
+
+  areas.forEach(area => {
+    const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
+    if (areaChildren.length > 0) {
+      ribbonGroups.push({
+        id: area.toLowerCase().replace(/\s+/g, '_'),
+        label: t(area),
+        tabs: areaChildren.map(child => ({
+          id: child.id,
+          label: stripNumericPrefix(t(child.id)) || child.title,
+          icon: ICON_MAP[child.icon || 'FileText'] || FileText,
+          description: th(child.id + '_summary') || child.summary,
+          focusArea: area,
+          size: highUsageIds.includes(child.id) ? 'large' : 'small'
+        }))
+      });
+    }
+  });
+
+  // Auto-select overview when domain changes
+  React.useEffect(() => {
+    setActiveTab('overview');
+  }, [page.id]);
+
+  const [isFavorite, setIsFavorite] = useState(() => {
+    const saved = localStorage.getItem('zarya_favorites');
+    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    return favs.includes(page.id);
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('zarya_favorites');
+    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    setIsFavorite(favs.includes(page.id));
+  }, [page.id]);
+
+  const toggleFavorite = () => {
+    const saved = localStorage.getItem('zarya_favorites');
+    let favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+    
+    if (favs.includes(page.id)) {
+      favs = favs.filter((id: string) => id !== page.id);
+      setIsFavorite(false);
+      toast.success(t('removed_from_favorites'));
+    } else {
+      favs.push(page.id);
+      setIsFavorite(true);
+      toast.success(t('added_to_favorites'));
+    }
+    
+    localStorage.setItem('zarya_favorites', JSON.stringify(favs));
+    window.dispatchEvent(new Event('storage'));
+  };
   // Risk Data State
   const [risks, setRisks] = useState<RiskEntry[]>([]);
   const [issues, setIssues] = useState<ProjectIssue[]>([]);
@@ -319,11 +428,11 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const renderPageContent = (p: Page) => {
     if (!p) return null;
     const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(p.id);
-    const isTasksPage = p.id === '2.6.21';
-    const isMeetingsPage = p.id === '2.6.22';
-    const isBOQPage = p.id === '2.4.0';
-    const isWBSPage = p.id === '2.2.9';
-    const isWorkPackagesPage = p.id === '2.2.10';
+    const isTasksPage = p.id === '3.6.3';
+    const isMeetingsPage = p.id === '3.6.4';
+    const isBOQPage = p.id === '2.4.1';
+    const isWBSPage = p.id === '2.2.5';
+    const isWorkPackagesPage = p.id === '2.2.7';
     const isEVMPage = p.id === '4.2.2';
     const isProgressReportPage = p.id === '3.3.3';
     const isSchedulePage = p.id === '2.3';
@@ -349,7 +458,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
     if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
     if (isTasksPage) return <TasksView />;
-    if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '2.6.22')!} />;
+    if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '3.6.4')!} />;
     if (isZaryaPage) return <ZaryaPOTracker page={p} />;
     if (isBOQPage) return <BOQView />;
     if (isWBSPage) return <WBSView />;
@@ -424,130 +533,192 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const activeHubId = null;
 
   return (
-    <div className="w-full">
-      {/* ── Domain Metadata Header ── */}
-      <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-           <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-              <Icon className="w-5 h-5" />
-           </div>
-           <div>
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 leading-none">{page.title} Dashboard</h2>
-              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">Active Phase: {activeFocusArea}</p>
-           </div>
-        </div>
-        <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setActiveTab('overview')}
-              className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
-                activeTab === 'overview' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
-            >
-              Overview
-            </button>
-            <div className="w-px h-4 bg-slate-200 mx-1" />
-            {focusChildren.map(child => (
-              <button 
-                key={child.id}
-                onClick={() => setActiveTab(child.id)}
-                className={cn("px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", 
-                  activeTab === child.id ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50")}
-              >
-                {stripNumericPrefix(child.title)}
-              </button>
-            ))}
-        </div>
-      </div>
+    <div className="w-full flex flex-col h-full bg-slate-50">
+      {/* ── Office-Style Ribbon ── */}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={handleTabChange}
+        focusAreaColors={focusAreaColors}
+      />
 
-      <AnimatePresence mode="wait">
-        <motion.div 
-          key={activeTab + activeFocusArea}
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }} 
-          transition={{ duration: 0.2 }} 
-          className="w-full"
-        >
-          {activeTab === 'overview' ? (
-            <div className="p-10 space-y-12 bg-slate-50/30">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full translate-x-12 -translate-y-12 group-hover:scale-110 transition-transform" />
-                    <div className="relative z-10 space-y-4">
-                       <div className="flex items-center gap-3">
-                          <Activity className="w-4 h-4 text-blue-600" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Processes</span>
-                       </div>
-                       <div className="text-5xl font-black text-slate-900">{focusChildren.length}</div>
-                    </div>
-                 </div>
-                 
-                 <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-12 -translate-y-12 group-hover:scale-110 transition-transform" />
-                    <div className="relative z-10 space-y-4">
-                       <div className="flex items-center gap-3">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Baseline Status</span>
-                       </div>
-                       <div className="text-3xl font-black text-white">HEALTHY</div>
-                       <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold">
-                          <Zap className="w-3 h-3" />
-                          98% COMPLIANCE
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center justify-center min-h-[160px]">
-                    {getChartData()}
-                 </div>
-              </div>
-
-              {/* Processes Grid */}
-              <div className="space-y-6">
-                 <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest px-2">Processes for {activeFocusArea}</h3>
-                 {focusChildren.length === 0 ? (
-                   <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
-                      <p className="text-slate-400 font-bold uppercase tracking-widest">No terminal processes defined for this lifecycle stage.</p>
+      <div className="flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.2 }} 
+            className="w-full h-full"
+          >
+            {activeTab === 'overview' ? (
+              <div className="p-8 space-y-12">
+                {/* Domain Header Card */}
+                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
+                   <div className="relative z-10 flex items-center gap-8">
+                      <div className="w-20 h-20 rounded-[2.5rem] bg-slate-900 flex items-center justify-center text-white shadow-2xl shadow-slate-200">
+                         <Icon className="w-10 h-10" strokeWidth={1} />
+                      </div>
+                      <div className="space-y-1">
+                         <div className="flex items-center gap-3">
+                           <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                           <button 
+                             onClick={toggleFavorite}
+                             className={cn(
+                               "p-2 rounded-xl transition-all shadow-sm",
+                               isFavorite ? "bg-amber-50 text-amber-500" : "bg-white border border-slate-200 text-slate-300 hover:text-slate-400"
+                             )}
+                           >
+                             <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
+                           </button>
+                         </div>
+                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
+                           {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
+                         </p>
+                      </div>
                    </div>
-                 ) : (
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {focusChildren.map(child => {
-                        const ChildIcon = ICON_MAP[child.icon || 'FileText'] || FileText;
+                   <div className="relative z-10 flex items-center gap-3">
+                      <div className="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-200">
+                         {t('enterprise_standard')}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400">
+                         <Activity className="w-4 h-4" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('status')}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">{t('healthy')}</div>
+                      <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                         <div className="h-full bg-emerald-500 w-[94%]" />
+                      </div>
+                   </div>
+                   
+                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400">
+                         <CheckCircle2 className="w-4 h-4" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('compliance')}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">98.2%</div>
+                      <div className="text-[10px] font-bold text-emerald-600 uppercase">↑ 2.1% {t('this_month')}</div>
+                   </div>
+
+                   <div className="col-span-2 bg-slate-900 p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
+                      <div className="relative z-10 flex items-center justify-between h-full">
+                         <div className="space-y-2">
+                            <h4 className="text-white text-xs font-bold uppercase tracking-widest opacity-40">{t('domain_kpi_index')}</h4>
+                            <div className="text-4xl font-bold text-white tracking-tighter italic">A+ <span className="text-xs font-normal opacity-60 not-italic ml-2">{t('standard_compliance')}</span></div>
+                         </div>
+                         <div className="w-32 h-16">
+                            {getChartData()}
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Focus Areas Visualization */}
+                <div className="space-y-6">
+                   <div className="flex items-center justify-between px-2">
+                      <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
+                      <div className="flex gap-4">
+                         {areas.map(area => (
+                           <div key={area} className="flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", focusAreaColors[area])} />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">{t(area)}</span>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                      {areas.map(area => {
+                        const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
                         return (
-                          <button 
-                            key={child.id}
-                            onClick={() => setActiveTab(child.id)}
-                            className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group text-left"
-                          >
-                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                   <ChildIcon className="w-6 h-6" />
-                                </div>
-                                <div className="text-[10px] font-black text-slate-300 group-hover:text-blue-600 transition-colors">ID: {child.id}</div>
-                             </div>
-                             <h4 className="text-lg font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{stripNumericPrefix(child.title)}</h4>
-                             <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6">{child.summary || 'Detail view of process activities, inputs, and outputs.'}</p>
+                          <div key={area} className="bg-slate-100/50 rounded-[2.5rem] p-6 space-y-4 border border-slate-200/50">
                              <div className="flex items-center justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">View Process</span>
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t(area)}</span>
+                                <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold text-white", focusAreaColors[area])}>
+                                   {areaChildren.length}
+                                </span>
                              </div>
-                          </button>
+                             <div className="space-y-2">
+                                {areaChildren.map(child => (
+                                  <button 
+                                    key={child.id}
+                                    onClick={() => handleTabChange(child.id)}
+                                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-700 text-left hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between group"
+                                  >
+                                     <span className="truncate pr-4 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
+                                     <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                  </button>
+                                ))}
+                                {areaChildren.length === 0 && (
+                                  <div className="p-4 border border-dashed border-slate-200 rounded-2xl text-[9px] font-bold text-slate-300 text-center uppercase">
+                                     {t('no_processes')}
+                                  </div>
+                                )}
+                             </div>
+                          </div>
                         );
                       })}
                    </div>
-                 )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="w-full">
-              {(() => {
-                const p = focusChildren.find(c => c.id === activeTab) ?? focusChildren.find(c => c.id === initialTab);
-                return p ? renderPageContent(p) : <DetailView page={pages.find(pg => pg.id === activeTab) || page} />;
-              })()}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            ) : activeTab === 'favorites' ? (
+              <div className="p-8 space-y-8 h-full bg-slate-50">
+                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
+                   <div className="relative z-10 flex items-center gap-8">
+                      <div className="w-20 h-20 rounded-[2.5rem] bg-amber-500 flex items-center justify-center text-white shadow-2xl shadow-amber-200">
+                         <Star className="w-10 h-10" />
+                      </div>
+                      <div className="space-y-1">
+                         <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{t('favorites')}</h1>
+                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
+                           {t('quick_access_favorites')}
+                         </p>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {pages.filter(p => p.type === 'terminal' && (p.id === '3.6.3' || p.id === '3.6.4' || p.id === '2.4.1')).map((p, idx) => (
+                     <motion.button 
+                       key={p.id}
+                       initial={{ opacity: 0, y: 20 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: idx * 0.1 }}
+                       onClick={() => handleTabChange(p.id)}
+                       className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-left space-y-4 group h-[180px] flex flex-col justify-between"
+                     >
+                        <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                           {React.createElement(ICON_MAP[p.icon || 'FileText'] || FileText, { className: "w-7 h-7 text-slate-400 group-hover:text-blue-500" })}
+                        </div>
+                        <div className="space-y-1">
+                           <h3 className="font-bold text-slate-900 text-lg tracking-tight">{stripNumericPrefix(t(p.id))}</h3>
+                           <p className="text-xs text-slate-400 line-clamp-2">{p.summary}</p>
+                        </div>
+                     </motion.button>
+                   ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white h-full relative z-10">
+                {(() => {
+                  const p = filteredChildren.find(c => c.id === activeTab);
+                  return p ? renderPageContent(p) : <DetailView page={pages.find(pg => pg.id === activeTab) || page} />;
+                })()}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

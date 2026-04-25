@@ -219,7 +219,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
             >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-semibold text-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
                     {member.name.charAt(0)}
                   </div>
                   <div>
@@ -263,9 +263,9 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{member.department}</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{member.department}</span>
                 <span className={cn(
-                  "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
+                  "px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-widest",
                   member.status === 'Active' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
                 )}>
                   {member.status}
@@ -302,7 +302,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
 
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                   <input 
                     type="text"
                     value={formData.name}
@@ -312,7 +312,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Role</label>
                   <input 
                     type="text"
                     value={formData.role}
@@ -322,7 +322,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Department</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Department</label>
                   <input 
                     type="text"
                     value={formData.department}
@@ -331,7 +331,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Email</label>
                   <input 
                     type="email"
                     value={formData.email}
@@ -340,7 +340,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Phone</label>
                   <input 
                     type="text"
                     value={formData.phone}
@@ -349,7 +349,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Location</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Location</label>
                   <input 
                     type="text"
                     value={formData.location}
@@ -358,7 +358,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Work Hours</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Work Hours</label>
                   <input 
                     type="text"
                     value={formData.workHours}
@@ -368,7 +368,7 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Status</label>
                   <select 
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}

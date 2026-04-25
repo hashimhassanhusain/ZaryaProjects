@@ -218,7 +218,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
             >
               <div className="flex items-center gap-2 mb-2 text-blue-400">
                 <Sparkles className="w-3 h-3" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Zarya AI Suggests</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Zarya AI Suggests</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
                 "{suggestion}"
@@ -251,13 +251,13 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
         <div className="relative z-10 space-y-6">
           <div className="flex flex-wrap gap-3">
-            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200">Executing Focus Area</span>
-            <span className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-200">Governance Performance Domain</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-semibold uppercase tracking-widest border border-blue-200">Executing Focus Area</span>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-semibold uppercase tracking-widest border border-emerald-200">Governance Performance Domain</span>
           </div>
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+              <h1 className="text-4xl font-semibold text-slate-900 tracking-tight flex items-center gap-4">
                 Quality Audit <span className="text-slate-300 font-light">|</span> <span className="text-blue-600">تدقيق الجودة</span>
               </h1>
               <p className="text-slate-500 mt-2 max-w-2xl text-sm leading-relaxed">
@@ -265,9 +265,9 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
               </p>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Compliance Rate</div>
+              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Compliance Rate</div>
               <div className={cn(
-                "text-5xl font-black tracking-tighter",
+                "text-5xl font-semibold tracking-tighter",
                 formData.complianceRate! >= 90 ? "text-emerald-500" : 
                 formData.complianceRate! >= 70 ? "text-amber-500" : "text-rose-500"
               )}>
@@ -430,19 +430,19 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">ID</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Defect Description</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Required Action</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsible (RACI)</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-40">Due Date</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">Actions</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">ID</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Defect Description</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Required Action</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible (RACI)</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-40">Due Date</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-48">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {formData.deficiencies?.map((def, idx) => (
                 <tr key={def.id} className="group hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="text-xs font-black text-slate-400">{def.id}</span>
+                    <span className="text-xs font-semibold text-slate-400">{def.id}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-2">
@@ -536,7 +536,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl space-y-4">
           <div className="flex items-center gap-2 text-blue-600">
             <ShieldCheck className="w-4 h-4" />
-            <h3 className="text-xs font-black uppercase tracking-widest">QMP Alignment</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-widest">QMP Alignment</h3>
           </div>
           <p className="text-[11px] text-slate-600 leading-relaxed">
             Comparing findings with <span className="font-bold">Quality Management Plan</span> acceptance criteria. 
@@ -549,7 +549,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="p-6 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-4">
           <div className="flex items-center gap-2 text-emerald-600">
             <RefreshCw className="w-4 h-4" />
-            <h3 className="text-xs font-black uppercase tracking-widest">CR Automation</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-widest">CR Automation</h3>
           </div>
           <p className="text-[11px] text-slate-600 leading-relaxed">
             Corrective actions are automatically routed to the <span className="font-bold">Change Control Board</span> when a Change Request is generated.
@@ -559,7 +559,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="p-6 bg-slate-900 text-white rounded-xl space-y-4 shadow-xl">
           <div className="flex items-center gap-2 text-blue-400">
             <Sparkles className="w-4 h-4" />
-            <h3 className="text-xs font-black uppercase tracking-widest">AI Intelligence</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-widest">AI Intelligence</h3>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Zarya AI analyzes historical data from similar projects to suggest potential risks and best practices for this audit.
@@ -575,7 +575,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="fixed bottom-8 right-8 z-50">
           <button 
             onClick={() => onSave(formData)}
-            className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-full font-black text-sm shadow-2xl shadow-blue-600/40 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
+            className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-full font-semibold text-sm shadow-2xl shadow-blue-600/40 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
           >
             <CheckCircle2 className="w-5 h-5" />
             Save Quality Audit

@@ -87,7 +87,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                  <Users className="w-6 h-6" />
               </div>
               <div>
-                 <h2 className="text-2xl font-black text-slate-900 italic uppercase">Stakeholder Master Database</h2>
+                 <h2 className="text-2xl font-semibold text-slate-900 italic uppercase">Stakeholder Master Database</h2>
                  <p className="text-sm text-slate-500 font-medium">The official repository of relationship identities for the project.</p>
               </div>
            </div>
@@ -100,12 +100,12 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                    placeholder="Search database..." 
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
-                   className="pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all w-64"
+                   className="pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-semibold uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all w-64"
                  />
               </div>
               <button 
                 onClick={() => setIsAdding(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
+                className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
               >
                  <Plus className="w-4 h-4" />
                  Register New
@@ -119,7 +119,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
             animate={{ opacity: 1, y: 0 }}
             className="p-8 bg-white border-2 border-purple-100 rounded-[2.5rem] shadow-xl space-y-6"
           >
-             <h3 className="text-lg font-black text-slate-900 italic">Stakeholder Onboarding</h3>
+             <h3 className="text-lg font-semibold text-slate-900 italic">Stakeholder Onboarding</h3>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input placeholder="Full Name" value={newSh.name} onChange={e => setNewSh({...newSh, name: e.target.value})} className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-sm font-bold focus:ring-purple-500/10" />
                 <input placeholder="Organization / Entity" value={newSh.organization} onChange={e => setNewSh({...newSh, organization: e.target.value})} className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-sm font-bold" />
@@ -133,12 +133,12 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                 <input placeholder="Email Address" value={newSh.email} onChange={e => setNewSh({...newSh, email: e.target.value})} className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-sm font-bold" />
                 <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
                     <input type="checkbox" checked={newSh.confidential} onChange={e => setNewSh({...newSh, confidential: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-purple-600" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">Confidential Entry</span>
+                    <span className="text-[10px] font-semibold uppercase text-slate-500">Confidential Entry</span>
                 </div>
              </div>
              <div className="flex justify-end gap-3">
-                <button onClick={() => setIsAdding(false)} className="px-6 py-2 text-[10px] font-black uppercase text-slate-400">Cancel</button>
-                <button onClick={handleCreate} className="px-8 py-3 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-600/20">Finalize Registration</button>
+                <button onClick={() => setIsAdding(false)} className="px-6 py-2 text-[10px] font-semibold uppercase text-slate-400">Cancel</button>
+                <button onClick={handleCreate} className="px-8 py-3 bg-purple-600 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest shadow-lg shadow-purple-600/20">Finalize Registration</button>
              </div>
           </motion.div>
         )}
@@ -147,11 +147,11 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
            <table className="w-full text-left">
               <thead>
                  <tr className="bg-slate-50/50">
-                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Identity & Org</th>
-                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Role</th>
-                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Category</th>
-                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Contact</th>
-                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Privacy</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Identity & Org</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Role</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Category</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Contact</th>
+                    <th className="px-8 py-4 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Privacy</th>
                     <th className="px-8 py-4"></th>
                  </tr>
               </thead>
@@ -160,7 +160,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                    <tr key={s.id} className="hover:bg-slate-50/30 transition-colors group">
                       <td className="px-8 py-6">
                          <div>
-                            <p className="text-sm font-black text-slate-900">{s.name}</p>
+                            <p className="text-sm font-semibold text-slate-900">{s.name}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.organization}</p>
                          </div>
                       </td>
@@ -168,7 +168,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                          <span className="text-xs font-bold text-slate-600">{s.role}</span>
                       </td>
                       <td className="px-8 py-6 text-center">
-                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase ${
                             s.category === 'External' ? 'bg-amber-50 text-amber-600' :
                             s.category === 'Regulatory' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
                          }`}>
@@ -185,7 +185,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                          {s.confidential ? (
                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full border border-rose-100">
                               <ShieldCheck className="w-3 h-3" />
-                              <span className="text-[8px] font-black uppercase tracking-tight">Secret</span>
+                              <span className="text-[8px] font-semibold uppercase tracking-tight">Secret</span>
                            </div>
                          ) : (
                            <span className="text-[9px] font-bold text-slate-300 uppercase">Public</span>

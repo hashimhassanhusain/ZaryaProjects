@@ -26,9 +26,10 @@ import { AddWBSLevelModal } from './AddWBSLevelModal';
 import { DataImportModal } from './DataImportModal';
 
 import { Ribbon, RibbonGroup } from './Ribbon';
+import { HelpTooltip } from './HelpTooltip';
 
 export const BOQView: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
@@ -627,8 +628,8 @@ export const BOQView: React.FC = () => {
         <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
           <Database className="w-10 h-10 text-slate-300" />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">No Project Selected</h3>
-        <p className="text-slate-500 max-w-xs">Please select a project from the dashboard to manage its BOQ.</p>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">{t('no_project_selected')}</h3>
+        <p className="text-slate-500 max-w-xs">{t('select_project_hint')}</p>
       </div>
     );
   }
@@ -640,13 +641,13 @@ export const BOQView: React.FC = () => {
           <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <LayoutGrid className="w-10 h-10 text-slate-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">WBS Structure Required</h3>
-          <p className="text-slate-500 mb-8">You must define your Work Breakdown Structure (WBS) before managing the Bill of Quantities. This ensures every item is correctly linked to its project location.</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">{t('wbs_required')}</h3>
+          <p className="text-slate-500 mb-8">{t('wbs_required_hint')}</p>
           <button 
-            onClick={() => navigate('/page/2.2.9')}
+            onClick={() => navigate('/page/2.2.5')}
             className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
-            Go to WBS Setup
+            {t('go_to_wbs')}
           </button>
         </div>
       </div>
@@ -681,63 +682,60 @@ export const BOQView: React.FC = () => {
             <div className="space-y-8">
               <div className="space-y-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-widest">
-                          Project
-                        </span>
-                        <h3 className="text-xl font-bold text-slate-900">
-                          Master Bill of Quantities
-                        </h3>
-                      </div>
-                      <p className="text-xs text-slate-500 font-medium">Managing all BOQ items for the entire project.</p>
-                    </div>
+                  <div className={cn("flex items-center gap-4 flex-1", isRtl && "flex-row-reverse")}>
                     {selectedItemIds.length > 0 && (
                       <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl"
+                        className={cn("flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl", isRtl && "flex-row-reverse")}
                       >
-                        <span className="text-[10px] font-bold text-red-600">{selectedItemIds.length} selected</span>
-                        <button 
-                          onClick={handleBulkDelete}
-                          className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
-                          title="Delete Selected"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-[10px] font-bold text-red-600">{selectedItemIds.length} {t('selected')}</span>
+                        <HelpTooltip text={th('delete_selected_summary')} position="bottom">
+                          <button 
+                            onClick={handleBulkDelete}
+                            className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </HelpTooltip>
                       </motion.div>
                     )}
                   </div>
 
                   <div className="relative flex-1 max-w-md mx-4">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
                     <input 
                       type="text" 
-                      placeholder="Search items..." 
+                      placeholder={t('search_items_placeholder')} 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                      className={cn(
+                        "w-full py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-center",
+                        isRtl ? "pr-12" : "pl-12"
+                      )}
                     />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => setShowImportModal(true)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
-                    >
-                      {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      {isAnalyzing ? 'Importing...' : 'Import Data'}
-                    </button>
+                  <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
+                    <HelpTooltip text={th('import_data_summary')} position="bottom">
+                      <button 
+                        onClick={() => setShowImportModal(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
+                      >
+                        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {isAnalyzing ? t('importing') : t('import_data')}
+                      </button>
+                    </HelpTooltip>
                     
-                    <button 
-                      onClick={() => setShowAddItem(true)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Item
-                    </button>
+                    <HelpTooltip text={th('add_item_summary')} position="bottom">
+                      <button 
+                        onClick={() => setShowAddItem(true)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {t('add_item')}
+                      </button>
+                    </HelpTooltip>
                   </div>
                 </div>
 
@@ -753,14 +751,14 @@ export const BOQView: React.FC = () => {
                             onChange={handleSelectAll}
                           />
                         </th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cost Account</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Qty</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Rate</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Total</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Completion %</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl && "text-right")}>{t('cost_account')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl && "text-right")}>{t('description')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl && "text-right")}>{t('location')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl ? "text-left" : "text-right")}>{t('qty')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl && "text-right")}>{t('unit')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl ? "text-left" : "text-right")}>{t('rate')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl ? "text-left" : "text-right")}>{t('total')}</th>
+                        <th className={cn("px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest", isRtl ? "text-left" : "text-right")}>{t('completion')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -771,11 +769,11 @@ export const BOQView: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
-                            <span className="text-xs font-black uppercase tracking-widest truncate">{selectedProject.name} (Task 0)</span>
+                            <span className="text-[10px] font-semibold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{selectedProject.code}</span>
+                            <span className="text-xs font-semibold uppercase tracking-widest truncate">{selectedProject.name} (Task 0)</span>
                           </div>
                         </td>
-                        <td colSpan={4} className="px-6 py-4 text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                        <td colSpan={4} className="px-6 py-4 text-[10px] text-slate-400 font-semibold uppercase tracking-widest">
                           Master Project Summary | {projectBoqTotals.count} Global Items
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -783,7 +781,7 @@ export const BOQView: React.FC = () => {
                           -
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="text-xs font-black text-blue-400">
+                          <div className="text-xs font-semibold text-blue-400">
                             {formatAmount(projectBoqTotals.amount, baseCurrency)}
                           </div>
                         </td>
@@ -1413,7 +1411,7 @@ export const BOQView: React.FC = () => {
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">AI BOQ Analysis Preview</h3>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">AI BOQ Analysis Preview</h3>
                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted BOQ items before importing</p>
                   </div>
                 </div>
@@ -1427,7 +1425,7 @@ export const BOQView: React.FC = () => {
 
               <div className="flex-1 overflow-auto p-6">
                 <table className="w-full text-left text-[11px]">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-black uppercase tracking-widest">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-widest">
                     <tr>
                       <th className="px-4 py-3">Cost Account</th>
                       <th className="px-4 py-3">Work Package</th>
@@ -1447,7 +1445,7 @@ export const BOQView: React.FC = () => {
                         <td className="px-4 py-3 text-right font-bold">{item.quantity.toLocaleString()}</td>
                         <td className="px-4 py-3 text-slate-500 uppercase font-bold">{item.unit}</td>
                         <td className="px-4 py-3 text-right font-bold">{formatAmount(item.inputRate, item.inputCurrency || baseCurrency)}</td>
-                        <td className="px-4 py-3 text-right font-black text-blue-600">{formatAmount(item.amount, baseCurrency)}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatAmount(item.amount, baseCurrency)}</td>
                       </tr>
                     ))}
                   </tbody>
