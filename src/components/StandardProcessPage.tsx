@@ -34,6 +34,15 @@ import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
+type PageStatus = 'Draft' | 'In Review' | 'Baseline' | 'Superseded';
+interface PageMetadata { status: PageStatus; driveFileId?: string; }
+const STATUS_CONFIG: Record<PageStatus, { color: string; label: string }> = {
+  'Draft':      { color: 'bg-slate-400',   label: 'Draft' },
+  'In Review':  { color: 'bg-amber-500',   label: 'In Review' },
+  'Baseline':   { color: 'bg-emerald-500', label: 'Baseline' },
+  'Superseded': { color: 'bg-red-400',     label: 'Superseded' },
+};
+
 interface StandardProcessPageProps {
   page: Page;
   inputs?: { id: string; title: string; status?: string }[];
@@ -45,27 +54,11 @@ interface StandardProcessPageProps {
   isSaving?: boolean;
 }
 
-type PageStatus = 'Draft' | 'In Review' | 'Baseline' | 'Superseded';
-
-interface PageMetadata {
-  status: PageStatus;
-  approvedBy?: string;
-  approvedAt?: any;
-  driveFileId?: string;
-}
-
-const STATUS_CONFIG: Record<PageStatus, { color: string; label: string }> = {
-  'Draft':      { color: 'bg-slate-400',  label: 'Draft' },
-  'In Review':  { color: 'bg-amber-500',  label: 'In Review' },
-  'Baseline':   { color: 'bg-emerald-500', label: 'Baseline' },
-  'Superseded': { color: 'bg-red-400',    label: 'Superseded' },
-};
-
-const QuickViewModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  id: string;
+const QuickViewModal: React.FC<{ 
+  isOpen: boolean; 
+  onClose: () => void; 
+  title: string; 
+  id: string 
 }> = ({ isOpen, onClose, title, id }) => {
   const normalize = (s: string) =>
     s.toLowerCase().replace(/[-_()[\]]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -247,7 +240,6 @@ const QuickViewModal: React.FC<{
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
@@ -313,11 +305,9 @@ const QuickViewModal: React.FC<{
                 </div>
               </div>
 
-              {/* Drive Integration (admin only) */}
               {renderDriveSection()}
             </div>
 
-            {/* Footer */}
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
               <p className="text-[10px] font-black text-slate-400 uppercase italic">Archived by Zarya Hub • {resolvedId}-V2.4</p>
               <button
