@@ -67,7 +67,17 @@ const QuickViewModal: React.FC<{
   title: string;
   id: string;
 }> = ({ isOpen, onClose, title, id }) => {
-  const linkedPage = pages.find(p => p.id === id);
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[-_()[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const linkedPage =
+    pages.find(p => p.id === id) ||
+    pages.find(p => normalize(p.title).startsWith(normalize(id))) ||
+    pages.find(p => normalize(id).startsWith(normalize(p.title).split(' ').slice(0, 2).join(' '))) ||
+    pages.find(p => normalize(p.title).includes(normalize(id)));
+
+  const resolvedId = linkedPage?.id ?? id;
+
   const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -78,10 +88,10 @@ const QuickViewModal: React.FC<{
   const [driveError, setDriveError] = useState<'DRIVE_NOT_CONFIGURED' | 'DRIVE_ERROR' | null>(null);
 
   useEffect(() => {
-    if (!isOpen || !selectedProject?.id || !id) return;
+    if (!isOpen || !selectedProject?.id || !resolvedId) return;
     setMetaLoading(true);
     setDriveError(null);
-    const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', id);
+    const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', resolvedId);
     const unsub = onSnapshot(ref, (snap) => {
       setMetadata(snap.exists() ? (snap.data() as PageMetadata) : { status: 'Draft' });
       setMetaLoading(false);
@@ -90,7 +100,7 @@ const QuickViewModal: React.FC<{
       setMetaLoading(false);
     });
     return () => unsub();
-  }, [isOpen, selectedProject?.id, id]);
+  }, [isOpen, selectedProject?.id, resolvedId]);
 
   const currentStatus: PageStatus = metadata?.status ?? 'Draft';
   const statusInfo = STATUS_CONFIG[currentStatus];
@@ -117,7 +127,7 @@ const QuickViewModal: React.FC<{
       }
       const folderId = data.rootFolderId || data.folderId || data.fileId;
       if (folderId) {
-        const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', id);
+        const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', resolvedId);
         await setDoc(ref, { driveFileId: folderId }, { merge: true });
       }
     } catch {
@@ -129,7 +139,7 @@ const QuickViewModal: React.FC<{
 
   const handleViewSource = () => {
     onClose();
-    navigate(`/page/${id}`);
+    navigate(`/page/${resolvedId}`);
   };
 
   const renderVerificationBadge = () => {
@@ -244,8 +254,8 @@ const QuickViewModal: React.FC<{
                   <FileText className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest leading-none mb-1">{id}</p>
-                  <h2 className="text-xl font-black text-slate-900">{stripNumericPrefix(title)}</h2>
+                  <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest leading-none mb-1">{resolvedId}</p>
+                  <h2 className="text-xl font-black text-slate-900">{linkedPage ? stripNumericPrefix(linkedPage.title) : stripNumericPrefix(title)}</h2>
                 </div>
               </div>
               <button
@@ -309,7 +319,7 @@ const QuickViewModal: React.FC<{
 
             {/* Footer */}
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-[10px] font-black text-slate-400 uppercase italic">Archived by Zarya Hub • {id}-V2.4</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase italic">Archived by Zarya Hub • {resolvedId}-V2.4</p>
               <button
                 onClick={handleViewSource}
                 className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
