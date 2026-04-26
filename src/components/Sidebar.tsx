@@ -151,7 +151,7 @@ export const Sidebar: React.FC = () => {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="overflow-hidden pl-7 space-y-1"
+                          className="overflow-hidden ps-7 space-y-1"
                         >
                           {PERFORMANCE_DOMAINS.map(domain => {
                             // Find any pages for this domain IN THIS focus area
@@ -189,7 +189,7 @@ export const Sidebar: React.FC = () => {
                                 </HelpTooltip>
 
                                 {/* Child Terminal Pages indented further */}
-                                <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-0.5">
+                                <div className="ps-6 border-s border-slate-200/50 ms-5 space-y-0.5">
                                   {domainPagesInArea.map(terminalPage => {
                                     const terminalPath = `/page/${terminalPage.id}`;
                                     const isTerminalActive = currentPath === terminalPath;

@@ -39,10 +39,12 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
 export function stripNumericPrefix(title: string | undefined | null): string {
   if (!title) return '';
   // Matches "1.0 ", "5.1.1 ", "03.1_", "[5.1.1]", "5.1.1: " etc. at the start or end
-  return title
+  const stripped = title
     .replace(/^\[?[\d\.]+\]?[_\s-:]*/, '') // Start: [1.0] Title
     .replace(/[_\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
     .trim();
+  
+  return stripped || title;
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {

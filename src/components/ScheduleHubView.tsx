@@ -52,7 +52,7 @@ interface ScheduleHubViewProps {
 }
 
 export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
-  const { t, isRtl } = useLanguage();
+  const { t, th, isRtl } = useLanguage();
   const { userProfile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,20 +64,20 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
   }, [page.id]);
 
   const schedulePages = [
-    { id: '1.3.1', group: 'initiating', icon: Clock, title: t('1.3.1') || 'Define Timeline', desc: 'Define high-level roadmap and major project milestones.' },
-    { id: '1.3.2', group: 'initiating', icon: ListTodo, title: t('1.3.2') || 'Identify Activities', desc: 'Decompose core deliverables into primary activities.' },
-    { id: '2.3.1', group: 'planning', icon: Database, title: t('2.3.1') || 'Activity Definition', desc: 'Granular breakdown of project work into trackable activities.' },
-    { id: '2.3.2', group: 'planning', icon: GitBranch, title: t('2.3.2') || 'Sequence Activities', desc: 'Link activities and establish logical progression.' },
-    { id: '2.3.3', group: 'planning', icon: BarChart3, title: t('view_gantt'), desc: 'Master schedule visual timeline.', size: 'large' as const },
-    { id: '2.3.4', group: 'planning', icon: History, title: t('2.3.4') || 'Estimate Durations', desc: 'Determine time required for each activity.' },
-    { id: '2.3.5', group: 'planning', icon: Calendar, title: t('2.3.5') || 'Develop Baseline', desc: 'Establish the formal Project Schedule and Baseline.' },
-    { id: '3.3.1', group: 'executing', icon: Play, title: t('3.3.1') || 'Manage Execution', desc: 'Coordinate team actions and track daily progress.' },
-    { id: '3.3.2', group: 'executing', icon: TrendingUp, title: t('3.3.2') || 'Progress Gantt', desc: 'Executive schedule view with actual progress.' },
-    { id: '3.3.3', group: 'executing', icon: FileText, title: t('3.3.3') || 'Daily Reports', desc: 'Formal daily logs of site activities.' },
-    { id: '4.3.1', group: 'monitoring', icon: Gauge, title: t('4.3.1') || 'Monitor Performance', desc: 'Analyze schedule variance and utilize EVM.' },
-    { id: '4.3.2', group: 'monitoring', icon: Settings2, title: t('4.3.2') || 'Control Changes', desc: 'Manage modifications to the schedule baseline.' },
-    { id: '5.3.1', group: 'closing', icon: CheckCircle2, title: t('5.3.1') || 'Final Validation', desc: 'Obtain stakeholder acceptance for final performance.' },
-    { id: '5.3.2', group: 'closing', icon: Library, title: t('5.3.2') || 'Archive Records', desc: 'Consolidate and archive all schedule artifacts.' }
+    { id: '1.3.1', group: 'initiating', icon: Clock, title: t('1.3.1_sched') },
+    { id: '1.3.2', group: 'initiating', icon: ListTodo, title: t('1.3.2_sched') },
+    { id: '2.3.1', group: 'planning', icon: Database, title: t('2.3.1_sched') },
+    { id: '2.3.2', group: 'planning', icon: GitBranch, title: t('2.3.2_sched') },
+    { id: '2.3.3', group: 'planning', icon: BarChart3, title: t('view_gantt'), size: 'large' as const },
+    { id: '2.3.4', group: 'planning', icon: History, title: t('2.3.4_sched') },
+    { id: '2.3.5', group: 'planning', icon: Calendar, title: t('2.3.5_sched') },
+    { id: '3.3.1', group: 'executing', icon: Play, title: t('3.3.1_sched') },
+    { id: '3.3.2', group: 'executing', icon: TrendingUp, title: t('3.3.2_sched') },
+    { id: '3.3.3', group: 'executing', icon: FileText, title: t('3.3.3_sched') },
+    { id: '4.3.1', group: 'monitoring', icon: Gauge, title: t('4.3.1_sched') },
+    { id: '4.3.2', group: 'monitoring', icon: Settings2, title: t('4.3.2_sched') },
+    { id: '5.3.1', group: 'closing', icon: CheckCircle2, title: t('5.3.1_sched') },
+    { id: '5.3.2', group: 'closing', icon: Library, title: t('5.3.2_sched') }
   ];
 
   const ribbonGroups: RibbonGroup[] = [
@@ -95,7 +95,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         id: p.id,
         label: stripNumericPrefix(p.title),
         icon: p.icon,
-        description: p.desc,
+        description: th(p.id + '_sched_summary'),
         size: 'small'
       }))
     },
@@ -106,7 +106,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         id: p.id,
         label: stripNumericPrefix(p.title),
         icon: p.icon,
-        description: p.desc,
+        description: th(p.id + '_sched_summary'),
         size: p.size || 'small'
       }))
     },
@@ -117,7 +117,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         id: p.id,
         label: stripNumericPrefix(p.title),
         icon: p.icon,
-        description: p.desc,
+        description: th(p.id + '_sched_summary'),
         size: 'small'
       }))
     },
@@ -128,7 +128,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         id: p.id,
         label: stripNumericPrefix(p.title),
         icon: p.icon,
-        description: p.desc,
+        description: th(p.id + '_sched_summary'),
         size: 'small'
       }))
     },
@@ -139,7 +139,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         id: p.id,
         label: stripNumericPrefix(p.title),
         icon: p.icon,
-        description: p.desc,
+        description: th(p.id + '_sched_summary'),
         size: 'small'
       }))
     }
@@ -269,7 +269,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
                   {p.group}
                 </p>
                 <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2 mt-2">
-                  {p.desc}
+                  {th(p.id + '_sched_summary')}
                 </p>
               </div>
             </div>

@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import {
-  FileText,
-  ArrowRight,
-  Printer,
-  Download,
-  Save,
-  History,
-  ChevronRight,
-  Eye,
+import { 
+  FileText, 
+  ArrowRight, 
+  Printer, 
+  Download, 
+  Save, 
+  History, 
+  ChevronRight, 
+  Eye, 
   Settings,
   Info,
   Clock,
@@ -23,27 +22,13 @@ import {
   Layers,
   ShieldCheck,
   Cloud,
-  Star,
-  HardDrive,
-  ExternalLink,
-  TriangleAlert,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
-import { useAuth } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
-import { db } from '../firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-
-type PageStatus = 'Draft' | 'In Review' | 'Baseline' | 'Superseded';
-interface PageMetadata { status: PageStatus; driveFileId?: string; }
-const STATUS_CONFIG: Record<PageStatus, { color: string; label: string }> = {
-  'Draft':      { color: 'bg-slate-400',   label: 'Draft' },
-  'In Review':  { color: 'bg-amber-500',   label: 'In Review' },
-  'Baseline':   { color: 'bg-emerald-500', label: 'Baseline' },
-  'Superseded': { color: 'bg-red-400',     label: 'Superseded' },
-};
 
 interface StandardProcessPageProps {
   page: Page;
@@ -56,168 +41,13 @@ interface StandardProcessPageProps {
   isSaving?: boolean;
 }
 
-const QuickViewModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  id: string;
+const QuickViewModal: React.FC<{ 
+  isOpen: boolean; 
+  onClose: () => void; 
+  title: string; 
+  id: string 
 }> = ({ isOpen, onClose, title, id }) => {
-  const normalize = (s: string) =>
-    s.toLowerCase().replace(/[-_()[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-
-  const linkedPage =
-    pages.find(p => p.id === id) ||
-    pages.find(p => normalize(p.title).startsWith(normalize(id))) ||
-    pages.find(p => normalize(id).startsWith(normalize(p.title).split(' ').slice(0, 2).join(' '))) ||
-    pages.find(p => normalize(p.title).includes(normalize(id)));
-
-  const resolvedId = linkedPage?.id ?? id;
-
-  const { selectedProject } = useProject();
-  const { userProfile, isAdmin } = useAuth();
-  const navigate = useNavigate();
-
-  const [metadata, setMetadata] = useState<PageMetadata | null>(null);
-  const [metaLoading, setMetaLoading] = useState(true);
-  const [driveLoading, setDriveLoading] = useState(false);
-  const [driveError, setDriveError] = useState<'DRIVE_NOT_CONFIGURED' | 'DRIVE_ERROR' | null>(null);
-
-  useEffect(() => {
-    if (!isOpen || !selectedProject?.id || !resolvedId) return;
-    setMetaLoading(true);
-    setDriveError(null);
-    const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', resolvedId);
-    const unsub = onSnapshot(ref, (snap) => {
-      setMetadata(snap.exists() ? (snap.data() as PageMetadata) : { status: 'Draft' });
-      setMetaLoading(false);
-    }, () => {
-      setMetadata({ status: 'Draft' });
-      setMetaLoading(false);
-    });
-    return () => unsub();
-  }, [isOpen, selectedProject?.id, resolvedId]);
-
-  const currentStatus: PageStatus = metadata?.status ?? 'Draft';
-  const statusInfo = STATUS_CONFIG[currentStatus];
-  const isVerified = currentStatus === 'Baseline' && !!metadata?.driveFileId;
-
-  const handleInitDrive = async () => {
-    if (!selectedProject || driveLoading) return;
-    setDriveLoading(true);
-    setDriveError(null);
-    try {
-      const res = await fetch('/api/projects/init-drive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectName: selectedProject.name,
-          projectCode: selectedProject.code,
-          userEmail: userProfile?.email,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setDriveError(data.error === 'DRIVE_NOT_CONFIGURED' ? 'DRIVE_NOT_CONFIGURED' : 'DRIVE_ERROR');
-        return;
-      }
-      const folderId = data.rootFolderId || data.folderId || data.fileId;
-      if (folderId) {
-        const ref = doc(db, 'project_metadata', selectedProject.id, 'pages', resolvedId);
-        await setDoc(ref, { driveFileId: folderId }, { merge: true });
-      }
-    } catch {
-      setDriveError('DRIVE_ERROR');
-    } finally {
-      setDriveLoading(false);
-    }
-  };
-
-  const handleViewSource = () => {
-    onClose();
-    navigate(`/page/${resolvedId}`);
-  };
-
-  const renderVerificationBadge = () => {
-    if (metaLoading) return <div className="h-8 w-40 bg-blue-100 rounded-xl animate-pulse" />;
-    if (isVerified) return (
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="w-10 h-10 text-blue-500" />
-        <div>
-          <p className="text-sm font-black text-blue-900 leading-none italic uppercase">Digitally Verified</p>
-          <p className="text-[9px] font-bold text-blue-600/60 uppercase mt-1">Cross-Process Link Active</p>
-        </div>
-      </div>
-    );
-    if (currentStatus === 'In Review') return (
-      <div className="flex items-center gap-3">
-        <Clock className="w-10 h-10 text-amber-500" />
-        <div>
-          <p className="text-sm font-black text-amber-800 leading-none italic uppercase">Pending Verification</p>
-          <p className="text-[9px] font-bold text-amber-600/60 uppercase mt-1">Under Review</p>
-        </div>
-      </div>
-    );
-    return (
-      <div className="flex items-center gap-3">
-        <AlertCircle className="w-10 h-10 text-slate-400" />
-        <div>
-          <p className="text-sm font-black text-slate-600 leading-none italic uppercase">Draft</p>
-          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Not Yet Verified</p>
-        </div>
-      </div>
-    );
-  };
-
-  const renderDriveSection = () => {
-    if (!isAdmin) return null;
-    return (
-      <div className="p-6 bg-slate-50 rounded-[2rem] space-y-3">
-        <h4 className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2">
-          <HardDrive className="w-3 h-3" /> Drive Integration
-        </h4>
-        {driveError === 'DRIVE_NOT_CONFIGURED' && (
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <TriangleAlert className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-xs font-black text-amber-800">Google Drive is not configured.</p>
-              <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
-                Add <span className="font-black bg-amber-100 px-1 rounded">GOOGLE_DRIVE_CREDENTIALS</span> in
-                Hostinger → Node.js App → Environment Variables.
-              </p>
-            </div>
-          </div>
-        )}
-        {driveError === 'DRIVE_ERROR' && (
-          <p className="text-[10px] font-bold text-red-500">Connection failed. Check server logs.</p>
-        )}
-        {!driveError && metadata?.driveFileId ? (
-          <a
-            href={`https://drive.google.com/drive/folders/${metadata.driveFileId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" /> Open in Drive
-          </a>
-        ) : !driveError ? (
-          <button
-            onClick={handleInitDrive}
-            disabled={driveLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50"
-          >
-            {driveLoading ? (
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                <Settings className="w-3 h-3" />
-              </motion.div>
-            ) : (
-              <HardDrive className="w-3 h-3" />
-            )}
-            {driveLoading ? 'Initializing...' : 'Initialize on Drive'}
-          </button>
-        ) : null}
-      </div>
-    );
-  };
+  const linkedPage = pages.find(p => p.id === id);
 
   return (
     <AnimatePresence>
@@ -236,85 +66,72 @@ const QuickViewModal: React.FC<{
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest leading-none mb-1">{resolvedId}</p>
-                  <h2 className="text-xl font-black text-slate-900">{linkedPage ? stripNumericPrefix(linkedPage.title) : stripNumericPrefix(title)}</h2>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
-              >
-                <ArrowRight className="w-5 h-5 rotate-180" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-12 space-y-8">
-              <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Connected Data Extract</h3>
-                <p className="text-sm font-medium text-slate-600 leading-relaxed italic">
-                  {linkedPage?.summary || `This is a quick-read snapshot of the approved ${stripNumericPrefix(title)}. The full interactive tool is available in the respective performance domain.`}
-                </p>
-                <p className="text-[10px] font-bold text-slate-400 italic">
-                  Note: This view is read-only to maintain "Single Source of Truth."
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8">
-                {/* Governance Context */}
-                <div className="p-8 bg-slate-50 rounded-[2rem] space-y-4">
-                  <h4 className="text-[9px] font-black uppercase text-slate-400">Governance Context</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <span className="text-xs font-bold text-slate-600">Domain</span>
-                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <span className="text-xs font-bold text-slate-600">Focus Area</span>
-                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{linkedPage?.focusArea || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <span className="text-xs font-bold text-slate-600">Status</span>
-                      {metaLoading ? (
-                        <div className="h-5 w-20 bg-slate-200 rounded-lg animate-pulse" />
-                      ) : (
-                        <span className={cn('text-white px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest', statusInfo.color)}>
-                          {statusInfo.label}
-                        </span>
-                      )}
-                    </div>
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                     <FileText className="w-6 h-6" />
                   </div>
-                </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase text-blue-600 tracking-widest leading-none mb-1">{id}</p>
+                    <h2 className="text-xl font-semibold text-slate-900">{stripNumericPrefix(title)}</h2>
+                  </div>
+               </div>
+               <button 
+                 onClick={onClose}
+                 className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+               >
+                 <ArrowRight className="w-5 h-5 rotate-180" />
+               </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-12 space-y-12">
+               <div className="space-y-4">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Connected Data Extract</h3>
+                  <p className="text-sm font-medium text-slate-600 leading-relaxed italic">
+                    {linkedPage?.summary || `This is a quick-read snapshot of the approved ${stripNumericPrefix(title)}. The full interactive tool is available in the respective performance domain.`}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-400 italic">
+                    Note: This view is read-only to maintain "Single Source of Truth."
+                  </p>
+               </div>
 
-                {/* Approval & Integration */}
-                <div className={cn('p-8 rounded-[2rem] space-y-4', isVerified ? 'bg-blue-50' : currentStatus === 'In Review' ? 'bg-amber-50' : 'bg-slate-50')}>
-                  <h4 className={cn('text-[9px] font-black uppercase', isVerified ? 'text-blue-600' : currentStatus === 'In Review' ? 'text-amber-600' : 'text-slate-400')}>
-                    Approval & Integration
-                  </h4>
-                  {renderVerificationBadge()}
-                </div>
-              </div>
-
-              {renderDriveSection()}
+               <div className="grid grid-cols-2 gap-8">
+                  <div className="p-8 bg-slate-50 rounded-[2rem] space-y-4">
+                     <h4 className="text-[9px] font-semibold uppercase text-slate-400">Governance Context</h4>
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                           <span className="text-xs font-bold text-slate-600">Domain</span>
+                           <span className="text-[10px] font-semibold text-slate-900 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                           <span className="text-xs font-bold text-slate-600">Focus Area</span>
+                           <span className="text-[10px] font-semibold text-slate-900 uppercase tracking-widest">{linkedPage?.focusArea || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                           <span className="text-xs font-bold text-slate-600">Status</span>
+                           <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg text-[8px] font-semibold uppercase tracking-widest">Baseline</span>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="p-8 bg-blue-50 rounded-[2rem] space-y-4">
+                     <h4 className="text-[9px] font-semibold uppercase text-blue-600">Approval & Integration</h4>
+                     <div className="flex items-center gap-3">
+                        <ShieldCheck className="w-10 h-10 text-blue-500" />
+                        <div>
+                           <p className="text-sm font-semibold text-blue-900 leading-none italic uppercase">Digitally Verified</p>
+                           <p className="text-[9px] font-bold text-blue-600/60 uppercase mt-1">Cross-Process Link Active</p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-[10px] font-black text-slate-400 uppercase italic">Archived by Zarya Hub • {resolvedId}-V2.4</p>
-              <button
-                onClick={handleViewSource}
-                className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
-              >
-                View Source Process
-                <ChevronRight className="w-3 h-3" />
-              </button>
+               <p className="text-[10px] font-semibold text-slate-400 uppercase italic">Archived by Zarya Hub • {id}-V2.4</p>
+               <button className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest">
+                  View Source Process
+                  <ChevronRight className="w-3 h-3" />
+               </button>
             </div>
           </motion.div>
         </div>
@@ -511,13 +328,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                              <Cloud className="w-16 h-16 text-blue-400" />
                           </motion.div>
-                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
+                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">{t('synchronizing_artifact')}</p>
                        </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
+                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">{t('refining_output_artifact')}</p>
                       <p className="text-[12px] text-slate-400 font-bold uppercase tracking-widest px-6 py-2.5 bg-slate-100 rounded-full inline-block">
-                        Ready for formal sign-off & archiving
+                        {t('ready_for_formal_sign_off')}
                       </p>
                     </div>
                   </div>
