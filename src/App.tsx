@@ -342,7 +342,6 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
-      <Sidebar />
       {/* Mobile Sidebar Overlay - Only on mobile */}
       <AnimatePresence>
         {isSidebarOpen && (

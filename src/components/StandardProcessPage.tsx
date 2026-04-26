@@ -328,13 +328,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                              <Cloud className="w-16 h-16 text-blue-400" />
                           </motion.div>
-                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">{t('synchronizing_artifact')}</p>
+                          <p className="text-[12px] font-semibold text-white uppercase tracking-[0.2em]">Synchronizing Artifact...</p>
                        </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">{t('refining_output_artifact')}</p>
+                      <p className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase italic">Refining Output Artifact</p>
                       <p className="text-[12px] text-slate-400 font-bold uppercase tracking-widest px-6 py-2.5 bg-slate-100 rounded-full inline-block">
-                        {t('ready_for_formal_sign_off')}
+                        Ready for formal sign-off & archiving
                       </p>
                     </div>
                   </div>

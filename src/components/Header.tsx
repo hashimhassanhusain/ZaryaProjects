@@ -133,7 +133,7 @@ export const Header: React.FC = () => {
     <header className="h-[60px] bg-slate-900 text-white border-b border-slate-700 flex items-center px-4 md:px-6 shrink-0 z-50">
       <div className="flex items-center gap-6 w-full h-full">
         {/* Brand */}
-        <div className="flex items-center gap-3 pe-6 border-e border-slate-700 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 pr-6 border-r border-slate-700 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">Z</div>
            <span className="text-sm font-bold uppercase tracking-widest hidden lg:block">Zarya PMIS</span>
         </div>
@@ -165,7 +165,7 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Right Tools */}
-        <div className="flex items-center gap-2 ms-auto shrink-0 pe-4">
+        <div className="flex items-center gap-2 ml-auto shrink-0 pr-4">
            {/* Action Buttons requested by user */}
            <div className="flex items-center gap-1 bg-slate-900 border border-slate-700 px-2 py-1 rounded-[1.25rem] mr-2">
               <div className="relative" ref={favoritesRef}>
@@ -184,7 +184,7 @@ export const Header: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.95, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute top-full inset-inline-start-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-1"
+                      className="absolute top-full left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-1"
                     >
                       <div className="px-4 py-2.5 border-b border-slate-700/50 mb-1 flex items-center justify-between">
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('favorites')}</span>
@@ -350,7 +350,7 @@ export const Header: React.FC = () => {
              </div>
           </div>
 
-          <div className="flex items-center gap-3 ps-4 border-s border-slate-700 relative" ref={userMenuRef}>
+          <div className="flex items-center gap-3 pl-4 border-l border-slate-700 relative" ref={userMenuRef}>
              <HelpTooltip text={th('user_profile_summary')} position="bottom">
                <div 
                  className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all" 
