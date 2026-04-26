@@ -221,16 +221,25 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     setActiveTab('overview');
   }, [page.id]);
 
-  const [isFavorite, setIsFavorite] = useState(() => {
+  // Favorites state
+  const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('zarya_favorites');
-    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
-    return favs.includes(page.id);
+    return saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+  });
+
+  const [isFavorite, setIsFavorite] = useState(() => {
+    return favorites.includes(page.id);
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('zarya_favorites');
-    const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
-    setIsFavorite(favs.includes(page.id));
+    const syncFavorites = () => {
+      const saved = localStorage.getItem('zarya_favorites');
+      const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
+      setFavorites(favs);
+      setIsFavorite(favs.includes(page.id));
+    };
+    window.addEventListener('storage', syncFavorites);
+    return () => window.removeEventListener('storage', syncFavorites);
   }, [page.id]);
 
   const toggleFavorite = () => {
@@ -239,15 +248,15 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     
     if (favs.includes(page.id)) {
       favs = favs.filter((id: string) => id !== page.id);
-      setIsFavorite(false);
       toast.success(t('removed_from_favorites'));
     } else {
       favs.push(page.id);
-      setIsFavorite(true);
       toast.success(t('added_to_favorites'));
     }
     
     localStorage.setItem('zarya_favorites', JSON.stringify(favs));
+    setFavorites(favs);
+    setIsFavorite(favs.includes(page.id));
     window.dispatchEvent(new Event('storage'));
   };
   // Risk Data State
@@ -688,7 +697,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {pages.filter(p => p.type === 'terminal' && (p.id === '3.6.3' || p.id === '3.6.4' || p.id === '2.4.1')).map((p, idx) => (
+                   {pages.filter(p => favorites.includes(p.id)).map((p, idx) => (
                      <motion.button 
                        key={p.id}
                        initial={{ opacity: 0, y: 20 }}
@@ -701,11 +710,17 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                            {React.createElement(ICON_MAP[p.icon || 'FileText'] || FileText, { className: "w-7 h-7 text-slate-400 group-hover:text-blue-500" })}
                         </div>
                         <div className="space-y-1">
-                           <h3 className="font-bold text-slate-900 text-lg tracking-tight">{stripNumericPrefix(t(p.id))}</h3>
-                           <p className="text-xs text-slate-400 line-clamp-2">{p.summary}</p>
+                           <h3 className="font-bold text-slate-900 text-lg tracking-tight">{stripNumericPrefix(th(p.id)) || p.title}</h3>
+                           <p className="text-xs text-slate-400 line-clamp-2">{th(p.id + '_summary') || p.summary}</p>
                         </div>
                      </motion.button>
                    ))}
+                   {favorites.length === 0 && (
+                     <div className="col-span-full py-20 text-center space-y-4">
+                        <Star className="w-12 h-12 text-slate-200 mx-auto" />
+                        <p className="text-slate-400 font-medium">{t('no_favorites')}</p>
+                     </div>
+                   )}
                 </div>
               </div>
             ) : (

@@ -685,25 +685,44 @@ app.get('/api/drive/folders-recursive/:folderId', async (req: any, res: any) => 
   try {
     const folders: any[] = [];
     
-    async function collectFolders(currentId: string, currentPath: string = '') {
+    async function collectFolders(currentId: string, currentPath: string = '', parentId: string | null = null) {
       const response = await drive.files.list({
+        // Optimization: only get specific fields
         q: `'${currentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
+        // Optimization: larger page size if many folders
+        pageSize: 1000
       });
 
       if (response.data.files) {
         for (const f of response.data.files) {
           const folderPath = currentPath ? `${currentPath}/${f.name}` : f.name;
-          folders.push({ id: f.id, name: f.name, path: folderPath });
-          // Recursively search subfolders
-          await collectFolders(f.id, folderPath);
+          folders.push({ id: f.id, name: f.name, path: folderPath, parentId: currentId });
+          // Limit recursion depth if needed or parallelize top levels
+          await collectFolders(f.id, folderPath, currentId);
         }
       }
     }
 
-    await collectFolders(folderId);
+    // Parallelize first level if root has many folders
+    const initialResponse = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    });
+
+    if (initialResponse.data.files) {
+      const initialFolders = initialResponse.data.files;
+      const promises = initialFolders.map(f => {
+        const folderPath = f.name;
+        folders.push({ id: f.id, name: f.name, path: folderPath, parentId: folderId });
+        return collectFolders(f.id, folderPath, folderId);
+      });
+      await Promise.all(promises);
+    }
     res.json({ folders });
   } catch (error) {
     console.error('Failed to list folders recursively:', error);
