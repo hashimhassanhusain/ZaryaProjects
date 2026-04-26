@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, ChevronDown, User as UserIcon, LogOut, Shield, Bell, Menu, Loader2, Languages, Search, Star, X, Info, FolderOpen, Printer, Zap, BarChart3 } from 'lucide-react';
+import { 
+  Settings, ChevronDown, User as UserIcon, LogOut, Shield, Bell, Menu, 
+  Loader2, Languages, Search, Star, X, Info, FolderOpen, Printer, 
+  Zap, BarChart3, FileText, LayoutDashboard, DraftingCompass, Calendar, 
+  Banknote, Users, Package, AlertTriangle, UserSearch, Layout, UserPlus, 
+  MessageSquare, Handshake, MessagesSquare, Eye, MessageCircleWarning, 
+  Smile, Archive, LineChart, Wallet, Database, Calculator, Lock, Coins, 
+  Receipt, PieChart, Scale, ShoppingCart, CheckCircle, FolderArchive, 
+  Clock, ListTodo, List, ArrowRightLeft, CheckSquare, Layers, ShieldCheck, 
+  GitBranch, Activity, CheckCircle2, Library, Play, FileText as FileIcon,
+  RefreshCw, DollarSign
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, handleFirestoreError, OperationType } from '../firebase';
@@ -11,7 +22,6 @@ import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
-import { RefreshCw, DollarSign, Coins } from 'lucide-react';
 import { db } from '../firebase';
 import { pages as allPages } from '../data';
 import { User as AppUser } from '../types';
@@ -29,6 +39,17 @@ const hubIds: Record<string, string> = {
   'stakeholders': 'stak',
   'resources': 'res',
   'risk': 'risk'
+};
+
+const ICON_MAP: Record<string, any> = {
+  Settings, Shield, FolderOpen, Printer, Zap, BarChart3, Star, Search, Info,
+  FileText, LayoutDashboard, DraftingCompass, Calendar, Banknote, Users, 
+  Package, AlertTriangle, UserSearch, Layout, UserPlus, MessageSquare, 
+  Handshake, MessagesSquare, Eye, MessageCircleWarning, Smile, Archive, 
+  LineChart, Wallet, Database, Calculator, Lock, Coins, Receipt, PieChart, 
+  Scale, ShoppingCart, CheckCircle, FolderArchive, Clock, ListTodo, List, 
+  ArrowRightLeft, CheckSquare, Layers, ShieldCheck, GitBranch, Activity, 
+  CheckCircle2, Library, Play, FileIcon
 };
 
 export const Header: React.FC = () => {
@@ -147,32 +168,35 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-2 ml-auto shrink-0 pr-4">
            {/* Action Buttons requested by user */}
            <div className="flex items-center gap-1 bg-slate-900 border border-slate-700 px-2 py-1 rounded-[1.25rem] mr-2">
-             <div className="relative" ref={favoritesRef}>
-               <HelpTooltip text={th('favorites_summary')} position="bottom">
-                 <button 
-                   onClick={() => setIsFavoritesOpen(!isFavoritesOpen)} 
-                   className={cn("p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all", isFavoritesOpen && "text-white bg-slate-800")} 
-                 >
-                    <Star className={cn("w-4 h-4", favorites.length > 0 ? "fill-amber-400 text-amber-400" : "text-slate-400")} />
-                 </button>
-               </HelpTooltip>
+              <div className="relative" ref={favoritesRef}>
+                <HelpTooltip text={th('favorites_summary')} position="bottom">
+                  <button 
+                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)} 
+                    className={cn("p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all", isFavoritesOpen && "text-white bg-slate-800")} 
+                  >
+                     <Star className={cn("w-4 h-4", favorites.length > 0 ? "fill-amber-400 text-amber-400" : "text-slate-400")} />
+                  </button>
+                </HelpTooltip>
 
-               <AnimatePresence>
-                 {isFavoritesOpen && (
-                   <motion.div
-                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                     className="absolute top-full left-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-2"
-                   >
-                     <div className="px-3 py-2 border-b border-slate-700/50 mb-1">
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('favorites')}</span>
-                     </div>
-                     <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                <AnimatePresence>
+                  {isFavoritesOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute top-full left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-1"
+                    >
+                      <div className="px-4 py-2.5 border-b border-slate-700/50 mb-1 flex items-center justify-between">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('favorites')}</span>
+                         <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto no-scrollbar scroll-smooth p-1 space-y-1">
                         {favorites.length === 0 ? (
-                          <div className="p-4 text-center">
-                            <Star className="w-8 h-8 text-slate-700 mx-auto mb-2 opacity-20" />
-                            <p className="text-[10px] text-slate-500">{t('no_favorites')}</p>
+                          <div className="p-8 text-center flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center border border-slate-700/50 scale-110 opacity-30">
+                              <Star className="w-6 h-6 text-slate-500" />
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('no_favorites')}</p>
                           </div>
                         ) : (
                           favorites.map(favId => {
@@ -185,21 +209,31 @@ export const Header: React.FC = () => {
                                   navigate(`/page/${favId}`);
                                   setIsFavoritesOpen(false);
                                 }}
-                                className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-[10px] text-slate-300 flex items-center gap-3 transition-colors group"
+                                className="w-full text-left p-3 hover:bg-slate-700/80 rounded-xl text-[10px] text-slate-300 flex items-center gap-4 transition-all group relative border border-transparent hover:border-slate-600/50"
                               >
-                                <div className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-slate-500 group-hover:text-blue-400 transition-colors">
-                                  {favId}
+                                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-amber-400 group-hover:border-amber-400/30 group-hover:bg-amber-400/5 transition-all shrink-0">
+                                  {(() => {
+                                    const IconComp = ICON_MAP[p.icon || ''] || FileIcon;
+                                    return <IconComp className="w-5 h-5" strokeWidth={1.2} />;
+                                  })()}
                                 </div>
-                                <span className="font-medium truncate">{stripNumericPrefix(t(favId) || p.title)}</span>
+                                <div className="flex flex-col min-w-0 pr-6">
+                                  <span className="font-black text-white truncate text-[11px] tracking-tight">{stripNumericPrefix(th(favId) || p.title)}</span>
+                                  <span className="text-[8px] text-slate-500 uppercase tracking-tighter opacity-60 font-mono italic flex items-center gap-2">
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 NOT-italic font-bold">{favId}</span>
+                                    {p.domain}
+                                  </span>
+                                </div>
+                                <Star className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-amber-500 fill-amber-500 opacity-20 group-hover:opacity-100 transition-opacity" />
                               </button>
                             );
                           })
                         )}
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-             </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
              <HelpTooltip text={th('generate_pdf_summary')} position="bottom">
                <button 
                  onClick={() => toast.success(t('pdf_saved_to_drive'))} 
