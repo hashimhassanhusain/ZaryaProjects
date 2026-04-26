@@ -42,7 +42,15 @@ export const ResourcesView: React.FC = () => {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource3M));
-      setResources(list);
+      const deDuped: Resource3M[] = [];
+      const seen = new Set<string>();
+      list.forEach(r => {
+        if (!seen.has(r.id)) {
+          seen.add(r.id);
+          deDuped.push(r);
+        }
+      });
+      setResources(deDuped);
       setIsLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'resources');
@@ -50,11 +58,29 @@ export const ResourcesView: React.FC = () => {
     });
 
     const unsubscribeCompanies = onSnapshot(collection(db, 'companies'), (snapshot) => {
-      setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
+      const deDuped: Company[] = [];
+      const seen = new Set<string>();
+      list.forEach(c => {
+        if (!seen.has(c.id)) {
+          seen.add(c.id);
+          deDuped.push(c);
+        }
+      });
+      setCompanies(deDuped);
     });
 
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      setDbUsers(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserType)));
+      const list = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserType));
+      const deDuped: UserType[] = [];
+      const seen = new Set<string>();
+      list.forEach(u => {
+        if (!seen.has(u.uid)) {
+          seen.add(u.uid);
+          deDuped.push(u);
+        }
+      });
+      setDbUsers(deDuped);
     });
 
     return () => {

@@ -14,7 +14,8 @@ import {
   DollarSign,
   Briefcase,
   Package,
-  Truck
+  Truck,
+  History
 } from 'lucide-react';
 import { 
   ResourceRequirement, 
@@ -79,32 +80,72 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
     const q = query(collection(db, 'resource_requirements'), where('projectId', '==', projectId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceRequirement));
-      setRequirements(data);
+      const deDuped: ResourceRequirement[] = [];
+      const seen = new Set<string>();
+      data.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          deDuped.push(d);
+        }
+      });
+      setRequirements(deDuped);
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'resource_requirements'));
 
     const wbsQ = query(collection(db, 'wbs'), where('projectId', '==', projectId));
     const unsubscribeWbs = onSnapshot(wbsQ, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel));
-      setWbsLevels(data);
+      const deDuped: WBSLevel[] = [];
+      const seen = new Set<string>();
+      data.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          deDuped.push(d);
+        }
+      });
+      setWbsLevels(deDuped);
     });
 
     const actQ = query(collection(db, 'activities'), where('projectId', '==', projectId));
     const unsubscribeAct = onSnapshot(actQ, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity));
-      setActivities(data);
+      const deDuped: Activity[] = [];
+      const seen = new Set<string>();
+      data.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          deDuped.push(d);
+        }
+      });
+      setActivities(deDuped);
     });
 
     const boqQ = query(collection(db, 'boq'), where('projectId', '==', projectId));
     const unsubscribeBoq = onSnapshot(boqQ, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BOQItem));
-      setBoqItems(data);
+      const deDuped: BOQItem[] = [];
+      const seen = new Set<string>();
+      data.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          deDuped.push(d);
+        }
+      });
+      setBoqItems(deDuped);
     });
 
     const versionsQ = query(collection(db, 'resource_versions'), where('projectId', '==', projectId));
     const unsubscribeVersions = onSnapshot(versionsQ, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceVersion));
-      setVersions(data.sort((a, b) => b.version - a.version));
+      const deDuped: ResourceVersion[] = [];
+      const seen = new Set<string>();
+      data.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          deDuped.push(d);
+        }
+      });
+      setVersions(deDuped.sort((a, b) => b.version - a.version));
     });
 
     return () => {

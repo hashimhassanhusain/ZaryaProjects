@@ -66,7 +66,12 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       tabs: [
         { 
           id: 'overview', 
-          label: t('overview'), 
+          label: (() => {
+            const translated = t(page.domain || 'governance');
+            const stripped = stripNumericPrefix(translated);
+            if (stripped && stripped.trim() !== '' && stripped !== translated) return stripped;
+            return stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '');
+          })(),
           icon: Gavel, 
           description: t('domain_overview_desc'),
           size: 'large'
@@ -76,14 +81,18 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     {
       id: 'governance-processes',
       label: t('governance'),
-      tabs: allManagementPlans.map(p => ({
-        id: p.id,
-        label: p.title,
-        icon: p.icon,
-        description: p.desc,
-        size: 'large',
-        focusArea: p.focusArea
-      }))
+      tabs: allManagementPlans.map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: p.desc,
+          size: 'large',
+          focusArea: p.focusArea
+        };
+      })
     }
   ];
 

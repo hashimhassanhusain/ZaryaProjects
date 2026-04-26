@@ -189,7 +189,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       tabs: [
         { 
           id: 'overview', 
-          label: t('overview'), 
+          label: stripNumericPrefix(t(domainKey)) === domainKey ? stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '') : stripNumericPrefix(t(domainKey)), 
           icon: Icon,
           description: th('overview_summary'),
           size: 'large'
@@ -204,14 +204,19 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       ribbonGroups.push({
         id: area.toLowerCase().replace(/\s+/g, '_'),
         label: t(area),
-        tabs: areaChildren.map(child => ({
-          id: child.id,
-          label: stripNumericPrefix(t(child.id)) || child.title,
-          icon: ICON_MAP[child.icon || 'FileText'] || FileText,
-          description: th(child.id + '_summary') || child.summary,
-          focusArea: area,
-          size: highUsageIds.includes(child.id) ? 'large' : 'small'
-        }))
+        tabs: areaChildren.map(child => {
+          const translatedLabel = t(child.id);
+          const label = translatedLabel === child.id ? child.title : translatedLabel;
+          
+          return {
+            id: child.id,
+            label: stripNumericPrefix(label),
+            icon: ICON_MAP[child.icon || 'FileText'] || FileText,
+            description: th(child.id + '_summary') || child.summary,
+            focusArea: area,
+            size: highUsageIds.includes(child.id) ? 'large' : 'small'
+          };
+        })
       });
     }
   });

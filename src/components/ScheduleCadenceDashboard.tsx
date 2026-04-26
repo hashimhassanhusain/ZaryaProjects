@@ -38,12 +38,30 @@ export const ScheduleCadenceDashboard: React.FC<ScheduleCadenceDashboardProps> =
     if (!selectedProject?.id) return;
     const qAct = query(collection(db, 'activities'), where('projectId', '==', selectedProject.id), where('status', '==', 'In Progress'));
     const unsubAct = onSnapshot(qAct, (snapshot) => {
-      setActivities(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity));
+      const deDuped: Activity[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setActivities(deDuped);
     });
 
     const qTask = query(collection(db, 'tasks'), where('projectId', '==', selectedProject.id));
     const unsubTask = onSnapshot(qTask, (snapshot) => {
-      setTasks(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Task)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Task));
+      const deDuped: Task[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setTasks(deDuped);
     });
 
     return () => {

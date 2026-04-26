@@ -196,6 +196,12 @@ export const Sidebar: React.FC = () => {
                                     
                                     if (!canAccess(terminalPage.id)) return null;
 
+                                    const translatedLabel = t(terminalPage.id);
+                                    const strippedLabel = stripNumericPrefix(translatedLabel);
+                                    const displayLabel = (strippedLabel && strippedLabel.trim() !== '') 
+                                      ? strippedLabel 
+                                      : stripNumericPrefix(terminalPage.title) || terminalPage.title;
+
                                     return (
                                       <Link
                                         key={terminalPage.id}
@@ -208,7 +214,7 @@ export const Sidebar: React.FC = () => {
                                             : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
                                         )}
                                       >
-                                        {stripNumericPrefix(t(terminalPage.id) || terminalPage.title)}
+                                        {displayLabel}
                                       </Link>
                                     );
                                   })}

@@ -37,26 +37,26 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
   const ribbonGroups: RibbonGroup[] = [
     {
       id: 'identification',
-      label: 'Identification & Priority',
+      label: t('identification_priority'),
       tabs: [
-        { id: 'analysis', label: 'Power/Interest Matrix', icon: LayoutGrid },
-        { id: 'register', label: 'Stakeholder Register', icon: Users },
+        { id: 'analysis', label: t('power_interest_matrix'), icon: LayoutGrid },
+        { id: 'register', label: t('stakeholder_register'), icon: Users },
       ]
     },
     {
       id: 'strategy',
-      label: 'Engagement & Planning',
+      label: t('engagement_planning'),
       tabs: [
-        { id: 'engagement', label: 'Engagement Strategy', icon: Target },
-        { id: 'comms', label: 'Communications Plan', icon: MessageSquare },
+        { id: 'engagement', label: t('engagement_strategy'), icon: Target },
+        { id: 'comms', label: t('communications_plan'), icon: MessageSquare },
       ]
     },
     {
       id: 'monitoring',
-      label: 'Relationship Monitoring',
+      label: t('relationship_monitoring'),
       tabs: [
-        { id: 'sentiment', label: 'Sentiment Monitor', icon: Activity },
-        { id: 'nps', label: 'Satisfaction Trends', icon: TrendingUp },
+        { id: 'sentiment', label: t('sentiment_monitor'), icon: Activity },
+        { id: 'nps', label: t('satisfaction_trends'), icon: TrendingUp },
       ]
     }
   ];
@@ -78,18 +78,18 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
       <div className="bg-white border-b border-slate-100 px-8 py-6">
         <div className="max-w-7xl mx-auto">
           <div className={cn("flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1", isRtl && "flex-row-reverse")}>
-             <span>{page.domain}</span>
+             <span>{stripNumericPrefix(t(page.domain || 'stakeholders'))}</span>
              <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
-             <span className="text-slate-900">{page.focusArea}</span>
+             <span className="text-slate-900">{t(page.focusArea)}</span>
           </div>
           <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
             {parentPage && (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(parentPage.title)}</span>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
                 <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
               </>
             )}
-            {stripNumericPrefix(page.title)}
+            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

@@ -85,63 +85,94 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       id: 'navigation',
       label: t('navigation'),
       tabs: [
-        { id: 'overview', label: t('overview'), icon: LayoutGrid, size: 'large', description: 'Schedule Domain Control Center' }
+        { 
+          id: 'overview', 
+          label: (() => {
+            const translated = t(page.domain || 'schedule');
+            const stripped = stripNumericPrefix(translated);
+            if (stripped && stripped.trim() !== '' && stripped !== translated) return stripped;
+            return stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '');
+          })(),
+          icon: LayoutGrid, 
+          size: 'large', 
+          description: 'Schedule Domain Control Center' 
+        }
       ]
     },
     {
       id: 'initiating',
       label: t('initiating'),
-      tabs: schedulePages.filter(p => p.group === 'initiating').map(p => ({
-        id: p.id,
-        label: stripNumericPrefix(p.title),
-        icon: p.icon,
-        description: th(p.id + '_sched_summary'),
-        size: 'small'
-      }))
+      tabs: schedulePages.filter(p => p.group === 'initiating').map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: th(p.id + '_sched_summary'),
+          size: 'small'
+        };
+      })
     },
     {
       id: 'planning',
       label: t('planning'),
-      tabs: schedulePages.filter(p => p.group === 'planning').map(p => ({
-        id: p.id,
-        label: stripNumericPrefix(p.title),
-        icon: p.icon,
-        description: th(p.id + '_sched_summary'),
-        size: p.size || 'small'
-      }))
+      tabs: schedulePages.filter(p => p.group === 'planning').map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: th(p.id + '_sched_summary'),
+          size: p.size || 'small'
+        };
+      })
     },
     {
       id: 'executing',
       label: t('executing'),
-      tabs: schedulePages.filter(p => p.group === 'executing').map(p => ({
-        id: p.id,
-        label: stripNumericPrefix(p.title),
-        icon: p.icon,
-        description: th(p.id + '_sched_summary'),
-        size: 'small'
-      }))
+      tabs: schedulePages.filter(p => p.group === 'executing').map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: th(p.id + '_sched_summary'),
+          size: 'small'
+        };
+      })
     },
     {
       id: 'monitoring',
       label: t('monitoring'),
-      tabs: schedulePages.filter(p => p.group === 'monitoring').map(p => ({
-        id: p.id,
-        label: stripNumericPrefix(p.title),
-        icon: p.icon,
-        description: th(p.id + '_sched_summary'),
-        size: 'small'
-      }))
+      tabs: schedulePages.filter(p => p.group === 'monitoring').map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: th(p.id + '_sched_summary'),
+          size: 'small'
+        };
+      })
     },
     {
       id: 'closing',
       label: t('closing'),
-      tabs: schedulePages.filter(p => p.group === 'closing').map(p => ({
-        id: p.id,
-        label: stripNumericPrefix(p.title),
-        icon: p.icon,
-        description: th(p.id + '_sched_summary'),
-        size: 'small'
-      }))
+      tabs: schedulePages.filter(p => p.group === 'closing').map(p => {
+        const translated = p.title;
+        const stripped = stripNumericPrefix(translated);
+        return {
+          id: p.id,
+          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
+          icon: p.icon,
+          description: th(p.id + '_sched_summary'),
+          size: 'small'
+        };
+      })
     }
   ];
 

@@ -111,7 +111,18 @@ export const TasksView: React.FC = () => {
     let issuesData: Task[] = [];
 
     const updateUnifiedTasks = () => {
-      setTasks([...tasksData, ...issuesData]);
+      const unified = [...tasksData, ...issuesData];
+      const deDuped: Task[] = [];
+      const seen = new Set<string>();
+      
+      unified.forEach(t => {
+        if (!seen.has(t.id)) {
+          seen.add(t.id);
+          deDuped.push(t);
+        }
+      });
+      
+      setTasks(deDuped);
       setIsLoading(false);
     };
 

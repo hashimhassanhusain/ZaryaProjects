@@ -28,7 +28,15 @@ export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ pa
     if (!selectedProject?.id) return;
     const q = query(collection(db, 'stakeholders'), where('projectId', '==', selectedProject.id));
     const unsub = onSnapshot(q, (snapshot) => {
-      setStakeholders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder)));
+      const seen = new Set();
+      const uniqueStakeholders = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() } as Stakeholder))
+        .filter(s => {
+          if (seen.has(s.id)) return false;
+          seen.add(s.id);
+          return true;
+        });
+      setStakeholders(uniqueStakeholders);
     });
     return () => unsub();
   }, [selectedProject?.id]);

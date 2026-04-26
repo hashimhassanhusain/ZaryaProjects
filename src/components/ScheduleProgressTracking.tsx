@@ -41,12 +41,30 @@ export const ScheduleProgressTracking: React.FC<ScheduleProgressTrackingProps> =
     
     const qAct = query(collection(db, 'activities'), where('projectId', '==', selectedProject.id));
     const unsubAct = onSnapshot(qAct, (snapshot) => {
-      setActivities(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity));
+      const deDuped: Activity[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setActivities(deDuped);
     });
 
     const qPo = query(collection(db, 'purchase-orders'), where('projectId', '==', selectedProject.id));
     const unsubPo = onSnapshot(qPo, (snapshot) => {
-      setPurchaseOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder));
+      const deDuped: PurchaseOrder[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setPurchaseOrders(deDuped);
     });
 
     return () => {

@@ -44,7 +44,16 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
     if (!selectedProject?.id) return;
     const q = query(collection(db, 'stakeholders'), where('projectId', '==', selectedProject.id));
     const unsub = onSnapshot(q, (snapshot) => {
-      setStakeholders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Stakeholder));
+      const deDuped: Stakeholder[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setStakeholders(deDuped);
     });
     return () => unsub();
   }, [selectedProject?.id]);
@@ -58,7 +67,16 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
       limit(20)
     );
     const unsub = onSnapshot(q, (snapshot) => {
-      setLogs(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SentimentLog)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SentimentLog));
+      const deDuped: SentimentLog[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setLogs(deDuped);
     });
     return () => unsub();
   }, [selectedProject?.id]);

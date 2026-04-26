@@ -38,27 +38,27 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   const ribbonGroups: RibbonGroup[] = [
     {
       id: 'planning',
-      label: 'Strategy & Structure',
+      label: t('strategy_structure'),
       tabs: [
-        { id: 'plan', label: 'Mgmt Plan', icon: Settings },
-        { id: 'raci', label: 'RACI Matrix', icon: Grid },
-        { id: 'rbs', label: 'Breakdown (RBS)', icon: Layers },
+        { id: 'plan', label: t('setup_plan'), icon: Settings },
+        { id: 'raci', label: t('ram_raci_matrix'), icon: Grid },
+        { id: 'rbs', label: t('resource_breakdown_structure_short'), icon: Layers },
       ]
     },
     {
       id: 'execution',
-      label: 'Acquisition & Booking',
+      label: t('acquisition_booking'),
       tabs: [
-        { id: 'acquisition', label: 'Acquisition', icon: UserPlus },
-        { id: 'assignments', label: 'Calendars', icon: Calendar },
+        { id: 'acquisition', label: t('resource_acquisition'), icon: UserPlus },
+        { id: 'assignments', label: t('calendars'), icon: Calendar },
       ]
     },
     {
       id: 'control',
-      label: 'Performance & Release',
+      label: t('performance_release'),
       tabs: [
-        { id: 'utilization', label: 'Utilization', icon: Activity },
-        { id: 'release', label: 'Release/Close', icon: CheckCircle },
+        { id: 'utilization', label: t('utilization'), icon: Activity },
+        { id: 'release', label: t('release_close'), icon: CheckCircle },
       ]
     }
   ];
@@ -78,18 +78,18 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
       <div className="bg-white border-b border-slate-100 px-8 py-6">
         <div className="max-w-7xl mx-auto">
           <div className={cn("flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1", isRtl && "flex-row-reverse")}>
-             <span>{page.domain}</span>
+             <span>{stripNumericPrefix(t(page.domain || 'resources'))}</span>
              <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
-             <span className="text-slate-900">{page.focusArea}</span>
+             <span className="text-slate-900">{t(page.focusArea)}</span>
           </div>
           <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
             {parentPage && (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(parentPage.title)}</span>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
                 <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
               </>
             )}
-            {stripNumericPrefix(page.title)}
+            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

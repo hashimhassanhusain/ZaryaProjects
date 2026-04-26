@@ -69,32 +69,53 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
   useEffect(() => {
     const critQ = query(collection(db, 'selection_criteria'), where('projectId', '==', projectId));
     const unsubscribeCrit = onSnapshot(critQ, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SelectionCriterion));
+      const seenIds = new Set();
+      const data = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as SelectionCriterion))
+        .filter(item => {
+          if (seenIds.has(item.id)) return false;
+          seenIds.add(item.id);
+          return true;
+        });
       setCriteria(data);
     });
 
     const evalQ = query(collection(db, 'supplier_evaluations'), where('projectId', '==', projectId));
     const unsubscribeEval = onSnapshot(evalQ, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupplierEvaluation));
+      const seenIds = new Set();
+      const data = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as SupplierEvaluation))
+        .filter(item => {
+          if (seenIds.has(item.id)) return false;
+          seenIds.add(item.id);
+          return true;
+        });
       setEvaluations(data);
       setLoading(false);
     });
 
     const vendorQ = query(collection(db, 'companies'), where('type', '==', 'Supplier'));
     const unsubscribeVendor = onSnapshot(vendorQ, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        name: doc.data().name,
-        vendorCode: doc.data().supplierCode || '',
-        discipline: doc.data().discipline || '',
-        status: doc.data().status === 'Active' ? 'Active' : 'Contract Ended',
-        contactDetails: {
-          address: doc.data().address || '',
-          phone: doc.data().phone || '',
-          email: doc.data().email || ''
-        },
-        projectId: projectId
-      } as Supplier));
+      const seenIds = new Set();
+      const data = snapshot.docs
+        .map(doc => ({ 
+          id: doc.id, 
+          name: doc.data().name,
+          vendorCode: doc.data().supplierCode || '',
+          discipline: doc.data().discipline || '',
+          status: doc.data().status === 'Active' ? 'Active' : 'Contract Ended',
+          contactDetails: {
+            address: doc.data().address || '',
+            phone: doc.data().phone || '',
+            email: doc.data().email || ''
+          },
+          projectId: projectId
+        } as Supplier))
+        .filter(item => {
+          if (seenIds.has(item.id)) return false;
+          seenIds.add(item.id);
+          return true;
+        });
       setVendors(data);
     });
 

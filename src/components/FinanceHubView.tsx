@@ -54,7 +54,12 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       tabs: [
         { 
           id: 'overview', 
-          label: t('overview'), 
+          label: (() => {
+            const translated = t(page.domain || 'finance');
+            const stripped = stripNumericPrefix(translated);
+            if (stripped && stripped.trim() !== '' && stripped !== translated) return stripped;
+            return stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '');
+          })(),
           icon: Banknote, // Finance Domain Icon
           description: t('domain_overview_desc'),
           size: 'large'
@@ -107,18 +112,18 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       <div className="bg-white border-b border-slate-100 px-8 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
-             <span>{page.domain}</span>
+             <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
              <ChevronRight className="w-3 h-3" />
-             <span className="text-slate-900">{page.focusArea}</span>
+             <span className="text-slate-900">{t(page.focusArea)}</span>
           </div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
             {parentPage && (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(parentPage.title)}</span>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
                 <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
               </>
             )}
-            {stripNumericPrefix(page.title)}
+            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

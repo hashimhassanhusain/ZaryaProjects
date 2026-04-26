@@ -44,12 +44,30 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
 
     const qWbs = query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id), where('type', '==', 'Work Package'));
     const unsubWbs = onSnapshot(qWbs, (snapshot) => {
-      setWbsLevels(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WBSLevel)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WBSLevel));
+      const deDuped: WBSLevel[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setWbsLevels(deDuped);
     });
 
     const qAct = query(collection(db, 'activities'), where('projectId', '==', selectedProject.id));
     const unsubAct = onSnapshot(qAct, (snapshot) => {
-      setActivities(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Activity));
+      const deDuped: Activity[] = [];
+      const seen = new Set<string>();
+      data.forEach(item => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deDuped.push(item);
+        }
+      });
+      setActivities(deDuped);
     });
 
     return () => {

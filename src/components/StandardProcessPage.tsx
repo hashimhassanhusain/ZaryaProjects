@@ -185,13 +185,17 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
   const grandParentPage = parentPage?.parentId ? pages.find(p => p.id === parentPage.parentId) : null;
 
-  const handleManualSave = () => {
-    setDriveSyncStatus('syncing');
-    if (onSave) onSave();
-    setTimeout(() => {
-      setDriveSyncStatus('synced');
-    }, 2000);
-  };
+  const translatedTitle = th(page.id);
+  const isIdTranslation = translatedTitle === page.id || stripNumericPrefix(translatedTitle) === '';
+  const displayTitle = isIdTranslation ? page.title : translatedTitle;
+  
+  const parentTranslated = parentPage ? th(parentPage.id) : '';
+  const isParentIdTranslation = parentTranslated === parentPage?.id || stripNumericPrefix(parentTranslated) === '';
+  const parentTitle = parentPage ? (isParentIdTranslation ? parentPage.title : parentTranslated) : '';
+  
+  const grandParentTranslated = grandParentPage ? th(grandParentPage.id) : '';
+  const isGrandParentIdTranslation = grandParentTranslated === grandParentPage?.id || stripNumericPrefix(grandParentTranslated) === '';
+  const grandParentTitle = grandParentPage ? (isGrandParentIdTranslation ? grandParentPage.title : grandParentTranslated) : '';
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] flex flex-col print:bg-white print:p-0">
@@ -216,26 +220,30 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           </div>
           
           <div className="space-y-3">
-            {inputs.map((input) => (
-              <div 
-                key={input.id}
-                onClick={() => setQuickView({ isOpen: true, title: t(input.id) || input.title, id: input.id })}
-                className={cn(
-                  "group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]",
-                  isRtl && "border-l-0 border-r-4 border-r-blue-500"
-                )}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{input.id}</span>
-                  <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <Eye className="w-4 h-4" />
+            {inputs.map((input) => {
+              const inputTranslated = t(input.id);
+              const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
+              return (
+                <div 
+                  key={input.id}
+                  onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })}
+                  className={cn(
+                    "group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]",
+                    isRtl && "border-l-0 border-r-4 border-r-blue-500"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{input.id}</span>
+                    <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <Eye className="w-4 h-4" />
+                    </div>
                   </div>
+                  <h4 className={cn("text-[13px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
+                    {stripNumericPrefix(inputDisplay)}
+                  </h4>
                 </div>
-                <h4 className={cn("text-[13px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
-                  {stripNumericPrefix(t(input.id) || input.title)}
-                </h4>
-              </div>
-            ))}
+              );
+            })}
             
             {inputs.length === 0 && (
               <div className="p-10 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-3">
@@ -254,12 +262,16 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                 </h3>
              </div>
              <div className="space-y-2">
-                {tools.map((tool) => (
-                  <div key={tool.id} className="px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 group hover:border-amber-200 transition-colors">
-                     <div className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
-                     <span className="text-xs font-bold text-slate-600 truncate">{t(tool.id) || tool.title}</span>
-                  </div>
-                ))}
+                {tools.map((tool) => {
+                  const toolTranslated = t(tool.id);
+                  const toolDisplay = toolTranslated === tool.id ? tool.title : toolTranslated;
+                  return (
+                    <div key={tool.id} className="px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 group hover:border-amber-200 transition-colors">
+                       <div className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
+                       <span className="text-xs font-bold text-slate-600 truncate">{toolDisplay}</span>
+                    </div>
+                  );
+                })}
                 {tools.length === 0 && (
                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center py-4">{t('standard_processing_only')}</p>
                 )}
@@ -346,7 +358,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                         {grandParentPage && (
                           <>
                             <span className="hover:text-blue-500 cursor-pointer transition-colors" onClick={() => navigate(`/page/${grandParentPage.id}`)}>
-                              {stripNumericPrefix(th(grandParentPage.id) || grandParentPage.title)}
+                              {stripNumericPrefix(grandParentTitle)}
                             </span>
                             <ChevronRight className="w-3 h-3 text-slate-300" />
                           </>
@@ -354,21 +366,21 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                         {parentPage && (
                           <>
                             <span className="hover:text-blue-500 cursor-pointer transition-colors" onClick={() => navigate(`/page/${parentPage.id}`)}>
-                              {stripNumericPrefix(th(parentPage.id) || parentPage.title)}
+                              {stripNumericPrefix(parentTitle)}
                             </span>
                             <ChevronRight className="w-3 h-3 text-slate-300" />
                           </>
                         )}
                         <span className="text-blue-600">
-                          {stripNumericPrefix(th(page.id) || page.title)}
+                          {stripNumericPrefix(displayTitle)}
                         </span>
                       </nav>
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between px-4">
                           <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight">
-                            {parentPage && <span className="text-slate-300">{stripNumericPrefix(th(parentPage.id) || parentPage.title)} <span className="mx-2 text-slate-200">›</span></span>}
-                            {stripNumericPrefix(th(page.id) || page.title)}
+                            {parentPage && <span className="text-slate-300">{stripNumericPrefix(parentTitle)} <span className="mx-2 text-slate-200">›</span></span>}
+                            {stripNumericPrefix(displayTitle)}
                           </h2>
                           <button 
                             onClick={toggleFavorite}
@@ -405,8 +417,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                       </div>
                       <div className={cn("text-right space-y-2", isRtl && "text-left")}>
                          <h2 className="text-2xl font-semibold uppercase tracking-tight italic">
-                           {parentPage && `${stripNumericPrefix(t(parentPage.id) || parentPage.title)} › `}
-                           {stripNumericPrefix(t(page.id) || page.title)}
+                           {parentPage && `${stripNumericPrefix(parentTitle)} › `}
+                           {stripNumericPrefix(displayTitle)}
                          </h2>
                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('project')}: {selectedProject?.name}</p>
                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('code')}: {selectedProject?.code}</p>
@@ -475,36 +487,40 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             </div>
             
             <div className="space-y-5">
-               {outputs.map((output) => (
-                 <div 
-                   key={output.id}
-                   className={cn(
-                     "group p-8 bg-white border border-emerald-100 rounded-[3rem] space-y-6 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all border-r-8 border-r-emerald-500 active:scale-[0.98]",
-                     isRtl && "border-r-0 border-l-8 border-l-emerald-500"
-                   )}
-                 >
-                    <div className="flex items-center justify-between">
-                       <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                          <FileText className="w-6 h-6" />
-                       </div>
-                       <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
-                          {t(output.status?.toLowerCase() || 'baseline')}
-                       </div>
-                    </div>
-                    <div className="space-y-2">
-                       <h4 className={cn("text-[15px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
-                         {stripNumericPrefix(t(output.id) || output.title)}
-                       </h4>
-                       <p className={cn("text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic", isRtl && "text-right")}>{output.id}</p>
-                    </div>
-                    <button 
-                      onClick={onPrint}
-                      className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
-                    >
-                      {t('export_pdf_deliverable')}
-                    </button>
-                 </div>
-               ))}
+               {outputs.map((output) => {
+                 const outputTranslated = t(output.id);
+                 const outputDisplay = outputTranslated === output.id ? output.title : outputTranslated;
+                 return (
+                   <div 
+                     key={output.id}
+                     className={cn(
+                       "group p-8 bg-white border border-emerald-100 rounded-[3rem] space-y-6 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all border-r-8 border-r-emerald-500 active:scale-[0.98]",
+                       isRtl && "border-r-0 border-l-8 border-l-emerald-500"
+                     )}
+                   >
+                      <div className="flex items-center justify-between">
+                         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                            <FileText className="w-6 h-6" />
+                         </div>
+                         <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                            {t(output.status?.toLowerCase() || 'baseline')}
+                         </div>
+                      </div>
+                      <div className="space-y-2">
+                         <h4 className={cn("text-[15px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
+                           {stripNumericPrefix(outputDisplay)}
+                         </h4>
+                         <p className={cn("text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic", isRtl && "text-right")}>{output.id}</p>
+                      </div>
+                      <button 
+                        onClick={onPrint}
+                        className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
+                      >
+                        {t('export_pdf_deliverable')}
+                      </button>
+                   </div>
+                 );
+               })}
 
                {outputs.length === 0 && (
                  <div className="p-12 bg-emerald-50/50 border border-emerald-100 rounded-[3.5rem] space-y-6 text-center">

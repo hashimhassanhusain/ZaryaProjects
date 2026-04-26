@@ -78,7 +78,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                       )}
                       <tab.icon className={cn("w-8 h-8 mb-1", isActive ? "text-blue-600" : "text-slate-500 opacity-80")} strokeWidth={1.5} />
                       <span className={cn(
-                        "text-[10px] font-medium leading-tight text-center max-w-[64px] line-clamp-2",
+                        "text-[11px] font-medium leading-tight text-center max-w-[64px] line-clamp-2",
                         isActive ? "font-bold" : ""
                       )}>
                         {tab.label}
@@ -110,7 +110,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                           )}
                         >
                           <tab.icon className={cn("w-4 h-4", isActive ? "text-blue-600" : "text-slate-500")} strokeWidth={1.5} />
-                          <span className={cn("text-[10px] truncate", isActive ? "font-bold" : "")}>{tab.label}</span>
+                          <span className={cn("text-[11px] truncate", isActive ? "font-bold" : "")}>{tab.label}</span>
                           {tab.focusArea && (
                             <div className={cn("ml-auto w-1.5 h-1.5 rounded-full", getFocusColor(tab.focusArea))} />
                           )}

@@ -116,7 +116,7 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({
         >
           <div className={cn(
             "leading-relaxed font-medium",
-            isHelpRtl ? "text-right font-arabic text-[13px]" : "text-left text-[11px]"
+            isHelpRtl ? "text-right font-arabic text-[17px]" : "text-left text-[15px]"
           )}>
             {text}
           </div>

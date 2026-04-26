@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useUI } from '../context/UIContext';
 import { 
   ChevronRight, Home, LayoutGrid, Database, Package, Target, List, Clock, 
   DollarSign, Shield, FileText, Flag, Compass, Users, TrendingUp, 
   CheckCircle2, ShieldAlert, Info, Settings, Users2, Zap, CheckSquare, 
   Calendar, Layers, Briefcase, Activity, ShieldCheck, User, Building2, 
   LayoutDashboard, ShoppingCart, BarChart3, Lightbulb, BookOpen, 
-  ClipboardList, MessageSquare, ListChecks, RefreshCw
+  ClipboardList, MessageSquare, ListChecks, RefreshCw, Star
 } from 'lucide-react';
 import { getBreadcrumbs, pages } from '../data';
 import { stripNumericPrefix, cn } from '../lib/utils';
@@ -56,10 +57,13 @@ const iconMap: Record<string, any> = {
 };
 
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
-  const { t, isRtl } = useLanguage();
+  const { t, th, isRtl } = useLanguage();
+  const { toggleFavorite, isFavorite } = useUI();
   const crumbs = getBreadcrumbs(currentPageId);
   const currentPage = pages.find(p => p.id === currentPageId);
   const IconComponent = currentPage?.icon ? iconMap[currentPage.icon] : null;
+
+  const isFav = isFavorite(currentPageId);
 
   return (
     <div className="space-y-2 mb-4">

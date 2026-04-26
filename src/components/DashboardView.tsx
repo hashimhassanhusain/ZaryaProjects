@@ -246,7 +246,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                       <StatusIcon status={child.status} />
                     </div>
                     <h3 className="text-base font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {stripNumericPrefix(t(child.id) || child.title)}
+                      {(() => {
+                        const translated = t(child.id);
+                        const isIdTranslation = translated === child.id || stripNumericPrefix(translated) === '';
+                        const display = isIdTranslation ? child.title : translated;
+                        return stripNumericPrefix(display);
+                      })()}
                     </h3>
                     <div className="text-[10px] text-slate-400 font-normal mb-2 uppercase tracking-wider">
                       {child.focusArea || ''}

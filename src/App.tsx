@@ -93,9 +93,17 @@ const PageRenderer = () => {
 
   const parent = (page as any)?.parentId ? pages.find(p => p.id === (page as any).parentId) : null;
   const grandParent = parent?.parentId ? pages.find(p => p.id === parent.parentId) : null;
-  const pageTitle = page ? stripNumericPrefix(t(page.id) || page.title) : '';
-  const parentTitle = parent ? stripNumericPrefix(t(parent.id) || parent.title) : '';
-  const grandParentTitle = grandParent ? stripNumericPrefix(t(grandParent.id) || grandParent.title) : '';
+  const getDisplayTitle = (p: any) => {
+    if (!p) return '';
+    const translated = t(p.id);
+    const isIdTranslation = translated === p.id || stripNumericPrefix(translated) === '';
+    const display = isIdTranslation ? p.title : translated;
+    return stripNumericPrefix(display);
+  };
+
+  const pageTitle = getDisplayTitle(page);
+  const parentTitle = getDisplayTitle(parent);
+  const grandParentTitle = getDisplayTitle(grandParent);
 
   useEffect(() => {
     if (!pageTitle) return;
