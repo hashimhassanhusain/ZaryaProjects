@@ -62,22 +62,61 @@ const getDriveClient = () => {
     
     let jsonStr = rawInput.substring(start, end + 1);
 
-    // 3. Parse the JSON
+    // 3. Parse the JSON - try multiple strategies
     let credentials;
+    // Strategy 1: Direct parse
     try {
       credentials = JSON.parse(jsonStr);
-    } catch (parseError) {
-      // If it fails, it might be double-escaped (common in some environments)
+    } catch {
+      // Strategy 2: Fix double-escaped sequences (e.g., \\n → \n)
       try {
         const unescaped = jsonStr.replace(/\\n/g, '\n').replace(/\\"/g, '"');
         credentials = JSON.parse(unescaped);
-      } catch (e) {
-        throw new Error('The content is not a valid JSON. Please check for missing braces or extra characters.');
+      } catch {
+        // Strategy 3: Sanitize literal newlines/CRs inside string values.
+        // This happens when the JSON is copy-pasted from a display that shows
+        // the private_key with real line breaks instead of \n escape sequences.
+        try {
+          let sanitized = '';
+          let inString = false;
+          let escaped = false;
+          for (const ch of jsonStr) {
+            if (escaped) {
+              sanitized += ch;
+              escaped = false;
+            } else if (ch === '\\' && inString) {
+              sanitized += ch;
+              escaped = true;
+            } else if (ch === '"') {
+              sanitized += ch;
+              inString = !inString;
+            } else if (inString && ch === '\n') {
+              sanitized += '\\n';
+            } else if (inString && ch === '\r') {
+              sanitized += '\\r';
+            } else {
+              sanitized += ch;
+            }
+          }
+          credentials = JSON.parse(sanitized);
+        } catch {
+          throw new Error('The content is not a valid JSON. Please check for missing braces or extra characters.');
+        }
       }
     }
-    
+
     if (!credentials.private_key || !credentials.client_email) {
       return { error: 'JSON parsed but missing "private_key" or "client_email".' };
+    }
+
+    // Strip markdown link formatting from client_email/universe_domain if present
+    // e.g., "[email@x.com](mailto:...)" → "email@x.com"
+    for (const field of ['client_email', 'universe_domain'] as const) {
+      const val: string = credentials[field] ?? '';
+      if (val.includes('](')) {
+        const m = val.match(/\[([^\]]+)\]/);
+        if (m) credentials[field] = m[1];
+      }
     }
 
     // 4. Clean the private_key
