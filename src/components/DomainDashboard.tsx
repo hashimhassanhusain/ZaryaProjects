@@ -103,6 +103,7 @@ interface DomainDashboardProps {
   page: Page;
   childrenPages?: Page[];
   initialTab?: string;
+  showRibbon?: boolean;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -123,7 +124,7 @@ const ICON_MAP: Record<string, any> = {
 
 import { Ribbon, RibbonGroup } from './Ribbon';
 
-export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
+export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab, showRibbon = true }) => {
   const { t, th, isRtl } = useLanguage();
   const { selectedProject, getPath } = useProject();
   const { userProfile, isAdmin } = useAuth();
@@ -561,12 +562,14 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   return (
     <div className="w-full flex flex-col h-full bg-slate-50">
       {/* ── Office-Style Ribbon ── */}
-      <Ribbon 
-        groups={ribbonGroups}
-        activeTabId={activeTab}
-        onTabChange={handleTabChange}
-        focusAreaColors={focusAreaColors}
-      />
+      {showRibbon && (
+        <Ribbon
+          groups={ribbonGroups}
+          activeTabId={activeTab}
+          onTabChange={handleTabChange}
+          focusAreaColors={focusAreaColors}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">

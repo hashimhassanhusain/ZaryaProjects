@@ -355,7 +355,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       headStyles: { fillColor: [30, 64, 175] }
     });
 
-    let currentY = (doc as any).lastAutoTable.finalY + 15;
+    let currentY = ((doc as any).lastAutoTable?.finalY ?? 150) + 15;
 
     // Root Causes
     doc.setFontSize(14);

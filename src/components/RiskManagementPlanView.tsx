@@ -316,7 +316,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY3 = (doc as any).lastAutoTable.finalY || 150;
+    const finalY3 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Tracking and Audit', margin, finalY3 + 10);
     doc.rect(margin, finalY3 + 15, pageWidth - 2 * margin, 40);
@@ -337,7 +337,7 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY4 = (doc as any).lastAutoTable.finalY || 100;
+    const finalY4 = ((doc as any).lastAutoTable?.finalY ?? 150) || 100;
     doc.setFont('helvetica', 'bold');
     doc.text('Definitions of Impact by Objective', margin, finalY4 + 10);
     autoTable(doc, {

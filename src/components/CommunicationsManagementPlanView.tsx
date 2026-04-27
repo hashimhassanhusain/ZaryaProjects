@@ -210,7 +210,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       headStyles: { fillColor: [48, 48, 48] }
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 10;
+    let y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
     doc.setFont('helvetica', 'bold');
     doc.text('Section B: Assumptions & Constraints', margin, y);
     y += 5;
@@ -226,7 +226,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40, fillColor: [245, 245, 245] } }
     });
 
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
     doc.setFont('helvetica', 'bold');
     doc.text('Section C: Glossary of Terms or Acronyms', margin, y);
     y += 5;

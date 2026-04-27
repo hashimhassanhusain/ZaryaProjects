@@ -523,8 +523,15 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         }
       });
 
-      const extractedPOs = JSON.parse(response.text || "[]");
-      
+      let extractedPOs: any[] = [];
+      try {
+        extractedPOs = JSON.parse(response.text || "[]");
+      } catch {
+        toast.error("Failed to parse AI response. Please try again.");
+        setIsAnalyzing(false);
+        return;
+      }
+
       if (extractedPOs.length === 0) {
         toast.error("No Purchase Orders could be extracted from the document.");
         setIsAnalyzing(false);

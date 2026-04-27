@@ -87,7 +87,7 @@ export const ScheduleForecasting: React.FC<ScheduleForecastingProps> = ({ page }
       headStyles: { fillColor: [30, 58, 138] }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    const finalY = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
 
     doc.setFontSize(14);
     doc.text('Root Cause of Variance', 20, finalY + 15);
