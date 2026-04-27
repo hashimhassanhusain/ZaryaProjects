@@ -135,7 +135,7 @@ export const WorkPackagesView: React.FC = () => {
   };
 
   const filteredPackages = workPackages.filter(wp => {
-    const matchesSearch = wp.title.toLowerCase().includes(searchTerm.toLowerCase()) || wp.code.includes(searchTerm);
+    const matchesSearch = wp.title.toLowerCase().includes(searchTerm.toLowerCase()) || (wp.code ?? '').includes(searchTerm);
     const matchesDivision = selectedDivision === 'All' || wp.divisionCode === selectedDivision;
     return matchesSearch && matchesDivision;
   });

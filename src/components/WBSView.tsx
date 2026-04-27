@@ -336,8 +336,15 @@ export const WBSView: React.FC = () => {
         }
       });
 
-      const generatedWbs = JSON.parse(response.text || '[]');
-      
+      let generatedWbs: any[] = [];
+      try {
+        generatedWbs = JSON.parse(response.text || '[]');
+      } catch {
+        toast.error("Failed to parse AI response. Please try again.");
+        setIsGenerating(false);
+        return;
+      }
+
       // Map to store created IDs by title to handle hierarchy
       const titleToId: Record<string, string> = {};
       const currentLevels = [...wbsLevels];

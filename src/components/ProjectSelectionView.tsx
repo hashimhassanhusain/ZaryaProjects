@@ -32,9 +32,9 @@ export const ProjectSelectionView: React.FC = () => {
     navigate(`/${companySlug}/${projectSlug}/governance/gov`);
   };
 
-  const filteredProjects = projects.filter(p => 
+  const filteredProjects = projects.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchQuery.toLowerCase())
+    (p.code ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
