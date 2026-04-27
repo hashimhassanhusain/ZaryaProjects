@@ -19,6 +19,7 @@ import {
   Database,
   TrendingUp
 } from 'lucide-react';
+import { PERFORMANCE_DOMAINS, HUB_IDS } from '../constants/navigation';
 import { Page, BOQItem, WBSLevel, Activity } from '../types';
 import { getChildren, getParent } from '../data';
 import { motion } from 'motion/react';
@@ -61,7 +62,7 @@ const getDomainIcon = (domain?: string, title?: string) => {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChildren }) => {
   const { t } = useLanguage();
-  const { selectedProject } = useProject();
+  const { selectedProject, getPath } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const { formatAmount, convertToBase } = useCurrency();
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
@@ -136,7 +137,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
                 </div>
                 {(isAdmin || userProfile?.accessiblePages?.includes('2.4.1')) && (
-                  <Link to="/page/2.4.1" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  <Link to={getPath('delivery', '2.4.1')} className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                     {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}
@@ -179,7 +180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
                 </div>
                 {(isAdmin || userProfile?.accessiblePages?.includes('2.3')) && (
-                  <Link to="/page/2.3" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  <Link to={getPath('schedule', '2.3')} className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                     {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}
@@ -236,7 +237,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   transition={{ delay: idx * 0.1 }}
                 >
                   <Link
-                    to={`/page/${child.id}`}
+                    to={getPath(child.domain || 'gov', child.id)}
                     className="group block p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
                   >
                     <div className="flex justify-between items-start mb-3">

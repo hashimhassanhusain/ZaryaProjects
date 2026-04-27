@@ -583,19 +583,53 @@ export interface Page {
   };
 }
 
-export interface Company {
+export interface Institution {
   id: string;
   name: string;
-  type: 'Main' | 'Supplier' | 'Stakeholder' | 'Other';
+  type: 'owner' | 'contractor' | 'consultant';
+  country: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface Company {
+  id: string;
+  institutionId: string;
+  name: string;
+  slug: string;
+  registrationNumber?: string;
   address?: string;
   phone?: string;
   email?: string;
   website?: string;
   status: 'Active' | 'Inactive';
-  createdAt?: string;
-  // Supplier specifics
-  supplierCode?: string;
-  discipline?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface Vendor {
+  id: string;
+  projectId: string;
+  createdBy: string;
+  name: string;
+  vendorCode: string;
+  specialty: string[];
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  country: string;
+  rating: number; // 1-5
+  status: 'active' | 'suspended';
+  createdAt: string;
+}
+
+export interface UserProject {
+  id: string;
+  userId: string;
+  projectId: string;
+  role: 'admin' | 'manager' | 'engineer' | 'accountant' | 'viewer';
+  grantedBy: string;
+  grantedAt: string;
 }
 
 export interface Contact {
@@ -619,7 +653,7 @@ export interface User {
   name: string;
   email: string;
   photoURL: string;
-  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office' | 'stakeholder';
+  role: 'admin' | 'manager' | 'engineer' | 'accountant' | 'viewer';
   companyId?: string;
   companyName?: string;
   accessiblePages?: string[];
@@ -770,6 +804,9 @@ export interface SavedDocument {
 export interface Project {
   id: string;
   name: string;
+  slug: string;
+  companyId: string;
+  institutionId: string;
   code?: string;
   manager?: string;
   sponsor?: string;

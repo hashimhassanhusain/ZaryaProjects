@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getBreadcrumbs, pages } from '../data';
 import { stripNumericPrefix, cn } from '../lib/utils';
+import { useProject } from '../context/ProjectContext';
 
 interface BreadcrumbsProps {
   currentPageId: string;
@@ -59,6 +60,7 @@ const iconMap: Record<string, any> = {
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
   const { t, th, isRtl } = useLanguage();
   const { toggleFavorite, isFavorite } = useUI();
+  const { getPath } = useProject();
   const crumbs = getBreadcrumbs(currentPageId);
   const currentPage = pages.find(p => p.id === currentPageId);
   const IconComponent = currentPage?.icon ? iconMap[currentPage.icon] : null;
@@ -74,7 +76,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
             <React.Fragment key={crumb.id}>
               {index > 0 && <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 mx-1", isRtl && "rotate-180")} />}
               <Link
-                to={`/page/${crumb.id}`}
+                to={getPath(crumb.domain || 'gov', crumb.id)}
                 className="hover:text-slate-600 transition-colors font-medium"
               >
                 {stripNumericPrefix(t(crumb.id) || crumb.title)}

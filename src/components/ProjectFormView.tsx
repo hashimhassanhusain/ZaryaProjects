@@ -1,23 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
-import { Project } from '../types';
-import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield, X } from 'lucide-react';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs } from 'firebase/firestore';
+import { Project, Institution, Company } from '../types';
+import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield, X, Landmark } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useLanguage } from '../context/LanguageContext';
-import { cn } from '../lib/utils';
+import { cn, toSlug } from '../lib/utils';
 
 export const ProjectFormView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setSelectedProject } = useProject();
   const { t, language, isRtl } = useLanguage();
-  const [loading, setLoading] = useState(!!id && id !== 'new');
+  
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
   const [formData, setFormData] = useState<Partial<Project>>({
     name: '',
     code: '',
@@ -30,36 +34,53 @@ export const ProjectFormView: React.FC = () => {
     location: '',
     description: '',
     adminPin: '1234',
+    institutionId: '',
+    companyId: '',
   });
 
   const isNew = !id || id === 'new';
 
   useEffect(() => {
     const fetchData = async () => {
-      if (id && id !== 'new') {
-        try {
+      try {
+        const [instSnap, compSnap] = await Promise.all([
+          getDocs(collection(db, 'institutions')),
+          getDocs(collection(db, 'companies'))
+        ]);
+        
+        setInstitutions(instSnap.docs.map(d => ({ id: d.id, ...d.data() } as Institution)));
+        setCompanies(compSnap.docs.map(d => ({ id: d.id, ...d.data() } as Company)));
+
+        if (id && id !== 'new') {
           const projectSnap = await getDoc(doc(db, 'projects', id));
           if (projectSnap.exists()) {
             setFormData(projectSnap.data() as Project);
           }
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `projects/${id}`);
-        } finally {
-          setLoading(false);
         }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, `projects/${id}`);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [id]);
 
+  const filteredCompanies = useMemo(() => {
+    if (!formData.institutionId) return [];
+    return companies.filter(c => c.institutionId === formData.institutionId);
+  }, [companies, formData.institutionId]);
+
   const handleSave = async () => {
-    if (!formData.name || !formData.code) {
-      toast.error(t('project_name_code_required'));
+    if (!formData.name || !formData.code || !formData.institutionId || !formData.companyId) {
+      toast.error('All fields including Institution and Company are required');
       return;
     }
 
     setSaving(true);
     try {
+      const slug = formData.slug || toSlug(formData.name);
+      
       if (isNew) {
         // 1. Initialize Google Drive Folders
         const driveRes = await fetch('/api/projects/init-drive', {
@@ -81,6 +102,7 @@ export const ProjectFormView: React.FC = () => {
         // 2. Save to Firestore
         const projectData = {
           ...formData,
+          slug,
           driveFolderId: rootFolderId,
           createdAt: new Date().toISOString(),
           // Pre-populate charter data with common fields
@@ -101,7 +123,9 @@ export const ProjectFormView: React.FC = () => {
         setSelectedProject(newProject);
         
         toast.success(t('project_created_success'));
-        navigate(`/project/${docRef.id}`);
+        const company = companies.find(c => c.id === formData.companyId);
+        const companySlug = company?.slug || toSlug(company?.name || 'unknown');
+        navigate(`/${companySlug}/${slug}/governance/gov`);
       } else {
         // Update existing project
         const projectRef = doc(db, 'projects', id!);
@@ -119,6 +143,7 @@ export const ProjectFormView: React.FC = () => {
 
         const finalData = {
           ...formData,
+          slug,
           charterData: updatedCharterData
         };
 
@@ -171,6 +196,39 @@ export const ProjectFormView: React.FC = () => {
           <section className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm space-y-8">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">{t('identity_identification')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Landmark className="w-3 h-3" /> Institution / Group
+                </label>
+                <select 
+                  value={formData.institutionId}
+                  onChange={(e) => setFormData({...formData, institutionId: e.target.value, companyId: ''})}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                >
+                  <option value="">Select Institution...</option>
+                  {institutions.map(inst => (
+                    <option key={inst.id} value={inst.id}>{inst.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Building className="w-3 h-3" /> Branch / Subsidiary
+                </label>
+                <select 
+                  value={formData.companyId}
+                  disabled={!formData.institutionId}
+                  onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium disabled:opacity-50"
+                >
+                  <option value="">Select Branch...</option>
+                  {filteredCompanies.map(comp => (
+                    <option key={comp.id} value={comp.id}>{comp.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <Globe className="w-3 h-3" /> {t('project_name')}

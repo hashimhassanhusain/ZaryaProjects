@@ -54,11 +54,21 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { StandardProcessPage } from './StandardProcessPage';
+import { IssueLogView } from './documents/IssueLogView';
+import { RiskRegisterView } from './documents/RiskRegisterView';
+import { ProjectFilesView } from './documents/ProjectFilesView';
 
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Custom View Mapping
+  const isIssueLogPage = page.id === '4.5.2';
+  const isRiskRegisterPage = page.id === '2.7.2' || page.id === '4.7.1';
+  const isChangeLogPage = page.id === '4.2.1';
+  const isArchivePage = page.id.endsWith('.2') && ['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7'].some(prefix => page.id.startsWith(prefix));
+
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
   const isMeetingsPage = page.id === '3.6.4';
@@ -4488,6 +4498,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 onCancel={() => setMeetingViewMode('archive')}
               />
             )
+          ) : isIssueLogPage ? (
+            <IssueLogView />
+          ) : isRiskRegisterPage ? (
+            <RiskRegisterView />
+          ) : isArchivePage ? (
+            <ProjectFilesView />
           ) : isVarianceAnalysisPage ? (
             <VarianceAnalysisView project={selectedProject!} />
           ) : isEditing ? (

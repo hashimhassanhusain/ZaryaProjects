@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Settings, 
@@ -12,35 +12,34 @@ import {
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
+import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
+import { toSlug } from '../lib/utils';
 import { HelpTooltip } from './HelpTooltip';
-import { FOCUS_AREAS, PERFORMANCE_DOMAINS, DomainId } from '../constants/navigation';
+import { FOCUS_AREAS, PERFORMANCE_DOMAINS, DomainId, HUB_IDS } from '../constants/navigation';
 import { pages } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
-const HUB_IDS: Record<string, string> = {
-  'governance': 'gov',
-  'schedule': 'sched',
-  'finance': 'fin',
-  'stakeholders': 'stak',
-  'resources': 'res',
-  'risk': 'risk',
-  'delivery': 'scope'
-};
-
 export const Sidebar: React.FC = () => {
   const { t, th } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
+  const { companySlug, projectSlug, domainSlug, pageSlug } = useParams();
   const { userProfile, isAdmin } = useAuth();
   const { isSidebarOpen, setSelectedFocusArea } = useUI();
+  const { selectedCompany, selectedProject } = useProject();
   const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({
     'Planning': true,
     'Executing': true,
     'Monitoring & Controlling': true
   });
+
+  const getPath = (dSlug: string, pSlug: string) => {
+    if (!selectedCompany || !selectedProject) return `/page/${pSlug}`;
+    return `/${toSlug(selectedCompany.name)}/${toSlug(selectedProject.name)}/${dSlug}/${pSlug}`;
+  };
 
   const toggleArea = (id: string) => {
     setExpandedAreas(prev => ({ ...prev, [id]: !prev[id] }));
@@ -72,10 +71,10 @@ export const Sidebar: React.FC = () => {
         {/* LOGO SECTION */}
         <div className="p-6 shrink-0 flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <span className="text-white font-black text-xl italic">Z</span>
+            <span className="text-white font-black text-xl italic">P</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-slate-900 font-black text-lg tracking-tighter leading-none italic uppercase">ZARYA</span>
+            <span className="text-slate-900 font-black text-lg tracking-tighter leading-none italic uppercase">PMISPro</span>
             <span className="text-[9px] font-bold text-blue-600 tracking-[0.2em] leading-none uppercase mt-1">Enterprise PMO</span>
           </div>
         </div>
@@ -164,8 +163,8 @@ export const Sidebar: React.FC = () => {
                             if (domainPagesInArea.length === 0) return null;
 
                             const hubId = HUB_IDS[domain.id];
-                            const path = `/page/${hubId}`;
-                            const isHubActive = currentPath === path;
+                            const path = getPath(domain.id, hubId);
+                            const isHubActive = domainSlug === domain.id || pageSlug === hubId;
                             const DomainIcon = domain.icon;
 
                             return (
@@ -191,8 +190,8 @@ export const Sidebar: React.FC = () => {
                                 {/* Child Terminal Pages indented further */}
                                 <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-0.5">
                                   {domainPagesInArea.map(terminalPage => {
-                                    const terminalPath = `/page/${terminalPage.id}`;
-                                    const isTerminalActive = currentPath === terminalPath;
+                                    const terminalPath = getPath(domain.id, terminalPage.id);
+                                    const isTerminalActive = pageSlug === terminalPage.id || toSlug(terminalPage.title) === pageSlug;
                                     
                                     if (!canAccess(terminalPage.id)) return null;
 

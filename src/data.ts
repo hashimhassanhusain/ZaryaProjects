@@ -1,4 +1,29 @@
-import { Page, User, Project, Workspace, Task, Meeting, BOQItem, PurchaseOrder } from './types';
+import { Page, User, Project, Workspace, Task, Meeting, BOQItem, PurchaseOrder, Institution, Company } from './types';
+
+export const initialInstitutions: Institution[] = [
+  {
+    id: 'inst1',
+    name: 'Zarya International Group',
+    type: 'contractor',
+    country: 'Iraq',
+    createdAt: new Date().toISOString(),
+    createdBy: 'system'
+  }
+];
+
+export const initialCompanies: Company[] = [
+  {
+    id: 'comp1',
+    institutionId: 'inst1',
+    name: 'Zarya Civil Engineering Ltd',
+    slug: 'zarya',
+    registrationNumber: 'IQ-12345',
+    address: 'Baghdad, Iraq',
+    status: 'Active',
+    createdAt: new Date().toISOString(),
+    createdBy: 'system'
+  }
+];
 
 export const currentUser: User = {
   uid: 'u1',
@@ -1036,6 +1061,20 @@ export const pages: Page[] = [
       inputs: ['resource-management-plan', 'governance-management-plan', 'org-policies', 'governance-framework'],
       tools: ['KPI Definition', 'Resource Tracking Systems', 'Performance Framework Design'],
       outputs: ['resource-control-plan', 'resource-tracking-structure', 'resource-performance-metrics']
+    }
+  },
+  { 
+    id: '3.3.4', 
+    title: 'Vendor Master Register', 
+    type: 'terminal', 
+    domain: 'resources', 
+    focusArea: 'Executing', 
+    icon: 'Truck', 
+    summary: 'Manage project-specific vendors, suppliers, and service providers.',
+    details: {
+      inputs: ['resource-management-plan', 'procurement-strategy', 'vendor-contracts'],
+      tools: ['Vendor Management System', 'Rating & Assessment'],
+      outputs: ['vendor-master-register', 'approved-vendor-list']
     }
   },
   { 

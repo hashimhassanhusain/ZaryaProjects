@@ -97,6 +97,7 @@ import { useAuth } from '../context/UserContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useUI } from '../context/UIContext';
+import { HUB_IDS } from '../constants/navigation';
 
 interface DomainDashboardProps {
   page: Page;
@@ -124,7 +125,7 @@ import { Ribbon, RibbonGroup } from './Ribbon';
 
 export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
   const { t, th, isRtl } = useLanguage();
-  const { selectedProject } = useProject();
+  const { selectedProject, getPath } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
@@ -150,7 +151,18 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       navigate('/admin/users');
       return;
     }
-    setActiveTab(id);
+    
+    if (id === 'overview') {
+      navigate(getPath(domainKey, HUB_IDS[domainKey]));
+      return;
+    }
+
+    const child = filteredChildren.find(c => c.id === id);
+    if (child) {
+      navigate(getPath(child.domain || domainKey, child.id));
+    } else {
+      setActiveTab(id);
+    }
   };
 
   // Focus area colors for indicators

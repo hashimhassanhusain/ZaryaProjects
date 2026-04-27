@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, Building2, Mail, Phone, Globe, MapPin, MoreVertical, Edit2, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Trash2, Building2, Mail, Phone, Globe, MapPin, MoreVertical, Edit2, Loader2, ArrowLeft, LogIn } from 'lucide-react';
 import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { Company } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { toSlug, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
+import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/UserContext';
 
 export const CompaniesView: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { companies, projects, setSelectedCompany } = useProject();
+  const { isAdmin } = useAuth();
+  const [isLoading, setIsLoading] = useState(false); // Context handles loading usually
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -27,20 +31,6 @@ export const CompaniesView: React.FC = () => {
   });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    const q = query(collection(db, 'companies'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
-      setCompanies(list);
-      setIsLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'companies');
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredCompanies.length) {
@@ -58,21 +48,21 @@ export const CompaniesView: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
+    if (selectedIds.length === 0 || !isAdmin) return;
     
-    toast((t) => (
+    toast((toastItem) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} selected companies?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastItem.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastItem.id);
               try {
                 const deletePromises = selectedIds.map(id => deleteDoc(doc(db, 'companies', id)));
                 await Promise.all(deletePromises);
@@ -92,24 +82,40 @@ export const CompaniesView: React.FC = () => {
   };
 
   const handleEdit = (company: Company) => {
+    if (!isAdmin) return;
     setEditingCompany(company);
     setFormData(company);
     setIsAdding(true);
   };
 
+  const handleEnter = (company: Company, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCompany(company);
+    // Find first project for this company if any
+    // Note: 'projects' from context might be already filtered by selectedCompany!
+    // So we should find from allProjects or just tell the user to pick a project.
+    // Navigating to / will show projects for the selected company now.
+    navigate('/');
+    toast.success(`Switched to ${company.name}`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name || !isAdmin) return;
 
     try {
+      const slug = formData.slug || toSlug(formData.name);
+      
       if (editingCompany) {
         await updateDoc(doc(db, 'companies', editingCompany.id), {
           ...formData,
+          slug,
           updatedAt: new Date().toISOString()
         });
       } else {
         await addDoc(collection(db, 'companies'), {
           ...formData,
+          slug,
           createdAt: new Date().toISOString()
         });
       }
@@ -126,16 +132,8 @@ export const CompaniesView: React.FC = () => {
     c.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4 md:px-8 py-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
@@ -149,16 +147,18 @@ export const CompaniesView: React.FC = () => {
             <p className="text-slate-500 text-sm">Manage partners, suppliers, and stakeholders.</p>
           </div>
         </div>
-        <button 
-          onClick={() => {
-            setEditingCompany(null);
-            setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
-            setIsAdding(true);
-          }}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> {t('add_company')}
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => {
+              setEditingCompany(null);
+              setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
+              setIsAdding(true);
+            }}
+            className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> {t('add_company')}
+          </button>
+        )}
       </header>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -205,6 +205,7 @@ export const CompaniesView: React.FC = () => {
                 <th className="px-6 py-4">{t('status')}</th>
                 <th className="px-6 py-4">Contact Info</th>
                 <th className="px-6 py-4">{t('address')}</th>
+                <th className="px-6 py-4 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -212,7 +213,10 @@ export const CompaniesView: React.FC = () => {
                 <tr 
                   key={company.id} 
                   onClick={() => handleEdit(company)}
-                  className="hover:bg-slate-50 transition-colors group divide-x divide-slate-100 cursor-pointer"
+                  className={cn(
+                    "hover:bg-slate-50 transition-colors group divide-x divide-slate-100",
+                    isAdmin ? "cursor-pointer" : "cursor-default"
+                  )}
                 >
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                     <input 
@@ -220,6 +224,7 @@ export const CompaniesView: React.FC = () => {
                       checked={selectedIds.includes(company.id)}
                       onChange={(e) => toggleSelect(company.id, e as any)}
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      disabled={!isAdmin}
                     />
                   </td>
                   <td className="px-6 py-4">
@@ -279,6 +284,21 @@ export const CompaniesView: React.FC = () => {
                     <div className="text-xs text-slate-500 flex items-start gap-1 max-w-[200px]">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                       <span className="line-clamp-2">{company.address || 'No address provided'}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={(e) => handleEnter(company, e)}
+                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
+                        title="Enter/Switch"
+                      >
+                        <LogIn className="w-4 h-4" />
+                        <span className="hidden sm:inline">Enter</span>
+                      </button>
+                      <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 opacity-0 group-hover:opacity-100">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
