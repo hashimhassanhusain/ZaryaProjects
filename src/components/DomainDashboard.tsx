@@ -226,7 +226,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             icon: ICON_MAP[child.icon || 'FileText'] || FileText,
             description: th(child.id + '_summary') || child.summary,
             focusArea: area,
-            size: 'small'
+            size: highUsageIds.includes(child.id) ? 'large' : 'small'
           };
         })
       });
@@ -579,120 +579,116 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             className="w-full h-full"
           >
             {activeTab === 'overview' ? (
-              <div className="p-6 space-y-6">
-                {/* Slim Domain Header */}
-                <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-                         <Icon className="w-6 h-6" strokeWidth={1.5} />
+              <div className="p-8 space-y-12">
+                {/* Domain Header Card */}
+                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
+                   <div className="relative z-10 flex items-center gap-8">
+                      <div className="w-20 h-20 rounded-[2.5rem] bg-slate-900 flex items-center justify-center text-white shadow-2xl shadow-slate-200">
+                         <Icon className="w-10 h-10" strokeWidth={1} />
                       </div>
-                      <div className="flex flex-col">
-                         <div className="flex items-center gap-2">
-                           <h1 className="text-lg font-bold text-slate-900 uppercase tracking-tight">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                      <div className="space-y-1">
+                         <div className="flex items-center gap-3">
+                           <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
-                               "p-1.5 rounded-lg transition-all",
-                               isFavorite ? "text-amber-500" : "text-slate-300 hover:text-slate-400"
+                               "p-2 rounded-xl transition-all shadow-sm",
+                               isFavorite ? "bg-amber-50 text-amber-500" : "bg-white border border-slate-200 text-slate-300 hover:text-slate-400"
                              )}
                            >
-                             <Star className={cn("w-4 h-4", isFavorite && "fill-amber-500")} />
+                             <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
                            </button>
                          </div>
-                         <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                           <span>{t('project_context')}: {selectedProject?.name}</span>
-                           <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                           <span>{t('active_processes')}: {filteredChildren.length}</span>
-                         </div>
+                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
+                           {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
+                         </p>
                       </div>
                    </div>
-                   <div className="flex items-center gap-3">
-                      <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-blue-100">
+                   <div className="relative z-10 flex items-center gap-3">
+                      <div className="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-200">
                          {t('enterprise_standard')}
                       </div>
                    </div>
                 </div>
 
-                {/* Single Row Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-slate-400 overflow-hidden">
-                           <Activity className="w-3.5 h-3.5 shrink-0" />
-                           <span className="text-[9px] font-bold uppercase tracking-widest truncate">{t('status')}</span>
-                        </div>
-                        <div className="text-xl font-bold text-slate-900">{t('healthy')}</div>
-                        <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden mt-2">
-                           <div className="h-full bg-emerald-500 w-[94%]" />
-                        </div>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400">
+                         <Activity className="w-4 h-4" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('status')}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">{t('healthy')}</div>
+                      <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                         <div className="h-full bg-emerald-500 w-[94%]" />
                       </div>
                    </div>
                    
-                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-slate-400 overflow-hidden">
-                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                           <span className="text-[9px] font-bold uppercase tracking-widest truncate">{t('compliance')}</span>
-                        </div>
-                        <div className="text-xl font-bold text-slate-900">98.2%</div>
-                        <div className="text-[9px] font-bold text-emerald-600 uppercase mt-1">↑ 2.1% {t('this_month')}</div>
+                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400">
+                         <CheckCircle2 className="w-4 h-4" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('compliance')}</span>
                       </div>
+                      <div className="text-2xl font-bold text-slate-900">98.2%</div>
+                      <div className="text-[10px] font-bold text-emerald-600 uppercase">↑ 2.1% {t('this_month')}</div>
                    </div>
 
-                   <div className="md:col-span-2 bg-slate-900 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl -mr-8 -mt-8" />
+                   <div className="col-span-2 bg-slate-900 p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
                       <div className="relative z-10 flex items-center justify-between h-full">
-                         <div className="space-y-1">
-                            <h4 className="text-white/40 text-[9px] font-bold uppercase tracking-widest">{t('domain_kpi_index')}</h4>
-                            <div className="text-2xl font-bold text-white tracking-tighter">A+ <span className="text-[10px] font-normal opacity-50 ml-1 not-italic">{t('standard_compliance')}</span></div>
+                         <div className="space-y-2">
+                            <h4 className="text-white text-xs font-bold uppercase tracking-widest opacity-40">{t('domain_kpi_index')}</h4>
+                            <div className="text-4xl font-bold text-white tracking-tighter italic">A+ <span className="text-xs font-normal opacity-60 not-italic ml-2">{t('standard_compliance')}</span></div>
                          </div>
-                         <div className="w-28 h-12">
+                         <div className="w-32 h-16">
                             {getChartData()}
                          </div>
                       </div>
                    </div>
                 </div>
 
-                {/* Process Lifecycle Organized in Grid */}
-                <div className="space-y-4">
-                   <div className="flex items-center justify-between px-1">
-                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em]">{t('process_lifecycle')}</h3>
-                      <div className="flex gap-3">
+                {/* Focus Areas Visualization */}
+                <div className="space-y-6">
+                   <div className="flex items-center justify-between px-2">
+                      <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
+                      <div className="flex gap-4">
                          {areas.map(area => (
-                           <div key={area} className="flex items-center gap-1.5">
-                              <div className={cn("w-1.5 h-1.5 rounded-full", focusAreaColors[area])} />
-                              <span className="text-[7px] font-bold text-slate-500 uppercase tracking-tighter">{t(area)}</span>
+                           <div key={area} className="flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", focusAreaColors[area])} />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">{t(area)}</span>
                            </div>
                          ))}
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                       {areas.map(area => {
                         const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
-                        if (areaChildren.length === 0) return null;
                         return (
-                          <div key={area} className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden group hover:border-blue-300 transition-all h-full">
-                             <div className={cn("px-4 py-2 flex items-center justify-between border-b border-slate-50", focusAreaColors[area].replace('bg-', 'bg-').replace('400', '50/30'))}>
-                                <div className="flex items-center gap-2">
-                                  <div className={cn("w-2 h-2 rounded-full", focusAreaColors[area])} />
-                                  <span className="text-[9px] font-bold text-slate-900 uppercase tracking-widest">{t(area)}</span>
-                                </div>
-                                <span className="text-[9px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
+                          <div key={area} className="bg-slate-100/50 rounded-[2.5rem] p-6 space-y-4 border border-slate-200/50">
+                             <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t(area)}</span>
+                                <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold text-white", focusAreaColors[area])}>
                                    {areaChildren.length}
                                 </span>
                              </div>
-                             <div className="p-3 grid grid-cols-1 gap-1.5 flex-1 content-start">
+                             <div className="space-y-2">
                                 {areaChildren.map(child => (
                                   <button 
                                     key={child.id}
                                     onClick={() => handleTabChange(child.id)}
-                                    className="w-full px-3 py-2.5 bg-slate-50/50 hover:bg-blue-50 border border-transparent hover:border-blue-100 rounded-xl text-[10px] font-semibold text-slate-600 text-left transition-all flex items-center justify-between"
+                                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-700 text-left hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between group"
                                   >
-                                     <span className="truncate pr-2 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
-                                     <ChevronRight className="w-3 h-3 text-slate-300 transition-colors" />
+                                     <span className="truncate pr-4 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
+                                     <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors" />
                                   </button>
                                 ))}
+                                {areaChildren.length === 0 && (
+                                  <div className="p-4 border border-dashed border-slate-200 rounded-2xl text-[9px] font-bold text-slate-300 text-center uppercase">
+                                     {t('no_processes')}
+                                  </div>
+                                )}
                              </div>
                           </div>
                         );

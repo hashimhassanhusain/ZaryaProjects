@@ -108,30 +108,23 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
-      <div className="bg-white border-b border-slate-100 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-               <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
-               <ChevronRight className="w-3 h-3" />
-               <span className="text-blue-600">{t(page.focusArea)}</span>
-            </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              {parentPage && (
-                <>
-                  <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
-                </>
-              )}
-              {stripNumericPrefix(t(page.id) || page.title)}
-            </h1>
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
+      <div className="bg-white border-b border-slate-100 px-8 py-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
+             <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
+             <ChevronRight className="w-3 h-3" />
+             <span className="text-slate-900">{t(page.focusArea)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest">
-              Live Context
-            </div>
-          </div>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
+            {parentPage && (
+              <>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
+              </>
+            )}
+            {stripNumericPrefix(t(page.id) || page.title)}
+          </h1>
         </div>
       </div>
 

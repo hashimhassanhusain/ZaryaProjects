@@ -138,21 +138,12 @@ export const Header: React.FC = () => {
         >
            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg text-lg italic">P</div>
            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                 <span className="text-[11px] font-black uppercase tracking-wider text-white">PMISPro</span>
-                 <div className="w-1 h-3 bg-slate-700 rounded-full rotate-12" />
-                 {selectedCompany && (
-                   <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest animate-in fade-in slide-in-from-left-2 duration-500">
-                     {selectedCompany.name}
-                   </span>
-                 )}
-              </div>
-              {selectedProject && (
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-tight">
-                  <Package className="w-3 h-3" />
-                  <span>{selectedProject.name}</span>
-                </div>
-              )}
+             <span className="text-sm font-bold uppercase tracking-widest hidden lg:block">PMISPro</span>
+             {selectedCompany && (
+               <span className="text-[10px] font-medium text-blue-400 uppercase tracking-[0.2em] hidden xl:block animate-in fade-in slide-in-from-left-2 duration-500">
+                 {selectedCompany.name}
+               </span>
+             )}
            </div>
         </div>
 
