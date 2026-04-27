@@ -53,7 +53,15 @@ export function stripNumericPrefix(title: string | undefined | null): string {
     .replace(/[_\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
     .trim();
   
-  return stripped || title;
+  // If the title IS a numeric prefix or it's empty after stripping, return an empty string
+  // to signal that we should fall back to another source (like currentPage.title)
+  if (!stripped || stripped === title || /^[\d\.\s-]+$/.test(stripped)) {
+    // If it's just numbers, it's not a real title
+    if (/^[\d\.\s-]+$/.test(title)) return '';
+    return stripped || '';
+  }
+  
+  return stripped;
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {

@@ -74,26 +74,7 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
-      <div className="bg-white border-b border-slate-100 px-8 py-6">
-        <div className="max-w-7xl mx-auto">
-          <div className={cn("flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1", isRtl && "flex-row-reverse")}>
-             <span>{stripNumericPrefix(t(page.domain || 'stakeholders'))}</span>
-             <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
-             <span className="text-slate-900">{t(page.focusArea)}</span>
-          </div>
-          <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
-            {parentPage && (
-              <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
-              </>
-            )}
-            {stripNumericPrefix(t(page.id) || page.title)}
-          </h1>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}

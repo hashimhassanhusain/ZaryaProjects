@@ -279,7 +279,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       { title: 'High-Level Risks:', content: charter.highLevelRisks }
     ];
 
-    let y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
+    let y = (doc as any).lastAutoTable.finalY + 10;
     pdfSections.forEach(s => {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
@@ -310,7 +310,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       headStyles: { fillColor: [48, 48, 48] }
     });
 
-    y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
+    y = (doc as any).lastAutoTable.finalY + 10;
     autoTable(doc, {
       startY: y,
       head: [['Summary Milestones', 'Due Date']],
@@ -343,7 +343,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       headStyles: { fillColor: [48, 48, 48] }
     });
 
-    y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
+    y = (doc as any).lastAutoTable.finalY + 10;
     const p3Sections = [
       { title: 'Project Manager Authority Level:', content: charter.pmAuthority },
       { title: 'Staffing Decisions:', content: charter.staffingDecisions },

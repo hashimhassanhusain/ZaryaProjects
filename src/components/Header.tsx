@@ -125,7 +125,7 @@ export const Header: React.FC = () => {
         {/* Brand & Company Context */}
         <div 
           className={cn(
-            "flex items-center gap-3 pr-6 border-r border-slate-700 shrink-0 select-none",
+            "flex items-center gap-4 pr-6 border-r border-slate-700 shrink-0 select-none",
             companies.length > 1 && "cursor-pointer hover:bg-slate-800 transition-all rounded-r-xl"
           )}
           onClick={() => {
@@ -136,14 +136,13 @@ export const Header: React.FC = () => {
             }
           }}
         >
-           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg text-lg italic">P</div>
-           <div className="flex flex-col">
-             <span className="text-sm font-bold uppercase tracking-widest hidden lg:block">PMISPro</span>
-             {selectedCompany && (
-               <span className="text-[10px] font-medium text-blue-400 uppercase tracking-[0.2em] hidden xl:block animate-in fade-in slide-in-from-left-2 duration-500">
-                 {selectedCompany.name}
-               </span>
-             )}
+           <div className="flex items-center gap-3">
+             <span className="text-lg font-black text-white tracking-tight leading-none">
+               {selectedCompany ? selectedCompany.name : 'ZARYA'}
+             </span>
+             <div className="bg-blue-600 px-1.5 py-1 rounded flex items-center justify-center font-black text-[10px] text-white leading-none shadow-lg shadow-blue-600/20">
+               PMIS
+             </div>
            </div>
         </div>
 

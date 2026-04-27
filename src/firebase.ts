@@ -8,14 +8,13 @@ import firebaseConfig from '../firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 
 // Improved Firestore initialization
-// We use (default) as a fallback, but the provided database ID from config is preferred.
+// In this sandboxed environment, we MUST force long polling to ensure connection stability.
 const dbId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
 
 console.log('Initializing Firestore with Database ID:', dbId);
 
 export const db = initializeFirestore(app, {
-  // Use auto-detection instead of forced long polling which can sometimes backfire
-  experimentalAutoDetectLongPolling: true,
+  experimentalForceLongPolling: true,
 }, dbId);
 
 // Explicitly pass the bucket URL to avoid initialization issues
@@ -35,18 +34,24 @@ export const signInWithGoogle = async () => {
 
 // Connection Test
 async function testConnection() {
-  console.log('Testing Firestore connection...');
+  console.log('Testing Firestore connection for Database ID:', dbId);
   try {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('YOUR_API_KEY')) {
+      console.error("CRITICAL: Firebase API Key is missing or placeholders detected.");
+      return;
+    }
+    
     // Try to get a doc from server
     const testDocRef = firestoreDoc(db, 'test_connection', 'status');
+    // Using getDocFromServer forces a network trip to verify transport
     const snapshot = await getDocFromServer(testDocRef);
-    console.log('Firestore connection successful. Snapshot exists:', snapshot.exists());
+    console.log('✅ Firestore connection successful. Snapshot exists:', snapshot.exists());
   } catch (error: any) {
-    console.error("Firestore initialization or connection failed:", error);
+    console.error("❌ Firestore initialization or connection failed:", error);
     if (error?.message?.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline.");
+      console.error("TRANSPORT ERROR: The client is offline or the backend is unreachable. Ensure experimentalForceLongPolling is enabled.");
     } else if (error?.code === 'permission-denied') {
-       console.log("Firestore connection reached, but permission denied (this is expected if not signed in).");
+       console.log("✅ Transport level successful, but permission denied (expected if checking restricted paths without auth).");
     } else {
        console.error("Unknown Firestore error during connection test:", error.message || error);
     }

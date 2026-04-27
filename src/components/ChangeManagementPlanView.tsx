@@ -220,7 +220,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50, fillColor: [245, 245, 245] } }
     });
 
-    y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
+    y = (doc as any).lastAutoTable.finalY + 10;
     doc.setFont('helvetica', 'bold');
     doc.text('Change Control Board:', margin, y);
     y += 5;
@@ -234,7 +234,7 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
       headStyles: { fillColor: [48, 48, 48] }
     });
 
-    y = ((doc as any).lastAutoTable?.finalY ?? 150) + 10;
+    y = (doc as any).lastAutoTable.finalY + 10;
     doc.setFont('helvetica', 'bold');
     doc.text('Change Control Process:', margin, y);
     y += 5;

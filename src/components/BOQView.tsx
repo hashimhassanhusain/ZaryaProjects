@@ -383,15 +383,8 @@ export const BOQView: React.FC = () => {
         }
       });
 
-      let extractedItems: any[] = [];
-      try {
-        extractedItems = JSON.parse(response.text || "[]");
-      } catch {
-        toast.error("Failed to parse AI response. Please try again.");
-        setIsAnalyzing(false);
-        return;
-      }
-
+      const extractedItems = JSON.parse(response.text || "[]");
+      
       if (extractedItems.length === 0) {
         toast.error("No items could be extracted from the PDF. Please ensure it's a valid BOQ document.");
         setIsAnalyzing(false);

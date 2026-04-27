@@ -315,7 +315,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY1 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY1 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Standard Procurement Documents', margin, finalY1 + 10);
     doc.rect(margin, finalY1 + 15, pageWidth - 2 * margin, 30);
@@ -349,7 +349,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY2 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY2 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Procurement Assumptions and Constraints', margin, finalY2 + 10);
     doc.rect(margin, finalY2 + 15, pageWidth - 2 * margin, 40);
@@ -379,7 +379,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       }
     });
 
-    const finalY3 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY3 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Metrics', margin, finalY3 + 10);
     autoTable(doc, {

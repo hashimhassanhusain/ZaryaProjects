@@ -103,7 +103,6 @@ interface DomainDashboardProps {
   page: Page;
   childrenPages?: Page[];
   initialTab?: string;
-  showRibbon?: boolean;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -124,7 +123,7 @@ const ICON_MAP: Record<string, any> = {
 
 import { Ribbon, RibbonGroup } from './Ribbon';
 
-export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab, showRibbon = true }) => {
+export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
   const { t, th, isRtl } = useLanguage();
   const { selectedProject, getPath } = useProject();
   const { userProfile, isAdmin } = useAuth();
@@ -562,14 +561,12 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   return (
     <div className="w-full flex flex-col h-full bg-slate-50">
       {/* ── Office-Style Ribbon ── */}
-      {showRibbon && (
-        <Ribbon
-          groups={ribbonGroups}
-          activeTabId={activeTab}
-          onTabChange={handleTabChange}
-          focusAreaColors={focusAreaColors}
-        />
-      )}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={handleTabChange}
+        focusAreaColors={focusAreaColors}
+      />
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -583,38 +580,6 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           >
             {activeTab === 'overview' ? (
               <div className="p-8 space-y-12">
-                {/* Domain Header Card */}
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
-                   <div className="relative z-10 flex items-center gap-8">
-                      <div className="w-20 h-20 rounded-[2.5rem] bg-slate-900 flex items-center justify-center text-white shadow-2xl shadow-slate-200">
-                         <Icon className="w-10 h-10" strokeWidth={1} />
-                      </div>
-                      <div className="space-y-1">
-                         <div className="flex items-center gap-3">
-                           <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
-                           <button 
-                             onClick={toggleFavorite}
-                             className={cn(
-                               "p-2 rounded-xl transition-all shadow-sm",
-                               isFavorite ? "bg-amber-50 text-amber-500" : "bg-white border border-slate-200 text-slate-300 hover:text-slate-400"
-                             )}
-                           >
-                             <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
-                           </button>
-                         </div>
-                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
-                           {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
-                         </p>
-                      </div>
-                   </div>
-                   <div className="relative z-10 flex items-center gap-3">
-                      <div className="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-200">
-                         {t('enterprise_standard')}
-                      </div>
-                   </div>
-                </div>
-
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                    <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">

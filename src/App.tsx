@@ -168,16 +168,59 @@ const PageRenderer = () => {
     }
   }
 
-  // If it's a schedule page, always use ScheduleHubView or the direct view
-  const isSchedulePage = page.domain === 'schedule' || page.id === 'sched';
+  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
+  const isTasksPage = page.id === '3.6.3';
+  const isMeetingsPage = page.id === '3.6.4' || page.id === '3.5.2';
+  const isFilesPage = page.id === 'files';
+  const isFinancePage = page.domain === 'finance' || [
+    '1.4.1', '2.4.1', '2.4.2', '2.4.3', '2.4.4', '4.4.1', '4.4.2', '5.4.1', '4.2.2', '4.2.6', '5.2.1'
+  ].includes(page.id);
+  const isResourcesPage = page.domain === 'resources' || [
+    '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1', '3.6.1', '3.6.2', '4.6.1'
+  ].includes(page.id);
+  const isStakeholdersPage = page.domain === 'stakeholders' || [
+    '1.2.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
+  ].includes(page.id);
+  const isRiskPage = page.domain === 'risk' || [
+    '2.1.14', '2.7.5', '2.7.6', '4.7.1', '4.7.2', '5.7.1', '2.7.3', '4.7.3'
+  ].includes(page.id);
+  const isSchedulePage = page.domain === 'schedule' || [
+    '1.3.1', '2.3.1', '2.3.2', '2.3.3', '2.3.4', '2.3.5', '3.3.2', '3.5.1', '4.5.1', '4.5.2', '5.5.1', 'sched'
+  ].includes(page.id);
 
-  if (isSchedulePage) {
-    return (
-      <div className="w-full">
-        <ScheduleHubView page={page} />
-      </div>
-    );
-  }
+  // Hub Pages
+  const isBOQPage = page.id === '2.4.1';
+  const isWBSPage = page.id === '2.2.5';
+  const isWorkPackagesPage = page.id === '2.2.7';
+  const isEVMPage = page.id === '4.2.2';
+  const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
+  const isAssumptionLogPage = page.id === '2.1.5';
+  const isVendorRegisterPage = page.id === '3.3.4';
+  const isQualityMetricsPage = page.id === '2.1.4';
+  const isStakeholderRegisterPage = page.id === '1.2.1';
+  const isLessonsLearnedPage = page.id === '5.1.1';
+  const isMasterPlanPage = page.id === '2.1.2';
+  const isSourcingStrategyPage = page.id === '2.1.13';
+  const isExecutionQAPage = page.id === '3.1.3';
+  const isPerformanceMonitoringPage = page.id === '4.1.1';
+  const isCharterPage = page.id === '1.1.1';
+  const isProjectManagementPlanPage = page.id === '2.1.2';
+  const isGovernanceHubPage = [
+    'gov', '1.1.2', // Hub, Policies
+    '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
+    '2.1.5', '1.2.1', '5.1.1' // Logs
+  ].includes(page.id);
+  const isChangeRequestPage = page.id === '3.1.1';
+  const isChangeManagementHubPage = page.id === '3.4';
+  const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
+  const isFormalAcceptancePage = page.id === '4.1.2';
+
+  // Handle Specialized Hub pages (These have their own Ribbons/Layouts)
+  if (isFinancePage) return <FinanceHubView page={page} />;
+  if (isResourcesPage) return <ResourcesHubView page={page} />;
+  if (isStakeholdersPage) return <StakeholdersHubView page={page} />;
+  if (isSchedulePage) return <ScheduleHubView page={page} />;
+  if (isRiskPage) return <RiskOpportunityHub page={page} />;
 
   // Handle Hub pages (Focus Areas and Domains)
   if (page.type === 'hub') {
@@ -222,48 +265,6 @@ const PageRenderer = () => {
     );
   }
 
-  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
-  const isTasksPage = page.id === '3.6.3';
-  const isMeetingsPage = page.id === '3.6.4' || page.id === '3.5.2';
-  const isFilesPage = page.id === 'files';
-  const isBOQPage = page.id === '2.4.1';
-  const isWBSPage = page.id === '2.2.5';
-  const isWorkPackagesPage = page.id === '2.2.7';
-  const isEVMPage = page.id === '4.2.2';
-  const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
-  const isAssumptionLogPage = page.id === '2.1.5';
-  const isVendorRegisterPage = page.id === '3.3.4';
-  const isQualityMetricsPage = page.id === '2.1.4';
-  const isStakeholderRegisterPage = page.id === '1.2.1';
-  const isLessonsLearnedPage = page.id === '5.1.1';
-  const isMasterPlanPage = page.id === '2.1.2';
-  const isSourcingStrategyPage = page.id === '2.1.13';
-  const isExecutionQAPage = page.id === '3.1.3';
-  const isPerformanceMonitoringPage = page.id === '4.1.1';
-  const isRiskPage = page.domain === 'risk' || [
-    '2.1.14', '2.7.5', '2.7.6', '4.7.1', '4.7.2', '5.7.1', '2.7.3', '4.7.3'
-  ].includes(page.id);
-  const isResourcesPage = page.domain === 'resources' || [
-    '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1'
-  ].includes(page.id);
-  const isCharterPage = page.id === '1.1.1';
-  const isProjectManagementPlanPage = page.id === '2.1.2';
-  const isGovernanceHubPage = [
-    'gov', '1.1.2', // Hub, Policies
-    '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
-    '2.1.5', '1.2.1', '5.1.1' // Logs
-  ].includes(page.id);
-  const isChangeRequestPage = page.id === '3.1.1';
-  const isChangeManagementHubPage = page.id === '3.4';
-  const isStakeholdersPage = page.domain === 'stakeholders' || [
-    '1.2.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
-  ].includes(page.id);
-  const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
-  const isFinancePage = page.domain === 'finance' || [
-    '1.4.1', '2.4.1', '2.4.2', '2.4.3', '2.4.4', '4.4.1', '4.4.2', '5.4.1', '4.2.2', '4.2.6', '5.2.1'
-  ].includes(page.id);
-  const isFormalAcceptancePage = page.id === '4.1.2';
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -274,8 +275,8 @@ const PageRenderer = () => {
         transition={{ duration: 0.2 }}
         className="w-full"
       >
-        <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
-          <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
+        <div className={cn(isMasterPlanPage ? "px-6 pt-4" : "px-4 md:px-8 lg:px-12", "mb-2")}>
+          <div className="mt-6 mb-4 border-b border-slate-100 pb-4">
             <Breadcrumbs currentPageId={page.id} />
           </div>
         </div>
@@ -289,12 +290,6 @@ const PageRenderer = () => {
           />
         ) : isFilesPage ? (
           <FileExplorer projectId={selectedProject?.id || ''} />
-        ) : isFinancePage ? (
-          <FinanceHubView page={page} />
-        ) : isResourcesPage ? (
-          <ResourcesHubView page={page} />
-        ) : isStakeholdersPage ? (
-          <StakeholdersHubView page={page} />
         ) : isZaryaPage ? (
           <ZaryaPOTracker page={page} />
         ) : isBOQPage ? (
@@ -376,6 +371,7 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
+      <Sidebar />
       {/* Mobile Sidebar Overlay - Only on mobile */}
       <AnimatePresence>
         {isSidebarOpen && (

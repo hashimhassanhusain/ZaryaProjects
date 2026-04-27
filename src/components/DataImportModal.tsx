@@ -129,13 +129,8 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
         }
       });
 
-      let suggestedMapping: Record<string, string> = {};
-      try {
-        suggestedMapping = JSON.parse(response.text || '{}');
-      } catch {
-        suggestedMapping = {};
-      }
-
+      const suggestedMapping = JSON.parse(response.text || '{}');
+      
       // Clean up suggested mapping to only include valid headers
       const validHeaders = new Set(fileHeaders);
       const cleanedMapping: Record<string, string> = {};

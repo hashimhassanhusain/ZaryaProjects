@@ -66,7 +66,7 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
       headStyles: { fillColor: [13, 148, 136] }
     });
 
-    const finalY = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
 
     // Signatures
     doc.line(20, finalY + 40, 80, finalY + 40);
