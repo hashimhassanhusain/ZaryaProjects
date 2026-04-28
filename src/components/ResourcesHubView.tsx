@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Users2, 
   Grid, 
@@ -32,15 +32,6 @@ type TabType = 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 
 export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('utilization');
-
-  useEffect(() => {
-    if (page.id === '3.6.1') setActiveTab('acquisition');
-    else if (page.id === '2.6.5') setActiveTab('raci');
-    else if (page.id === '2.6.4') setActiveTab('rbs');
-    else if (page.id === '2.1.10') setActiveTab('plan');
-    else if (page.id === '3.3.6' || page.id === '3.3.2') setActiveTab('utilization');
-    else if (page.id === '5.3.1' || page.id === '5.6.1') setActiveTab('release');
-  }, [page.id]);
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
@@ -83,7 +74,26 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
+      <div className="bg-white border-b border-slate-100 px-8 py-6">
+        <div className="max-w-7xl mx-auto">
+          <div className={cn("flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1", isRtl && "flex-row-reverse")}>
+             <span>{stripNumericPrefix(t(page.domain || 'resources'))}</span>
+             <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
+             <span className="text-slate-900">{t(page.focusArea)}</span>
+          </div>
+          <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
+            {parentPage && (
+              <>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+              </>
+            )}
+            {stripNumericPrefix(t(page.id) || page.title)}
+          </h1>
+        </div>
+      </div>
+
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}

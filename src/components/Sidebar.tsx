@@ -1,46 +1,46 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Settings, 
   FolderOpen, 
   ChevronDown,
   ChevronRight,
-  ArrowRight,
   LogOut,
   User
 } from 'lucide-react';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
-import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
-import { toSlug } from '../lib/utils';
 import { HelpTooltip } from './HelpTooltip';
-import { FOCUS_AREAS, PERFORMANCE_DOMAINS, DomainId, HUB_IDS } from '../constants/navigation';
+import { FOCUS_AREAS, PERFORMANCE_DOMAINS, DomainId } from '../constants/navigation';
 import { pages } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
+const HUB_IDS: Record<string, string> = {
+  'governance': 'gov',
+  'schedule': 'sched',
+  'finance': 'fin',
+  'stakeholders': 'stak',
+  'resources': 'res',
+  'risk': 'risk',
+  'delivery': 'scope'
+};
+
 export const Sidebar: React.FC = () => {
   const { t, th } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { companySlug, projectSlug, domainSlug, pageSlug } = useParams();
   const { userProfile, isAdmin } = useAuth();
   const { isSidebarOpen, setSelectedFocusArea } = useUI();
-  const { selectedCompany, selectedProject } = useProject();
   const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({
     'Planning': true,
     'Executing': true,
     'Monitoring & Controlling': true
   });
-
-  const getPath = (dSlug: string, pSlug: string) => {
-    if (!selectedCompany || !selectedProject) return `/page/${pSlug}`;
-    return `/${toSlug(selectedCompany.name)}/${toSlug(selectedProject.name)}/${dSlug}/${pSlug}`;
-  };
 
   const toggleArea = (id: string) => {
     setExpandedAreas(prev => ({ ...prev, [id]: !prev[id] }));
@@ -65,14 +65,19 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className={cn(
-      'h-screen bg-[#f8fafc] border-e border-slate-200/60 flex flex-col shrink-0 transition-all duration-300 relative z-40',
+      'h-screen bg-[#f1f5f9] border-e border-slate-200 flex flex-col shrink-0 transition-all duration-300 relative z-40',
       isSidebarOpen ? 'w-72 overflow-y-auto custom-scrollbar' : 'w-0 overflow-hidden border-none'
     )}>
       <div className="flex flex-col h-full">
         {/* LOGO SECTION */}
-        <div className="p-8 shrink-0 flex items-center gap-3">
-          <div className="bg-slate-900 px-2 py-1 rounded flex items-center justify-center font-black text-[10px] text-white italic shadow-sm">PMIS</div>
-          <span className="text-slate-900 font-black text-lg tracking-tighter uppercase leading-none italic">PRO</span>
+        <div className="p-6 shrink-0 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <span className="text-white font-black text-xl italic">Z</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-900 font-black text-lg tracking-tighter leading-none italic uppercase">ZARYA</span>
+            <span className="text-[9px] font-bold text-blue-600 tracking-[0.2em] leading-none uppercase mt-1">Enterprise PMO</span>
+          </div>
         </div>
 
         {/* PROFILE PREVIEW */}
@@ -146,71 +151,74 @@ export const Sidebar: React.FC = () => {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="overflow-hidden pl-4 ml-3 border-l border-slate-200 space-y-1 mt-1"
+                          className="overflow-hidden pl-7 space-y-1"
                         >
                           {PERFORMANCE_DOMAINS.map(domain => {
-                            // Find all pages for this domain IN THIS focus area
+                            // Find any pages for this domain IN THIS focus area
                             const domainPagesInArea = pages.filter(p => 
                               p.domain === domain.id && 
-                              p.focusArea === area.id
+                              p.focusArea === area.id &&
+                              p.type === 'terminal'
                             );
 
                             if (domainPagesInArea.length === 0) return null;
 
-                            const hubPage = domainPagesInArea.find(p => p.type === 'hub') || domainPagesInArea[0];
-                            const terminalSubPages = domainPagesInArea.filter(p => p.type === 'terminal' && p.id !== hubPage.id);
-                            
-                            const hubPath = getPath(domain.id, hubPage.id);
-                            const isDomainActive = domainSlug === domain.id;
+                            const hubId = HUB_IDS[domain.id];
+                            const path = `/page/${hubId}`;
+                            const isHubActive = currentPath === path;
                             const DomainIcon = domain.icon;
 
                             return (
                               <div key={domain.id} className="space-y-0.5">
-                                <Link
-                                  to={hubPath}
-                                  onClick={() => setSelectedFocusArea(area.id)}
-                                  className={cn(
-                                    "flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all group relative",
-                                    isDomainActive 
-                                      ? "text-blue-600 bg-blue-50/50 font-bold" 
-                                      : "text-slate-500 hover:text-slate-900 hover:bg-white"
-                                  )}
-                                >
-                                  {/* Tree Connector */}
-                                  <div className="absolute left-[-17px] top-[10px] w-3 h-[1px] bg-slate-200" />
-                                  
-                                  <DomainIcon className={cn("w-3.5 h-3.5 shrink-0", isDomainActive ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
-                                  <span className="text-[10px] uppercase font-bold tracking-wider truncate">
-                                    {stripNumericPrefix(t(domain.id))}
-                                  </span>
-                                  {terminalSubPages.length > 0 && (
-                                    <ChevronRight className={cn("w-3 h-3 ml-auto opacity-40 transition-transform", isDomainActive && "rotate-90")} />
-                                  )}
-                                </Link>
+                                <HelpTooltip text={th(`${domain.id}_summary`)} position="right">
+                                  <Link
+                                    to={path}
+                                    onClick={() => setSelectedFocusArea(area.id)}
+                                    className={cn(
+                                      "flex items-center gap-3 px-4 py-2 rounded-xl transition-all group",
+                                      isHubActive 
+                                        ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-100" 
+                                        : "text-slate-400 hover:text-slate-900 border border-transparent"
+                                    )}
+                                  >
+                                    <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600" : "text-slate-300 group-hover:text-blue-500")} />
+                                    <span className={cn("text-[11px] font-bold tracking-tight uppercase opacity-80")}>
+                                      {stripNumericPrefix(t(domain.id))}
+                                    </span>
+                                  </Link>
+                                </HelpTooltip>
 
-                                {/* Terminal Sub-pages */}
-                                {isDomainActive && terminalSubPages.length > 0 && (
-                                  <div className="pl-4 ml-2 border-l border-slate-200/50 space-y-0.5 mt-0.5">
-                                    {terminalSubPages.map(subPage => {
-                                      const isSubActive = pageSlug === subPage.id;
-                                      return (
-                                        <Link
-                                          key={subPage.id}
-                                          to={getPath(domain.id, subPage.id)}
-                                          className={cn(
-                                            "flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-all relative",
-                                            isSubActive ? "text-blue-600 bg-blue-50" : "text-slate-400 hover:text-slate-700"
-                                          )}
-                                        >
-                                          {/* Sub Tree Connector */}
-                                          <div className="absolute left-[-13px] top-[9px] w-2.5 h-[1px] bg-slate-200/50" />
-                                          <ArrowRight className="w-2.5 h-2.5 opacity-30" />
-                                          <span className="truncate">{stripNumericPrefix(t(subPage.id) || subPage.title)}</span>
-                                        </Link>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                                {/* Child Terminal Pages indented further */}
+                                <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-0.5">
+                                  {domainPagesInArea.map(terminalPage => {
+                                    const terminalPath = `/page/${terminalPage.id}`;
+                                    const isTerminalActive = currentPath === terminalPath;
+                                    
+                                    if (!canAccess(terminalPage.id)) return null;
+
+                                    const translatedLabel = t(terminalPage.id);
+                                    const strippedLabel = stripNumericPrefix(translatedLabel);
+                                    const displayLabel = (strippedLabel && strippedLabel.trim() !== '') 
+                                      ? strippedLabel 
+                                      : stripNumericPrefix(terminalPage.title) || terminalPage.title;
+
+                                    return (
+                                      <Link
+                                        key={terminalPage.id}
+                                        to={terminalPath}
+                                        onClick={() => setSelectedFocusArea(area.id)}
+                                        className={cn(
+                                          "block px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
+                                          isTerminalActive
+                                            ? "bg-blue-50 text-blue-600 font-bold"
+                                            : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                                        )}
+                                      >
+                                        {displayLabel}
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             );
                           })}

@@ -32,7 +32,44 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
-  const [view, setView] = useState<'list' | 'form'>('list');
+  const [view, setView] = useState<'list' | 'form'>(page.details?.initialView === 'form' ? 'form' : 'list');
+
+  // New PO State
+  const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
+    id: '',
+    date: new Date().toISOString().split('T')[0],
+    supplier: '',
+    wbsId: '',
+    masterFormat: '',
+    activityId: '',
+    actualStartDate: '',
+    actualFinishDate: '',
+    inputCurrency: baseCurrency,
+    exchangeRateUsed: globalExchangeRate,
+    lineItems: [],
+    contractNumber: '',
+    contractDuration: 0,
+    contractDurationType: 'Calendar Days',
+    contractDriveUrl: '',
+    changeOrdersUrl: '',
+    sowUrl: ''
+  });
+
+  const totalPOAmount = useMemo(() => {
+    return (newPO.lineItems || []).reduce((sum, li) => sum + (li.amount || 0), 0);
+  }, [newPO.lineItems]);
+
+  const requiresAgreement = totalPOAmount > 3000000;
+  const requiresContract = totalPOAmount > 15000000;
+
+  // Handle initialization/prop changes
+  useEffect(() => {
+    if (page.details?.initialView === 'form') {
+      setView('form');
+    } else if (page.details?.initialView === 'list') {
+      setView('list');
+    }
+  }, [page.details?.initialView]);
   const [editingPOId, setEditingPOId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewPOs, setPreviewPOs] = useState<PurchaseOrder[] | null>(null);
@@ -61,27 +98,6 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     if (amount < 12000000) return 'text-orange-500';
     return 'text-red-500 font-bold';
   };
-
-  // New PO State
-  const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
-    id: '',
-    date: new Date().toISOString().split('T')[0],
-    supplier: '',
-    wbsId: '',
-    masterFormat: '',
-    activityId: '',
-    actualStartDate: '',
-    actualFinishDate: '',
-    inputCurrency: baseCurrency,
-    exchangeRateUsed: globalExchangeRate,
-    lineItems: [],
-    contractNumber: '',
-    contractDuration: 0,
-    contractDurationType: 'Calendar Days',
-    contractDriveUrl: '',
-    changeOrdersUrl: '',
-    sowUrl: ''
-  });
 
   // Sync newPO exchange rate when global rate changes or project changes
   useEffect(() => {
@@ -314,8 +330,8 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         amount: totalAmount,
         inputCurrency,
         exchangeRateUsed,
-        status: 'Approved',
-        workflowStatus: 'Approved',
+        status: requiresContract && !newPO.contractDriveUrl ? 'Pending Contract' : 'Approved',
+        workflowStatus: requiresContract && !newPO.contractDriveUrl ? 'Pending Contract' : 'Approved',
         completion: poCompletion,
         projectName: selectedProject.name,
         purchaseOffice: selectedProject.code,
@@ -774,8 +790,41 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   }, [activities, newPO.workPackageId, wbsLevels]);
 
   const renderPOForm = () => {
-    const totalPOAmount = (newPO.lineItems || []).reduce((sum, li) => sum + (li.amount || 0), 0);
-    const requiresContract = totalPOAmount >= 15000000;
+    const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !selectedProject) return;
+
+      const toastId = toast.loading('Uploading contract to Drive...');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('projectRootId', selectedProject.driveFolderId || '');
+        
+        // Find Cost Center Folder Name
+        const costCenterName = newPO.masterFormat || 'General';
+        const safeCostCenter = costCenterName.replace(/\s+/g, '_');
+        formData.append('path', `PROCUREMENT_AND_SUBCONTRACTORS_03/03.3_Subcontractors_Hub/${safeCostCenter}/03_Contracts`);
+
+        const response = await fetch('/api/drive/upload-by-path', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+        const result = await response.json();
+        
+        setNewPO(prev => ({ 
+          ...prev, 
+          contractDriveUrl: `https://drive.google.com/file/d/${result.fileId}/view`,
+          workflowStatus: requiresContract ? 'Pending Contract' : prev.workflowStatus
+        }));
+        
+        toast.success('Contract uploaded and linked successfully', { id: toastId });
+      } catch (error) {
+        console.error('Contract upload error:', error);
+        toast.error('Failed to upload contract. Please try again.', { id: toastId });
+      }
+    };
 
     return (
       <motion.div
@@ -1138,19 +1187,39 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         {/* Contract & Documentation Section */}
         <div className={cn(
           "space-y-6 pt-6 border-t transition-all",
-          requiresContract ? "border-rose-200 bg-rose-50/20 p-6 rounded-3xl" : "border-slate-100"
+          requiresContract ? "border-rose-200 bg-rose-50/20 p-6 rounded-3xl" : 
+          requiresAgreement ? "border-amber-200 bg-amber-50/20 p-6 rounded-3xl" : "border-slate-100"
         )}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ShieldCheck className={cn("w-5 h-5", requiresContract ? "text-rose-500" : "text-blue-500")} />
+              <ShieldCheck className={cn("w-5 h-5", requiresContract ? "text-rose-500" : requiresAgreement ? "text-amber-500" : "text-blue-500")} />
               <h4 className="text-sm font-bold text-slate-900">Contract & Documentation</h4>
               {requiresContract && (
                 <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-semibold uppercase rounded animate-pulse">
-                  Contract Required
+                  Official Contract Required ({'>'}15M IQD)
+                </span>
+              )}
+              {!requiresContract && requiresAgreement && (
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-semibold uppercase rounded">
+                  Agreement Required ({'>'}3M IQD)
                 </span>
               )}
             </div>
           </div>
+
+          {(requiresAgreement || requiresContract) && !newPO.contractDriveUrl && (
+            <div className={cn(
+              "p-4 rounded-xl flex items-start gap-3 border",
+              requiresContract ? "bg-rose-100 border-rose-200 text-rose-800" : "bg-amber-100 border-amber-200 text-amber-800"
+            )}>
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-bold mb-1">Financial Logic Gate Active</p>
+                <p>This PO value ({formatAmount(totalPOAmount, baseCurrency)}) exceeds the {requiresContract ? '15,000,000' : '3,000,000'} IQD threshold. 
+                   Please upload the {requiresContract ? 'Official Contract' : 'Agreement'} to proceed.</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
@@ -1163,6 +1232,37 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
               />
             </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Quick Upload</label>
+              <div className="flex items-center gap-2">
+                <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-dashed border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600 rounded-xl transition-all">
+                  <Upload className="w-4 h-4" />
+                  <span className="text-xs font-bold">Upload to Drive</span>
+                  <input type="file" className="hidden" onChange={handleContractUpload} accept=".pdf,.doc,.docx" />
+                </label>
+                {newPO.contractDriveUrl && (
+                  <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Contract PDF Link (Drive)</label>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={newPO.contractDriveUrl || ''}
+                  onChange={(e) => setNewPO(prev => ({ ...prev, contractDriveUrl: e.target.value }))}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl pr-10"
+                />
+                <FileText className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              </div>
+            </div>
+            
             <div className="space-y-2">
               <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Contract Duration</label>
               <div className="flex gap-2">

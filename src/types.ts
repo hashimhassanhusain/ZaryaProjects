@@ -113,6 +113,82 @@ export interface PurchaseOrder {
   contractDriveUrl?: string;
   changeOrdersUrl?: string;
   sowUrl?: string;
+  contractId?: string; // Reference to official contract
+}
+
+export interface ProjectContract {
+  id: string;
+  contractId: string;
+  projectId: string;
+  vendorId: string;
+  vendorName: string;
+  contractValue: number;
+  awardDate: string;
+  tenderNumber: string;
+  contractType: 'Agreement' | 'Official Contract';
+  costCenterId: string;
+  driveUrl?: string;
+  status: 'Draft' | 'Active' | 'Ended' | 'Suspended';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Unified Register/Log Entity
+export interface ProjectLogEntry {
+  id: string;
+  projectId: string;
+  type: 'Risk' | 'Issue' | 'Change' | 'Assumption' | 'Lesson' | 'Stakeholder' | 'Milestone' | 'Activity' | 'BOQ' | 'Backlog';
+  title: string;
+  description: string;
+  status: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  ownerId?: string;
+  ownerName?: string;
+  dateIdentified?: string;
+  dateResolved?: string;
+  impact?: string;
+  probability?: string; // For Risks
+  costImpact?: number;
+  scheduleImpact?: number;
+  tags?: string[];
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EntityType = 
+  | 'contracts' 
+  | 'purchaseOrders' 
+  | 'projects' 
+  | 'suppliers' 
+  | 'risks' 
+  | 'issues' 
+  | 'changes' 
+  | 'assumptions' 
+  | 'lessons' 
+  | 'stakeholders' 
+  | 'milestones' 
+  | 'activities' 
+  | 'boq' 
+  | 'backlogs';
+
+export interface EntityConfig {
+  id: EntityType;
+  label: string;
+  icon: any;
+  collection: string;
+  columns: {
+    key: string;
+    label: string;
+    type: 'string' | 'number' | 'date' | 'status' | 'currency' | 'badge';
+    visible?: boolean;
+    width?: number;
+  }[];
+  sections?: {
+    id: string;
+    title: string;
+    fields: string[];
+  }[];
 }
 
 export type DependencyType = 'FS' | 'SS' | 'FF' | 'SF';
@@ -583,53 +659,22 @@ export interface Page {
   };
 }
 
-export interface Institution {
-  id: string;
-  name: string;
-  type: 'owner' | 'contractor' | 'consultant';
-  country: string;
-  createdAt: string;
-  createdBy: string;
-}
-
 export interface Company {
   id: string;
-  institutionId: string;
   name: string;
-  slug: string;
-  registrationNumber?: string;
+  type: 'Main' | 'Supplier' | 'Stakeholder' | 'Other';
+  parent_entity_id?: string;
+  entity_type?: 'holding' | 'holding_division' | 'department' | 'subsidiary' | 'vendor';
+  is_internal: boolean;
   address?: string;
   phone?: string;
   email?: string;
   website?: string;
   status: 'Active' | 'Inactive';
-  createdAt: string;
-  createdBy: string;
-}
-
-export interface Vendor {
-  id: string;
-  projectId: string;
-  createdBy: string;
-  name: string;
-  vendorCode: string;
-  specialty: string[];
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
-  country: string;
-  rating: number; // 1-5
-  status: 'active' | 'suspended';
-  createdAt: string;
-}
-
-export interface UserProject {
-  id: string;
-  userId: string;
-  projectId: string;
-  role: 'admin' | 'manager' | 'engineer' | 'accountant' | 'viewer';
-  grantedBy: string;
-  grantedAt: string;
+  createdAt?: string;
+  // Supplier specifics
+  supplierCode?: string;
+  discipline?: string;
 }
 
 export interface Contact {
@@ -653,7 +698,7 @@ export interface User {
   name: string;
   email: string;
   photoURL: string;
-  role: 'admin' | 'manager' | 'engineer' | 'accountant' | 'viewer';
+  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office' | 'stakeholder';
   companyId?: string;
   companyName?: string;
   accessiblePages?: string[];
@@ -804,10 +849,8 @@ export interface SavedDocument {
 export interface Project {
   id: string;
   name: string;
-  slug: string;
-  companyId: string;
-  institutionId: string;
   code?: string;
+  companyId?: string;
   manager?: string;
   sponsor?: string;
   customer?: string;

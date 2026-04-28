@@ -1,34 +1,46 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { Project, UserProject, Company } from '../types';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Project, Company } from '../types';
 import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
-import { useAuth } from './UserContext';
-import { toSlug } from '../lib/utils';
 
 interface ProjectContextType {
   selectedProject: Project | null;
-  setSelectedProject: (project: Project) => void;
-  selectedCompany: Company | null;
-  setSelectedCompany: (company: Company) => void;
+  setSelectedProject: (project: Project | null) => void;
+  selectedCompanyId: string;
+  setSelectedCompanyId: (id: string) => void;
+  selectedInstitutionId: string;
+  setSelectedInstitutionId: (id: string) => void;
   projects: Project[];
   companies: Company[];
   loading: boolean;
-  resolveContext: (companySlug: string, projectSlug: string) => void;
-  getPath: (domainSlug: string, pageSlug: string) => string;
-  scheduleState: any; 
-  setScheduleState: React.Dispatch<React.SetStateAction<any>>;
+  scheduleState: {
+    expandedWbs: Record<string, boolean>;
+    expandedActivities: Record<string, boolean>;
+    zoomLevel: string;
+    viewLevel: string;
+    visibleColumns: Record<string, boolean>;
+    columnOrder: string[];
+  };
+  setScheduleState: React.Dispatch<React.SetStateAction<{
+    expandedWbs: Record<string, boolean>;
+    expandedActivities: Record<string, boolean>;
+    zoomLevel: string;
+    viewLevel: string;
+    visibleColumns: Record<string, boolean>;
+    columnOrder: string[];
+  }>>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userProfile, isAdmin } = useAuth();
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
-  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
-  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
   
+  const [selectedCompanyId, setSelectedCompanyIdState] = useState<string>(() => localStorage.getItem('selectedCompanyId') || '');
+  const [selectedInstitutionId, setSelectedInstitutionIdState] = useState<string>(() => localStorage.getItem('selectedInstitutionId') || '');
+
   const [scheduleState, setScheduleState] = useState({
     expandedWbs: {} as Record<string, boolean>,
     expandedActivities: {} as Record<string, boolean>,
@@ -63,119 +75,86 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return null;
   });
 
-  // Listen to ALL companies
   useEffect(() => {
-    const q = query(collection(db, 'companies'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
-      setAllCompanies(list);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'companies');
+    setLoading(true);
+    const qComp = query(collection(db, 'companies'), orderBy('name'));
+    const unsubscribeComp = onSnapshot(qComp, (snapshot) => {
+      setCompanies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
     });
-    return () => unsubscribe();
-  }, []);
 
-  // Listen to ALL projects (Admin or base for filtering)
-  useEffect(() => {
-    const q = query(collection(db, 'projects'), orderBy('name'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const qProj = query(collection(db, 'projects'), orderBy('name'));
+    const unsubscribeProj = onSnapshot(qProj, (snapshot) => {
       const projectsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Project[];
-      setAllProjects(projectsData);
-      if (isAdmin) setLoading(false);
+      
+      setProjects(projectsData);
+      
+      // Sync selectedProject with the latest data from Firestore
+      setSelectedProjectState(current => {
+        if (projectsData.length === 0) return null;
+        if (current) {
+          const updated = projectsData.find(p => p.id === current.id);
+          if (updated) {
+            localStorage.setItem('selectedProject', JSON.stringify(updated));
+            return updated;
+          }
+        }
+        return null;
+      });
+      
+      setLoading(false);
     }, (error) => {
       console.error("Error fetching projects:", error);
       handleFirestoreError(error, OperationType.LIST, 'projects');
-    });
-
-    return () => unsubscribe();
-  }, [isAdmin]);
-
-  // Listen to user's assigned projects in 'userProjects' collection
-  useEffect(() => {
-    if (!userProfile || isAdmin) return;
-
-    const q = query(collection(db, 'userProjects'), where('userId', '==', userProfile.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const assignments = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as UserProject[];
-      setUserProjects(assignments);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching user projects:", error);
-      handleFirestoreError(error, OperationType.LIST, 'userProjects');
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [userProfile, isAdmin]);
+    return () => {
+      unsubscribeComp();
+      unsubscribeProj();
+    };
+  }, []);
 
-  // Derived list of accessible projects
-  const accessibleProjects = useMemo(() => {
-    const base = isAdmin ? allProjects : (() => {
-      const assignedIds = new Set(userProjects.map(up => up.projectId));
-      if (userProfile?.accessibleProjects) {
-        userProfile.accessibleProjects.forEach(id => assignedIds.add(id));
-      }
-      return allProjects.filter(p => assignedIds.has(p.id));
-    })();
-    
-    if (selectedCompany) {
-      return base.filter(p => p.companyId === selectedCompany.id);
-    }
-    
-    return base;
-  }, [allProjects, userProjects, isAdmin, userProfile, selectedCompany]);
-
-  // Derived list of accessible companies
-  const accessibleCompanies = useMemo(() => {
-    if (isAdmin) return allCompanies;
-    const companyIds = new Set(accessibleProjects.map(p => p.companyId));
-    return allCompanies.filter(c => companyIds.has(c.id));
-  }, [allCompanies, accessibleProjects, isAdmin]);
-
-  // Resolve Context from Slugs
-  const resolveContext = (companySlug: string, projectSlug: string) => {
-    const company = allCompanies.find(c => c.slug === companySlug || toSlug(c.name) === companySlug);
-    const project = allProjects.find(p => p.slug === projectSlug || toSlug(p.name) === projectSlug);
-
-    if (company) setSelectedCompanyState(company);
-    if (project) {
-      setSelectedProjectState(project);
-      localStorage.setItem('selectedProject', JSON.stringify(project));
-    }
-  };
-
-  const setSelectedProject = (project: Project) => {
+  const setSelectedProject = (project: Project | null) => {
     setSelectedProjectState(project);
-    localStorage.setItem('selectedProject', JSON.stringify(project));
+    if (project) {
+      localStorage.setItem('selectedProject', JSON.stringify(project));
+      // Optionally auto-select company/institution
+      if (project.companyId) {
+        setSelectedCompanyId(project.companyId);
+        const comp = companies.find(c => c.id === project.companyId);
+        if (comp?.parent_entity_id) {
+          setSelectedInstitutionId(comp.parent_entity_id);
+        }
+      }
+    } else {
+      localStorage.removeItem('selectedProject');
+    }
   };
 
-  const setSelectedCompany = (company: Company) => {
-    setSelectedCompanyState(company);
+  const setSelectedCompanyId = (id: string) => {
+    setSelectedCompanyIdState(id);
+    localStorage.setItem('selectedCompanyId', id);
   };
 
-  const getPath = (domainSlug: string, pageSlug: string) => {
-    const compSlug = selectedCompany?.slug || toSlug(selectedCompany?.name || 'unknown');
-    const projSlug = selectedProject?.slug || (selectedProject?.name ? toSlug(selectedProject.name) : 'unknown');
-    return `/${compSlug}/${projSlug}/${domainSlug}/${pageSlug}`;
+  const setSelectedInstitutionId = (id: string) => {
+    setSelectedInstitutionIdState(id);
+    localStorage.setItem('selectedInstitutionId', id);
   };
 
   return (
     <ProjectContext.Provider value={{ 
       selectedProject, 
       setSelectedProject, 
-      selectedCompany,
-      setSelectedCompany,
-      projects: accessibleProjects, 
-      companies: accessibleCompanies,
+      selectedCompanyId,
+      setSelectedCompanyId,
+      selectedInstitutionId,
+      setSelectedInstitutionId,
+      projects, 
+      companies,
       loading,
-      resolveContext,
-      getPath,
       scheduleState,
       setScheduleState
     }}>

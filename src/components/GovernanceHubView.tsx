@@ -29,13 +29,15 @@ import {
   GitBranch,
   AlertTriangle,
   Target,
-  Info
+  Info,
+  GraduationCap
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
+import { UniversalManager } from './common/UniversalManager';
 import { DomainDashboard } from './DomainDashboard';
 
 interface GovernanceHubViewProps {
@@ -79,6 +81,18 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       ]
     },
     {
+      id: 'performance-logs',
+      label: 'Performance Logs & Registers',
+      tabs: [
+        { id: 'risks', label: 'Risk Register', icon: AlertTriangle, size: 'large' },
+        { id: 'issues', label: 'Issue Log', icon: Activity, size: 'small' },
+        { id: 'changes', label: 'Change Log', icon: Layers, size: 'small' },
+        { id: 'stakeholders', label: 'Stakeholders', icon: Users, size: 'small' },
+        { id: 'assumptions', label: 'Assumptions', icon: ClipboardList, size: 'small' },
+        { id: 'lessons', label: 'Lessons Learned', icon: GraduationCap, size: 'small' },
+      ]
+    },
+    {
       id: 'governance-processes',
       label: t('governance'),
       tabs: allManagementPlans.map(p => {
@@ -97,114 +111,75 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   ];
 
   const renderContent = () => {
-    if (activeTab === 'overview') {
-      return (
-        <div className="pb-20 space-y-12 px-6 pt-6">
-          <header className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
-                <Gavel className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">Governance Control Center</h2>
-                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMBOK 8 Standard Framework</p>
-              </div>
-            </div>
-          </header>
-
-          {/* Domain Status Matrix */}
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {accessiblePlans.map((plan) => (
-              <div 
-                key={plan.id}
-                onClick={() => navigate(`/page/${plan.id}`)}
-                className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-blue-50 transition-colors" />
-                
-                <div className="relative z-10 space-y-6">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-blue-600/30 transition-all duration-500">
-                    <plan.icon className="w-7 h-7" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {stripNumericPrefix(plan.title)}
-                    </h3>
-                    <p className="text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
-                      {plan.desc}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600">Baselined</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
-                      Open Hub <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="pb-20 space-y-12 px-6 pt-6">
+            <header className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+                  <Gavel className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">Governance Control Center</h2>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMBOK 8 Standard Framework</p>
                 </div>
               </div>
-            ))}
-          </section>
+            </header>
 
-          {/* Governance Insights Summary */}
-          <section className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl" />
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-20">
-              <div className="space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-2xl font-semibold tracking-tight">Compliance & Health Summary</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Decision Velocity</p>
-                    <p className="text-4xl font-semibold italic tracking-tighter">4.2 <span className="text-xs uppercase text-slate-500 not-italic">Days</span></p>
-                    <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full w-[80%] bg-blue-500" />
+            {/* Domain Status Matrix */}
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {accessiblePlans.map((plan) => (
+                <div 
+                  key={plan.id}
+                  onClick={() => navigate(`/page/${plan.id}`)}
+                  className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-blue-50 transition-colors" />
+                  
+                  <div className="relative z-10 space-y-6">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-blue-600/30 transition-all duration-500">
+                      <plan.icon className="w-7 h-7" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Process Consistency</p>
-                    <p className="text-4xl font-semibold italic tracking-tighter">98%</p>
-                    <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full w-[98%] bg-emerald-500" />
+
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {stripNumericPrefix(plan.title)}
+                      </h3>
+                      <p className="text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
+                        {plan.desc}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600">Baselined</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
+                        Open Hub <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md space-y-6">
-                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Critical Blockers (2 Active)</h4>
-                <div className="space-y-4">
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4">
-                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-                    <p className="text-xs font-bold text-red-100">Sourcing Strategy for heavy machinery requires Project Sponsor signature.</p>
-                  </div>
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4">
-                    <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
-                    <p className="text-xs font-bold text-amber-100">Quality Metrics baseline exceeds standard variance; readjustment required.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      );
+              ))}
+            </section>
+          </div>
+        );
+      case 'risks': return <UniversalManager entityType="risks" />;
+      case 'issues': return <UniversalManager entityType="issues" />;
+      case 'changes': return <UniversalManager entityType="changes" />;
+      case 'stakeholders': return <UniversalManager entityType="stakeholders" />;
+      case 'assumptions': return <UniversalManager entityType="assumptions" />;
+      case 'lessons': return <UniversalManager entityType="lessons" />;
+      default: return null;
     }
-
-    // Default to navigating to the sub-process
-    return null;
   };
 
   useEffect(() => {
-    if (activeTab !== 'overview' && activeTab !== '') {
+    // Navigate only if it's a specific plan ID (not one of our logs)
+    const logs = ['risks', 'issues', 'changes', 'stakeholders', 'assumptions', 'lessons'];
+    if (activeTab !== 'overview' && activeTab !== '' && !logs.includes(activeTab)) {
       navigate(`/page/${activeTab}`);
     }
   }, [activeTab, navigate]);

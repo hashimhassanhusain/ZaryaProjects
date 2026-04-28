@@ -44,6 +44,7 @@
         "date": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["Draft", "Pending", "Approved", "Closed"] },
         "amount": { "type": "number" },
+        "contractId": { "type": "string" },
         "workPackageId": { "type": "string" },
         "lineItems": { "type": "array", "items": { "type": "object" } }
       },
@@ -88,8 +89,6 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "institutionId": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
         "manager": { "type": "string" },
@@ -97,71 +96,7 @@
         "driveFolderId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "status", "companyId", "institutionId"]
-    },
-    "Institution": {
-      "title": "Institution",
-      "description": "Top-level corporate owner.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["owner", "contractor", "consultant"] },
-        "country": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "createdBy": { "type": "string" }
-      },
-      "required": ["name", "type", "country", "createdBy"]
-    },
-    "Company": {
-      "title": "Company",
-      "description": "Subsidiary or branch under an institution.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "institutionId": { "type": "string" },
-        "name": { "type": "string" },
-        "registrationNumber": { "type": "string" },
-        "address": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "createdBy": { "type": "string" }
-      },
-      "required": ["name", "institutionId", "createdBy"]
-    },
-    "Vendor": {
-      "title": "Vendor",
-      "description": "Project-level external supplier.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "name": { "type": "string" },
-        "vendorCode": { "type": "string" },
-        "specialty": { "type": "array", "items": { "type": "string" } },
-        "contactName": { "type": "string" },
-        "contactPhone": { "type": "string" },
-        "contactEmail": { "type": "string", "format": "email" },
-        "country": { "type": "string" },
-        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
-        "status": { "type": "string", "enum": ["active", "suspended"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["projectId", "name", "vendorCode", "createdBy"]
-    },
-    "UserProject": {
-      "title": "User Project Assignment",
-      "description": "Mapping users to projects with specific roles.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "projectId": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "manager", "engineer", "accountant", "viewer"] },
-        "grantedBy": { "type": "string" },
-        "grantedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "projectId", "role", "grantedBy"]
+      "required": ["name", "status"]
     },
     "Task": {
       "title": "Task",
@@ -469,148 +404,46 @@
       },
       "required": ["projectId", "wbsId", "workPackage", "description", "status"]
     },
-    "IssueLog": {
-      "title": "Issue Log",
-      "description": "Interactive register of project issues.",
+    "Company": {
+      "title": "Company",
+      "description": "An organization or corporate entity.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
-        "status": { "type": "string", "enum": ["Open", "Closed"] },
-        "assignedTo": { "type": "string" },
-        "dueDate": { "type": "string", "format": "date" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["projectId", "title", "status", "priority", "isActive"]
-    },
-    "RiskRegister": {
-      "title": "Risk Register",
-      "description": "SWOT-based risk assessment tracking.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "riskName": { "type": "string" },
-        "category": { "type": "string" },
-        "probability": { "type": "number", "minimum": 1, "maximum": 5 },
-        "impact": { "type": "number", "minimum": 1, "maximum": 5 },
-        "riskScore": { "type": "number" },
-        "responseStrategy": { "type": "string", "enum": ["Mitigate", "Avoid", "Transfer", "Accept"] },
-        "owner": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["projectId", "riskName", "probability", "impact", "riskScore", "isActive"]
-    },
-    "ChangeRequest": {
-      "title": "Change Request",
-      "description": "Formal requests for project changes.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "title": { "type": "string" },
-        "justification": { "type": "string" },
-        "impactOnCost": { "type": "number" },
-        "impactOnSchedule": { "type": "number" },
-        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
-        "approvedBy": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["projectId", "title", "status", "isActive"]
-    },
-    "StakeholderRegister": {
-      "title": "Stakeholder Register",
-      "description": "Directory of project stakeholders and engagement levels.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
         "name": { "type": "string" },
-        "organization": { "type": "string" },
-        "role": { "type": "string" },
-        "powerLevel": { "type": "string", "enum": ["High", "Low"] },
-        "interestLevel": { "type": "string", "enum": ["High", "Low"] },
-        "engagementStrategy": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
+        "type": { "type": "string", "enum": ["Main", "Supplier", "Stakeholder", "Other"] },
+        "parent_entity_id": { "type": "string" },
+        "entity_type": { "type": "string", "enum": ["holding", "division", "department", "subsidiary", "vendor"] },
+        "is_internal": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["Active", "Inactive"] }
       },
-      "required": ["projectId", "name", "isActive"]
+      "required": ["name", "type", "is_internal", "status"]
     },
-    "LessonsLearned": {
-      "title": "Lessons Learned Register",
-      "description": "Knowledge management for project outcomes.",
+    "ProjectContract": {
+      "title": "Project Contract",
+      "description": "An official contract or agreement with a vendor.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "contractId": { "type": "string" },
         "projectId": { "type": "string" },
-        "situation": { "type": "string" },
-        "actionTaken": { "type": "string" },
-        "outcome": { "type": "string" },
-        "recommendation": { "type": "string" },
-        "category": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
+        "vendorId": { "type": "string" },
+        "vendorName": { "type": "string" },
+        "contractValue": { "type": "number" },
+        "awardDate": { "type": "string", "format": "date" },
+        "tenderNumber": { "type": "string" },
+        "contractType": { "type": "string", "enum": ["Agreement", "Official Contract"] },
+        "costCenterId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Draft", "Active", "Ended", "Suspended"] }
       },
-      "required": ["projectId", "situation", "actionTaken", "isActive"]
-    },
-    "QualityMetric": {
-      "title": "Quality Metric",
-      "description": "Standard KPIs for technical validation.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "metricName": { "type": "string" },
-        "targetValue": { "type": "string" },
-        "actualValue": { "type": "string" },
-        "variance": { "type": "string" },
-        "passFailState": { "type": "string", "enum": ["Pass", "Fail", "Ongoing"] },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["projectId", "metricName", "targetValue", "isActive"]
-    },
-    "ProjectFile": {
-      "title": "Project File",
-      "description": "Unified document repository for project files.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "projectId": { "type": "string" },
-        "documentType": { "type": "string", "enum": ["BusinessCase", "Agreement", "ScopeStatement", "SOW", "Requirements", "Other"] },
-        "domain": { "type": "string", "enum": ["Governance", "Scope", "Schedule", "Finance", "Quality", "Resources", "Delivery", "Risk"] },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "fileUrl": { "type": "string", "format": "uri" },
-        "version": { "type": "string" },
-        "isBaseline": { "type": "boolean" },
-        "createdBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["projectId", "title", "documentType", "domain", "isActive"]
+      "required": ["contractId", "projectId", "vendorId", "contractValue", "contractType", "status"]
     }
   },
   "firestore": {
+    "/companies/{id}": {
+      "schema": "Company",
+      "description": "Enterprise structure and company directory."
+    },
     "/wbs/{id}": {
       "schema": "WBSLevel",
       "description": "Work Breakdown Structure levels."
@@ -715,49 +548,9 @@
       "schema": "ProjectManagementVersion",
       "description": "Project management plan versions."
     },
-    "/institutions/{id}": {
-      "schema": "Institution",
-      "description": "Top-level corporate institutions."
-    },
-    "/companies/{id}": {
-      "schema": "Company",
-      "description": "Corporate branches and subsidiaries."
-    },
-    "/vendors/{id}": {
-      "schema": "Vendor",
-      "description": "Project-specific vendor directory."
-    },
-    "/userProjects/{id}": {
-      "schema": "UserProject",
-      "description": "User access and roles per project."
-    },
-    "/issueLogs/{id}": {
-      "schema": "IssueLog",
-      "description": "Project issue registers."
-    },
-    "/riskRegisters/{id}": {
-      "schema": "RiskRegister",
-      "description": "Project risk registers and reports."
-    },
-    "/changeRequests/{id}": {
-      "schema": "ChangeRequest",
-      "description": "Project change management logs."
-    },
-    "/stakeholderRegisters/{id}": {
-      "schema": "StakeholderRegister",
-      "description": "Project stakeholder registers."
-    },
-    "/lessonsLearned/{id}": {
-      "schema": "LessonsLearned",
-      "description": "Project lessons learned repository."
-    },
-    "/qualityMetrics/{id}": {
-      "schema": "QualityMetric",
-      "description": "Project quality metrics and reports."
-    },
-    "/projectFiles/{id}": {
-      "schema": "ProjectFile",
-      "description": "Unified repository for project narrative files and baseline documents."
+    "/contracts/{id}": {
+      "schema": "ProjectContract",
+      "description": "Official project contracts and agreements."
     }
   }
 }

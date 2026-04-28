@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, Building2, Mail, Phone, Globe, MapPin, MoreVertical, Edit2, Loader2, ArrowLeft, LogIn } from 'lucide-react';
+import { Plus, Search, Trash2, Building2, Mail, Phone, Globe, MapPin, MoreVertical, Edit2, Loader2, ArrowLeft } from 'lucide-react';
 import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { Company } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { toSlug, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
-import { useProject } from '../context/ProjectContext';
-import { useAuth } from '../context/UserContext';
 
 export const CompaniesView: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { companies, projects, setSelectedCompany } = useProject();
-  const { isAdmin } = useAuth();
-  const [isLoading, setIsLoading] = useState(false); // Context handles loading usually
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -27,10 +23,27 @@ export const CompaniesView: React.FC = () => {
     address: '',
     phone: '',
     email: '',
-    website: ''
+    website: '',
+    parent_entity_id: '',
+    entity_type: 'subsidiary',
+    is_internal: true
   });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'companies'), orderBy('name', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
+      setCompanies(list);
+      setIsLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'companies');
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredCompanies.length) {
@@ -48,21 +61,21 @@ export const CompaniesView: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedIds.length === 0 || !isAdmin) return;
+    if (selectedIds.length === 0) return;
     
-    toast((toastItem) => (
+    toast((t) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} selected companies?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(toastItem.id)}
+            onClick={() => toast.dismiss(t.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(toastItem.id);
+              toast.dismiss(t.id);
               try {
                 const deletePromises = selectedIds.map(id => deleteDoc(doc(db, 'companies', id)));
                 await Promise.all(deletePromises);
@@ -82,47 +95,57 @@ export const CompaniesView: React.FC = () => {
   };
 
   const handleEdit = (company: Company) => {
-    if (!isAdmin) return;
     setEditingCompany(company);
     setFormData(company);
     setIsAdding(true);
   };
 
-  const handleEnter = (company: Company, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedCompany(company);
-    // Find first project for this company if any
-    // Note: 'projects' from context might be already filtered by selectedCompany!
-    // So we should find from allProjects or just tell the user to pick a project.
-    // Navigating to / will show projects for the selected company now.
-    navigate('/');
-    toast.success(`Switched to ${company.name}`);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !isAdmin) return;
+    if (!formData.name) {
+      toast.error(t('name_required') || 'Name is required');
+      return;
+    }
 
+    const saveToast = toast.loading(editingCompany ? t('updating') : t('saving'));
     try {
-      const slug = formData.slug || toSlug(formData.name);
-      
+      const dataToSave = {
+        ...formData,
+        name: formData.name.trim(),
+        type: formData.type || 'Supplier',
+        status: formData.status || 'Active',
+        is_internal: !!formData.is_internal,
+        entity_type: formData.entity_type || 'subsidiary',
+        updatedAt: new Date().toISOString()
+      };
+
       if (editingCompany) {
-        await updateDoc(doc(db, 'companies', editingCompany.id), {
-          ...formData,
-          slug,
-          updatedAt: new Date().toISOString()
-        });
+        await updateDoc(doc(db, 'companies', editingCompany.id), dataToSave);
+        toast.success(t('company_updated_success') || 'Company updated successfully', { id: saveToast });
       } else {
         await addDoc(collection(db, 'companies'), {
-          ...formData,
-          slug,
+          ...dataToSave,
           createdAt: new Date().toISOString()
         });
+        toast.success(t('company_added_success') || 'Company added successfully', { id: saveToast });
       }
       setIsAdding(false);
       setEditingCompany(null);
-      setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
+      setFormData({ 
+        name: '', 
+        type: 'Supplier', 
+        status: 'Active', 
+        address: '', 
+        phone: '', 
+        email: '', 
+        website: '',
+        parent_entity_id: '',
+        entity_type: 'subsidiary',
+        is_internal: true
+      });
     } catch (error) {
+      console.error('Error saving company:', error);
+      toast.error(t('error_saving_company') || 'Error saving company', { id: saveToast });
       handleFirestoreError(error, editingCompany ? OperationType.UPDATE : OperationType.CREATE, 'companies');
     }
   };
@@ -132,8 +155,16 @@ export const CompaniesView: React.FC = () => {
     c.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 px-4 md:px-8 py-8">
+    <div className="space-y-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
@@ -147,18 +178,27 @@ export const CompaniesView: React.FC = () => {
             <p className="text-slate-500 text-sm">Manage partners, suppliers, and stakeholders.</p>
           </div>
         </div>
-        {isAdmin && (
-          <button 
-            onClick={() => {
-              setEditingCompany(null);
-              setFormData({ name: '', type: 'Supplier', status: 'Active', address: '', phone: '', email: '', website: '' });
-              setIsAdding(true);
-            }}
-            className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> {t('add_company')}
-          </button>
-        )}
+        <button 
+          onClick={() => {
+            setEditingCompany(null);
+            setFormData({ 
+              name: '', 
+              type: 'Supplier', 
+              status: 'Active', 
+              address: '', 
+              phone: '', 
+              email: '', 
+              website: '',
+              parent_entity_id: '',
+              entity_type: 'subsidiary',
+              is_internal: true
+            });
+            setIsAdding(true);
+          }}
+          className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> {t('add_company')}
+        </button>
       </header>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -205,7 +245,6 @@ export const CompaniesView: React.FC = () => {
                 <th className="px-6 py-4">{t('status')}</th>
                 <th className="px-6 py-4">Contact Info</th>
                 <th className="px-6 py-4">{t('address')}</th>
-                <th className="px-6 py-4 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -213,10 +252,7 @@ export const CompaniesView: React.FC = () => {
                 <tr 
                   key={company.id} 
                   onClick={() => handleEdit(company)}
-                  className={cn(
-                    "hover:bg-slate-50 transition-colors group divide-x divide-slate-100",
-                    isAdmin ? "cursor-pointer" : "cursor-default"
-                  )}
+                  className="hover:bg-slate-50 transition-colors group divide-x divide-slate-100 cursor-pointer"
                 >
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                     <input 
@@ -224,7 +260,6 @@ export const CompaniesView: React.FC = () => {
                       checked={selectedIds.includes(company.id)}
                       onChange={(e) => toggleSelect(company.id, e as any)}
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      disabled={!isAdmin}
                     />
                   </td>
                   <td className="px-6 py-4">
@@ -286,21 +321,6 @@ export const CompaniesView: React.FC = () => {
                       <span className="line-clamp-2">{company.address || 'No address provided'}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={(e) => handleEnter(company, e)}
-                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
-                        title="Enter/Switch"
-                      >
-                        <LogIn className="w-4 h-4" />
-                        <span className="hidden sm:inline">Enter</span>
-                      </button>
-                      <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 opacity-0 group-hover:opacity-100">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -342,6 +362,47 @@ export const CompaniesView: React.FC = () => {
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
                         placeholder={t('company_name_placeholder')}
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('is_internal_label')}</label>
+                      <select 
+                        value={formData.is_internal ? 'true' : 'false'}
+                        onChange={(e) => setFormData({ ...formData, is_internal: e.target.value === 'true' })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+                      >
+                        <option value="true">{t('yes')}</option>
+                        <option value="false">{t('no')}</option>
+                      </select>
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('parent_entity')}</label>
+                      <select 
+                        value={formData.parent_entity_id || ''}
+                        onChange={(e) => setFormData({ ...formData, parent_entity_id: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+                      >
+                        <option value="">{t('no_parent')}</option>
+                        {companies.filter(c => c.id !== editingCompany?.id).map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('entity_type')}</label>
+                      <select 
+                        value={formData.entity_type}
+                        onChange={(e) => setFormData({ ...formData, entity_type: e.target.value as any })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+                      >
+                        <option value="holding">{t('holding')}</option>
+                        <option value="holding_division">{t('holding_division')}</option>
+                        <option value="department">{t('department')}</option>
+                        <option value="subsidiary">{t('subsidiary')}</option>
+                        <option value="vendor">{t('vendor')}</option>
+                      </select>
                     </div>
 
                     <div>

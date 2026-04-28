@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useProject } from '../context/ProjectContext';
 import { 
   Calculator, 
   Settings, 
@@ -9,7 +11,10 @@ import {
   Package, 
   Banknote,
   ChevronRight,
-  Info
+  Info,
+  Plus,
+  Database,
+  Upload
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
@@ -26,6 +31,7 @@ import { ReserveAnalysisView } from './ReserveAnalysisView';
 import { EVMReportView } from './EVMReportView';
 import { ZaryaPOTracker } from './ZaryaPOTracker';
 import { FinancialCloseOutView } from './FinancialCloseOutView';
+import { UniversalManager } from './common/UniversalManager';
 
 interface FinanceHubViewProps {
   page: Page;
@@ -43,7 +49,9 @@ const ICON_MAP: Record<string, any> = {
 
 export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const { selectedProject } = useProject();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string>('evm');
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
@@ -67,28 +75,36 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       ]
     },
     {
-      id: 'planning',
-      label: t('Planning'),
+      id: 'financial-controls',
+      label: 'Financial Controls',
       tabs: [
-        { id: 'feasibility', label: t('feasibility'), icon: Calculator, size: 'small', focusArea: 'Planning' },
-        { id: 'plan', label: t('plan'), icon: Settings, size: 'small', focusArea: 'Planning' },
-        { id: 'budget', label: t('budget'), icon: FileText, size: 'large', focusArea: 'Planning' },
-        { id: 'reserves', label: t('reserves'), icon: ShieldCheck, size: 'small', focusArea: 'Planning' },
+        { id: 'evm', label: 'EVM Dashboard', icon: TrendingUp, size: 'large' },
+        { id: 'reserves', label: 'Reserves', icon: ShieldCheck, size: 'small' },
+        { id: 'feasibility', label: 'Feasibility', icon: Calculator, size: 'small' },
       ]
     },
     {
-      id: 'execution',
-      label: t('Executing'),
+      id: 'procurement',
+      label: 'Procurement & Contracts',
       tabs: [
-        { id: 'evm', label: t('evm'), icon: TrendingUp, size: 'large', focusArea: 'Executing' },
-        { id: 'pos', label: t('pos'), icon: Package, size: 'large', focusArea: 'Executing' },
+        { id: 'pos', label: 'PO Tracker', icon: Package, size: 'large' },
+        { id: 'contracts', label: 'Contracts Archive', icon: ShieldCheck, size: 'large' },
+        { id: 'new-po', label: 'New PO', icon: Plus, size: 'small' },
+        { id: 'new-rfq', label: 'New RFQ', icon: FileText, size: 'small' },
       ]
     },
     {
-      id: 'closing',
-      label: t('Closing'),
+      id: 'suppliers',
+      label: 'Vendors Hub',
       tabs: [
-        { id: 'closing', label: t('closing'), icon: Banknote, size: 'small', focusArea: 'Closing' },
+        { id: 'supplier-register', label: 'Supplier Register', icon: Database, size: 'large' },
+      ]
+    },
+    {
+      id: 'archive',
+      label: 'Archive',
+      tabs: [
+        { id: 'drive-archive', label: 'Drive Archive', icon: Upload, size: 'large' },
       ]
     }
   ];
@@ -102,13 +118,40 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       case 'reserves': return <ReserveAnalysisView page={page} />;
       case 'evm': return <EVMReportView page={page} />;
       case 'pos': return <ZaryaPOTracker page={page} />;
+      case 'contracts': return <UniversalManager entityType="contracts" />;
+      case 'new-po': return <ZaryaPOTracker page={{ ...page, details: { ...page.details, initialView: 'form' } }} />;
+      case 'supplier-register': navigate('/page/companies'); return null;
+      case 'drive-archive': 
+        if (selectedProject?.driveFolderId) {
+          window.open(`https://drive.google.com/drive/folders/${selectedProject.driveFolderId}`, '_blank');
+        }
+        return <div className="p-8 text-center text-slate-500">Opening Google Drive...</div>;
       case 'closing': return <FinancialCloseOutView page={page} />;
       default: return <EVMReportView page={page} />;
     }
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
+      <div className="bg-white border-b border-slate-100 px-8 py-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
+             <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
+             <ChevronRight className="w-3 h-3" />
+             <span className="text-slate-900">{t(page.focusArea)}</span>
+          </div>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
+            {parentPage && (
+              <>
+                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
+              </>
+            )}
+            {stripNumericPrefix(t(page.id) || page.title)}
+          </h1>
+        </div>
+      </div>
+
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}

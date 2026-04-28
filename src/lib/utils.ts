@@ -1,15 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-export function toSlug(text: string): string {
-  if (!text) return '';
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
-    .replace(/\s+/g, '')     // Remove all spaces to match "villa0" example
-    .replace(/^-+|-+$/g, ''); // Trim leading/trailing hyphens (if any survive)
-}
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -53,15 +44,7 @@ export function stripNumericPrefix(title: string | undefined | null): string {
     .replace(/[_\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
     .trim();
   
-  // If the title IS a numeric prefix or it's empty after stripping, return an empty string
-  // to signal that we should fall back to another source (like currentPage.title)
-  if (!stripped || stripped === title || /^[\d\.\s-]+$/.test(stripped)) {
-    // If it's just numbers, it's not a real title
-    if (/^[\d\.\s-]+$/.test(title)) return '';
-    return stripped || '';
-  }
-  
-  return stripped;
+  return stripped || title;
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {

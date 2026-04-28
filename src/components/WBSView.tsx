@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { WBSLevel, BOQItem, WorkPackage } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
@@ -29,9 +29,8 @@ import { Flag } from 'lucide-react';
 
 export const WBSView: React.FC = () => {
   const { t, isRtl } = useLanguage();
-  const { selectedProject, getPath } = useProject();
+  const { selectedProject } = useProject();
   const location = useLocation();
-  const navigate = useNavigate();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1358,7 +1357,7 @@ export const WBSView: React.FC = () => {
                       value={editingPackage ? editingPackage.divisionId : newPackage.divisionId}
                       onChange={e => {
                         if (e.target.value === 'new') {
-                          navigate(getPath('scope', '2.2.1'));
+                          window.location.href = '/page/2.2.1';
                           return;
                         }
                         editingPackage ? setEditingPackage({...editingPackage, divisionId: e.target.value}) : setNewPackage({...newPackage, divisionId: e.target.value})

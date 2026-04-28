@@ -12,11 +12,11 @@ import {
   RefreshCw, DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, handleFirestoreError, OperationType } from '../firebase';
 import { updateDoc, doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { User, signOut } from 'firebase/auth';
-import { cn, stripNumericPrefix, toSlug } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 
 import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
@@ -24,11 +24,11 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
 import { pages as allPages } from '../data';
-import { User as AppUser } from '../types';
+import { User as AppUser, Company, Project } from '../types';
 import { toast } from 'react-hot-toast';
 import { HelpTooltip } from './HelpTooltip';
 
-import { PERFORMANCE_DOMAINS, HUB_IDS } from '../constants/navigation';
+import { PERFORMANCE_DOMAINS } from '../constants/navigation';
 import { Link } from 'react-router-dom';
 
 const hubIds: Record<string, string> = {
@@ -54,10 +54,21 @@ const ICON_MAP: Record<string, any> = {
 
 export const Header: React.FC = () => {
   const { language, setLanguage, t, th, isRtl, isHelpRtl } = useLanguage();
-  const { selectedProject, setSelectedProject, selectedCompany, projects, companies, loading: projectsLoading } = useProject();
+  const { 
+    selectedProject, 
+    setSelectedProject, 
+    selectedCompanyId, 
+    setSelectedCompanyId, 
+    selectedInstitutionId, 
+    setSelectedInstitutionId,
+    projects,
+    companies,
+    loading: projectsLoading 
+  } = useProject();
   const { currency, setCurrency, exchangeRate, setExchangeRate, refreshExchangeRate } = useCurrency();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
+  
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
@@ -66,24 +77,18 @@ export const Header: React.FC = () => {
   const [taskCount, setTaskCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const { companySlug, projectSlug, domainSlug, pageSlug } = useParams();
 
   const projectMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const favoritesRef = useRef<HTMLDivElement>(null);
 
-  const activePage = pageSlug || '';
+  const activePage = location.pathname.split('/').pop() || '';
   const currentDomain = PERFORMANCE_DOMAINS.find(d => activePage && (activePage === d.id || activePage.startsWith(d.id + '-')));
   
-  const isHierarchical = !!companySlug && !!projectSlug;
+  const isPage = location.pathname.startsWith('/page/');
   const { toggleSidebar, favorites, toggleFavorite, isFavorite } = useUI();
   const isCurrentFav = activePage ? isFavorite(activePage) : false;
-
-  const getPath = (dSlug: string, pSlug: string) => {
-    if (!selectedCompany || !selectedProject) return `/page/${pSlug}`;
-    return `/${toSlug(selectedCompany.name)}/${toSlug(selectedProject.name)}/${dSlug}/${pSlug}`;
-  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -99,6 +104,17 @@ export const Header: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Sync selectors with selected project only if not manually set
+  useEffect(() => {
+    if (selectedProject && companies.length > 0 && !selectedCompanyId) {
+      const projectCompany = companies.find(c => c.id === selectedProject.companyId);
+      if (projectCompany) {
+        setSelectedCompanyId(projectCompany.id);
+        setSelectedInstitutionId(projectCompany.parent_entity_id || '');
+      }
+    }
+  }, [selectedProject, companies, selectedCompanyId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -119,31 +135,18 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const selectedCompany = companies.find(c => c.id === selectedCompanyId);
+  const siteName = selectedCompany ? `${selectedCompany.name} PMIS` : 'Zarya PMIS';
+
   return (
     <header className="h-[60px] bg-slate-900 text-white border-b border-slate-700 flex items-center px-4 md:px-6 shrink-0 z-50">
       <div className="flex items-center gap-6 w-full h-full">
-        {/* Brand & Company Context */}
-        <div 
-          className={cn(
-            "flex items-center gap-4 pr-6 border-r border-slate-700 shrink-0 select-none",
-            companies.length > 1 && "cursor-pointer hover:bg-slate-800 transition-all rounded-r-xl"
-          )}
-          onClick={() => {
-            if (companies.length > 1) {
-              navigate('/admin/companies');
-            } else {
-              navigate('/');
-            }
-          }}
-        >
-           <div className="flex items-center gap-3">
-             <span className="text-lg font-black text-white tracking-tight leading-none">
-               {selectedCompany ? selectedCompany.name : 'ZARYA'}
-             </span>
-             <div className="bg-blue-600 px-1.5 py-1 rounded flex items-center justify-center font-black text-[10px] text-white leading-none shadow-lg shadow-blue-600/20">
-               PMIS
-             </div>
+        {/* Brand */}
+        <div className="flex items-center gap-3 pr-6 border-r border-slate-700 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
+           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
+             {selectedCompany ? selectedCompany.name.charAt(0).toUpperCase() : 'Z'}
            </div>
+           <span className="text-sm font-bold uppercase tracking-widest hidden lg:block">{siteName}</span>
         </div>
 
         {/* Ribbon Selection (Top Bar) */}
@@ -151,16 +154,16 @@ export const Header: React.FC = () => {
            {PERFORMANCE_DOMAINS.map(domain => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
-             const isActive = domainSlug === domain.id || pageSlug === hubId;
+             const isActive = activePage === domain.id || activePage === hubId || (currentDomain?.id === domain.id);
              return (
                <HelpTooltip key={domain.id} text={th(domain.id + '_summary')} position="bottom">
-                  <Link 
-                    to={getPath(domain.id, hubId)}
-                    className={cn(
-                      "flex flex-col items-center justify-center px-5 h-full transition-all relative group shrink-0",
-                      isActive ? "bg-slate-800 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                    )}
-                  >
+                 <Link 
+                   to={`/page/${hubId}`}
+                   className={cn(
+                     "flex flex-col items-center justify-center px-5 h-full transition-all relative group shrink-0",
+                     isActive ? "bg-slate-800 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                   )}
+                 >
                    <Icon className={cn("w-4 h-4 mb-1", isActive ? "text-white" : "text-slate-500 opacity-60")} strokeWidth={isActive ? 2.5 : 1.5} />
                    <span className="text-[9px] font-bold uppercase tracking-wider">{t(domain.id)}</span>
                    {isActive && (
@@ -218,12 +221,21 @@ export const Header: React.FC = () => {
                           favorites.map(favId => {
                             const p = allPages.find(page => page.id === favId);
                             if (!p) return null;
-                            const domain = PERFORMANCE_DOMAINS.find(d => d.id === p.domain) || PERFORMANCE_DOMAINS[0];
                             return (
-                               <Link
+                              <div
                                 key={favId}
-                                to={getPath(domain.id, favId)}
-                                onClick={() => setIsFavoritesOpen(false)}
+                                onClick={() => {
+                                  navigate(`/page/${favId}`);
+                                  setIsFavoritesOpen(false);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    navigate(`/page/${favId}`);
+                                    setIsFavoritesOpen(false);
+                                  }
+                                }}
+                                role="button"
+                                tabIndex={0}
                                 className="w-full text-left p-3 hover:bg-slate-700/80 rounded-xl text-[10px] text-slate-300 flex items-center gap-4 transition-all group relative border border-transparent hover:border-slate-600/50 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
                               >
                                 <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-amber-400 group-hover:border-amber-400/30 group-hover:bg-amber-400/5 transition-all shrink-0">
@@ -241,15 +253,15 @@ export const Header: React.FC = () => {
                                 </div>
                                 <button
                                   onClick={(e) => {
-                                    e.preventDefault();
                                     e.stopPropagation();
                                     toggleFavorite(favId);
                                   }}
+                                  onKeyDown={(e) => e.stopPropagation()}
                                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-rose-500/10 text-amber-500/20 hover:text-rose-500 transition-all z-10"
                                 >
                                   <Star className="w-3.5 h-3.5 fill-current" />
                                 </button>
-                              </Link>
+                              </div>
                             );
                           })
                         )}
@@ -259,10 +271,10 @@ export const Header: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {isHierarchical && activePage && <div className="w-px h-4 bg-slate-700/30 mx-0.5" />}
+              {isPage && activePage && <div className="w-px h-4 bg-slate-700/30 mx-0.5" />}
 
               {/* Toggle current page as favorite */}
-              {isHierarchical && activePage && (
+              {isPage && activePage && (
                 <HelpTooltip text={t(isCurrentFav ? 'in_favorites' : 'add_to_favorites')} position="bottom">
                   <button 
                     onClick={() => toggleFavorite(activePage)}
@@ -311,19 +323,73 @@ export const Header: React.FC = () => {
              </HelpTooltip>
            </div>
 
-           {/* Project Selector */}
-           <HelpTooltip text={th('project_selector_summary')} position="bottom">
+           {/* Hierarchy Selectors */}
+           <div className="flex items-center gap-2">
+             {/* Institution Select */}
              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
-               <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-[10px] font-bold">P</div>
+               <div className="w-6 h-6 rounded bg-indigo-600 flex items-center justify-center text-[8px] font-bold">INST</div>
                <select 
-                 value={selectedProject?.id || ''} 
-                 onChange={(e) => setSelectedProject(projects.find(p => p.id === e.target.value) || null)}
-                 className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer"
+                 value={selectedInstitutionId} 
+                 onChange={(e) => {
+                   setSelectedInstitutionId(e.target.value);
+                   setSelectedCompanyId('');
+                   setSelectedProject(null);
+                 }}
+                 className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
                >
-                 {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
+                 <option value="" className="bg-slate-900">{t('all_institutions') || 'All Institutions'}</option>
+                 {companies.filter(c => !c.parent_entity_id).map(inst => (
+                   <option key={inst.id} value={inst.id} className="bg-slate-900">{inst.name}</option>
+                 ))}
                </select>
-            </div>
-           </HelpTooltip>
+             </div>
+
+             {/* Company Select */}
+             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
+               <div className="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-[8px] font-bold">COMP</div>
+               <select 
+                 value={selectedCompanyId} 
+                 onChange={(e) => {
+                   setSelectedCompanyId(e.target.value);
+                   setSelectedProject(null);
+                 }}
+                 className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
+               >
+                 <option value="" className="bg-slate-900">{t('all_companies') || 'All Companies'}</option>
+                 {companies
+                   .filter(c => selectedInstitutionId ? c.parent_entity_id === selectedInstitutionId : true)
+                   .map(comp => (
+                     <option key={comp.id} value={comp.id} className="bg-slate-900">{comp.name}</option>
+                   ))
+                 }
+               </select>
+             </div>
+
+             {/* Project Selector */}
+             <HelpTooltip text={th('project_selector_summary')} position="bottom">
+               <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
+                 <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-[8px] font-bold">PROJ</div>
+                 <select 
+                   value={selectedProject?.id || ''} 
+                   onChange={(e) => setSelectedProject(projects.find(p => p.id === e.target.value) || null)}
+                   className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
+                 >
+                   <option value="" className="bg-slate-900">{t('select_project') || 'Select Project'}</option>
+                   {projects
+                     .filter(p => {
+                       if (selectedCompanyId) return p.companyId === selectedCompanyId;
+                       if (selectedInstitutionId) {
+                         const subCompanies = companies.filter(c => c.parent_entity_id === selectedInstitutionId).map(c => c.id);
+                         return subCompanies.includes(p.companyId || '') || p.companyId === selectedInstitutionId;
+                       }
+                       return true;
+                     })
+                     .map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)
+                   }
+                 </select>
+               </div>
+             </HelpTooltip>
+           </div>
 
           <div className="flex items-center gap-1 ml-2">
              <HelpTooltip text={th('change_language_summary')} position="bottom">
