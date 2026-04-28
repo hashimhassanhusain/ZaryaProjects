@@ -851,144 +851,172 @@ export const pages: Page[] = [
       outputs: ['archived-scope-records', 'scope-structured-folder', 'final-scope-documentation']
     }
   },
-  { 
-    id: '1.1.1', 
-    title: 'Project Charter (Governance Framework)', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Initiating', 
-    icon: 'Shield', 
-    summary: 'Define the governing framework, roles, and decision-making model for project oversight.',
+  {
+    id: '1.1.1',
+    title: 'Project Charter',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Initiating',
+    icon: 'Gavel',
+    summary: 'The foundational authorization document defining project objectives, authority, and high-level scope.',
     details: {
       inputs: ['org-strategy', 'business-case', 'eef', 'opa'],
       tools: ['Expert Judgment', 'Governance Framework Modeling', 'Stakeholder Alignment Workshops'],
       outputs: ['governance-framework', 'governance-structure', 'decision-making-model']
     }
   },
-  { 
-    id: '1.1.2', 
-    title: 'Define Project Value Alignment', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Initiating', 
-    icon: 'Target', 
-    summary: 'Ensure project objectives align with organizational value targets and strategic KPIs.',
+  {
+    id: '1.1.2',
+    title: 'Management Policies & Procedures',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Initiating',
+    icon: 'ShieldCheck',
+    summary: 'Formal governance policies, roles, authority matrix, and operating procedures for the project.',
     details: {
       inputs: ['business-case', 'strategic-objectives', 'stakeholder-expectations'],
       tools: ['Value Analysis', 'Benefit Mapping', 'Alignment Workshops'],
-      outputs: ['value-alignment-statement', 'success-criteria-definition', 'high-level-kpis']
+      outputs: ['governance-policies', 'authority-matrix', 'operating-procedures']
     }
   },
-  { 
-    id: '2.1.1', 
-    title: 'Develop Governance Management Plan', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Planning', 
-    icon: 'FileText', 
-    summary: 'Formalize the plan for managing governance, including escalation and approval workflows.',
+  {
+    id: '2.1.1',
+    title: 'Change Management Plan',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Planning',
+    icon: 'FileText',
+    summary: 'Plan governing how project changes are identified, assessed, approved, and implemented.',
     details: {
-      inputs: ['governance-framework', 'value-alignment-statement', 'org-policies'],
+      inputs: ['governance-framework', 'governance-policies', 'org-policies'],
       tools: ['Planning Workshops', 'Governance Templates', 'Expert Judgment'],
-      outputs: ['governance-management-plan', 'escalation-procedures', 'approval-workflows']
+      outputs: ['change-management-plan', 'escalation-procedures', 'approval-workflows']
     }
   },
-  { 
-    id: '2.1.2', 
-    title: 'Project Management Plan (Metrics & Control)', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Planning', 
-    icon: 'Activity', 
-    summary: 'Establish the KPIs and dashboard structures for governance monitoring.',
+  {
+    id: '2.1.2',
+    title: 'Project Management Plan',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Planning',
+    icon: 'ClipboardList',
+    summary: 'The master plan integrating all subsidiary management plans and baselines for project execution.',
     details: {
-      inputs: ['governance-management-plan', 'success-criteria-definition', 'org-kpis'],
+      inputs: ['change-management-plan', 'governance-policies', 'org-kpis'],
       tools: ['KPI Definition Techniques', 'Performance Measurement Frameworks', 'Benchmarking'],
-      outputs: ['gov-metrics-framework', 'perf-indicators-dashboard', 'reporting-templates']
+      outputs: ['project-management-plan', 'performance-baselines', 'reporting-templates']
     }
   },
-  { 
-    id: '3.1.1', 
-    title: 'Implement Governance Framework', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Executing', 
-    icon: 'Zap', 
-    summary: 'Activate the governance system and maintain records of decisions and meetings.',
+  {
+    id: '3.1.1',
+    title: 'Change Requests',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Executing',
+    icon: 'FilePlus',
+    summary: 'Register of all formal change requests with status tracking, impact analysis, and approval records.',
     details: {
-      inputs: ['governance-management-plan', 'governance-structure', 'approval-workflows'],
-      tools: ['Communication Systems', 'Workflow Automation Tools', 'Collaboration Platforms'],
-      outputs: ['active-governance-system', 'decision-logs', 'meeting-records']
+      inputs: ['project-management-plan', 'governance-policies', 'approval-workflows'],
+      tools: ['Change Control System', 'Impact Analysis', 'Approval Workflow Tools'],
+      outputs: ['approved-changes', 'rejected-changes', 'change-log']
     }
   },
-  { 
-    id: '3.1.2', 
-    title: 'Enable Governance Communication', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Executing', 
-    icon: 'MessageSquare', 
-    summary: 'Distribute governance reports and manage stakeholder updates.',
+  {
+    id: '3.1.2',
+    title: 'Correspondence Log',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Executing',
+    icon: 'Inbox',
+    summary: 'Centralized register of all official incoming and outgoing project correspondence and formal letters.',
     details: {
-      inputs: ['governance-management-plan', 'communication-requirements'],
-      tools: ['Communication Planning', 'Reporting Systems', 'Dashboard Tools'],
-      outputs: ['governance-reports', 'stakeholder-updates', 'communication-logs']
+      inputs: ['project-management-plan', 'communication-requirements'],
+      tools: ['Document Management', 'Correspondence Tracking Systems'],
+      outputs: ['correspondence-register', 'letter-archive', 'communication-audit-trail']
     }
   },
-  { 
-    id: '4.1.1', 
-    title: 'Monitor Governance Performance', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Monitoring & Controlling', 
-    icon: 'Activity', 
-    summary: 'Analyze performance data and trends to identify governance deviations.',
+  {
+    id: '3.1.3',
+    title: 'Minutes of Meeting (MOM)',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Executing',
+    icon: 'MessagesSquare',
+    summary: 'Official records of all project meetings including attendees, decisions, and action items.',
     details: {
-      inputs: ['gov-metrics-framework', 'governance-reports', 'decision-logs'],
+      inputs: ['project-management-plan', 'stakeholder-register'],
+      tools: ['Meeting Management', 'Action Item Tracking'],
+      outputs: ['meeting-minutes', 'action-items-log', 'decision-register']
+    }
+  },
+  {
+    id: '3.1.4',
+    title: 'Decision Log',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Executing',
+    icon: 'ListChecks',
+    summary: 'Structured register of all key project decisions, the rationale behind them, and their impact.',
+    details: {
+      inputs: ['meeting-minutes', 'change-log', 'issue-logs'],
+      tools: ['Decision Frameworks', 'Root Cause Analysis'],
+      outputs: ['decision-register', 'rationale-documentation', 'impact-assessments']
+    }
+  },
+  {
+    id: '4.1.1',
+    title: 'Governance Progress Reports',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Monitoring & Controlling',
+    icon: 'BarChart3',
+    summary: 'Periodic governance performance reports tracking KPIs, compliance, and deviations.',
+    details: {
+      inputs: ['project-management-plan', 'change-log', 'decision-register'],
       tools: ['Performance Analysis', 'Variance Analysis', 'Trend Analysis'],
       outputs: ['gov-performance-reports', 'deviation-analysis', 'gov-recommendations']
     }
   },
-  { 
-    id: '4.1.2', 
-    title: 'Manage Governance Issues & Escalations', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Monitoring & Controlling', 
-    icon: 'AlertCircle', 
-    summary: 'Resolve governance conflicts and manage escalations through defined procedures.',
+  {
+    id: '4.1.2',
+    title: 'Deliverable Acceptance',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Monitoring & Controlling',
+    icon: 'CheckSquare',
+    summary: 'Formal acceptance records for completed project deliverables signed off by authorized stakeholders.',
     details: {
-      inputs: ['issue-logs', 'gov-performance-reports', 'escalation-procedures'],
-      tools: ['Root Cause Analysis', 'Decision Frameworks', 'Escalation Models'],
-      outputs: ['resolved-issues-log', 'escalation-records', 'corrective-actions']
+      inputs: ['project-management-plan', 'gov-performance-reports', 'escalation-procedures'],
+      tools: ['Acceptance Criteria Review', 'Inspection & Testing', 'Sign-off Workflows'],
+      outputs: ['accepted-deliverables', 'acceptance-records', 'punch-list']
     }
   },
-  { 
-    id: '5.1.1', 
-    title: 'Evaluate Governance Effectiveness', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Closing', 
-    icon: 'Award', 
-    summary: 'Conduct a final review of governance effectiveness and recommend future improvements.',
+  {
+    id: '5.1.1',
+    title: 'Lessons Learned Register',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Closing',
+    icon: 'BookOpen',
+    summary: 'Formal register of lessons learned throughout the project lifecycle for future reference.',
     details: {
-      inputs: ['gov-performance-reports', 'lessons-learned-data', 'stakeholder-feedback'],
-      tools: ['Performance Review', 'Lessons Learned Workshops', 'Benchmarking'],
-      outputs: ['gov-evaluation-report', 'improvement-recommendations', 'gov-best-practices']
+      inputs: ['gov-performance-reports', 'decision-register', 'stakeholder-feedback'],
+      tools: ['Lessons Learned Workshops', 'Performance Review', 'Benchmarking'],
+      outputs: ['lessons-learned-register', 'improvement-recommendations', 'best-practices']
     }
   },
-  { 
-    id: '5.1.2', 
-    title: 'Archive Governance Artifacts', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Closing', 
-    icon: 'Box', 
-    summary: 'Officially archive all governance records and decision logs to the project repository.',
+  {
+    id: '5.1.2',
+    title: 'Project Close Out',
+    type: 'terminal',
+    domain: 'governance',
+    focusArea: 'Closing',
+    icon: 'Archive',
+    summary: 'Final project closure documentation including handover records, archive index, and sign-off.',
     details: {
-      inputs: ['project-documents', 'governance-reports', 'decision-logs'],
-      tools: ['Document Management Systems', 'Archiving Standards'],
-      outputs: ['archived-gov-records', 'structured-folder-drive', 'final-gov-documentation']
+      inputs: ['accepted-deliverables', 'lessons-learned-register', 'decision-register'],
+      tools: ['Document Management Systems', 'Archiving Standards', 'Handover Protocols'],
+      outputs: ['project-closure-report', 'archive-index', 'final-handover-package']
     }
   },
 
