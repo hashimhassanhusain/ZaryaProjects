@@ -54,26 +54,42 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { StandardProcessPage } from './StandardProcessPage';
-import { IssueLogView } from './documents/IssueLogView';
-import { RiskRegisterView } from './documents/RiskRegisterView';
-import { ProjectFilesView } from './documents/ProjectFilesView';
+import { UniversalManager } from './common/UniversalManager';
 
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  // Custom View Mapping
-  const isIssueLogPage = page.id === '4.5.2';
-  const isRiskRegisterPage = page.id === '2.7.2' || page.id === '4.7.1';
-  const isChangeLogPage = page.id === '4.2.1';
-  const isArchivePage = page.id.endsWith('.2') && ['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7'].some(prefix => page.id.startsWith(prefix));
-
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
   const isMeetingsPage = page.id === '3.6.4';
   const isVarianceAnalysisPage = page.id === '4.3.2';
   
+  // Mapping for Grid First logic
+  const GRID_COLLECTION_MAP: Record<string, string> = {
+    '1.2.1': 'stakeholders',
+    '3.1.2': 'projectLogs', // Change Log
+    '2.1.5': 'projectLogs', // App Log
+    '1.2.2': 'projectLogs', // Req Doc
+    '2.3.1': 'activities', // Activity List
+    '2.4.1': 'boq',
+    '3.4.3': 'purchaseOrders',
+    '2.7.5': 'risks',
+    '3.3.3': 'projectLogs', // Daily Progress Reports
+    '2.1.4': 'projectLogs', // Quality Metrics
+    '4.1.1': 'projectLogs', // Audit Logs (Monitor Governance)
+    '2.4.2': 'projectLogs', // Estimates
+    '2.4.4': 'agreements',
+    '4.2.2': 'projectLogs', // Variance
+    '2.3.5': 'projectLogs', // Rel Plan
+    '2.1.10': 'resourcePlans',
+    '3.3.1': 'staff',
+    '3.3.5': 'projectLogs', // Team Charter
+    '2.6.5': 'assignments'
+  };
+
+  const collectionName = GRID_COLLECTION_MAP[page.id];
+
   const [isCreating, setIsCreating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -267,7 +283,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 82, 136); // Zarya Blue
-      const titleText = page.title.toUpperCase();
+      const titleText = stripNumericPrefix(page.title).toUpperCase();
       doc.text(titleText, pageWidth / 2, currentY, { align: 'center' });
       
       currentY += 15;
@@ -1879,8 +1895,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <span className="px-2 py-0.5 bg-white border border-slate-100 rounded-full text-[10px] font-bold text-slate-500">{members.length}</span>
               </div>
               <div className="flex flex-wrap gap-2 overflow-y-auto max-h-[200px] pr-2 custom-scrollbar">
-                {members.map(m => (
-                  <div key={m.id} className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl shadow-sm text-[11px] font-medium text-slate-700 flex items-center gap-2">
+                {members.map((m, mIdx) => (
+                  <div key={`${m.id}-${mIdx}`} className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl shadow-sm text-[11px] font-medium text-slate-700 flex items-center gap-2">
                     <div className={cn(
                       "w-1.5 h-1.5 rounded-full",
                       m.influence === 'High' ? "bg-red-500" : m.influence === 'Medium' ? "bg-amber-500" : "bg-blue-500"
@@ -1960,9 +1976,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </div>
                 
                 <div className="flex flex-wrap gap-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar relative z-10">
-                  {members.map(m => (
+                  {members.map((m, mIdx) => (
                     <motion.div 
-                      key={m.id} 
+                      key={`${m.id}-${mIdx}`} 
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-2 hover:shadow-md transition-all cursor-pointer"
@@ -2031,8 +2047,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredAnalysis.map((analysis) => (
-                  <tr key={analysis.id} className="hover:bg-slate-50/50 transition-colors group">
+                {filteredAnalysis.map((analysis, idx) => (
+                  <tr key={`${analysis.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-sm">
@@ -2168,8 +2184,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
               >
                 <option value="">Choose from Register...</option>
-                {stakeholderRegister.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                {stakeholderRegister.map((s, sIdx) => (
+                  <option key={`${s.id}-${sIdx}`} value={s.id}>{s.name} ({s.role})</option>
                 ))}
               </select>
               <p className="text-[10px] text-slate-400 font-medium italic">Only stakeholders from the Register can be analyzed.</p>
@@ -4126,7 +4142,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredStakeholders.map((s, idx) => (
-                      <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr key={`${s.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-6 py-4 text-[10px] font-mono font-semibold text-slate-400 whitespace-nowrap">SR-{String(idx + 1).padStart(3, '0')}</td>
                         <td className="px-6 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">{s.name}</td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{s.position}</td>
@@ -4409,13 +4425,20 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       onSave={() => handleSaveDocument(true)}
       onPrint={() => generatePDF(false)}
       isSaving={isCreating}
-      inputs={page.details?.inputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
-      tools={page.details?.tools?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
-      outputs={page.details?.outputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
+      collectionName={collectionName}
+      inputs={isCharterPage ? [
+        { id: '1.4.1', title: 'Business Case', status: 'Approved' },
+        { id: 'agreements', title: 'Agreements', status: 'Finalized' },
+        { id: '1.1.2', title: 'Enterprise Environmental Factors', status: 'Active' }
+      ] : page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []}
     >
-      <div className="space-y-8">
+      <div className="space-y-8 flex-1 flex flex-col min-h-0">
         {/* Detail Content */}
-        {isLogPage && (
+        {collectionName ? (
+           <UniversalManager entityType={collectionName as any} inputs={page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []} />
+        ) : (
+          <>
+            {isLogPage && (
           <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -4498,12 +4521,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 onCancel={() => setMeetingViewMode('archive')}
               />
             )
-          ) : isIssueLogPage ? (
-            <IssueLogView />
-          ) : isRiskRegisterPage ? (
-            <RiskRegisterView />
-          ) : isArchivePage ? (
-            <ProjectFilesView />
           ) : isVarianceAnalysisPage ? (
             <VarianceAnalysisView project={selectedProject!} />
           ) : isEditing ? (
@@ -4922,6 +4939,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
         )}
       </AnimatePresence>
+      </>
+      )}
       </div>
     </StandardProcessPage>
   );

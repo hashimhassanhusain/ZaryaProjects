@@ -57,8 +57,6 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { DocumentShell } from './shared/DocumentShell';
-import { ShoppingCart } from 'lucide-react';
 
 interface ProcurementManagementPlanViewProps {
   page: Page;
@@ -317,7 +315,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY1 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY1 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Standard Procurement Documents', margin, finalY1 + 10);
     doc.rect(margin, finalY1 + 15, pageWidth - 2 * margin, 30);
@@ -351,7 +349,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const finalY2 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY2 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Procurement Assumptions and Constraints', margin, finalY2 + 10);
     doc.rect(margin, finalY2 + 15, pageWidth - 2 * margin, 40);
@@ -381,7 +379,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       }
     });
 
-    const finalY3 = ((doc as any).lastAutoTable?.finalY ?? 150) || 150;
+    const finalY3 = (doc as any).lastAutoTable.finalY || 150;
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Metrics', margin, finalY3 + 10);
     autoTable(doc, {
@@ -399,42 +397,9 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
     doc.save(fileName);
   };
 
-  const defaultProcPlan: ProcurementPlanData = {
-    projectTitle: selectedProject?.name ?? '',
-    datePrepared: new Date().toISOString().split('T')[0],
-    authority: '',
-    pmResponsibilities: [],
-    procurementResponsibilities: [],
-    standardDocuments: [],
-    contractType: '',
-    bondingInsurance: '',
-    selectionCriteria: [],
-    assumptionsConstraints: '',
-    integrationWBS: '',
-    integrationSchedule: '',
-    integrationDocumentation: '',
-    integrationRisk: '',
-    performanceReporting: '',
-    performanceMetrics: [],
-  };
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
 
   return (
-    <DocumentShell
-      icon={ShoppingCart}
-      title="Procurement Management Plan"
-      docType="PROC-PLAN"
-      versions={versions}
-      isLoading={loading}
-      isSaving={isSaving}
-      onSaveNew={() => handleSave(true)}
-      onUpdate={() => handleSave(false)}
-      onOpenVersion={(v) => setProcPlan(v.data as ProcurementPlanData)}
-      onNewDraft={() => setProcPlan(defaultProcPlan)}
-      drivePath="01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain"
-    >
-    {loading ? (
-      <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>
-    ) : (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -778,8 +743,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {procPlan.selectionCriteria.map((c) => (
-                    <tr key={c.id} className="group hover:bg-slate-50/30 transition-all">
+                  {procPlan.selectionCriteria.map((c, idx) => (
+                    <tr key={`${c.id}-${idx}`} className="group hover:bg-slate-50/30 transition-all">
                       <td className="px-8 py-6">
                         {isEditing ? (
                           <input 
@@ -907,8 +872,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {procPlan.performanceMetrics.map((m) => (
-                    <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
+                  {procPlan.performanceMetrics.map((m, idx) => (
+                    <tr key={`${m.id}-${idx}`} className="group hover:bg-slate-50/30 transition-all">
                       <td className="px-8 py-6">
                         {isEditing ? (
                           <input 
@@ -1009,8 +974,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {versions.length > 0 ? versions.map((v) => (
-                <tr key={v.version}>
+              {versions.length > 0 ? versions.map((v, idx) => (
+                <tr key={`${v.version}-${idx}`}>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">V{v.version.toFixed(1)}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{new Date(v.date).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{v.author}</td>
@@ -1026,7 +991,5 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         </div>
       </section>
     </div>
-    )}
-    </DocumentShell>
   );
 };

@@ -436,7 +436,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <input 
                   type="text"
                   name="description"
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={handleInputChange}
                   maxLength={100}
                   className="w-full max-w-2xl px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all shadow-sm"
@@ -539,7 +539,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Status</label>
                 <select 
                   name="status"
-                  value={formData.status}
+                  value={formData.status || 'Planned'}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
@@ -676,7 +676,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 <div key={index} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <div className="flex-1">
                     <select 
-                      value={dep.id}
+                      value={dep.id || ''}
                       onChange={(e) => updatePredecessor(index, 'id', e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
@@ -688,7 +688,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   </div>
                   <div className="w-24">
                     <select 
-                      value={dep.type}
+                      value={dep.type || 'FS'}
                       onChange={(e) => updatePredecessor(index, 'type', e.target.value as DependencyType)}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
@@ -701,7 +701,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   <div className="w-24">
                     <input 
                       type="number"
-                      value={dep.lag}
+                      value={dep.lag || 0}
                       onChange={(e) => updatePredecessor(index, 'lag', parseInt(e.target.value))}
                       placeholder="Lag"
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"

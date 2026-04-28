@@ -435,7 +435,24 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
       "PROCUREMENT_AND_SUBCONTRACTORS_03": [
         "03.1_Vendors_and_Suppliers_Database", 
         "03.2_Purchase_Orders_PO", 
-        "03.3_Subcontractors_Hub"
+        { "03.3_Subcontractors_Hub": [
+          { "Div_01_General_Requirements": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_02_Existing_Conditions": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_03_Concrete": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_04_Masonry": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_05_Metals": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_06_Wood_and_Plastics": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_07_Thermal_and_Moisture": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_08_Openings": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_09_Finishes": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_10_Specialties": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_11_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_12_Furnishings": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_13_Special_Construction": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_14_Conveying_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_22_Plumbing": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_26_Electrical": ["01_RFQ", "02_PO", "03_Contracts"] }
+        ]}
       ],
       "SITE_OPERATIONS_04": [
         "04.1_Daily_Site_Reports", 

@@ -273,7 +273,7 @@ export const HumanResourceManagementPlanView: React.FC<HumanResourceManagementPl
       }
     });
 
-    const finalY = ((doc as any).lastAutoTable?.finalY ?? 150) || 100;
+    const finalY = (doc as any).lastAutoTable.finalY || 100;
     doc.setFont('helvetica', 'bold');
     doc.text('Project Organizational Structure', margin, finalY + 10);
     doc.rect(margin, finalY + 15, pageWidth - 2 * margin, 80);

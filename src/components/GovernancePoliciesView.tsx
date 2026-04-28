@@ -46,8 +46,6 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { DocumentShell } from './shared/DocumentShell';
-import { Shield } from 'lucide-react';
 
 interface GovernancePoliciesViewProps {
   page: Page;
@@ -282,37 +280,15 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
     });
   };
 
-  const defaultPolicies = {
-    projectTitle: `${selectedProject?.code ?? ''} - ${selectedProject?.name ?? ''}`,
-    revisionHistory: [],
-    governanceRoles: [],
-    communicationProtocols: '',
-    archivingNamingProtocol: `[${selectedProject?.code ?? 'PCODE'}]-[DIVxx]-[Type]-[RefNo]-[Desc]-[Ver]-[Date]`,
-    folderStructure: '',
-    technicalStandards: '',
-    procurementStandards: '',
-    disciplinaryCode: '',
-  };
-
-  return (
-    <DocumentShell
-      icon={Shield}
-      title="Governance Policies & Procedures"
-      docType="POLICY"
-      versions={versions}
-      isLoading={loading}
-      isSaving={isSaving}
-      onSaveNew={() => handleSave(true)}
-      onUpdate={() => handleSave(false)}
-      onOpenVersion={(v) => setPolicies(v.data as PolicyData)}
-      onNewDraft={() => setPolicies(defaultPolicies as PolicyData)}
-      drivePath="01_PROJECT_MANAGEMENT_FORMS/1.0_Initiating/1.1_Governance_Domain"
-    >
-    {loading ? (
+  if (loading) {
+    return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
-    ) : (
+    );
+  }
+
+  return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
@@ -728,7 +704,5 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
         )}
       </AnimatePresence>
     </div>
-    )}
-    </DocumentShell>
   );
 };

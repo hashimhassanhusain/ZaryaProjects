@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2 } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn } from '../lib/utils';
@@ -59,6 +59,9 @@ export const TasksView: React.FC = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+  
+  // View states: 'list', 'kanban', 'edit', 'add'
+  const activeView = isAddingTask ? 'add' : selectedTaskId ? 'edit' : viewMode;
 
   const getAssignee = (uid: string) => {
     return dbUsers.find(u => u.uid === uid) || { name: 'Unassigned', photoURL: 'https://picsum.photos/seed/user/200/200' };
@@ -584,8 +587,8 @@ export const TasksView: React.FC = () => {
             items={tasks.map(t => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            {tasks.map(task => (
-              <DraggableTaskCard key={task.id} task={task} />
+            {tasks.map((task, idx) => (
+              <DraggableTaskCard key={`${task.id}-${idx}`} task={task} />
             ))}
           </SortableContext>
         </div>
@@ -601,9 +604,10 @@ export const TasksView: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
+  if (activeView === 'kanban' || activeView === 'list') {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsManagingStatuses(true)}
@@ -700,9 +704,9 @@ export const TasksView: React.FC = () => {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px] items-start">
-            {customStatuses.map(status => (
+            {customStatuses.map((status, sIdx) => (
               <KanbanColumn 
-                key={status} 
+                key={`${status}-${sIdx}`} 
                 status={status} 
                 tasks={filteredTasks.filter(t => t.status === status)} 
               />
@@ -782,9 +786,9 @@ export const TasksView: React.FC = () => {
           </tr>
             </thead>
             <tbody>
-              {filteredTasks.map(task => (
+              {filteredTasks.map((task, idx) => (
                 <tr 
-                  key={task.id} 
+                  key={`${task.id}-${idx}`} 
                   onDoubleClick={() => setSelectedTaskId(task.id)}
                   className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
@@ -853,401 +857,370 @@ export const TasksView: React.FC = () => {
           </table>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Status Management Modal */}
-      <AnimatePresence>
-        {isManagingStatuses && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsManagingStatuses(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col p-8"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-slate-800">Manage Statuses</h3>
-                <button onClick={() => setIsManagingStatuses(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
-                  <Plus className="w-6 h-6 rotate-45 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                {customStatuses.map((status, index) => (
-                  <div key={status} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                    <div className="flex-1">
-                      {editingStatus?.oldName === status ? (
-                        <input 
-                          autoFocus
-                          type="text"
-                          value={editingStatus.newName}
-                          onChange={(e) => setEditingStatus({ ...editingStatus, newName: e.target.value })}
-                          className="w-full px-2 py-1 bg-white border border-blue-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleRenameStatus();
-                            if (e.key === 'Escape') setEditingStatus(null);
-                          }}
-                        />
-                      ) : (
-                        <span className="text-sm font-bold text-slate-700">{status}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {editingStatus?.oldName === status ? (
-                        <button onClick={handleRenameStatus} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg">
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button onClick={() => setEditingStatus({ oldName: status, newName: status })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleDeleteStatus(status)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <div className="flex flex-col gap-0.5 ml-1">
-                        <button 
-                          disabled={index === 0}
-                          onClick={() => handleReorderStatuses(index, index - 1)}
-                          className="p-0.5 text-slate-400 hover:text-slate-600 disabled:opacity-30"
-                        >
-                          <Plus className="w-3 h-3 rotate-180" />
-                        </button>
-                        <button 
-                          disabled={index === customStatuses.length - 1}
-                          onClick={() => handleReorderStatuses(index, index + 1)}
-                          className="p-0.5 text-slate-400 hover:text-slate-600 disabled:opacity-30"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-slate-100">
-                <div className="flex gap-2">
+  if (activeView === 'add') {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px]"
+      >
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div>
+            <h3 className="text-2xl font-bold text-slate-800">{t('create_new_task')}</h3>
+            <p className="text-sm text-slate-500 mt-1">Project: {selectedProject?.name}</p>
+          </div>
+          <button 
+            onClick={() => setIsAddingTask(false)}
+            className="p-3 hover:bg-slate-200 rounded-2xl transition-all text-slate-500"
+          >
+            <Plus className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 pb-32">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Task Title</label>
                   <input 
                     type="text" 
-                    value={newStatusName}
-                    onChange={(e) => setNewStatusName(e.target.value)}
-                    placeholder="New status name..."
-                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
-                  />
-                  <button 
-                    onClick={handleAddStatus}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Task Detail Modal */}
-      <AnimatePresence>
-        {selectedTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedTaskId(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              className="relative w-full max-w-4xl h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-            >
-              <div className="p-8 border-b border-slate-100 flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    <span className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                      selectedTask.priority === 'High' ? "bg-red-50 text-red-600" :
-                      selectedTask.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                    )}>
-                      {selectedTask.priority} Priority
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedTask.id}</span>
-                  </div>
-                  <input 
-                    type="text"
-                    value={selectedTask.title}
-                    onChange={(e) => handleUpdateTask(selectedTask.id, { title: e.target.value })}
-                    className="text-2xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-50 transition-all rounded-lg"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    placeholder="e.g. Site Survey Block A"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   />
                 </div>
-                <button 
-                  onClick={() => setSelectedTaskId(null)}
-                  className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-slate-600"
-                >
-                  <Plus className="w-6 h-6 rotate-45" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                  <div className="lg:col-span-2 space-y-8">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Description</h4>
-                      <textarea 
-                        value={selectedTask.description}
-                        onChange={(e) => handleUpdateTask(selectedTask.id, { description: e.target.value })}
-                        className="w-full text-slate-600 leading-relaxed bg-transparent border-none focus:ring-0 p-0 hover:bg-slate-50 transition-all rounded-lg resize-none h-32"
-                      />
-                    </div>
-
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Notes</h4>
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <input 
-                            type="text"
-                            value={newNote}
-                            onChange={(e) => setNewNote(e.target.value)}
-                            placeholder="Add a note..."
-                            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddNote(selectedTask.id)}
-                          />
-                          <button 
-                            onClick={() => handleAddNote(selectedTask.id)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all"
-                          >
-                            Post
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {selectedTask.notes?.slice().reverse().map(note => (
-                            <div key={note.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  {getAssignee(note.userId)?.photoURL ? (
-                                    <img src={getAssignee(note.userId)?.photoURL || undefined} className="w-5 h-5 rounded-full" alt="" />
-                                  ) : (
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                                      <User className="w-2.5 h-2.5 text-slate-400" />
-                                    </div>
-                                  )}
-                                  <span className="text-xs font-bold text-slate-700">{getAssignee(note.userId)?.name}</span>
-                                </div>
-                                <span className="text-[10px] text-slate-400">{note.timestamp}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 leading-relaxed">{note.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Activity History</h4>
-                      <div className="space-y-6">
-                        {selectedTask.history?.map((item, idx) => (
-                          <div key={item.id} className="flex gap-4 relative">
-                            {idx !== selectedTask.history!.length - 1 && (
-                              <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-slate-100"></div>
-                            )}
-                            {getAssignee(item.userId)?.photoURL ? (
-                              <img src={getAssignee(item.userId)?.photoURL || undefined} className="w-8 h-8 rounded-full z-10" alt="" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full z-10 bg-slate-100 flex items-center justify-center border border-slate-200">
-                                <User className="w-4 h-4 text-slate-400" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-bold text-slate-700">{getAssignee(item.userId)?.name}</span>
-                                <span className="text-[10px] text-slate-400 font-medium">{item.timestamp}</span>
-                              </div>
-                              <p className="text-xs text-slate-500">{item.action}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-8">
-                    <div className="bg-slate-50 p-6 rounded-2xl space-y-6">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
-                        <select 
-                          value={selectedTask.status}
-                          onChange={(e) => updateTaskStatus(selectedTask.id, e.target.value as TaskStatus)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        >
-                          {customStatuses.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee</label>
-                        <select 
-                          value={selectedTask.assigneeId}
-                          onChange={(e) => updateTaskAssignee(selectedTask.id, e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        >
-                          <option value="Unassigned">Unassigned</option>
-                          {dbUsers.map(u => (
-                            <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
-                          <input 
-                            type="date"
-                            value={selectedTask.startDate}
-                            onChange={(e) => handleUpdateTask(selectedTask.id, { startDate: e.target.value })}
-                            className="w-full bg-white p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">End Date</label>
-                          <input 
-                            type="date"
-                            value={selectedTask.endDate}
-                            onChange={(e) => handleUpdateTask(selectedTask.id, { endDate: e.target.value })}
-                            className="w-full bg-white p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
+                  <textarea 
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    rows={6}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
+                    placeholder="Detailed description of the task..."
+                  />
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
-      {/* Add Task Modal */}
-      <AnimatePresence>
-        {isAddingTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAddingTask(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-800 mb-6">Create New Task</h3>
-                <div className="space-y-4">
+              <div className="space-y-6 bg-slate-50/50 p-8 rounded-3xl border border-slate-100">
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Task Title</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee</label>
+                    <select 
+                      value={newTask.assigneeId}
+                      onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    >
+                      <option value="Unassigned">Unassigned</option>
+                      {dbUsers.map(u => (
+                        <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Priority</label>
+                    <select 
+                      value={newTask.priority}
+                      onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as any })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
                     <input 
-                      type="text" 
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                      placeholder="e.g. Site Survey Block A"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      type="date" 
+                      value={newTask.startDate}
+                      onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
-                    <textarea 
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                      rows={3}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">End Date</label>
+                    <input 
+                      type="date" 
+                      value={newTask.endDate}
+                      onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Assignee</label>
-                      <select 
-                        value={newTask.assigneeId}
-                        onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                  <select 
+                    value={newTask.status}
+                    onChange={(e) => setNewTask({ ...newTask, status: e.target.value as any })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  >
+                    {customStatuses.map(s => (
+                      <option key={s} value={s}>{translateStatus(s)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-4">
+          <button 
+            onClick={() => setIsAddingTask(false)}
+            className="px-8 py-4 text-slate-600 font-bold hover:bg-slate-200 rounded-2xl transition-all"
+          >
+            {t('cancel')}
+          </button>
+          <button 
+            onClick={handleAddTask}
+            disabled={!newTask.title}
+            className="px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50"
+          >
+            {t('create_task')}
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (selectedTask) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px]"
+      >
+        <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className={cn(
+                "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest",
+                selectedTask.priority === 'High' ? "bg-red-50 text-red-600" :
+                selectedTask.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+              )}>
+                {selectedTask.priority} Priority
+              </span>
+              <span className="text-slate-300">|</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {selectedTask.id}</span>
+              {selectedTask.sourceType && (
+                <>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Source: {selectedTask.sourceType}</span>
+                </>
+              )}
+            </div>
+            <input 
+              type="text"
+              value={selectedTask.title}
+              onChange={(e) => handleUpdateTask(selectedTask.id, { title: e.target.value })}
+              className="text-3xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-100/50 transition-all rounded-xl focus:px-2"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setSelectedTaskId(null)}
+              className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-2xl shadow-sm transition-all flex items-center gap-2 font-bold text-sm"
+            >
+              <Plus className="w-5 h-5 rotate-45" />
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+            <div className="lg:col-span-3 space-y-12">
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</h4>
+                  <div className="text-[10px] text-slate-300 italic">Auto-saves on change</div>
+                </div>
+                <textarea 
+                  value={selectedTask.description}
+                  onChange={(e) => handleUpdateTask(selectedTask.id, { description: e.target.value })}
+                  className="w-full text-slate-600 text-lg leading-relaxed bg-slate-50/50 border border-transparent focus:border-blue-100 focus:bg-white focus:ring-4 focus:ring-blue-500/5 p-6 transition-all rounded-2xl resize-none h-48 outline-none"
+                  placeholder="No description provided..."
+                />
+              </section>
+
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Notes & Discussion</h4>
+                  <span className="bg-slate-100 text-slate-500 text-[10px] px-3 py-1 rounded-full font-bold">
+                    {selectedTask.notes?.length || 0} Comments
+                  </span>
+                </div>
+                
+                <div className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+                    {auth.currentUser?.displayName?.charAt(0) || auth.currentUser?.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <textarea 
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Add a progress update or internal note..."
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none min-h-[100px]"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                          handleAddNote(selectedTask.id);
+                        }
+                      }}
+                    />
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] text-slate-400">Press Cmd+Enter to post</p>
+                      <button 
+                        onClick={() => handleAddNote(selectedTask.id)}
+                        disabled={!newNote.trim()}
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
                       >
-                        <option value="Unassigned">Unassigned</option>
-                        {dbUsers.map(u => (
-                          <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Priority</label>
-                      <select 
-                        value={newTask.priority}
-                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                      </select>
+                        Post Note
+                      </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
+                </div>
+
+                <div className="space-y-4 max-w-3xl">
+                  {selectedTask.notes?.slice().reverse().map(note => (
+                    <div key={note.id} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          {getAssignee(note.userId)?.photoURL ? (
+                            <img src={getAssignee(note.userId)?.photoURL || undefined} className="w-8 h-8 rounded-xl" alt="" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center">
+                              <User className="w-4 h-4 text-slate-400" />
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-sm font-bold text-slate-700 block">{getAssignee(note.userId)?.name}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">Author</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 bg-white px-2 py-1 rounded-lg shadow-sm">{note.timestamp}</span>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed pl-11">{note.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <History className="w-4 h-4 text-slate-400" />
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Activity Audit Trail</h4>
+                </div>
+                <div className="space-y-4 pl-4 border-l-2 border-slate-100">
+                  {selectedTask.history?.map((item, idx) => (
+                    <div key={item.id} className="relative py-2 group">
+                      <div className="absolute -left-[21px] top-4 w-4 h-4 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-blue-400 transition-colors"></div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-700">{getAssignee(item.userId)?.name}</span>
+                          <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{item.action}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium">{item.timestamp}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <aside className="space-y-8">
+              <div className="bg-slate-50 p-8 rounded-3xl space-y-8 border border-slate-100 shadow-sm">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Status</label>
+                  <select 
+                    value={selectedTask.status}
+                    onChange={(e) => updateTaskStatus(selectedTask.id, e.target.value as TaskStatus)}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  >
+                    {customStatuses.map(c => (
+                      <option key={c} value={c}>{translateStatus(c)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ownership</label>
+                  <select 
+                    value={selectedTask.assigneeId}
+                    onChange={(e) => updateTaskAssignee(selectedTask.id, e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  >
+                    <option value="Unassigned">Unassigned</option>
+                    {dbUsers.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Commencement</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
-                        type="date" 
-                        value={newTask.startDate}
-                        onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        type="date"
+                        value={selectedTask.startDate}
+                        onChange={(e) => handleUpdateTask(selectedTask.id, { startDate: e.target.value })}
+                        className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">End Date</label>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Deadline</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
-                        type="date" 
-                        value={newTask.endDate}
-                        onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        type="date"
+                        value={selectedTask.endDate}
+                        onChange={(e) => handleUpdateTask(selectedTask.id, { endDate: e.target.value })}
+                        className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="p-6 bg-slate-50 flex justify-end gap-3">
-                <button 
-                  onClick={() => setIsAddingTask(false)}
-                  className="px-6 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-xl transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleAddTask}
-                  className="px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-                >
-                  Create Task
-                </button>
+
+              <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
+                <h5 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Quick Stats
+                </h5>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-blue-400 font-medium">Time Remaining</span>
+                    <span className="text-blue-900 font-bold">4 Days</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-blue-400 font-medium">Last Activity</span>
+                    <span className="text-blue-900 font-bold">2 Hours ago</span>
+                  </div>
+                </div>
               </div>
-            </motion.div>
+            </aside>
           </div>
-        )}
-      </AnimatePresence>
-      {/* Status Error Message */}
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
       <AnimatePresence>
         {statusError && (
           <motion.div 

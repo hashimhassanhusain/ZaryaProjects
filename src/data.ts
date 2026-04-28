@@ -138,11 +138,12 @@ export const pages: Page[] = [
 
   // --- STAKEHOLDERS DOMAIN (REFINED PMBOK 8) ---
   { 
-    id: '1.5.1', 
-    title: 'Identify Stakeholders', 
-    type: 'terminal', 
-    domain: 'stakeholders', 
-    focusArea: 'Initiating', 
+    id: '1.5.1',
+    title: 'Identify Stakeholders',
+    type: 'terminal',
+    domain: 'stakeholders',
+    focusArea: 'Initiating',
+    collectionName: 'stakeholders',
     icon: 'UserSearch', 
     summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
     details: {
@@ -306,11 +307,12 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.1', 
-    title: 'Bill of Quantities (BOQ)', 
-    type: 'terminal', 
-    domain: 'finance', 
-    focusArea: 'Planning', 
+    id: '2.4.1',
+    title: 'Bill of Quantities (BOQ)',
+    type: 'terminal',
+    domain: 'finance',
+    focusArea: 'Planning',
+    collectionName: 'boq_items',
     icon: 'Database', 
     summary: 'Centralized repository of all project quantities, units, and rates mapped to MasterFormat divisions.',
     details: {
@@ -418,11 +420,12 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.4.3', 
-    title: 'Purchase Order Tracking', 
-    type: 'terminal', 
-    domain: 'finance', 
-    focusArea: 'Executing', 
+    id: '3.4.3',
+    title: 'Purchase Order Tracking',
+    type: 'terminal',
+    domain: 'finance',
+    focusArea: 'Executing',
+    collectionName: 'purchase_orders',
     icon: 'ShoppingCart', 
     summary: 'Tracking system for all project purchase orders from commitment to payment.',
     details: {
@@ -502,11 +505,12 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.3.1', 
-    title: 'Activity Definition Table', 
-    type: 'terminal', 
-    domain: 'schedule', 
-    focusArea: 'Planning', 
+    id: '2.3.1',
+    title: 'Activity Definition Table',
+    type: 'terminal',
+    domain: 'schedule',
+    focusArea: 'Planning',
+    collectionName: 'activities',
     icon: 'List', 
     summary: 'Detailed list of activities, quantities, and attributes sorted by WBS structure.',
     details: {
@@ -858,6 +862,7 @@ export const pages: Page[] = [
     domain: 'governance',
     focusArea: 'Initiating',
     icon: 'Gavel',
+    collectionName: 'charter_entries',
     summary: 'The foundational authorization document defining project objectives, authority, and high-level scope.',
     details: {
       inputs: ['org-strategy', 'business-case', 'eef', 'opa'],

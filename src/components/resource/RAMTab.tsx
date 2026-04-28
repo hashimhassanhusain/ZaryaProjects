@@ -85,7 +85,7 @@ export const RAMTab: React.FC<RAMTabProps> = ({ projectId }) => {
     // Validation: Block "A" if not in Roles & Responsibilities
     if (value === 'A') {
       const stakeholder = stakeholders.find(s => s.id === stakeholderId);
-      const roleExists = roles.some(r => r.position.toLowerCase() === stakeholder?.position.toLowerCase());
+      const roleExists = roles.some(r => (r.position || '').toLowerCase() === (stakeholder?.position || '').toLowerCase());
       if (!roleExists) {
         toast.error(`Validation Error: ${stakeholder?.name} cannot be assigned as Accountable (A) because their position "${stakeholder?.position}" is not defined in the approved Roles & Responsibilities log.`);
         return;

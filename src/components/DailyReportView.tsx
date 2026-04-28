@@ -72,9 +72,9 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
   }, [selectedProject?.id]);
 
   const filteredReports = reports.filter(r => 
-    r.date.includes(searchQuery) || 
-    r.progressSummary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.author.toLowerCase().includes(searchQuery.toLowerCase())
+    (r.date || '').includes(searchQuery) || 
+    (r.progressSummary || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (r.author || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

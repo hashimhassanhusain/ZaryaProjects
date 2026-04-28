@@ -24,10 +24,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [sidebarWidth, setSidebarWidth] = useState(80);
   const [selectedDomain, setSelectedDomain] = useState<DomainId | null>(null);
   const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('zarya_favorites');
-    return saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
-  });
+  const [favorites, setFavorites] = useState<string[]>(['3.6.3', '3.6.4', '2.4.1']);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -35,7 +32,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const toggleFavorite = (id: string) => {
     setFavorites(prev => {
       const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem('zarya_favorites', JSON.stringify(next));
       return next;
     });
   };

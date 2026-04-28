@@ -236,10 +236,10 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Project Management Processes and Tailoring Decisions', margin, ((doc as any).lastAutoTable?.finalY ?? 150) + 10);
+    doc.text('Project Management Processes and Tailoring Decisions', margin, (doc as any).lastAutoTable.finalY + 10);
 
     autoTable(doc, {
-      startY: ((doc as any).lastAutoTable?.finalY ?? 150) + 15,
+      startY: (doc as any).lastAutoTable.finalY + 15,
       head: [['Knowledge Area', 'Processes', 'Tailoring Decisions']],
       body: pmp.tailoring.map(t => [t.knowledgeArea, t.processes, t.decisions]),
       theme: 'grid',
@@ -266,10 +266,10 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Variances and Baseline Management', margin, ((doc as any).lastAutoTable?.finalY ?? 150) + 10);
+    doc.text('Variances and Baseline Management', margin, (doc as any).lastAutoTable.finalY + 10);
 
     autoTable(doc, {
-      startY: ((doc as any).lastAutoTable?.finalY ?? 150) + 15,
+      startY: (doc as any).lastAutoTable.finalY + 15,
       body: [
         ['Scope Variance', pmp.baselines.scopeVariance, 'Scope Baseline Management', pmp.baselines.scopeManagement],
         ['Schedule Variance', pmp.baselines.scheduleVariance, 'Schedule Baseline Management', pmp.baselines.scheduleManagement],
@@ -282,12 +282,12 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Project Reviews', margin, ((doc as any).lastAutoTable?.finalY ?? 150) + 10);
+    doc.text('Project Reviews', margin, (doc as any).lastAutoTable.finalY + 10);
     
     const reviewLines = doc.splitTextToSize(pmp.projectReviews || '', pageWidth - 2 * margin);
-    doc.rect(margin, ((doc as any).lastAutoTable?.finalY ?? 150) + 15, pageWidth - 2 * margin, Math.max(30, reviewLines.length * 5 + 5));
+    doc.rect(margin, (doc as any).lastAutoTable.finalY + 15, pageWidth - 2 * margin, Math.max(30, reviewLines.length * 5 + 5));
     doc.setFont('helvetica', 'normal');
-    doc.text(reviewLines, margin + 2, ((doc as any).lastAutoTable?.finalY ?? 150) + 20);
+    doc.text(reviewLines, margin + 2, (doc as any).lastAutoTable.finalY + 20);
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = (versions[0]?.version || 1.0).toFixed(1);

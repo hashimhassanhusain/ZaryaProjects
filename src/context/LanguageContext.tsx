@@ -484,6 +484,19 @@ const translations: Record<Language, Record<string, string>> = {
     'type_supplier': 'Supplier',
     'type_stakeholder': 'Stakeholder',
     'type_other': 'Other',
+    'parent_entity': 'Parent Entity',
+    'entity_type': 'Entity Type',
+    'holding': 'Holding/Group',
+    'holding_division': 'Division/Branch',
+    'department': 'Department/Unit',
+    'subsidiary': 'Subsidiary Company',
+    'vendor': 'External Vendor/Partner',
+    'internal_entity': 'Internal Corporate Entity',
+    'external_vendor': 'External Vendor',
+    'enterprise_structure': 'Enterprise Structure',
+    'no_parent': 'No Parent (Top Level)',
+    'move_to_parent': 'Move to Parent',
+    'is_internal_label': 'Is internal group company?',
     'save_company': 'Save Company',
     'address': 'Address',
     'phone': 'Phone',
@@ -787,46 +800,6 @@ const translations: Record<Language, Record<string, string>> = {
     '2.7.5_summary': 'Registry of project risks, impacts, and responses.',
     '3.1.3_summary': 'Formal record of project decisions and authorizations.',
     'daily-reports_summary': 'Daily site construction logs and activity tracking.',
-    'total_issues': 'Total Issues',
-    'open_issues': 'Open Issues',
-    'critical_priority': 'Critical Priority',
-    'issue_details': 'Issue Details',
-    'search_issues': 'Search issues...',
-    'new_issue': 'New Issue',
-    'log_new_issue': 'Log New Issue',
-    'save_issue': 'Save Issue',
-    'no_issues_found': 'No issues found',
-    'issue_title_placeholder': 'e.g. Concrete mix delay',
-    'issue_desc_placeholder': 'Describe the issue and impact...',
-    'active_risk_exposure': 'Active Risk Exposure',
-    'opps': 'Opportunities',
-    'threats': 'Threats',
-    'probability_impact_matrix': 'P/I Matrix',
-    'search_risks': 'Search risks...',
-    'log_risk': 'Log Risk',
-    'risk_event': 'Risk Event',
-    'p_x_i': 'P x I',
-    'score': 'Score',
-    'strategy': 'Strategy',
-    'mitigate': 'Mitigate',
-    'avoid': 'Avoid',
-    'transfer': 'Transfer',
-    'accept': 'Accept',
-    'identify_register_risk': 'Identify Risk',
-    'risk_name': 'Risk Name',
-    'risk_event_desc': 'What could happen?',
-    'probability': 'Probability',
-    'impact': 'Impact',
-    'register_risk_record': 'Register Risk',
-    'total_artifacts': 'Total Artifacts',
-    'baseline_documents': 'Baseline Docs',
-    'recently_updated': 'Recently Updated',
-    'documents_pending': 'Pending Review',
-    'asset_domains': 'Asset Domains',
-    'upload_new_artifact': 'Upload Artifact',
-    'search_documents_and_assets': 'Search assets...',
-    'repository_empty': 'Repository Empty',
-    'start_uploading_compliance_documents': 'Start uploading compliance documents',
   },
   ar: {
     'task_instructions': 'اضغط ضغطاً مزدوجاً لفتح المهمة وتعديلها، أو اسحبها وأسقطها لتغيير حالتها.',
@@ -1305,11 +1278,24 @@ const translations: Record<Language, Record<string, string>> = {
     'edit_company': 'تعديل بيانات الشركة',
     'company_details_desc': 'أدخل تفاصيل الشركة أدناه.',
     'company_name': 'اسم الشركة',
-    'company_name_placeholder': 'مثال: زريا للإنشاءات',
+    'company_name_placeholder': 'مثلاً: شركة زريا للمقاولات',
     'type_main': 'رئيسي (زريا)',
     'type_supplier': 'مورد',
     'type_stakeholder': 'صاحب مصلحة',
-    'type_other': 'أخرى',
+    'type_other': 'آخر',
+    'parent_entity': 'الكيان الأم',
+    'entity_type': 'نوع الكيان',
+    'holding': 'مجموعة / قابضة',
+    'holding_division': 'قطاع / فرع',
+    'department': 'قسم / وحدة',
+    'subsidiary': 'شركة تابعة',
+    'vendor': 'مورد خارجي / شريك',
+    'internal_entity': 'كيان داخلي تابع للمجموعة',
+    'external_vendor': 'مورد خارجي',
+    'enterprise_structure': 'الهيكل التنظيمي للمؤسسة',
+    'no_parent': 'لا يوجد كيان أم (مستوى أعلى)',
+    'move_to_parent': 'نقل إلى كيان أم',
+    'is_internal_label': 'هل هي شركة داخلية تابعة للمجموعة؟',
     'save_company': 'حفظ الشركة',
     'address': 'العنوان',
     'phone': 'رقم الهاتف',
@@ -1568,78 +1554,33 @@ const translations: Record<Language, Record<string, string>> = {
     '4.3.2_sched_summary': 'إدارة التعديلات على خط الأساس للجدول الزمني.',
     '5.3.1_sched_summary': 'الحصول على قبول أصحاب المصلحة للأداء النهائي.',
     '5.3.2_sched_summary': 'تجميع وأرشفة جميع سجلات الجدول الزمني.',
-    'total_issues': 'إجمالي المشاكل',
-    'open_issues': 'مشاكل مفتوحة',
-    'critical_priority': 'أولوية حرجة',
-    'issue_details': 'تفاصيل المشكلة',
-    'search_issues': 'بحث في المشاكل...',
-    'new_issue': 'مشكلة جديدة',
-    'log_new_issue': 'تسجيل مشكلة جديدة',
-    'save_issue': 'حفظ المشكلة',
-    'no_issues_found': 'لم يتم العثور على مشاكل',
-    'issue_title_placeholder': 'مثال: تأخير مادة الخرسانة',
-    'issue_desc_placeholder': 'وصف المشكلة وتأثيرها...',
-    'active_risk_exposure': 'مستوى التعرض للمخاطر',
-    'opps': 'الفرص',
-    'threats': 'التهديدات',
-    'probability_impact_matrix': 'مصفوفة الاحتمالية والأثر',
-    'search_risks': 'بحث في المخاطر...',
-    'log_risk': 'تسجيل خطر',
-    'risk_event': 'حدث الخطر',
-    'p_x_i': 'الاحتمالية × الأثر',
-    'score': 'الدرجة',
-    'strategy': 'الاستراتيجية',
-    'mitigate': 'التخفيف',
-    'avoid': 'التجنب',
-    'transfer': 'التحويل',
-    'accept': 'القبول',
-    'identify_register_risk': 'تحديد خطر',
-    'risk_name': 'اسم الخطر',
-    'risk_event_desc': 'ماذا يمكن أن يحدث؟',
-    'probability': 'الاحتمالية',
-    'impact': 'الأثر',
-    'register_risk_record': 'تسجيل الخطر',
-    'total_artifacts': 'إجمالي المستندات',
-    'baseline_documents': 'وثائق مرجعية',
-    'recently_updated': 'حدث مؤخراً',
-    'documents_pending': 'انتظار المراجعة',
-    'asset_domains': 'مجالات الأصول',
-    'upload_new_artifact': 'رفع مستند',
-    'search_documents_and_assets': 'بحث في المستندات...',
-    'repository_empty': 'المستودع فارغ',
-    'start_uploading_compliance_documents': 'ابدأ برفع وثائق الامتثال',
   },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language');
-    return (saved as Language) || 'en';
-  });
+  const [language, setLanguage] = useState<Language>('en');
 
   useEffect(() => {
-    localStorage.setItem('app_language', language);
     // UI is always English LTR
     document.documentElement.lang = 'en';
     document.documentElement.dir = 'ltr';
-  }, [language]);
+  }, []);
 
   const t = (key: string) => {
     return translations['en'][key] || key;
   };
 
-  // th function (translate help/summary) uses selected language
   const th = (key: string) => {
-    return translations[language][key] || translations['en'][key] || key;
+    return translations['en'][key] || key;
   };
 
   const isRtl = false;
-  const isHelpRtl = language === 'ar';
+  const isHelpRtl = false;
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>
+    <LanguageContext.Provider value={{ language, setLanguage: () => {}, t, th, isRtl, isHelpRtl }}>
       <div className="font-sans">
         {children}
       </div>

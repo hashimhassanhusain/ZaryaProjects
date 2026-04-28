@@ -19,10 +19,12 @@ interface StandardProcessPageProps {
   inputs?: { id: string; title: string; status?: string }[];
   tools?: { id: string; title: string }[];
   outputs?: { id: string; title: string; status?: string }[];
-  children: React.ReactNode; 
+  children: React.ReactNode;
   onSave?: () => void;
   onPrint?: () => void;
   isSaving?: boolean;
+  /** Firestore collection name for grid-first pages (optional) */
+  collectionName?: string;
 }
 
 const QuickViewModal: React.FC<{ 

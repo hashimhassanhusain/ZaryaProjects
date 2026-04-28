@@ -199,7 +199,7 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
                 </tr>
               ) : (
                 filteredEntries.map((entry, idx) => (
-                  <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={`${entry.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4 text-xs text-slate-400 font-mono">{idx + 1}</td>
                     {page.formFields?.slice(0, 4).map(field => (
                       <td key={field} className="px-6 py-4">

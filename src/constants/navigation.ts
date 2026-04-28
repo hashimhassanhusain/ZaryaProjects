@@ -34,13 +34,3 @@ export const FOCUS_AREAS = [
 
 export type DomainId = typeof PERFORMANCE_DOMAINS[number]['id'];
 export type FocusAreaId = typeof FOCUS_AREAS[number]['id'];
-
-export const HUB_IDS: Record<string, string> = {
-  'governance': 'gov',
-  'schedule': 'sched',
-  'finance': 'fin',
-  'stakeholders': 'stak',
-  'resources': 'res',
-  'risk': 'risk',
-  'delivery': 'scope'
-};

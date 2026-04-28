@@ -45,7 +45,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
   };
 
   return (
-    <div className={cn("bg-[#f3f4f6] border-b border-slate-300 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 h-[105px] z-30 select-none", className)}>
+    <div className={cn("bg-slate-50 border-b border-slate-200 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 h-[105px] z-30 select-none", className)}>
       {groups.map((group) => {
         const largeTabs = group.tabs.filter(t => t.size === 'large' || !t.size);
         const smallTabs = group.tabs.filter(t => t.size === 'small');
@@ -74,7 +74,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                       )}
                     >
                       {tab.focusArea && (
-                        <div className={cn("absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full", getFocusColor(tab.focusArea))} />
+                        <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm", getFocusColor(tab.focusArea))} />
                       )}
                       <tab.icon className={cn("w-8 h-8 mb-1", isActive ? "text-blue-600" : "text-slate-500 opacity-80")} strokeWidth={1.5} />
                       <span className={cn(
@@ -112,7 +112,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                           <tab.icon className={cn("w-4 h-4", isActive ? "text-blue-600" : "text-slate-500")} strokeWidth={1.5} />
                           <span className={cn("text-[11px] truncate", isActive ? "font-bold" : "")}>{tab.label}</span>
                           {tab.focusArea && (
-                            <div className={cn("ml-auto w-1.5 h-1.5 rounded-full", getFocusColor(tab.focusArea))} />
+                            <div className={cn("ml-auto w-2 h-2 rounded-full border border-white shadow-sm", getFocusColor(tab.focusArea))} />
                           )}
                         </button>
                       </HelpTooltip>

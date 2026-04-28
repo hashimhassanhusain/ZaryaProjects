@@ -99,13 +99,11 @@ import { useAuth } from '../context/UserContext';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useUI } from '../context/UIContext';
-import { HUB_IDS } from '../constants/navigation';
 
 interface DomainDashboardProps {
   page: Page;
   childrenPages?: Page[];
   initialTab?: string;
-  showRibbon?: boolean;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -127,9 +125,9 @@ const ICON_MAP: Record<string, any> = {
 
 import { Ribbon, RibbonGroup } from './Ribbon';
 
-export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab, showRibbon = true }) => {
+export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, childrenPages = [], initialTab }) => {
   const { t, th, isRtl } = useLanguage();
-  const { selectedProject, getPath } = useProject();
+  const { selectedProject } = useProject();
   const { userProfile, isAdmin } = useAuth();
   const projectId = selectedProject?.id || '';
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'overview');
@@ -155,27 +153,16 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       navigate('/admin/users');
       return;
     }
-    
-    if (id === 'overview') {
-      navigate(getPath(domainKey, HUB_IDS[domainKey]));
-      return;
-    }
-
-    const child = filteredChildren.find(c => c.id === id);
-    if (child) {
-      navigate(getPath(child.domain || domainKey, child.id));
-    } else {
-      setActiveTab(id);
-    }
+    setActiveTab(id);
   };
 
   // Focus area colors for indicators
   const focusAreaColors: Record<string, string> = {
-    'Initiating': 'bg-blue-400',
-    'Planning': 'bg-amber-400',
-    'Executing': 'bg-emerald-400',
-    'Monitoring & Controlling': 'bg-indigo-400',
-    'Closing': 'bg-slate-400'
+    'Initiating': 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]',
+    'Planning': 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
+    'Executing': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]',
+    'Monitoring & Controlling': 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]',
+    'Closing': 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
   };
 
   // Filter children based on permissions
@@ -187,8 +174,11 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
+  // Always use Focus Area division for the ribbon as per user request
+  const ribbonGroups: RibbonGroup[] = [];
+
   // Group processes by focus area for the ribbon
-  const areas = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
+  const focusAreas = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
   
   // Define high-usage processes for large icons
   const highUsageIds = [
@@ -198,23 +188,26 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     '2.7.5', '2.1.6', '2.3.3', '3.3.2'
   ];
 
-  // Prepare ribbon groups
-  const ribbonGroups: RibbonGroup[] = [
-    {
-      id: 'general',
-      tabs: [
-        { 
-          id: 'overview', 
-          label: stripNumericPrefix(t(domainKey)) === domainKey ? stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '') : stripNumericPrefix(t(domainKey)), 
-          icon: Icon,
-          description: th('overview_summary'),
-          size: 'large'
-        }
-      ]
-    }
-  ];
+  const areas = focusAreas; // Alias for backward compatibility if used in JSX
 
-  areas.forEach(area => {
+  // Add the "Overview" tab first
+  ribbonGroups.push({
+    id: 'general',
+    tabs: [
+      { 
+        id: 'overview', 
+        label: stripNumericPrefix(t(domainKey)) === domainKey 
+          ? stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '') 
+          : stripNumericPrefix(t(domainKey)), 
+        icon: Icon,
+        description: th('overview_summary'),
+        size: 'large'
+      }
+    ]
+  });
+
+  // Group children by focus area
+  focusAreas.forEach(area => {
     const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
     if (areaChildren.length > 0) {
       ribbonGroups.push({
@@ -229,7 +222,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             label: stripNumericPrefix(label),
             icon: ICON_MAP[child.icon || 'FileText'] || FileText,
             description: th(child.id + '_summary') || child.summary,
-            focusArea: area,
+            focusArea: area, // This adds the colored dot
             size: highUsageIds.includes(child.id) ? 'large' : 'small'
           };
         })
@@ -569,14 +562,12 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   return (
     <div className="w-full flex flex-col h-full bg-slate-50">
       {/* ── Office-Style Ribbon ── */}
-      {showRibbon && (
-        <Ribbon
-          groups={ribbonGroups}
-          activeTabId={activeTab}
-          onTabChange={handleTabChange}
-          focusAreaColors={focusAreaColors}
-        />
-      )}
+      <Ribbon 
+        groups={ribbonGroups}
+        activeTabId={activeTab}
+        onTabChange={handleTabChange}
+        focusAreaColors={focusAreaColors}
+      />
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">

@@ -321,14 +321,14 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                       <>
                         <input 
                           type="text"
-                          value={s.name}
+                          value={s.name || ''}
                           onChange={(e) => updateStakeholder(i, 'name', e.target.value)}
                           placeholder="Name"
                           className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
                         />
                         <input 
                           type="text"
-                          value={s.role}
+                          value={s.role || ''}
                           onChange={(e) => updateStakeholder(i, 'role', e.target.value)}
                           placeholder="Role"
                           className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
