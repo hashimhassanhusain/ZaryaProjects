@@ -1560,32 +1560,27 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language');
-    return (saved as Language) || 'en';
-  });
+  const [language, setLanguage] = useState<Language>('en');
 
   useEffect(() => {
-    localStorage.setItem('app_language', language);
     // UI is always English LTR
     document.documentElement.lang = 'en';
     document.documentElement.dir = 'ltr';
-  }, [language]);
+  }, []);
 
   const t = (key: string) => {
     return translations['en'][key] || key;
   };
 
-  // th function (translate help/summary) uses selected language
   const th = (key: string) => {
-    return translations[language][key] || translations['en'][key] || key;
+    return translations['en'][key] || key;
   };
 
   const isRtl = false;
-  const isHelpRtl = language === 'ar';
+  const isHelpRtl = false;
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>
+    <LanguageContext.Provider value={{ language, setLanguage: () => {}, t, th, isRtl, isHelpRtl }}>
       <div className="font-sans">
         {children}
       </div>

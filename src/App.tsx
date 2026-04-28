@@ -350,6 +350,24 @@ const AppLayout = () => {
   const { isSidebarOpen, closeSidebar, sidebarWidth, selectedDomain, selectedFocusArea, setSelectedFocusArea } = useUI();
   const location = useLocation();
 
+  useEffect(() => {
+    const pageId = location.pathname.split('/').pop();
+    if (pageId) {
+      if (pageId === 'profile') {
+        document.title = `${t('my_profile')} | ZARYA PMIS`;
+        return;
+      }
+      const page = pages.find(p => p.id === pageId);
+      if (page) {
+        document.title = `${stripNumericPrefix(t(pageId) === pageId ? page.title : t(pageId))} | ZARYA PMIS`;
+      } else {
+        document.title = 'ZARYA PMIS';
+      }
+    } else {
+      document.title = 'ZARYA PMIS';
+    }
+  }, [location.pathname, t]);
+
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Mobile Sidebar Overlay - Only on mobile */}
@@ -365,18 +383,21 @@ const AppLayout = () => {
         )}
       </AnimatePresence>
 
+      {/* Sidebar removed as per user request */}
+
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
         
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
-            "flex-1 overflow-y-auto no-scrollbar",
+            "flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc]",
             "p-0"
           )}
         >
-          <Routes>
-            <Route path="/page/:id" element={<PageRenderer />} />
+          <div className="max-w-[1600px] mx-auto w-full">
+            <Routes>
+              <Route path="/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
             <Route path="/profile" element={<UserFormView />} />
             <Route path="/admin/users" element={<AdminSettings />} />
@@ -540,7 +561,8 @@ const AppLayout = () => {
                 </div>
               </div>
             } />
-          </Routes>
+            </Routes>
+          </div>
         </main>
       </div>
     </div>

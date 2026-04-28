@@ -12,7 +12,7 @@ import {
   Trash2,
   Download
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { EntityConfig } from '../../types';
 

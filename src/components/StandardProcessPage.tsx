@@ -409,48 +409,53 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                      </div>
                   </div>
                   <div className={cn("flex flex-col items-end gap-2 relative z-10", isRtl && "items-start")}>
-                     <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center gap-3">
-                        <ShieldCheck className="w-4 h-4 text-blue-400" />
-                        <span className="text-[11px] font-semibold text-white uppercase tracking-tighter italic">{t('enterprise_governance_protocol')}</span>
+                     <div className="px-5 py-2.5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-xl flex items-center gap-3">
+                        <ShieldCheck className="w-4 h-4 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                        <span className="text-[11px] font-bold text-white uppercase tracking-wider italic">{t('enterprise_governance_protocol')}</span>
                      </div>
-                     <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">{t('source_context')}: {page.focusArea}</span>
+                     <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">{t('source_context')}: {page.focusArea}</span>
+                     </div>
                   </div>
                </div>
 
                {/* View Toggle Bar (Top of Workspace) */}
-               <div className="px-12 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between print:hidden">
-                 <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200">
-                    <button 
-                      onClick={() => setViewMode('grid')}
-                      className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all tracking-wider",
-                        viewMode === 'grid' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-slate-400 hover:text-slate-600"
-                      )}
-                    >
-                      <Table className="w-3.5 h-3.5" />
-                      {t('grid_view')}
-                    </button>
-                    <button 
-                      onClick={() => setViewMode('edit')}
-                      className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all tracking-wider",
-                        viewMode === 'edit' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-slate-400 hover:text-slate-600"
-                      )}
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      {t('edit_view')}
-                    </button>
-                 </div>
-                 
-                 <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-end">
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('data_synchronization')}</p>
-                       <p className="text-[10px] font-semibold text-emerald-500 uppercase flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          {t('live_firestore_link')}
-                       </p>
-                    </div>
-                 </div>
+               <div className="px-12 py-8 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between print:hidden">
+                  <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-slate-200/60 shadow-sm">
+                     <button 
+                       onClick={() => setViewMode('grid')}
+                       className={cn(
+                         "flex items-center gap-2.5 px-7 py-3 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest",
+                         viewMode === 'grid' ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                       )}
+                     >
+                       <Table className="w-4 h-4" />
+                       {t('grid_view')}
+                     </button>
+                     <button 
+                       onClick={() => setViewMode('edit')}
+                       className={cn(
+                         "flex items-center gap-2.5 px-7 py-3 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest",
+                         viewMode === 'edit' ? "bg-blue-600 text-white shadow-xl shadow-blue-500/20" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                       )}
+                     >
+                       <Edit2 className="w-4 h-4" />
+                       {t('edit_view')}
+                     </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                     <div className="flex flex-col items-end">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('data_synchronization')}</p>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
+                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                           <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">
+                              {t('live_firestore_link')}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
                </div>
 
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">

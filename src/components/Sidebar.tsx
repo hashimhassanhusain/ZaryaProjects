@@ -7,7 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  User
+  User,
+  Building
 } from 'lucide-react';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
@@ -20,6 +21,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
+import { useProject } from '../context/ProjectContext';
+
 const HUB_IDS: Record<string, string> = {
   'governance': 'gov',
   'schedule': 'sched',
@@ -31,19 +34,27 @@ const HUB_IDS: Record<string, string> = {
 };
 
 export const Sidebar: React.FC = () => {
-  const { t, th } = useLanguage();
+  const { t, th, isRtl } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
   const { isSidebarOpen, setSelectedFocusArea } = useUI();
+  const { companies, projects, selectedProject, setSelectedProject, setSelectedCompanyId, selectedCompanyId } = useProject();
+  
   const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({
     'Planning': true,
     'Executing': true,
     'Monitoring & Controlling': true
   });
+  
+  const [expandedCompanies, setExpandedCompanies] = useState<Record<string, boolean>>({});
 
   const toggleArea = (id: string) => {
     setExpandedAreas(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleCompany = (id: string) => {
+    setExpandedCompanies(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const currentPath = location.pathname;
@@ -68,60 +79,135 @@ export const Sidebar: React.FC = () => {
       'h-screen bg-[#f1f5f9] border-e border-slate-200 flex flex-col shrink-0 transition-all duration-300 relative z-40',
       isSidebarOpen ? 'w-72 overflow-y-auto custom-scrollbar' : 'w-0 overflow-hidden border-none'
     )}>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* LOGO SECTION */}
-        <div className="p-6 shrink-0 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <span className="text-white font-black text-xl italic">Z</span>
+        <div className="p-8 shrink-0 flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-600 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-blue-200 group cursor-pointer" onClick={() => navigate('/')}>
+            <span className="text-white font-black text-2xl italic group-hover:scale-110 transition-transform">Z</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-slate-900 font-black text-lg tracking-tighter leading-none italic uppercase">ZARYA</span>
-            <span className="text-[9px] font-bold text-blue-600 tracking-[0.2em] leading-none uppercase mt-1">Enterprise PMO</span>
+            <span className="text-slate-900 font-black text-xl tracking-tighter leading-none italic uppercase">ZARYA</span>
+            <span className="text-[10px] font-black text-blue-600 tracking-[0.3em] leading-none uppercase mt-1.5 opacity-80">{t('pmo_system')}</span>
           </div>
-        </div>
-
-        {/* PROFILE PREVIEW */}
-        <div className="px-6 mb-6">
-          <Link to="/profile" className="flex items-center gap-3 p-3 bg-white/50 border border-slate-200 rounded-2xl hover:bg-white hover:border-blue-200 transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-slate-200 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-slate-100">
-              {userProfile?.photoURL ? (
-                <img src={userProfile.photoURL} alt={userProfile.name} className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-5 h-5 text-slate-400" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-               <div className="text-[11px] font-bold text-slate-900 truncate tracking-tight">{userProfile?.name}</div>
-               <div className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{userProfile?.role}</div>
-            </div>
-          </Link>
         </div>
 
         {/* NAVIGATION */}
-        <nav className="flex-1 px-4 space-y-8 pb-10">
-          {/* DASHBOARD */}
-          <div className="space-y-1">
-             <HelpTooltip text={th('dashboard_summary')} position="right">
-               <Link
-                 to="/"
-                 className={cn(
-                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest group",
-                   currentPath === '/' 
-                     ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
-                     : "text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm"
-                 )}
-               >
-                 <LayoutDashboard className={cn("w-4 h-4", currentPath === '/' ? "text-white" : "text-slate-400 group-hover:text-blue-600")} />
-                 {t('dashboard')}
-               </Link>
-             </HelpTooltip>
-          </div>
+        <nav className="flex-1 px-4 space-y-10 pb-10">
+          
+          {/* ── COMPANIES & PROJECTS HUB ── */}
+          <div className="space-y-4">
+             <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center justify-between">
+                {t('enterprise_hub')}
+                <Building className="w-3 h-3 opacity-30" />
+             </h3>
+             
+             <div className="space-y-2">
+                {/* Active Company Selector */}
+                <div className="px-2">
+                   <button
+                     onClick={() => setExpandedCompanies(prev => ({ ...prev, _all: !prev._all }))}
+                     className={cn(
+                       "w-full flex items-center gap-3 px-4 py-4 rounded-3xl transition-all group bg-white shadow-sm ring-1 ring-slate-100",
+                       expandedCompanies._all ? "ring-blue-200" : "hover:ring-blue-100"
+                     )}
+                   >
+                     <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
+                        <Building className="w-5 h-5" />
+                     </div>
+                     <div className="flex flex-col text-left flex-1 min-w-0">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">{t('company')}</span>
+                        <span className="text-[12px] font-black text-slate-800 uppercase tracking-wider truncate">
+                           {companies.find(c => c.id === (selectedProject?.companyId || selectedCompanyId))?.name || t('select_company')}
+                        </span>
+                     </div>
+                     <ChevronDown className={cn("w-4 h-4 text-slate-300 transition-transform", expandedCompanies._all && "rotate-180")} />
+                   </button>
+                </div>
 
-          {/* FOCUS AREAS TREE */}
-          <div className="space-y-6">
-            <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
+                <AnimatePresence>
+                  {expandedCompanies._all && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden px-2 space-y-1"
+                    >
+                       <div className="bg-slate-100/50 p-2 rounded-3xl border border-slate-200/50 space-y-1">
+                          {companies.map(company => (
+                             <button
+                               key={company.id}
+                               onClick={() => {
+                                 setSelectedCompanyId(company.id);
+                                 setExpandedCompanies({}); // Close list
+                               }}
+                               className={cn(
+                                 "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left",
+                                 (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
+                                   ? "bg-white shadow-sm ring-1 ring-slate-200 text-blue-600"
+                                   : "text-slate-500 hover:bg-white/80 hover:text-slate-900"
+                               )}
+                             >
+                                <div className={cn(
+                                  "w-2 h-2 rounded-full",
+                                  (selectedProject?.companyId === company.id || selectedCompanyId === company.id) ? "bg-blue-600" : "bg-slate-300"
+                                )} />
+                                <span className="text-[11px] font-black uppercase tracking-wider truncate">{company.name}</span>
+                             </button>
+                          ))}
+                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Projects for Selected Company */}
+                {(selectedProject?.companyId || selectedCompanyId) && (
+                   <div className="pt-4 px-2 space-y-2">
+                       <h4 className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('active_projects')}</h4>
+                       <div className="space-y-1">
+                          {projects
+                            .filter(p => p.companyId === (selectedProject?.companyId || selectedCompanyId))
+                            .map(project => (
+                              <button
+                                key={project.id}
+                                onClick={() => {
+                                  setSelectedProject(project);
+                                  navigate(`/project/${project.id}`);
+                                }}
+                                className={cn(
+                                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all group",
+                                  selectedProject?.id === project.id 
+                                    ? "bg-slate-900 text-white shadow-xl shadow-slate-900/10" 
+                                    : "text-slate-600 hover:bg-white hover:shadow-sm"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-7 h-7 rounded-xl flex items-center justify-center transition-colors",
+                                  selectedProject?.id === project.id ? "bg-blue-600" : "bg-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600"
+                                )}>
+                                   <FolderOpen className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex flex-col text-left flex-1 min-w-0">
+                                   <span className="text-[11px] font-black tracking-tight truncate leading-none mb-1">{project.name}</span>
+                                   <span className={cn("text-[8px] font-bold uppercase tracking-widest", selectedProject?.id === project.id ? "text-blue-400" : "text-slate-400")}>{project.code}</span>
+                                </div>
+                              </button>
+                            ))}
+                          {projects.filter(p => p.companyId === (selectedProject?.companyId || selectedCompanyId)).length === 0 && (
+                            <div className="px-4 py-4 text-[9px] font-bold text-slate-400 italic bg-white/50 rounded-2xl border border-dashed border-slate-200">
+                               {t('no_active_projects')}
+                            </div>
+                          )}
+                       </div>
+                   </div>
+                )}
+             </div>
+          </div>
+          
+          {/* ── FOCUS AREAS ── */}
+          <div className="space-y-4">
+            <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
             
-            <div className="space-y-2">
+            <div className="space-y-1">
               {FOCUS_AREAS.map(area => {
                 const isExpanded = expandedAreas[area.id];
                 const AreaIcon = area.icon;
@@ -131,90 +217,63 @@ export const Sidebar: React.FC = () => {
                     <button
                       onClick={() => toggleArea(area.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group",
-                        "hover:bg-white hover:shadow-sm"
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all group hover:bg-white hover:shadow-sm"
                       )}
                     >
-                      <AreaIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
-                      <span className="flex-1 text-left text-[11px] font-bold text-slate-700 uppercase tracking-wider">{t(area.id)}</span>
-                      {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-300" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                      )}
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                        <AreaIcon className="w-4 h-4" />
+                      </div>
+                      <span className="flex-1 text-left text-[11px] font-black text-slate-700 uppercase tracking-wider">{t(area.id)}</span>
+                      {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-300" /> : <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300", isRtl && "rotate-180")} />}
                     </button>
 
-                    <AnimatePresence initial={false}>
+                    <AnimatePresence>
                       {isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden pl-7 space-y-1"
+                          className="overflow-hidden pl-11 space-y-1"
                         >
                           {PERFORMANCE_DOMAINS.map(domain => {
-                            // Find any pages for this domain IN THIS focus area
-                            const domainPagesInArea = pages.filter(p => 
-                              p.domain === domain.id && 
-                              p.focusArea === area.id &&
-                              p.type === 'terminal'
-                            );
-
+                            const domainPagesInArea = pages.filter(p => p.domain === domain.id && p.focusArea === area.id && p.type === 'terminal');
                             if (domainPagesInArea.length === 0) return null;
 
                             const hubId = HUB_IDS[domain.id];
-                            const path = `/page/${hubId}`;
-                            const isHubActive = currentPath === path;
+                            const path = selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`;
+                            const isHubActive = currentPath.includes(`/page/${hubId}`);
                             const DomainIcon = domain.icon;
 
                             return (
-                              <div key={domain.id} className="space-y-0.5">
-                                <HelpTooltip text={th(`${domain.id}_summary`)} position="right">
-                                  <Link
-                                    to={path}
-                                    onClick={() => setSelectedFocusArea(area.id)}
-                                    className={cn(
-                                      "flex items-center gap-3 px-4 py-2 rounded-xl transition-all group",
-                                      isHubActive 
-                                        ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-100" 
-                                        : "text-slate-400 hover:text-slate-900 border border-transparent"
-                                    )}
-                                  >
-                                    <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600" : "text-slate-300 group-hover:text-blue-500")} />
-                                    <span className={cn("text-[11px] font-bold tracking-tight uppercase opacity-80")}>
-                                      {stripNumericPrefix(t(domain.id))}
-                                    </span>
-                                  </Link>
-                                </HelpTooltip>
+                              <div key={domain.id} className="space-y-1 group/domain">
+                                <Link
+                                  to={path}
+                                  onClick={() => setSelectedFocusArea(area.id)}
+                                  className={cn(
+                                    "flex items-center gap-3 px-4 py-2 rounded-xl transition-all",
+                                    isHubActive ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-100" : "text-slate-400 hover:text-slate-900"
+                                  )}
+                                >
+                                  <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.3)]" : "text-slate-300 group-hover/domain:text-blue-500")} />
+                                  <span className="text-[11px] font-black tracking-tight uppercase opacity-80">{stripNumericPrefix(t(domain.id))}</span>
+                                </Link>
 
-                                {/* Child Terminal Pages indented further */}
-                                <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-0.5">
+                                <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-1">
                                   {domainPagesInArea.map(terminalPage => {
-                                    const terminalPath = `/page/${terminalPage.id}`;
+                                    const terminalPath = selectedProject ? `/project/${selectedProject.id}/page/${terminalPage.id}` : `/page/${terminalPage.id}`;
                                     const isTerminalActive = currentPath === terminalPath;
-                                    
                                     if (!canAccess(terminalPage.id)) return null;
-
-                                    const translatedLabel = t(terminalPage.id);
-                                    const strippedLabel = stripNumericPrefix(translatedLabel);
-                                    const displayLabel = (strippedLabel && strippedLabel.trim() !== '') 
-                                      ? strippedLabel 
-                                      : stripNumericPrefix(terminalPage.title) || terminalPage.title;
 
                                     return (
                                       <Link
                                         key={terminalPage.id}
                                         to={terminalPath}
-                                        onClick={() => setSelectedFocusArea(area.id)}
                                         className={cn(
-                                          "block px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
-                                          isTerminalActive
-                                            ? "bg-blue-50 text-blue-600 font-bold"
-                                            : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                                          "block px-3 py-2 rounded-xl text-[10px] font-bold transition-all uppercase tracking-tighter",
+                                          isTerminalActive ? "bg-blue-50 text-blue-600 shadow-inner" : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
                                         )}
                                       >
-                                        {displayLabel}
+                                        {stripNumericPrefix(terminalPage.title)}
                                       </Link>
                                     );
                                   })}
@@ -232,33 +291,27 @@ export const Sidebar: React.FC = () => {
           </div>
         </nav>
 
-        {/* BOTTOM SECTION */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 relative z-10 shrink-0">
-          <div className="grid grid-cols-2 gap-2 mb-3">
-             <HelpTooltip text={th('drive_explorer_summary')} position="top">
-               <Link to="/page/files" className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50 transition-all group w-full">
-                  <FolderOpen className="w-5 h-5 text-slate-400 group-hover:text-blue-600 mb-1" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('files')}</span>
-               </Link>
-             </HelpTooltip>
-             <HelpTooltip text={th('admin_settings_summary')} position="top">
-               <Link to="/admin/users" className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50 transition-all group w-full">
-                  <Settings className="w-5 h-5 text-slate-400 group-hover:text-blue-600 mb-1" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('admin')}</span>
-               </Link>
-             </HelpTooltip>
-          </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-rose-50 text-rose-600 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            {t('logout')}
-          </button>
+        {/* PROFILE SECTION */}
+        <div className="p-6 border-t border-slate-200 bg-white/50 space-y-4">
+           <Link to="/profile" className="flex items-center gap-3 p-2 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-slate-100">
+                 {userProfile?.photoURL ? <img src={userProfile.photoURL} alt={userProfile.name} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-slate-400" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                 <div className="text-[11px] font-black text-slate-900 truncate tracking-tight">{userProfile?.name}</div>
+                 <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{userProfile?.role}</div>
+              </div>
+           </Link>
+           
+           <button 
+             onClick={handleLogout}
+             className="w-full flex items-center justify-center gap-2 py-3 bg-rose-50 text-rose-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100 italic"
+           >
+             <LogOut className="w-3.5 h-3.5" />
+             {t('terminate_session')}
+           </button>
         </div>
       </div>
     </aside>
   );
 };
-

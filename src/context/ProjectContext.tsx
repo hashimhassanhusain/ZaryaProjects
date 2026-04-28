@@ -38,8 +38,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [selectedCompanyId, setSelectedCompanyIdState] = useState<string>(() => localStorage.getItem('selectedCompanyId') || '');
-  const [selectedInstitutionId, setSelectedInstitutionIdState] = useState<string>(() => localStorage.getItem('selectedInstitutionId') || '');
+  const [selectedCompanyId, setSelectedCompanyIdState] = useState<string>('');
+  const [selectedInstitutionId, setSelectedInstitutionIdState] = useState<string>('');
 
   const [scheduleState, setScheduleState] = useState({
     expandedWbs: {} as Record<string, boolean>,
@@ -63,17 +63,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     columnOrder: ['status', 'plannedStart', 'plannedFinish', 'plannedDuration', 'actualStart', 'actualFinish', 'actualDuration', 'progress', 'plannedCost', 'supplier', 'poCost', 'actualCost']
   });
 
-  const [selectedProject, setSelectedProjectState] = useState<Project | null>(() => {
-    const saved = localStorage.getItem('selectedProject');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
+  const [selectedProject, setSelectedProjectState] = useState<Project | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -97,7 +87,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (current) {
           const updated = projectsData.find(p => p.id === current.id);
           if (updated) {
-            localStorage.setItem('selectedProject', JSON.stringify(updated));
             return updated;
           }
         }
@@ -120,7 +109,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setSelectedProject = (project: Project | null) => {
     setSelectedProjectState(project);
     if (project) {
-      localStorage.setItem('selectedProject', JSON.stringify(project));
       // Optionally auto-select company/institution
       if (project.companyId) {
         setSelectedCompanyId(project.companyId);
@@ -129,19 +117,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setSelectedInstitutionId(comp.parent_entity_id);
         }
       }
-    } else {
-      localStorage.removeItem('selectedProject');
     }
   };
 
   const setSelectedCompanyId = (id: string) => {
     setSelectedCompanyIdState(id);
-    localStorage.setItem('selectedCompanyId', id);
   };
 
   const setSelectedInstitutionId = (id: string) => {
     setSelectedInstitutionIdState(id);
-    localStorage.setItem('selectedInstitutionId', id);
   };
 
   return (

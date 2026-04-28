@@ -22,9 +22,10 @@ import { rollupToParent, RollupLevel } from '../../services/rollupService';
 
 interface UniversalManagerProps {
   entityType: EntityType;
+  inputs?: { id: string; title: string; status?: string }[];
 }
 
-export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType }) => {
+export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, inputs = [] }) => {
   const { selectedProject } = useProject();
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [data, setData] = useState<any[]>([]);
@@ -148,6 +149,7 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType }
           onCancel={() => setView('list')}
           onUploadToDrive={(data) => toast('Integration with Drive Coming Soon', { icon: '☁️' })}
           onPreviewPDF={(data) => toast('PDF Preview Triggered', { icon: '📄' })}
+          inputs={inputs}
         />
       )}
     </div>

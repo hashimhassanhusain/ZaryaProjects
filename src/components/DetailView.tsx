@@ -54,6 +54,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { StandardProcessPage } from './StandardProcessPage';
+import { UniversalManager } from './common/UniversalManager';
 
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
@@ -64,6 +65,31 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const isMeetingsPage = page.id === '3.6.4';
   const isVarianceAnalysisPage = page.id === '4.3.2';
   
+  // Mapping for Grid First logic
+  const GRID_COLLECTION_MAP: Record<string, string> = {
+    '1.2.1': 'stakeholders',
+    '3.1.2': 'projectLogs', // Change Log
+    '2.1.5': 'projectLogs', // App Log
+    '1.2.2': 'projectLogs', // Req Doc
+    '2.3.1': 'activities', // Activity List
+    '2.4.1': 'boq',
+    '3.4.3': 'purchaseOrders',
+    '2.7.5': 'risks',
+    '3.3.3': 'projectLogs', // Daily Progress Reports
+    '2.1.4': 'projectLogs', // Quality Metrics
+    '4.1.1': 'projectLogs', // Audit Logs (Monitor Governance)
+    '2.4.2': 'projectLogs', // Estimates
+    '2.4.4': 'agreements',
+    '4.2.2': 'projectLogs', // Variance
+    '2.3.5': 'projectLogs', // Rel Plan
+    '2.1.10': 'resourcePlans',
+    '3.3.1': 'staff',
+    '3.3.5': 'projectLogs', // Team Charter
+    '2.6.5': 'assignments'
+  };
+
+  const collectionName = GRID_COLLECTION_MAP[page.id];
+
   const [isCreating, setIsCreating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -257,7 +283,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 82, 136); // Zarya Blue
-      const titleText = page.title.toUpperCase();
+      const titleText = stripNumericPrefix(page.title).toUpperCase();
       doc.text(titleText, pageWidth / 2, currentY, { align: 'center' });
       
       currentY += 15;
@@ -4399,14 +4425,20 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       onSave={() => handleSaveDocument(true)}
       onPrint={() => generatePDF(false)}
       isSaving={isCreating}
-      collectionName={page.collectionName}
-      inputs={page.details?.inputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
-      tools={page.details?.tools?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
-      outputs={page.details?.outputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
+      collectionName={collectionName}
+      inputs={isCharterPage ? [
+        { id: '1.4.1', title: 'Business Case', status: 'Approved' },
+        { id: 'agreements', title: 'Agreements', status: 'Finalized' },
+        { id: '1.1.2', title: 'Enterprise Environmental Factors', status: 'Active' }
+      ] : page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []}
     >
-      <div className="space-y-8">
+      <div className="space-y-8 flex-1 flex flex-col min-h-0">
         {/* Detail Content */}
-        {isLogPage && (
+        {collectionName ? (
+           <UniversalManager entityType={collectionName as any} inputs={page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []} />
+        ) : (
+          <>
+            {isLogPage && (
           <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -4907,6 +4939,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
         )}
       </AnimatePresence>
+      </>
+      )}
       </div>
     </StandardProcessPage>
   );

@@ -1,21 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Settings, ChevronDown, User as UserIcon, LogOut, Shield, Bell, Menu, 
-  Loader2, Languages, Search, Star, X, Info, FolderOpen, Printer, 
-  Zap, BarChart3, FileText, LayoutDashboard, DraftingCompass, Calendar, 
-  Banknote, Users, Package, AlertTriangle, UserSearch, Layout, UserPlus, 
-  MessageSquare, Handshake, MessagesSquare, Eye, MessageCircleWarning, 
-  Smile, Archive, LineChart, Wallet, Database, Calculator, Lock, Coins, 
-  Receipt, PieChart, Scale, ShoppingCart, CheckCircle, FolderArchive, 
-  Clock, ListTodo, List, ArrowRightLeft, CheckSquare, Layers, ShieldCheck, 
-  GitBranch, Activity, CheckCircle2, Library, Play, FileText as FileIcon,
-  RefreshCw, DollarSign
+  Settings, User as UserIcon, LogOut, Shield, Search, Star, 
+  FileText as FileIcon, Info, Building, FolderOpen, ChevronDown,
+  LayoutDashboard, Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { auth, handleFirestoreError, OperationType } from '../firebase';
-import { updateDoc, doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
-import { User, signOut } from 'firebase/auth';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { auth } from '../firebase';
+import { getDoc, doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { cn, stripNumericPrefix } from '../lib/utils';
 
 import { useProject } from '../context/ProjectContext';
@@ -24,12 +17,8 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
 import { pages as allPages } from '../data';
-import { User as AppUser, Company, Project } from '../types';
-import { toast } from 'react-hot-toast';
-import { HelpTooltip } from './HelpTooltip';
-
+import { User as AppUser } from '../types';
 import { PERFORMANCE_DOMAINS } from '../constants/navigation';
-import { Link } from 'react-router-dom';
 
 const hubIds: Record<string, string> = {
   'governance': 'gov',
@@ -41,79 +30,31 @@ const hubIds: Record<string, string> = {
   'risk': 'risk'
 };
 
-const ICON_MAP: Record<string, any> = {
-  Settings, Shield, FolderOpen, Printer, Zap, BarChart3, Star, Search, Info,
-  FileText, LayoutDashboard, DraftingCompass, Calendar, Banknote, Users, 
-  Package, AlertTriangle, UserSearch, Layout, UserPlus, MessageSquare, 
-  Handshake, MessagesSquare, Eye, MessageCircleWarning, Smile, Archive, 
-  LineChart, Wallet, Database, Calculator, Lock, Coins, Receipt, PieChart, 
-  Scale, ShoppingCart, CheckCircle, FolderArchive, Clock, ListTodo, List, 
-  ArrowRightLeft, CheckSquare, Layers, ShieldCheck, GitBranch, Activity, 
-  CheckCircle2, Library, Play, FileIcon
-};
-
 export const Header: React.FC = () => {
-  const { language, setLanguage, t, th, isRtl, isHelpRtl } = useLanguage();
-  const { 
-    selectedProject, 
-    setSelectedProject, 
-    selectedCompanyId, 
-    setSelectedCompanyId, 
-    selectedInstitutionId, 
-    setSelectedInstitutionId,
-    projects,
-    companies,
-    loading: projectsLoading 
-  } = useProject();
-  const { currency, setCurrency, exchangeRate, setExchangeRate, refreshExchangeRate } = useCurrency();
+  const { t, isRtl } = useLanguage();
+  const { companies, projects, selectedProject, setSelectedProject, setSelectedCompanyId, selectedCompanyId } = useProject();
+  const { currency } = useCurrency();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
-  
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(auth.currentUser);
+  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
+  const [user, setUser] = useState(auth.currentUser);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [taskCount, setTaskCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const projectMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const favoritesRef = useRef<HTMLDivElement>(null);
+  const projectMenuRef = useRef<HTMLDivElement>(null);
 
   const activePageId = location.pathname.split('/').pop() || '';
   const currentPage = allPages.find(p => p.id === activePageId);
   const currentDomain = PERFORMANCE_DOMAINS.find(d => activePageId && (activePageId === d.id || activePageId === hubIds[d.id] || currentPage?.domain === d.id));
   
-  const getBreadcrumbs = () => {
-    if (!currentPage) return null;
-    
-    const crumbs = [];
-    
-    // Focus Area
-    if (currentPage.focusArea) {
-      crumbs.push({ label: t(currentPage.focusArea), icon: DraftingCompass });
-    }
-    
-    // Domain
-    if (currentDomain) {
-      crumbs.push({ label: stripNumericPrefix(t(currentDomain.id)), icon: currentDomain.icon });
-    }
-    
-    // Self (Terminal Page)
-    if (currentPage.type === 'terminal') {
-      crumbs.push({ label: stripNumericPrefix(t(currentPage.id) || currentPage.title), current: true });
-    }
-    
-    return crumbs;
-  };
+  const { favorites, toggleFavorite } = useUI();
 
-  const breadcrumbs = getBreadcrumbs();
-  const isPage = location.pathname.startsWith('/page/');
-  const { toggleSidebar, favorites, toggleFavorite, isFavorite } = useUI();
-  const isCurrentFav = activePageId ? isFavorite(activePageId) : false;
+  const selectedCompany = companies.find(c => c.id === (selectedProject?.companyId || selectedCompanyId));
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -130,433 +71,239 @@ export const Header: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Sync selectors with selected project only if not manually set
-  useEffect(() => {
-    if (selectedProject && companies.length > 0 && !selectedCompanyId) {
-      const projectCompany = companies.find(c => c.id === selectedProject.companyId);
-      if (projectCompany) {
-        setSelectedCompanyId(projectCompany.id);
-        setSelectedInstitutionId(projectCompany.parent_entity_id || '');
-      }
-    }
-  }, [selectedProject, companies, selectedCompanyId]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (projectMenuRef.current && !projectMenuRef.current.contains(event.target as Node)) {
-        setIsProjectMenuOpen(false);
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-      }
-      if (favoritesRef.current && !favoritesRef.current.contains(event.target as Node)) {
-        setIsFavoritesOpen(false);
-      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) setIsUserMenuOpen(false);
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setIsSearchOpen(false);
+      if (favoritesRef.current && !favoritesRef.current.contains(event.target as Node)) setIsFavoritesOpen(false);
+      if (projectMenuRef.current && !projectMenuRef.current.contains(event.target as Node)) setIsProjectMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedCompany = companies.find(c => c.id === selectedCompanyId);
-  const siteName = selectedCompany ? `${selectedCompany.name} PMIS` : 'Zarya PMIS';
-
   return (
-    <header className="h-[60px] bg-slate-900 text-white border-b border-slate-700 flex items-center px-4 md:px-6 shrink-0 z-50">
+    <header className="h-[72px] bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm">
       <div className="flex items-center gap-6 w-full h-full">
-        {/* Brand & Breadcrumbs */}
-        <div className="flex items-center gap-6 pr-6 border-r border-slate-700 shrink-0">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
-              {selectedCompany ? selectedCompany.name.charAt(0).toUpperCase() : 'Z'}
-            </div>
-            <span className="text-sm font-bold uppercase tracking-widest hidden xl:block">{siteName}</span>
-          </div>
-
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <div className="hidden md:flex items-center gap-2 text-slate-500 border-l border-slate-700 pl-6 ml-2 h-6">
-              {breadcrumbs.map((crumb, idx) => (
-                <React.Fragment key={idx}>
-                  {idx > 0 && <ChevronDown className="w-3 h-3 -rotate-90 opacity-40" />}
-                  <div className={cn(
-                    "flex items-center gap-2 group transition-all",
-                    crumb.current ? "text-white font-bold" : "text-slate-400 hover:text-white cursor-pointer"
-                  )}>
-                    {crumb.icon && <crumb.icon className="w-3 h-3 opacity-60" />}
-                    <span className="text-[10px] uppercase tracking-widest whitespace-nowrap">
-                      {crumb.label}
+        {/* Project & Company Selector */}
+        <div className="relative group shrink-0" ref={projectMenuRef}>
+           <button 
+             onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
+             className={cn(
+               "flex items-center gap-3 px-4 py-2 rounded-2xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
+               isProjectMenuOpen && "border-blue-100 bg-blue-50/50 shadow-sm"
+             )}
+           >
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                 <Building className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col text-left">
+                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">ZARYA PMIS</span>
+                 <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-tight truncate max-w-[150px]">
+                       {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
+                 </div>
+              </div>
+           </button>
+
+           <AnimatePresence>
+             {isProjectMenuOpen && (
+               <motion.div
+                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                 className="absolute top-full left-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-3"
+               >
+                  <div className="max-h-[70vh] overflow-y-auto no-scrollbar space-y-4">
+                     {/* Company List */}
+                     <div className="space-y-1">
+                        <div className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('companies')}</div>
+                        {companies.map(company => (
+                          <div key={company.id} className="space-y-1">
+                             <button
+                               onClick={() => setSelectedCompanyId(company.id)}
+                               className={cn(
+                                 "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left",
+                                 (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
+                                   ? "bg-blue-50 text-blue-700 font-bold"
+                                   : "text-slate-600 hover:bg-slate-50"
+                               )}
+                             >
+                                <Building className="w-4 h-4 opacity-50" />
+                                <span className="text-[11px] uppercase tracking-wider truncate">{company.name}</span>
+                             </button>
+                             
+                             {/* Projects for this company */}
+                             {(selectedProject?.companyId === company.id || selectedCompanyId === company.id) && (
+                               <div className="pl-6 space-y-1 mt-1 border-l-2 border-blue-100 ml-6">
+                                  {projects.filter(p => p.companyId === company.id).map(proj => (
+                                    <button
+                                      key={proj.id}
+                                      onClick={() => {
+                                        setSelectedProject(proj);
+                                        setIsProjectMenuOpen(false);
+                                        navigate(`/project/${proj.id}`);
+                                      }}
+                                      className={cn(
+                                        "w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-left",
+                                        selectedProject?.id === proj.id
+                                          ? "bg-slate-900 text-white font-bold shadow-lg"
+                                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                      )}
+                                    >
+                                       <FolderOpen className="w-3.5 h-3.5 opacity-50" />
+                                       <span className="text-[10px] uppercase truncate">{proj.name}</span>
+                                    </button>
+                                  ))}
+                               </div>
+                             )}
+                          </div>
+                        ))}
+                     </div>
                   </div>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+               </motion.div>
+             )}
+           </AnimatePresence>
         </div>
 
-        {/* Ribbon Selection (Top Bar) */}
-        <nav className="flex items-center h-full overflow-x-auto no-scrollbar">
+        {/* Global Hubs Navigation */}
+        <nav className="flex items-center h-full gap-1 flex-1 px-4">
            {PERFORMANCE_DOMAINS.map(domain => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
              const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
              return (
-               <HelpTooltip key={domain.id} text={th(domain.id + '_summary')} position="bottom">
-                 <Link 
-                   to={`/page/${hubId}`}
-                   className={cn(
-                     "flex flex-col items-center justify-center px-5 h-full transition-all relative group shrink-0",
-                     isActive ? "bg-slate-800 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                   )}
-                 >
-                   <Icon className={cn("w-4 h-4 mb-1", isActive ? "text-white" : "text-slate-500 opacity-60")} strokeWidth={isActive ? 2.5 : 1.5} />
-                   <span className="text-[9px] font-bold uppercase tracking-wider">{t(domain.id)}</span>
-                   {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white shadow-[0_-2px_10px_rgba(255,255,255,0.3)]" />
-                   )}
-                 </Link>
-               </HelpTooltip>
+               <Link 
+                 key={domain.id} 
+                 to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
+                 className={cn(
+                   "flex items-center gap-2.5 px-6 h-11 rounded-[1.25rem] transition-all relative group shrink-0",
+                   isActive 
+                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200" 
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                 )}
+               >
+                 <Icon className={cn("w-4 h-4", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-600")} strokeWidth={isActive ? 2.5 : 2} />
+                 <span className="text-[11px] font-black uppercase tracking-widest leading-none">
+                    {stripNumericPrefix(t(domain.id))}
+                 </span>
+                 {isActive && (
+                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-blue-500/5 rounded-[1.25rem] -z-10" />
+                 )}
+               </Link>
              );
            })}
         </nav>
 
-        {/* Right Tools */}
-        <div className="flex items-center gap-2 ml-auto shrink-0 pr-4">
-           {/* Action Buttons requested by user */}
-            <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 px-2 py-1 rounded-[1.25rem] mr-2 transition-all">
+        {/* Global Actions */}
+        <div className="flex items-center gap-4 shrink-0">
+           {/* Favorites & Search */}
+           <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
               <div className="relative" ref={favoritesRef}>
-                <HelpTooltip text={th('favorites_summary')} position="bottom">
-                  <button 
-                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)} 
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/50 rounded-xl hover:bg-slate-700 hover:border-slate-600 transition-all text-white group", 
-                      isFavoritesOpen && "bg-slate-800 border-slate-600"
-                    )} 
-                  >
-                     <Star className={cn("w-3.5 h-3.5 transition-all group-hover:scale-110", favorites.length > 0 ? "fill-amber-400 text-amber-400" : "text-slate-400")} />
-                     <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block whitespace-nowrap">{t('favorites')}</span>
-                     <ChevronDown className={cn("w-3 h-3 text-slate-500 transition-transform duration-300", isFavoritesOpen && "rotate-180")} />
-                  </button>
-                </HelpTooltip>
-
-                <AnimatePresence>
-                  {isFavoritesOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute top-full right-0 mt-2 w-72 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[100] p-1"
-                    >
-                      <div className="px-4 py-3 border-b border-slate-700/50 mb-1 flex items-center justify-between bg-slate-900/30">
-                         <div className="flex items-center gap-2">
-                           <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                           <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{t('favorites')}</span>
-                         </div>
-                         <span className="px-2 py-0.5 rounded-full bg-slate-700 text-[8px] font-bold text-slate-400 uppercase tracking-widest">{favorites.length} {t('pages')}</span>
-                      </div>
-                      <div className="max-h-[400px] overflow-y-auto no-scrollbar scroll-smooth p-1 space-y-1">
-                        {favorites.length === 0 ? (
-                          <div className="p-8 text-center flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center border border-slate-700/50 scale-110 opacity-30">
-                              <Star className="w-6 h-6 text-slate-500" />
-                            </div>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('no_favorites')}</p>
-                          </div>
-                        ) : (
-                          favorites.map(favId => {
-                            const p = allPages.find(page => page.id === favId);
-                            if (!p) return null;
-                            return (
-                              <div
-                                key={favId}
-                                onClick={() => {
-                                  navigate(`/page/${favId}`);
-                                  setIsFavoritesOpen(false);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === ' ') {
-                                    navigate(`/page/${favId}`);
-                                    setIsFavoritesOpen(false);
-                                  }
-                                }}
-                                role="button"
-                                tabIndex={0}
-                                className="w-full text-left p-3 hover:bg-slate-700/80 rounded-xl text-[10px] text-slate-300 flex items-center gap-4 transition-all group relative border border-transparent hover:border-slate-600/50 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
-                              >
-                                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-amber-400 group-hover:border-amber-400/30 group-hover:bg-amber-400/5 transition-all shrink-0">
-                                  {(() => {
-                                    const IconComp = ICON_MAP[p.icon || ''] || FileIcon;
-                                    return <IconComp className="w-5 h-5" strokeWidth={1.2} />;
-                                  })()}
-                                </div>
-                                <div className="flex flex-col min-w-0 pr-6">
-                                  <span className="font-black text-white truncate text-[11px] tracking-tight">{stripNumericPrefix(th(favId) || p.title)}</span>
-                                  <span className="text-[8px] text-slate-500 uppercase tracking-tighter opacity-60 font-mono italic flex items-center gap-2">
-                                    <span className="px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 NOT-italic font-bold">{favId}</span>
-                                    {p.domain}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFavorite(favId);
-                                  }}
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-rose-500/10 text-amber-500/20 hover:text-rose-500 transition-all z-10"
+                 <button 
+                   onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
+                   className={cn(
+                     "p-2.5 rounded-xl transition-all",
+                     isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-slate-400 hover:text-slate-600"
+                   )}
+                 >
+                    <Star className={cn("w-4 h-4", favorites.length > 0 && "fill-amber-400 text-amber-400")} />
+                 </button>
+                 <AnimatePresence>
+                   {isFavoritesOpen && (
+                     <motion.div
+                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                       className="absolute top-full right-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-3"
+                     >
+                        <div className="px-4 py-4 bg-slate-50 rounded-2xl mb-2 flex items-center justify-between">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('favorites')}</span>
+                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold">{favorites.length}</div>
+                        </div>
+                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
+                           {favorites.map(favId => {
+                              const p = allPages.find(page => page.id === favId);
+                              if (!p) return null;
+                              return (
+                                <button 
+                                  key={favId}
+                                  onClick={() => { navigate(`/page/${favId}`); setIsFavoritesOpen(false); }}
+                                  className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
                                 >
-                                  <Star className="w-3.5 h-3.5 fill-current" />
+                                   <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                      <FileIcon className="w-4 h-4" />
+                                   </div>
+                                   <div className="flex flex-col text-left">
+                                      <span className="text-[11px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
+                                      <span className="text-[8px] font-bold text-slate-400 uppercase">{p.domain}</span>
+                                   </div>
                                 </button>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                              );
+                           })}
+                        </div>
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
               </div>
 
-              {isPage && currentPage && <div className="w-px h-4 bg-slate-700/30 mx-0.5" />}
-
-              {/* Toggle current page as favorite */}
-              {isPage && activePageId && (
-                <HelpTooltip text={t(isCurrentFav ? 'in_favorites' : 'add_to_favorites')} position="bottom">
-                  <button 
-                    onClick={() => toggleFavorite(activePageId)}
-                    className={cn(
-                      "p-2 rounded-xl transition-all active:scale-90 group",
-                      isCurrentFav 
-                        ? "text-amber-400 bg-amber-400/10" 
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    )}
-                  >
-                    <Star className={cn("w-4 h-4 transition-all", isCurrentFav ? "fill-amber-400" : "group-hover:scale-110")} />
-                  </button>
-                </HelpTooltip>
-              )}
-             <HelpTooltip text={th('generate_pdf_summary')} position="bottom">
-               <button 
-                 onClick={() => toast.success(t('pdf_saved_to_drive'))} 
-                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" 
-               >
-                  <Printer className="w-4 h-4" />
-               </button>
-             </HelpTooltip>
-             <HelpTooltip text={th('push_baseline_summary')} position="bottom">
-               <button 
-                 onClick={() => toast.success(t('update_success'))} 
-                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" 
-               >
-                  <Zap className="w-4 h-4 text-blue-400" />
-               </button>
-             </HelpTooltip>
-             <HelpTooltip text={th('drive_explorer_summary')} position="bottom">
-               <button 
-                 onClick={() => navigate('/explorer/root')} 
-                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" 
-               >
-                  <FolderOpen className="w-4 h-4" />
-               </button>
-             </HelpTooltip>
-             <HelpTooltip text={th('admin_settings_summary')} position="bottom">
-               <button 
-                 onClick={() => navigate('/admin/users')} 
-                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" 
-               >
-                  <Settings className="w-4 h-4" />
-               </button>
-             </HelpTooltip>
-           </div>
-
-           {/* Hierarchy Selectors */}
-           <div className="flex items-center gap-2">
-             {/* Institution Select */}
-             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
-               <div className="w-6 h-6 rounded bg-indigo-600 flex items-center justify-center text-[8px] font-bold">INST</div>
-               <select 
-                 value={selectedInstitutionId} 
-                 onChange={(e) => {
-                   setSelectedInstitutionId(e.target.value);
-                   setSelectedCompanyId('');
-                   setSelectedProject(null);
-                 }}
-                 className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
-               >
-                 <option value="" className="bg-slate-900">{t('all_institutions') || 'All Institutions'}</option>
-                 {companies.filter(c => !c.parent_entity_id).map(inst => (
-                   <option key={inst.id} value={inst.id} className="bg-slate-900">{inst.name}</option>
-                 ))}
-               </select>
-             </div>
-
-             {/* Company Select */}
-             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
-               <div className="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-[8px] font-bold">COMP</div>
-               <select 
-                 value={selectedCompanyId} 
-                 onChange={(e) => {
-                   setSelectedCompanyId(e.target.value);
-                   setSelectedProject(null);
-                 }}
-                 className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
-               >
-                 <option value="" className="bg-slate-900">{t('all_companies') || 'All Companies'}</option>
-                 {companies
-                   .filter(c => selectedInstitutionId ? c.parent_entity_id === selectedInstitutionId : true)
-                   .map(comp => (
-                     <option key={comp.id} value={comp.id} className="bg-slate-900">{comp.name}</option>
-                   ))
-                 }
-               </select>
-             </div>
-
-             {/* Project Selector */}
-             <HelpTooltip text={th('project_selector_summary')} position="bottom">
-               <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
-                 <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-[8px] font-bold">PROJ</div>
-                 <select 
-                   value={selectedProject?.id || ''} 
-                   onChange={(e) => setSelectedProject(projects.find(p => p.id === e.target.value) || null)}
-                   className="bg-transparent text-[10px] font-bold text-white border-none focus:ring-0 outline-none pr-6 cursor-pointer max-w-[120px]"
-                 >
-                   <option value="" className="bg-slate-900">{t('select_project') || 'Select Project'}</option>
-                   {projects
-                     .filter(p => {
-                       if (selectedCompanyId) return p.companyId === selectedCompanyId;
-                       if (selectedInstitutionId) {
-                         const subCompanies = companies.filter(c => c.parent_entity_id === selectedInstitutionId).map(c => c.id);
-                         return subCompanies.includes(p.companyId || '') || p.companyId === selectedInstitutionId;
-                       }
-                       return true;
-                     })
-                     .map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)
-                   }
-                 </select>
-               </div>
-             </HelpTooltip>
-           </div>
-
-          <div className="flex items-center gap-1 ml-2">
-             <HelpTooltip text={th('change_language_summary')} position="bottom">
-               <button 
-                 onClick={() => {
-                   const cycle: Record<string, 'en' | 'ar'> = { en: 'ar', ar: 'en' };
-                   setLanguage(cycle[language]);
-                 }} 
-                 className="p-2 text-slate-400 hover:text-white transition-colors relative group" 
-               >
-                  <Languages className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-blue-600 text-white px-1 rounded uppercase">
-                    {language}
-                  </span>
-               </button>
-             </HelpTooltip>
-             
-             <div className="relative" ref={searchRef}>
-               <HelpTooltip text={th('search_summary')} position="bottom">
-                 <button 
-                   onClick={() => setIsSearchOpen(!isSearchOpen)} 
-                   className={cn("p-2 text-slate-400 hover:text-white transition-colors", isSearchOpen && "text-white")}
-                 >
+              <div className="relative" ref={searchRef}>
+                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2.5 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
                     <Search className="w-4 h-4" />
                  </button>
-               </HelpTooltip>
-               <AnimatePresence>
-                 {isSearchOpen && (
-                   <motion.div
-                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                     className="absolute top-full right-0 mt-2 w-72 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-4 z-50"
-                   >
-                     <div className="relative">
-                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                       <input 
-                         autoFocus
-                         type="text" 
-                         value={searchQuery}
-                         onChange={(e) => setSearchQuery(e.target.value)}
-                         placeholder={t('search_placeholder')}
-                         className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                       />
-                     </div>
-                     {searchQuery && (
-                       <div className="mt-4 space-y-1 max-h-60 overflow-y-auto no-scrollbar">
-                         {allPages.filter(p => (stripNumericPrefix(t(p.id) || p.title)).toLowerCase().includes(searchQuery.toLowerCase()))
-                           .slice(0, 5).map(p => (
-                           <button 
-                             key={p.id}
-                             onClick={() => {
-                               navigate(`/page/${p.id}`);
-                               setIsSearchOpen(false);
-                               setSearchQuery('');
-                             }}
-                             className="w-full text-left p-2 hover:bg-slate-700 rounded-lg text-[10px] text-slate-300 transition-colors"
-                           >
-                             {stripNumericPrefix(t(p.id) || p.title)}
-                           </button>
-                         ))}
-                       </div>
-                     )}
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-             </div>
-          </div>
+                 <AnimatePresence>
+                   {isSearchOpen && (
+                     <motion.div
+                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                       className="absolute top-full right-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl p-4"
+                     >
+                        <input autoFocus placeholder={t('search_pmis')} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" />
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
+              </div>
+           </div>
 
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-700 relative" ref={userMenuRef}>
-             <HelpTooltip text={th('user_profile_summary')} position="bottom">
-               <div 
-                 className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all" 
-                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-               >
-                   <img src={appUser?.photoURL || user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Hashim"} alt="Avatar" className="w-full h-full object-cover" />
-               </div>
-             </HelpTooltip>
+           {/* User Profile */}
+           <div className="relative" ref={userMenuRef}>
+              <button 
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-3 pl-4 border-l border-slate-200 group active:scale-95 transition-all"
+              >
+                 <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 p-0.5 shadow-sm group-hover:border-blue-400 transition-all">
+                    <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[0.85rem] object-cover" />
+                 </div>
+              </button>
 
-             <AnimatePresence>
-               {isUserMenuOpen && (
-                 <motion.div
-                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                   className="absolute top-full right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50"
-                 >
-                   <div className="p-4 bg-slate-900/50 border-b border-slate-700">
-                     <p className="font-bold text-white text-sm">{appUser?.name || user?.displayName || 'User'}</p>
-                     <p className="text-[10px] text-slate-400 font-medium">{user?.email}</p>
-                     <div className="mt-2 inline-flex px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[9px] font-bold uppercase tracking-widest border border-blue-500/20">
-                       {appUser?.role || 'Guest'}
+              <AnimatePresence>
+                {isUserMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute top-full right-0 mt-3 w-64 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-50 p-2"
+                  >
+                     <div className="p-5 bg-slate-50 rounded-2xl mb-2 text-center">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-white border border-slate-200 p-1 mx-auto mb-3 shadow-sm">
+                           <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1.1rem] object-cover" />
+                        </div>
+                        <div className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
+                        <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{appUser?.role}</div>
                      </div>
-                   </div>
-                   <div className="p-2">
-                     <button onClick={() => { navigate('/profile'); setIsUserMenuOpen(false); }} className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                       <UserIcon className="w-4 h-4 text-slate-500" />
-                       {t('my_profile')}
-                     </button>
-                     <button onClick={() => { navigate('/admin/users'); setIsUserMenuOpen(false); }} className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                       <Shield className="w-4 h-4 text-slate-500" />
-                       {t('admin_settings')}
-                     </button>
-                     <button onClick={() => { navigate('/explorer/root'); setIsUserMenuOpen(false); }} className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                       <FolderOpen className="w-4 h-4 text-slate-500" />
-                       {t('drive_explorer')}
-                     </button>
-                     <button onClick={() => { navigate('/explorer/root'); setIsUserMenuOpen(false); }} className="w-full text-left p-2.5 hover:bg-slate-700 rounded-xl text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                       <Star className="w-4 h-4 text-slate-500" />
-                       {t('favorites')}
-                     </button>
-                     <div className="my-1 border-t border-slate-700 mx-2" />
-                     <button onClick={() => signOut(auth)} className="w-full text-left p-2.5 hover:bg-rose-500/10 hover:text-rose-400 rounded-xl text-xs text-slate-300 flex items-center gap-3 transition-colors group">
-                       <LogOut className="w-4 h-4 text-slate-500 group-hover:text-rose-400" />
-                       {t('sign_out')}
-                     </button>
-                   </div>
-                 </motion.div>
-               )}
-             </AnimatePresence>
-          </div>
+                     <div className="space-y-1">
+                        <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                           <UserIcon className="w-4 h-4" /> {t('my_profile')}
+                        </button>
+                        <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                           <Shield className="w-4 h-4" /> {t('admin_portal')}
+                        </button>
+                        <div className="h-px bg-slate-100 my-1 mx-2" />
+                        <button onClick={() => signOut(auth)} className="w-full flex items-center gap-3 p-3 hover:bg-rose-50 rounded-xl text-[11px] font-black uppercase tracking-widest text-rose-500 transition-all italic">
+                           <LogOut className="w-4 h-4" /> {t('sign_out')}
+                        </button>
+                     </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+           </div>
         </div>
       </div>
     </header>
