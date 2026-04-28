@@ -78,10 +78,9 @@ export const DocumentShell: React.FC<DocumentShellProps> = ({
   initialMode = 'list',
 }) => {
   const { selectedProject } = useProject();
-  const [mode, setMode] = useState<DocumentShellMode>(
-    // If no versions exist yet, jump straight to edit mode for first-time use
-    versions.length === 0 && !isLoading ? 'edit' : initialMode,
-  );
+  // Always start in list mode — the empty state in VersionedDocumentList
+  // provides the "Create First Version" CTA for brand-new documents.
+  const [mode, setMode] = useState<DocumentShellMode>(initialMode);
   const [isSyncing, setIsSyncing] = useState(false);
 
   /* ── Handlers ── */
@@ -205,18 +204,31 @@ export const DocumentShell: React.FC<DocumentShellProps> = ({
             transition={{ duration: 0.18 }}
             className="w-full h-full"
           >
-            {/* Edit-mode breadcrumb */}
-            <div className="flex items-center gap-2 px-8 pt-6 pb-2">
-              <button
-                onClick={handleCancel}
-                className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                {title}
-              </button>
-              <span className="text-slate-300 text-xs">›</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Edit
-              </span>
+            {/* Mode toggle bar */}
+            <div className="flex items-center justify-between px-8 pt-5 pb-3 border-b border-slate-100 bg-white sticky top-0 z-30">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={handleCancel}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-700 hover:bg-white/80 transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+                  </svg>
+                  Grid View
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-blue-600 text-white shadow-sm"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit View
+                </button>
+              </div>
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Firestore Link
+              </div>
             </div>
 
             {/* Document form */}
