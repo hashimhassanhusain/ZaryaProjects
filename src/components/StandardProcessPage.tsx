@@ -2,25 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { 
-  FileText, 
-  ArrowRight, 
-  Printer, 
-  Download, 
-  Save, 
-  History, 
-  ChevronRight, 
-  Eye, 
-  Settings,
-  Info,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Zap,
-  Box,
-  Cpu,
-  Layers,
-  ShieldCheck,
+import {
+  FileText,
+  ChevronRight,
   Cloud,
   Star
 } from 'lucide-react';
@@ -207,116 +191,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
       />
 
       <div className="flex-1 w-full px-4 md:px-10 py-8 print:block print:p-0">
-        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-10">
-        
-        {/* ── BLOCK A: INPUT HUB (Left Sidebar) ── */}
-        <aside className="col-span-3 space-y-6 print:hidden">
-          <div className="flex items-center justify-between px-2">
-             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                <Box className="w-4 h-4 text-blue-500" />
-                {t('input_arsenal')}
-             </h3>
-             <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{inputs.length} {t('items')}</span>
-          </div>
-          
-          <div className="space-y-3">
-            {inputs.map((input) => {
-              const inputTranslated = t(input.id);
-              const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
-              return (
-                <div 
-                  key={input.id}
-                  onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })}
-                  className={cn(
-                    "group p-5 bg-white border border-slate-100 rounded-[2rem] hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer border-l-4 border-l-blue-500 active:scale-[0.98]",
-                    isRtl && "border-l-0 border-r-4 border-r-blue-500"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic">{input.id}</span>
-                    <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                      <Eye className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <h4 className={cn("text-[13px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
-                    {stripNumericPrefix(inputDisplay)}
-                  </h4>
-                </div>
-              );
-            })}
-            
-            {inputs.length === 0 && (
-              <div className="p-10 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-3">
-                <FileText className="w-10 h-10 text-slate-200 mx-auto" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-300">{t('initial_process_state')}</p>
-              </div>
-            )}
-          </div>
+        <div className="w-full">
 
-          {/* Tools & Techniques Section */}
-          <div className="pt-6 space-y-4">
-             <div className="flex items-center justify-between px-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                   <Cpu className="w-4 h-4 text-amber-500" />
-                   {t('tools_logic')}
-                </h3>
-             </div>
-             <div className="space-y-2">
-                {tools.map((tool) => {
-                  const toolTranslated = t(tool.id);
-                  const toolDisplay = toolTranslated === tool.id ? tool.title : toolTranslated;
-                  return (
-                    <div key={tool.id} className="px-5 py-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 group hover:border-amber-200 transition-colors">
-                       <div className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
-                       <span className="text-xs font-bold text-slate-600 truncate">{toolDisplay}</span>
-                    </div>
-                  );
-                })}
-                {tools.length === 0 && (
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center py-4">{t('standard_processing_only')}</p>
-                )}
-             </div>
-          </div>
-        </aside>
+        {/* ── INTERACTIVE WORKSPACE ── */}
+        <section className="space-y-8 flex flex-col">
+            <div className="flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col print:border-none print:shadow-none">
 
-        {/* ── BLOCK B: INTERACTIVE WORKSPACE (Central Flow) ── */}
-        <section className="col-span-12 md:col-span-6 space-y-8 flex flex-col">
-            <div className="flex-1 bg-white rounded-[4.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[900px] print:border-none print:shadow-none print:min-h-0">
-               {/* Workflow Visualization Header */}
-               <div className="bg-slate-900 p-10 flex items-center justify-between print:hidden overflow-hidden relative">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-                  <div className={cn("flex items-center gap-8 relative z-10", isRtl && "flex-row-reverse")}>
-                     <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-2">
-                           <Box className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">{t('input_arsenal')}</p>
-                     </div>
-                     <ArrowRight className={cn("w-6 h-6 text-white/10", isRtl && "rotate-180")} />
-                     <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-3xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mb-2 animate-pulse">
-                           <Cpu className="w-6 h-6 text-amber-400" />
-                        </div>
-                        <p className="text-[10px] font-semibold text-white uppercase tracking-widest">{t('processing_logic')}</p>
-                     </div>
-                     <ArrowRight className={cn("w-6 h-6 text-white/10", isRtl && "rotate-180")} />
-                     <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center mb-2">
-                           <Layers className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">{t('output_tier')}</p>
-                     </div>
-                  </div>
-                  <div className={cn("flex flex-col items-end gap-2 relative z-10", isRtl && "items-start")}>
-                     <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center gap-3">
-                        <ShieldCheck className="w-4 h-4 text-blue-400" />
-                        <span className="text-[11px] font-semibold text-white uppercase tracking-tighter italic">{t('enterprise_governance_protocol')}</span>
-                     </div>
-                     <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">{t('source_context')}: {page.focusArea}</span>
-                  </div>
-               </div>
-
-               <div className="p-16 relative flex-1">
+               <div className="px-10 pt-8 pb-2 relative flex-1">
                 {/* Workspace Content */}
                 {driveSyncStatus === 'syncing' ? (
                   <div className="flex flex-col items-center justify-center min-h-[600px] text-center space-y-12 animate-in zoom-in-95 duration-700 print:hidden">
@@ -436,7 +317,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                             <p className="text-lg font-semibold italic">{new Date().toLocaleString(language === 'ar' ? 'ar-IQ' : 'en-US')}</p>
                          </div>
                       </section>
-                      
+
                       <div className="prose prose-slate max-w-none">
                          {children}
                       </div>
@@ -475,89 +356,6 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             </div>
         </section>
 
-        {/* ── BLOCK C: OUTPUT TIER (Right Sidebar) ── */}
-        <aside className="col-span-3 space-y-10 print:hidden">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-               <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-emerald-500" />
-                  {t('output_tier')}
-               </h3>
-               <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">{t('archive_ready')}</span>
-            </div>
-            
-            <div className="space-y-5">
-               {outputs.map((output) => {
-                 const outputTranslated = t(output.id);
-                 const outputDisplay = outputTranslated === output.id ? output.title : outputTranslated;
-                 return (
-                   <div 
-                     key={output.id}
-                     className={cn(
-                       "group p-8 bg-white border border-emerald-100 rounded-[3rem] space-y-6 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all border-r-8 border-r-emerald-500 active:scale-[0.98]",
-                       isRtl && "border-r-0 border-l-8 border-l-emerald-500"
-                     )}
-                   >
-                      <div className="flex items-center justify-between">
-                         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                            <FileText className="w-6 h-6" />
-                         </div>
-                         <div className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
-                            {t(output.status?.toLowerCase() || 'baseline')}
-                         </div>
-                      </div>
-                      <div className="space-y-2">
-                         <h4 className={cn("text-[15px] font-semibold text-slate-900 leading-tight", isRtl && "text-right")}>
-                           {stripNumericPrefix(outputDisplay)}
-                         </h4>
-                         <p className={cn("text-[10px] font-semibold text-slate-300 uppercase tracking-widest italic", isRtl && "text-right")}>{output.id}</p>
-                      </div>
-                      <button 
-                        onClick={onPrint}
-                        className="w-full py-4 bg-slate-900 text-white rounded-[2rem] text-[10px] font-semibold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/10"
-                      >
-                        {t('export_pdf_deliverable')}
-                      </button>
-                   </div>
-                 );
-               })}
-
-               {outputs.length === 0 && (
-                 <div className="p-12 bg-emerald-50/50 border border-emerald-100 rounded-[3.5rem] space-y-6 text-center">
-                    <Printer className="w-12 h-12 text-emerald-500/20 mx-auto" />
-                    <div className="space-y-1">
-                       <p className="text-xs font-semibold text-emerald-900 uppercase tracking-tight">{t('finalizing_resultant_artifact')}</p>
-                       <p className="text-[9px] font-semibold text-emerald-600/40 uppercase tracking-widest italic">{t('awaiting_work_completion')}</p>
-                    </div>
-                 </div>
-               )}
-            </div>
-          </div>
-
-          {/* ── Google Drive Integration Card ── */}
-          <div className="p-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] shadow-2xl shadow-blue-600/30 space-y-8 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-1000" />
-             <div className={cn("flex items-center justify-between relative z-10", isRtl && "flex-row-reverse")}>
-                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md border border-white/20">
-                   <Cloud className="w-7 h-7" />
-                </div>
-                <div className={cn("flex flex-col items-end", isRtl && "items-start")}>
-                   <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,1)] mb-1" />
-                   <span className="text-[8px] font-semibold text-white/60 uppercase tracking-widest">{t('enterprise_sync')}</span>
-                </div>
-             </div>
-             <div className="space-y-4 relative z-10">
-                <h4 className={cn("text-lg font-semibold text-white italic uppercase tracking-tight leading-tight", isRtl && "text-right")}>{t('automated_cloud_archival_plan')}</h4>
-                <p className={cn("text-[12px] text-white/80 font-bold leading-relaxed", isRtl && "text-right")}>
-                   {t('zarya_creates_structure')} 
-                   <span className="block mt-3 p-3 bg-black/20 rounded-2xl font-mono text-[10px] text-blue-200" dir="ltr">
-                     /Drive/ZARYA/{page.domain}/{page.focusArea}/
-                   </span>
-                </p>
-             </div>
-          </div>
-        </aside>
-        
         </div>
       </div>
     </div>

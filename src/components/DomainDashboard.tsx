@@ -234,10 +234,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     }
   });
 
-  // Auto-select overview when domain changes
+  // Auto-select overview when domain changes, but respect initialTab on mount/route-change
   React.useEffect(() => {
-    setActiveTab('overview');
-  }, [page.id]);
+    setActiveTab(initialTab || 'overview');
+  }, [page.id, initialTab]);
 
   // Favorites state
   const [favorites, setFavorites] = useState<string[]>(() => {
