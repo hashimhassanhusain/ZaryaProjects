@@ -18,8 +18,7 @@ import {
   UserSearch, Layout, Coins, Receipt, Wallet, Landmark, Eye, MessageCircleWarning,
   Smile, Archive, Calculator, Lock, FilePlus, History, CalendarDays,
   Play, Gauge, Settings2, Library, Network, Search, UserPlus, Handshake, MessagesSquare,
-  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle, Star, FolderOpen, Printer,
-  Inbox, Gavel
+  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle, Star, FolderOpen, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType } from '../types';
@@ -65,7 +64,6 @@ import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanVi
 import { TasksView } from './TasksView';
 import { ProjectCharterView } from './ProjectCharterView';
 import { GovernancePoliciesView } from './GovernancePoliciesView';
-import { CorrespondenceLogView } from './CorrespondenceLogView';
 import { ZaryaPOTracker } from './ZaryaPOTracker';
 import { BOQView } from './BOQView';
 import { WBSView } from './WBSView';
@@ -119,8 +117,7 @@ const ICON_MAP: Record<string, any> = {
   UserSearch, Layout, Coins, Receipt, Wallet, Landmark, Eye, MessageCircleWarning,
   Smile, Archive, Calculator, Lock, FilePlus, History, CalendarDays,
   Play, Gauge, Settings2, Library, Network, Search, UserPlus, Handshake, MessagesSquare,
-  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle,
-  Inbox, Gavel
+  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle
 };
 
 import { Ribbon, RibbonGroup } from './Ribbon';
@@ -230,10 +227,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     }
   });
 
-  // Auto-select overview when domain changes, but respect initialTab on mount/route-change
+  // Auto-select overview when domain changes
   React.useEffect(() => {
-    setActiveTab(initialTab || 'overview');
-  }, [page.id, initialTab]);
+    setActiveTab('overview');
+  }, [page.id]);
 
   // Favorites state
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -473,18 +470,13 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isLessonsLearnedPage = p.id === '5.1.1';
     const isGovernanceHubPage = p.id === 'gov' || p.type === 'hub' && p.domain === 'governance';
     const isChangeRequestPage = p.id === '3.1.1';
-    const isCorrespondenceLogPage = p.id === '3.1.2';
-    const isMOMPage = p.id === '3.1.3';
-    const isDecisionLogPage = p.id === '3.1.4';
+    const isDecisionLogPage = p.id === '3.1.3';
     const isChangeManagementHubPage = p.id === '3.4';
     const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(p.id);
     const isFormalAcceptancePage = p.id === '4.1.2';
 
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
     if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
-    if (isCorrespondenceLogPage) return <CorrespondenceLogView page={p} />;
-    if (isMOMPage) return <DetailView page={pages.find(pg => pg.id === '3.6.4') || p} />;
-    if (isDecisionLogPage) return <DecisionLogView page={p} />;
     if (isTasksPage) return <TasksView />;
     if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '3.6.4')!} />;
     if (isZaryaPage) return <ZaryaPOTracker page={p} />;
@@ -533,6 +525,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isGovernanceHubPage) return <GovernanceHubView page={p} />;
     if (isStakeholderRegisterPage) return <StakeholderRegisterView page={p} />;
     if (isLessonsLearnedPage) return <LessonsLearnedView page={p} />;
+    if (isDecisionLogPage) return <DecisionLogView page={p} />;
     if (isChangeManagementHubPage) return <ChangeManagementHubView page={p} />;
     if (isChangeRequestPage) return <ChangeRequestView page={p} />;
     if (isVendorRegisterPage) return <SupplierMasterRegister page={p} />;

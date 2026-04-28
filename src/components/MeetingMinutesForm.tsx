@@ -37,7 +37,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 interface MeetingMinutesFormProps {
-  project: Project;
+  project: Project | null;
   meeting?: Meeting;
   onSave: (data: Partial<Meeting>) => void;
   onCancel: () => void;
@@ -45,6 +45,17 @@ interface MeetingMinutesFormProps {
 
 export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project, meeting, onSave, onCancel }) => {
   const { t, isRtl, language } = useLanguage();
+  
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+        <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
+        <h3 className="text-lg font-bold text-slate-900">{t('select_project_first')}</h3>
+        <p className="text-slate-500">{t('select_project_hint')}</p>
+      </div>
+    );
+  }
+
   const [formData, setFormData] = useState<Partial<Meeting>>(meeting || {
     title: '',
     date: new Date().toISOString().split('T')[0],

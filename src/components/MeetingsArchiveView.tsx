@@ -24,7 +24,7 @@ import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 
 interface MeetingsArchiveViewProps {
-  project: Project;
+  project: Project | null;
   onNewMeeting: () => void;
   onViewMeeting: (meeting: Meeting) => void;
 }
@@ -37,6 +37,8 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!project?.id) return;
+
     const q = query(
       collection(db, 'meetings'),
       where('projectId', '==', project.id),
@@ -48,7 +50,7 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
     });
 
     return () => unsubscribe();
-  }, [project.id]);
+  }, [project?.id]);
 
   const filteredMeetings = meetings.filter(m => {
     const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -71,6 +73,16 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
       default: return 'bg-slate-500';
     }
   };
+
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+        <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
+        <h3 className="text-lg font-bold text-slate-900">{t('select_project_first')}</h3>
+        <p className="text-slate-500">{t('select_project_hint')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

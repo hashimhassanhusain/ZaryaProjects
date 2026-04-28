@@ -259,7 +259,7 @@ const PageRenderer = () => {
           <TasksView />
         ) : isMeetingsPage ? (
           <MeetingsArchiveView 
-            project={selectedProject!} 
+            project={selectedProject} 
             onNewMeeting={() => {}} 
             onViewMeeting={() => {}} 
           />

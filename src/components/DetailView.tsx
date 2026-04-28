@@ -4501,7 +4501,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           ) : isMeetingsPage ? (
             meetingViewMode === 'archive' ? (
               <MeetingsArchiveView 
-                project={selectedProject!}
+                project={selectedProject}
                 onNewMeeting={() => {
                   setSelectedMeeting(null);
                   setMeetingViewMode('form');
@@ -4513,7 +4513,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               />
             ) : (
               <MeetingMinutesForm 
-                project={selectedProject!}
+                project={selectedProject}
                 meeting={selectedMeeting || undefined}
                 onSave={async (data) => {
                   setMeetingViewMode('archive');

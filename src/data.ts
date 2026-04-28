@@ -1,29 +1,4 @@
-import { Page, User, Project, Workspace, Task, Meeting, BOQItem, PurchaseOrder, Institution, Company } from './types';
-
-export const initialInstitutions: Institution[] = [
-  {
-    id: 'inst1',
-    name: 'Zarya International Group',
-    type: 'contractor',
-    country: 'Iraq',
-    createdAt: new Date().toISOString(),
-    createdBy: 'system'
-  }
-];
-
-export const initialCompanies: Company[] = [
-  {
-    id: 'comp1',
-    institutionId: 'inst1',
-    name: 'Zarya Civil Engineering Ltd',
-    slug: 'zarya',
-    registrationNumber: 'IQ-12345',
-    address: 'Baghdad, Iraq',
-    status: 'Active',
-    createdAt: new Date().toISOString(),
-    createdBy: 'system'
-  }
-];
+import { Page, User, Project, Workspace, Task, Meeting, BOQItem, PurchaseOrder } from './types';
 
 export const currentUser: User = {
   uid: 'u1',
@@ -138,13 +113,13 @@ export const pages: Page[] = [
 
   // --- STAKEHOLDERS DOMAIN (REFINED PMBOK 8) ---
   { 
-    id: '1.5.1',
-    title: 'Identify Stakeholders',
-    type: 'terminal',
-    domain: 'stakeholders',
-    focusArea: 'Initiating',
-    collectionName: 'stakeholders',
+    id: '1.5.1', 
+    title: 'Identify Stakeholders', 
+    type: 'terminal', 
+    domain: 'stakeholders', 
+    focusArea: 'Initiating', 
     icon: 'UserSearch', 
+    collectionName: 'stakeholders',
     summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
     details: {
       inputs: ['business-case', 'project-charter', 'governance-framework', 'org-structure'],
@@ -307,13 +282,13 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.1',
-    title: 'Bill of Quantities (BOQ)',
-    type: 'terminal',
-    domain: 'finance',
-    focusArea: 'Planning',
-    collectionName: 'boq_items',
+    id: '2.4.1', 
+    title: 'Bill of Quantities (BOQ)', 
+    type: 'terminal', 
+    domain: 'finance', 
+    focusArea: 'Planning', 
     icon: 'Database', 
+    collectionName: 'boq_items',
     summary: 'Centralized repository of all project quantities, units, and rates mapped to MasterFormat divisions.',
     details: {
       inputs: ['Approved Drawings', 'Technical Specifications'],
@@ -420,13 +395,13 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '3.4.3',
-    title: 'Purchase Order Tracking',
-    type: 'terminal',
-    domain: 'finance',
-    focusArea: 'Executing',
-    collectionName: 'purchase_orders',
+    id: '3.4.3', 
+    title: 'Purchase Order Tracking', 
+    type: 'terminal', 
+    domain: 'finance', 
+    focusArea: 'Executing', 
     icon: 'ShoppingCart', 
+    collectionName: 'purchase_orders',
     summary: 'Tracking system for all project purchase orders from commitment to payment.',
     details: {
       inputs: ['Approved Requisitions', 'Vendor Contracts'],
@@ -505,13 +480,13 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.3.1',
-    title: 'Activity Definition Table',
-    type: 'terminal',
-    domain: 'schedule',
-    focusArea: 'Planning',
-    collectionName: 'activities',
+    id: '2.3.1', 
+    title: 'Activity Definition Table', 
+    type: 'terminal', 
+    domain: 'schedule', 
+    focusArea: 'Planning', 
     icon: 'List', 
+    collectionName: 'activities',
     summary: 'Detailed list of activities, quantities, and attributes sorted by WBS structure.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'detailed-scope-statement'],
@@ -855,173 +830,145 @@ export const pages: Page[] = [
       outputs: ['archived-scope-records', 'scope-structured-folder', 'final-scope-documentation']
     }
   },
-  {
-    id: '1.1.1',
-    title: 'Project Charter',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Initiating',
-    icon: 'Gavel',
+  { 
+    id: '1.1.1', 
+    title: 'Project Charter (Governance Framework)', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Initiating', 
+    icon: 'Shield', 
     collectionName: 'charter_entries',
-    summary: 'The foundational authorization document defining project objectives, authority, and high-level scope.',
+    summary: 'Define the governing framework, roles, and decision-making model for project oversight.',
     details: {
       inputs: ['org-strategy', 'business-case', 'eef', 'opa'],
       tools: ['Expert Judgment', 'Governance Framework Modeling', 'Stakeholder Alignment Workshops'],
       outputs: ['governance-framework', 'governance-structure', 'decision-making-model']
     }
   },
-  {
-    id: '1.1.2',
-    title: 'Management Policies & Procedures',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Initiating',
-    icon: 'ShieldCheck',
-    summary: 'Formal governance policies, roles, authority matrix, and operating procedures for the project.',
+  { 
+    id: '1.1.2', 
+    title: 'Define Project Value Alignment', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Initiating', 
+    icon: 'Target', 
+    summary: 'Ensure project objectives align with organizational value targets and strategic KPIs.',
     details: {
       inputs: ['business-case', 'strategic-objectives', 'stakeholder-expectations'],
       tools: ['Value Analysis', 'Benefit Mapping', 'Alignment Workshops'],
-      outputs: ['governance-policies', 'authority-matrix', 'operating-procedures']
+      outputs: ['value-alignment-statement', 'success-criteria-definition', 'high-level-kpis']
     }
   },
-  {
-    id: '2.1.1',
-    title: 'Change Management Plan',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Planning',
-    icon: 'FileText',
-    summary: 'Plan governing how project changes are identified, assessed, approved, and implemented.',
+  { 
+    id: '2.1.1', 
+    title: 'Develop Governance Management Plan', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Planning', 
+    icon: 'FileText', 
+    summary: 'Formalize the plan for managing governance, including escalation and approval workflows.',
     details: {
-      inputs: ['governance-framework', 'governance-policies', 'org-policies'],
+      inputs: ['governance-framework', 'value-alignment-statement', 'org-policies'],
       tools: ['Planning Workshops', 'Governance Templates', 'Expert Judgment'],
-      outputs: ['change-management-plan', 'escalation-procedures', 'approval-workflows']
+      outputs: ['governance-management-plan', 'escalation-procedures', 'approval-workflows']
     }
   },
-  {
-    id: '2.1.2',
-    title: 'Project Management Plan',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Planning',
-    icon: 'ClipboardList',
-    summary: 'The master plan integrating all subsidiary management plans and baselines for project execution.',
+  { 
+    id: '2.1.2', 
+    title: 'Project Management Plan (Metrics & Control)', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Planning', 
+    icon: 'Activity', 
+    summary: 'Establish the KPIs and dashboard structures for governance monitoring.',
     details: {
-      inputs: ['change-management-plan', 'governance-policies', 'org-kpis'],
+      inputs: ['governance-management-plan', 'success-criteria-definition', 'org-kpis'],
       tools: ['KPI Definition Techniques', 'Performance Measurement Frameworks', 'Benchmarking'],
-      outputs: ['project-management-plan', 'performance-baselines', 'reporting-templates']
+      outputs: ['gov-metrics-framework', 'perf-indicators-dashboard', 'reporting-templates']
     }
   },
-  {
-    id: '3.1.1',
-    title: 'Change Requests',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Executing',
-    icon: 'FilePlus',
-    summary: 'Register of all formal change requests with status tracking, impact analysis, and approval records.',
+  { 
+    id: '3.1.1', 
+    title: 'Implement Governance Framework', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Executing', 
+    icon: 'Zap', 
+    summary: 'Activate the governance system and maintain records of decisions and meetings.',
     details: {
-      inputs: ['project-management-plan', 'governance-policies', 'approval-workflows'],
-      tools: ['Change Control System', 'Impact Analysis', 'Approval Workflow Tools'],
-      outputs: ['approved-changes', 'rejected-changes', 'change-log']
+      inputs: ['governance-management-plan', 'governance-structure', 'approval-workflows'],
+      tools: ['Communication Systems', 'Workflow Automation Tools', 'Collaboration Platforms'],
+      outputs: ['active-governance-system', 'decision-logs', 'meeting-records']
     }
   },
-  {
-    id: '3.1.2',
-    title: 'Correspondence Log',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Executing',
-    icon: 'Inbox',
-    summary: 'Centralized register of all official incoming and outgoing project correspondence and formal letters.',
+  { 
+    id: '3.1.2', 
+    title: 'Enable Governance Communication', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Executing', 
+    icon: 'MessageSquare', 
+    summary: 'Distribute governance reports and manage stakeholder updates.',
     details: {
-      inputs: ['project-management-plan', 'communication-requirements'],
-      tools: ['Document Management', 'Correspondence Tracking Systems'],
-      outputs: ['correspondence-register', 'letter-archive', 'communication-audit-trail']
+      inputs: ['governance-management-plan', 'communication-requirements'],
+      tools: ['Communication Planning', 'Reporting Systems', 'Dashboard Tools'],
+      outputs: ['governance-reports', 'stakeholder-updates', 'communication-logs']
     }
   },
-  {
-    id: '3.1.3',
-    title: 'Minutes of Meeting (MOM)',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Executing',
-    icon: 'MessagesSquare',
-    summary: 'Official records of all project meetings including attendees, decisions, and action items.',
+  { 
+    id: '4.1.1', 
+    title: 'Monitor Governance Performance', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Monitoring & Controlling', 
+    icon: 'Activity', 
+    summary: 'Analyze performance data and trends to identify governance deviations.',
     details: {
-      inputs: ['project-management-plan', 'stakeholder-register'],
-      tools: ['Meeting Management', 'Action Item Tracking'],
-      outputs: ['meeting-minutes', 'action-items-log', 'decision-register']
-    }
-  },
-  {
-    id: '3.1.4',
-    title: 'Decision Log',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Executing',
-    icon: 'ListChecks',
-    summary: 'Structured register of all key project decisions, the rationale behind them, and their impact.',
-    details: {
-      inputs: ['meeting-minutes', 'change-log', 'issue-logs'],
-      tools: ['Decision Frameworks', 'Root Cause Analysis'],
-      outputs: ['decision-register', 'rationale-documentation', 'impact-assessments']
-    }
-  },
-  {
-    id: '4.1.1',
-    title: 'Governance Progress Reports',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Monitoring & Controlling',
-    icon: 'BarChart3',
-    summary: 'Periodic governance performance reports tracking KPIs, compliance, and deviations.',
-    details: {
-      inputs: ['project-management-plan', 'change-log', 'decision-register'],
+      inputs: ['gov-metrics-framework', 'governance-reports', 'decision-logs'],
       tools: ['Performance Analysis', 'Variance Analysis', 'Trend Analysis'],
       outputs: ['gov-performance-reports', 'deviation-analysis', 'gov-recommendations']
     }
   },
-  {
-    id: '4.1.2',
-    title: 'Deliverable Acceptance',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Monitoring & Controlling',
-    icon: 'CheckSquare',
-    summary: 'Formal acceptance records for completed project deliverables signed off by authorized stakeholders.',
+  { 
+    id: '4.1.2', 
+    title: 'Manage Governance Issues & Escalations', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Monitoring & Controlling', 
+    icon: 'AlertCircle', 
+    summary: 'Resolve governance conflicts and manage escalations through defined procedures.',
     details: {
-      inputs: ['project-management-plan', 'gov-performance-reports', 'escalation-procedures'],
-      tools: ['Acceptance Criteria Review', 'Inspection & Testing', 'Sign-off Workflows'],
-      outputs: ['accepted-deliverables', 'acceptance-records', 'punch-list']
+      inputs: ['issue-logs', 'gov-performance-reports', 'escalation-procedures'],
+      tools: ['Root Cause Analysis', 'Decision Frameworks', 'Escalation Models'],
+      outputs: ['resolved-issues-log', 'escalation-records', 'corrective-actions']
     }
   },
-  {
-    id: '5.1.1',
-    title: 'Lessons Learned Register',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Closing',
-    icon: 'BookOpen',
-    summary: 'Formal register of lessons learned throughout the project lifecycle for future reference.',
+  { 
+    id: '5.1.1', 
+    title: 'Evaluate Governance Effectiveness', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Closing', 
+    icon: 'Award', 
+    summary: 'Conduct a final review of governance effectiveness and recommend future improvements.',
     details: {
-      inputs: ['gov-performance-reports', 'decision-register', 'stakeholder-feedback'],
-      tools: ['Lessons Learned Workshops', 'Performance Review', 'Benchmarking'],
-      outputs: ['lessons-learned-register', 'improvement-recommendations', 'best-practices']
+      inputs: ['gov-performance-reports', 'lessons-learned-data', 'stakeholder-feedback'],
+      tools: ['Performance Review', 'Lessons Learned Workshops', 'Benchmarking'],
+      outputs: ['gov-evaluation-report', 'improvement-recommendations', 'gov-best-practices']
     }
   },
-  {
-    id: '5.1.2',
-    title: 'Project Close Out',
-    type: 'terminal',
-    domain: 'governance',
-    focusArea: 'Closing',
-    icon: 'Archive',
-    summary: 'Final project closure documentation including handover records, archive index, and sign-off.',
+  { 
+    id: '5.1.2', 
+    title: 'Archive Governance Artifacts', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Closing', 
+    icon: 'Box', 
+    summary: 'Officially archive all governance records and decision logs to the project repository.',
     details: {
-      inputs: ['accepted-deliverables', 'lessons-learned-register', 'decision-register'],
-      tools: ['Document Management Systems', 'Archiving Standards', 'Handover Protocols'],
-      outputs: ['project-closure-report', 'archive-index', 'final-handover-package']
+      inputs: ['project-documents', 'governance-reports', 'decision-logs'],
+      tools: ['Document Management Systems', 'Archiving Standards'],
+      outputs: ['archived-gov-records', 'structured-folder-drive', 'final-gov-documentation']
     }
   },
 
@@ -1094,20 +1041,6 @@ export const pages: Page[] = [
       inputs: ['resource-management-plan', 'governance-management-plan', 'org-policies', 'governance-framework'],
       tools: ['KPI Definition', 'Resource Tracking Systems', 'Performance Framework Design'],
       outputs: ['resource-control-plan', 'resource-tracking-structure', 'resource-performance-metrics']
-    }
-  },
-  { 
-    id: '3.3.4', 
-    title: 'Vendor Master Register', 
-    type: 'terminal', 
-    domain: 'resources', 
-    focusArea: 'Executing', 
-    icon: 'Truck', 
-    summary: 'Manage project-specific vendors, suppliers, and service providers.',
-    details: {
-      inputs: ['resource-management-plan', 'procurement-strategy', 'vendor-contracts'],
-      tools: ['Vendor Management System', 'Rating & Assessment'],
-      outputs: ['vendor-master-register', 'approved-vendor-list']
     }
   },
   { 
