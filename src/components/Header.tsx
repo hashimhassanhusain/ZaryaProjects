@@ -83,12 +83,37 @@ export const Header: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const favoritesRef = useRef<HTMLDivElement>(null);
 
-  const activePage = location.pathname.split('/').pop() || '';
-  const currentDomain = PERFORMANCE_DOMAINS.find(d => activePage && (activePage === d.id || activePage.startsWith(d.id + '-')));
+  const activePageId = location.pathname.split('/').pop() || '';
+  const currentPage = allPages.find(p => p.id === activePageId);
+  const currentDomain = PERFORMANCE_DOMAINS.find(d => activePageId && (activePageId === d.id || activePageId === hubIds[d.id] || currentPage?.domain === d.id));
   
+  const getBreadcrumbs = () => {
+    if (!currentPage) return null;
+    
+    const crumbs = [];
+    
+    // Focus Area
+    if (currentPage.focusArea) {
+      crumbs.push({ label: t(currentPage.focusArea), icon: DraftingCompass });
+    }
+    
+    // Domain
+    if (currentDomain) {
+      crumbs.push({ label: stripNumericPrefix(t(currentDomain.id)), icon: currentDomain.icon });
+    }
+    
+    // Self (Terminal Page)
+    if (currentPage.type === 'terminal') {
+      crumbs.push({ label: stripNumericPrefix(t(currentPage.id) || currentPage.title), current: true });
+    }
+    
+    return crumbs;
+  };
+
+  const breadcrumbs = getBreadcrumbs();
   const isPage = location.pathname.startsWith('/page/');
   const { toggleSidebar, favorites, toggleFavorite, isFavorite } = useUI();
-  const isCurrentFav = activePage ? isFavorite(activePage) : false;
+  const isCurrentFav = activePageId ? isFavorite(activePageId) : false;
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -141,12 +166,33 @@ export const Header: React.FC = () => {
   return (
     <header className="h-[60px] bg-slate-900 text-white border-b border-slate-700 flex items-center px-4 md:px-6 shrink-0 z-50">
       <div className="flex items-center gap-6 w-full h-full">
-        {/* Brand */}
-        <div className="flex items-center gap-3 pr-6 border-r border-slate-700 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
-           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
-             {selectedCompany ? selectedCompany.name.charAt(0).toUpperCase() : 'Z'}
-           </div>
-           <span className="text-sm font-bold uppercase tracking-widest hidden lg:block">{siteName}</span>
+        {/* Brand & Breadcrumbs */}
+        <div className="flex items-center gap-6 pr-6 border-r border-slate-700 shrink-0">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
+              {selectedCompany ? selectedCompany.name.charAt(0).toUpperCase() : 'Z'}
+            </div>
+            <span className="text-sm font-bold uppercase tracking-widest hidden xl:block">{siteName}</span>
+          </div>
+
+          {breadcrumbs && breadcrumbs.length > 0 && (
+            <div className="hidden md:flex items-center gap-2 text-slate-500 border-l border-slate-700 pl-6 ml-2 h-6">
+              {breadcrumbs.map((crumb, idx) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <ChevronDown className="w-3 h-3 -rotate-90 opacity-40" />}
+                  <div className={cn(
+                    "flex items-center gap-2 group transition-all",
+                    crumb.current ? "text-white font-bold" : "text-slate-400 hover:text-white cursor-pointer"
+                  )}>
+                    {crumb.icon && <crumb.icon className="w-3 h-3 opacity-60" />}
+                    <span className="text-[10px] uppercase tracking-widest whitespace-nowrap">
+                      {crumb.label}
+                    </span>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Ribbon Selection (Top Bar) */}
@@ -154,7 +200,7 @@ export const Header: React.FC = () => {
            {PERFORMANCE_DOMAINS.map(domain => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
-             const isActive = activePage === domain.id || activePage === hubId || (currentDomain?.id === domain.id);
+             const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
              return (
                <HelpTooltip key={domain.id} text={th(domain.id + '_summary')} position="bottom">
                  <Link 
@@ -271,13 +317,13 @@ export const Header: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {isPage && activePage && <div className="w-px h-4 bg-slate-700/30 mx-0.5" />}
+              {isPage && currentPage && <div className="w-px h-4 bg-slate-700/30 mx-0.5" />}
 
               {/* Toggle current page as favorite */}
-              {isPage && activePage && (
+              {isPage && activePageId && (
                 <HelpTooltip text={t(isCurrentFav ? 'in_favorites' : 'add_to_favorites')} position="bottom">
                   <button 
-                    onClick={() => toggleFavorite(activePage)}
+                    onClick={() => toggleFavorite(activePageId)}
                     className={cn(
                       "p-2 rounded-xl transition-all active:scale-90 group",
                       isCurrentFav 

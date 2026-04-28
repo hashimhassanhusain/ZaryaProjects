@@ -532,6 +532,10 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 lineItems: updatedLineItems,
                 updatedAt: serverTimestamp()
               });
+
+              // Trigger rollup for this PO (line items updated)
+              const { rollupToParent } = await import('../services/rollupService');
+              await rollupToParent('lineItem', poDoc.id);
             }
           }
         }

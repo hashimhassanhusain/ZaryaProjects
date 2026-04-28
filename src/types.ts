@@ -644,6 +644,7 @@ export interface Page {
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
   summary?: string;
   formFields?: string[];
+  collectionName?: string; // New field for standardized "Grid First" logic
   kpis?: KPI[];
   alerts?: Alert[];
   icon?: string;

@@ -7,25 +7,55 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Zarya File Naming Convention (FNC)
- * [ProjectCode]-ZRY-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version].pdf
+ * [ProjectCode]-ZRY-DIV[XX]-[TYPE]-[SEQ]
+ * fallback: [ProjectCode]-ZRY-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version]
  */
 export function generateZaryaFileName(params: {
   projectCode: string;
-  category: string; // Management, Engineering, Procurement, Finance, Legal
-  dept: string; // INIT, PLAN, EXEC, MON, CLS
-  type: string; // FRM, PLN, RPT, LOG, DRW, SPC, MS
-  description: string;
-  version: string; // e.g. 1
-  date?: string; // YYYYMMDD
+  type: string; // FRM, PLN, RPT, LOG, DRW, SPC, MS, INV, CON
+  division?: string; // e.g. "03" or "03 - Concrete"
+  seq?: string; // e.g. 001
+  category?: string;
+  dept?: string;
+  description?: string;
+  version?: string;
+  date?: string;
 }) {
   const date = params.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
-  const desc = params.description.replace(/\s+/g, '_').toUpperCase();
-  const ver = params.version.startsWith('V') ? params.version : `V${params.version}`;
-  const cat = params.category.toUpperCase();
-  const dept = params.dept.toUpperCase();
   const type = params.type.toUpperCase();
   
+  // If division is provided, use the new strict format
+  if (params.division) {
+    const divNum = params.division.match(/^\d+/) ? params.division.match(/^\d+/)![0].padStart(2, '0') : 'XX';
+    const seq = params.seq || '001';
+    return `${params.projectCode}-ZRY-DIV${divNum}-${type}-${seq}`;
+  }
+
+  // Fallback for legacy/management files
+  const desc = (params.description || 'DOC').replace(/\s+/g, '_').toUpperCase();
+  const ver = params.version ? (params.version.startsWith('V') ? params.version : `V${params.version}`) : 'V1';
+  const cat = (params.category || 'MGT').toUpperCase();
+  const dept = (params.dept || 'EXEC').toUpperCase();
+  
   return `${params.projectCode}-ZRY-${cat}-${dept}-${type}-${desc}-${date}-${ver}`;
+}
+
+/**
+ * Auto-routes files based on type and content
+ */
+export function getRouteForFile(type: string, division?: string): string {
+  const t = type.toUpperCase();
+  if (t === 'DRW' || t === 'CAD') {
+    const div = division ? division.match(/^\d+/) : null;
+    return div ? `Engineering/AutoCAD/DIV${div[0].padStart(2, '0')}` : 'Engineering/AutoCAD/General';
+  }
+  if (t === 'INV' || t === 'BILL') {
+    return 'Finance/Invoices';
+  }
+  if (t === 'CON' || t === 'AGR') {
+    return 'Subcontractors_Hub/Contracts';
+  }
+  return 'General_Archive';
 }
 
 export function formatCurrency(amount: number, currency: string = 'IQD') {

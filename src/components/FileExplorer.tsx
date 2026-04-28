@@ -232,8 +232,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const extension = pendingFile.name.split('.').pop();
       let finalName = `${baseName}.${extension}`;
 
-      const baseNameNoVersion = baseName.split('-V')[0];
-      const sameFiles = existingFiles?.filter((f: any) => f.name.startsWith(baseNameNoVersion)) || [];
+      // Versioning logic for the file name
+      const sameFiles = existingFiles?.filter((f: any) => f.name.includes(uploadMetadata.description.toUpperCase().replace(/\s+/g, '_'))) || [];
       if (sameFiles.length > 0) {
         version = sameFiles.length + 1;
         const newBaseName = generateZaryaFileName({

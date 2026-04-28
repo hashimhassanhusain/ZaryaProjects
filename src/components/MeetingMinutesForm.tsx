@@ -354,7 +354,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Meeting Title</label>
               <input 
                 type="text"
-                value={formData.title}
+                value={formData.title || ''}
                 onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="e.g. Weekly Technical Review"
                 className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
@@ -365,13 +365,13 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               <div className="flex gap-2">
                 <input 
                   type="date"
-                  value={formData.date}
+                  value={formData.date || ''}
                   onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                   className="flex-1 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
                 />
                 <input 
                   type="time"
-                  value={formData.time}
+                  value={formData.time || ''}
                   onChange={e => setFormData(prev => ({ ...prev, time: e.target.value }))}
                   className="w-24 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
                 />
@@ -383,7 +383,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input 
                   type="text"
-                  value={formData.location}
+                  value={formData.location || ''}
                   onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="e.g. Site Office - Villa 2"
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
@@ -393,7 +393,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
             <div className="space-y-2">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Meeting Type</label>
               <select 
-                value={formData.type}
+                value={formData.type || 'General'}
                 onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
                 className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all appearance-none"
               >
@@ -619,7 +619,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   </button>
                   <input 
                     type="text"
-                    value={item.topic}
+                    value={item.topic || ''}
                     onChange={e => {
                       const newAgenda = [...(formData.agenda || [])];
                       newAgenda[idx].topic = e.target.value;
@@ -691,7 +691,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                   <div className="space-y-2">
                     <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Decision / Action Item</label>
                     <textarea 
-                      value={dec.decision}
+                      value={dec.decision || ''}
                       onChange={e => {
                         const newDecs = [...(formData.decisions || [])];
                         newDecs[idx].decision = e.target.value;
@@ -707,7 +707,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</label>
                       <select 
-                        value={dec.category}
+                        value={dec.category || 'Civil'}
                         onChange={e => {
                           const newDecs = [...(formData.decisions || [])];
                           newDecs[idx].category = e.target.value as any;
@@ -726,7 +726,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible / المسؤول</label>
                       <select 
-                        value={dec.responsibleParty}
+                        value={dec.responsibleParty || ''}
                         onChange={e => {
                           const newDecs = [...(formData.decisions || [])];
                           newDecs[idx].responsibleParty = e.target.value;

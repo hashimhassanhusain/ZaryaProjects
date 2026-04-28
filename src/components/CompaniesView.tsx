@@ -7,10 +7,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
+import { cn } from '../lib/utils';
 
 export const CompaniesView: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [view, setView] = useState<'list' | 'form'>('list');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,7 +99,7 @@ export const CompaniesView: React.FC = () => {
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
     setFormData(company);
-    setIsAdding(true);
+    setView('form');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,7 +131,7 @@ export const CompaniesView: React.FC = () => {
         });
         toast.success(t('company_added_success') || 'Company added successfully', { id: saveToast });
       }
-      setIsAdding(false);
+      setView('list');
       setEditingCompany(null);
       setFormData({ 
         name: '', 
@@ -151,8 +153,8 @@ export const CompaniesView: React.FC = () => {
   };
 
   const filteredCompanies = companies.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.type.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (c.type || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   if (isLoading) {
@@ -164,339 +166,365 @@ export const CompaniesView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('admin-companies')}</h1>
-            <p className="text-slate-500 text-sm">Manage partners, suppliers, and stakeholders.</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => {
-            setEditingCompany(null);
-            setFormData({ 
-              name: '', 
-              type: 'Supplier', 
-              status: 'Active', 
-              address: '', 
-              phone: '', 
-              email: '', 
-              website: '',
-              parent_entity_id: '',
-              entity_type: 'subsidiary',
-              is_internal: true
-            });
-            setIsAdding(true);
-          }}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> {t('add_company')}
-        </button>
-      </header>
+    <div className="p-8 max-w-[1600px] mx-auto space-y-8">
+      {view === 'list' ? (
+        <>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-200">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">{t('companies')}</h1>
+                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{t('manage_companies_desc')}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <input 
+                  type="text"
+                  placeholder={t('search_companies')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-11 pr-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl w-full md:w-80 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium"
+                />
+              </div>
 
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search companies by name or type..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          {selectedIds.length > 0 && (
-            <button 
-              onClick={handleBulkDelete}
-              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" /> Delete Selected ({selectedIds.length})
-            </button>
-          )}
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest px-4">
-            Total: {companies.length}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-widest text-[10px]">
-              <tr className="divide-x divide-slate-200">
-                <th className="px-6 py-4 w-10">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.length === filteredCompanies.length && filteredCompanies.length > 0}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                </th>
-                <th className="px-6 py-4">{t('company_name')}</th>
-                <th className="px-6 py-4">{t('type')}</th>
-                <th className="px-6 py-4">{t('status')}</th>
-                <th className="px-6 py-4">Contact Info</th>
-                <th className="px-6 py-4">{t('address')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredCompanies.map(company => (
-                <tr 
-                  key={company.id} 
-                  onClick={() => handleEdit(company)}
-                  className="hover:bg-slate-50 transition-colors group divide-x divide-slate-100 cursor-pointer"
+              {selectedIds.length > 0 && (
+                <button 
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-2 px-6 py-3.5 bg-red-50 text-red-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-red-100 transition-all border border-red-100 group"
                 >
-                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.includes(company.id)}
-                      onChange={(e) => toggleSelect(company.id, e as any)}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
-                        <Building2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900">{company.name}</div>
-                        {company.website && (
-                          <div className="text-[10px] text-blue-600 flex items-center gap-1">
-                            <Globe className="w-3 h-3" /> {company.website.replace(/^https?:\/\//, '')}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      company.type === 'Main' ? 'bg-blue-50 text-blue-600' :
-                      company.type === 'Supplier' ? 'bg-amber-50 text-amber-600' :
-                      company.type === 'Stakeholder' ? 'bg-purple-50 text-purple-600' : 'bg-slate-50 text-slate-600'
-                    }`}>
-                      {company.type === 'Supplier' ? t('type_supplier') : 
-                       company.type === 'Main' ? t('type_main') :
-                       company.type === 'Stakeholder' ? t('type_stakeholder') :
-                       company.type === 'Other' ? t('type_other') : company.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`flex items-center gap-1.5 text-xs font-bold ${
-                      company.status === 'Active' ? 'text-emerald-600' : 'text-slate-400'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        company.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
-                      }`} />
-                      {company.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      {company.email && (
-                        <div className="flex items-center gap-2 text-slate-600 text-xs">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="truncate max-w-[150px]">{company.email}</span>
-                        </div>
-                      )}
-                      {company.phone && (
-                        <div className="flex items-center gap-2 text-slate-600 text-xs">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{company.phone}</span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs text-slate-500 flex items-start gap-1 max-w-[200px]">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                      <span className="line-clamp-2">{company.address || 'No address provided'}</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110" />
+                  {t('delete_selected')} ({selectedIds.length})
+                </button>
+              )}
 
-      <AnimatePresence>
-        {isAdding && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAdding(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
-            >
-              <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="p-8 border-b border-slate-100">
-                  <h2 className="text-2xl font-bold text-slate-900">{editingCompany ? t('edit_company') : t('add_company')}</h2>
-                  <p className="text-slate-500 text-sm">{t('company_details_desc')}</p>
+              <button 
+                onClick={() => {
+                  setEditingCompany(null);
+                  setFormData({
+                    name: '',
+                    type: 'Supplier',
+                    status: 'Active',
+                    address: '',
+                    phone: '',
+                    email: '',
+                    website: '',
+                    parent_entity_id: '',
+                    entity_type: 'subsidiary',
+                    is_internal: true
+                  });
+                  setView('form');
+                }}
+                className="flex items-center gap-2 px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 group"
+              >
+                <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+                {t('add_company')}
+              </button>
+            </div>
+          </div>
+
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCompanies.map((company) => (
+              <motion.div
+                key={company.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group relative cursor-pointer",
+                  selectedIds.includes(company.id) && "ring-2 ring-blue-600 ring-offset-4"
+                )}
+                onClick={() => handleEdit(company)}
+              >
+                <div className="absolute top-6 right-6 flex items-center gap-2">
+                  <div className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                    company.status === 'Active' ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
+                  )}>
+                    {t(company.status.toLowerCase() as any)}
+                  </div>
+                  <button 
+                    onClick={(e) => toggleSelect(company.id, e)}
+                    className={cn(
+                      "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center",
+                      selectedIds.includes(company.id) ? "bg-blue-600 border-blue-600 text-white" : "border-slate-200 text-transparent"
+                    )}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
 
-                <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('company_name')}</label>
-                      <input 
-                        required
-                        type="text" 
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                        placeholder={t('company_name_placeholder')}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('is_internal_label')}</label>
-                      <select 
-                        value={formData.is_internal ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, is_internal: e.target.value === 'true' })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                      >
-                        <option value="true">{t('yes')}</option>
-                        <option value="false">{t('no')}</option>
-                      </select>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('parent_entity')}</label>
-                      <select 
-                        value={formData.parent_entity_id || ''}
-                        onChange={(e) => setFormData({ ...formData, parent_entity_id: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                      >
-                        <option value="">{t('no_parent')}</option>
-                        {companies.filter(c => c.id !== editingCompany?.id).map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('entity_type')}</label>
-                      <select 
-                        value={formData.entity_type}
-                        onChange={(e) => setFormData({ ...formData, entity_type: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                      >
-                        <option value="holding">{t('holding')}</option>
-                        <option value="holding_division">{t('holding_division')}</option>
-                        <option value="department">{t('department')}</option>
-                        <option value="subsidiary">{t('subsidiary')}</option>
-                        <option value="vendor">{t('vendor')}</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('type')}</label>
-                      <select 
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                      >
-                        <option value="Main">{t('type_main')}</option>
-                        <option value="Supplier">{t('type_supplier')}</option>
-                        <option value="Stakeholder">{t('type_stakeholder')}</option>
-                        <option value="Other">{t('type_other')}</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('status')}</label>
-                      <select 
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                      >
-                        <option value="Active">{t('active')}</option>
-                        <option value="Inactive">{t('inactive')}</option>
-                      </select>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('address')}</label>
-                      <input 
-                        type="text" 
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                        placeholder={t('address_placeholder')}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('phone')}</label>
-                      <input 
-                        type="text" 
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                        placeholder="+964..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('email')}</label>
-                      <input 
-                        type="email" 
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                        placeholder="contact@company.com"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('website')}</label>
-                      <input 
-                        type="text" 
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
-                        placeholder="https://..."
-                      />
-                    </div>
+                <div className="flex items-center gap-6 mb-8">
+                  <div className={cn(
+                    "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black italic",
+                    company.name.charCodeAt(0) % 2 === 0 ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-400"
+                  )}>
+                    {company.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 leading-none mb-2">{company.name}</h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2rem]">{t(company.type.toLowerCase() as any)}</p>
                   </div>
                 </div>
 
-                <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 z-10">
-                  <button 
-                    type="button"
-                    onClick={() => setIsAdding(false)}
-                    className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-2xl transition-all"
-                  >
-                    {t('cancel')}
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-10 py-3 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
-                  >
-                    {editingCompany ? t('update_company') : t('save_company')}
-                  </button>
+                <div className="space-y-4">
+                  {company.email && (
+                    <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
+                      <Mail className="w-4 h-4 text-slate-300" />
+                      {company.email}
+                    </div>
+                  )}
+                  {company.phone && (
+                    <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
+                      <Phone className="w-4 h-4 text-slate-300" />
+                      {company.phone}
+                    </div>
+                  )}
+                  {company.address && (
+                    <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
+                      <MapPin className="w-4 h-4 text-slate-300" />
+                      <span className="truncate">{company.address}</span>
+                    </div>
+                  )}
                 </div>
-              </form>
-            </motion.div>
+
+                <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between">
+                  {company.parent_entity_id ? (
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-3 h-3 text-blue-500" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {companies.find(c => c.id === company.parent_entity_id)?.name || 'Parent Entity'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleEdit(company); }}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast((t) => (
+                          <div className="flex flex-col gap-4">
+                            <p className="text-sm font-bold text-slate-900">Delete company "{company.name}"?</p>
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">Cancel</button>
+                              <button onClick={async () => {
+                                toast.dismiss(t.id);
+                                await deleteDoc(doc(db, 'companies', company.id));
+                                toast.success('Company deleted');
+                              }} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold">Delete</button>
+                            </div>
+                          </div>
+                        ));
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
-        )}
-      </AnimatePresence>
+
+          {filteredCompanies.length === 0 && !isLoading && (
+            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-20 text-center shadow-sm">
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto ring-8 ring-slate-50/50">
+                  <Building2 className="w-12 h-12" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 italic uppercase mb-2">{t('no_companies_found')}</h3>
+                  <p className="text-slate-500 font-medium">{t('no_companies_desc')}</p>
+                </div>
+                <button 
+                  onClick={() => setView('form')}
+                  className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
+                >
+                  {t('add_company')}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-sm max-w-4xl mx-auto overflow-hidden">
+          <form onSubmit={handleSubmit} className="space-y-10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-200">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">{editingCompany ? t('edit_company') : t('add_new_company')}</h3>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{t('company_details_desc')}</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setView('list')} 
+                className="p-4 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('company_name')}</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-lg font-bold focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-300"
+                    placeholder={t('company_name_placeholder')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('is_internal_label')}</label>
+                  <select 
+                    value={formData.is_internal ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, is_internal: e.target.value === 'true' })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                  >
+                    <option value="true">{t('yes')}</option>
+                    <option value="false">{t('no')}</option>
+                  </select>
+                </div>
+
+                <div>
+                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('parent_entity')}</label>
+                   <select 
+                    value={formData.parent_entity_id || ''}
+                    onChange={(e) => setFormData({ ...formData, parent_entity_id: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                  >
+                    <option value="">{t('no_parent')}</option>
+                    {companies.filter(c => c.id !== editingCompany?.id).map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('entity_type')}</label>
+                  <select 
+                    value={formData.entity_type}
+                    onChange={(e) => setFormData({ ...formData, entity_type: e.target.value as any })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                  >
+                    <option value="holding">{t('holding')}</option>
+                    <option value="holding_division">{t('holding_division')}</option>
+                    <option value="department">{t('department')}</option>
+                    <option value="subsidiary">{t('subsidiary')}</option>
+                    <option value="vendor">{t('vendor')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('type')}</label>
+                  <select 
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                  >
+                    <option value="Main">{t('type_main')}</option>
+                    <option value="Supplier">{t('type_supplier')}</option>
+                    <option value="Stakeholder">{t('type_stakeholder')}</option>
+                    <option value="Other">{t('type_other')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('status')}</label>
+                  <select 
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                  >
+                    <option value="Active">{t('active')}</option>
+                    <option value="Inactive">{t('inactive')}</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('address')}</label>
+                  <input 
+                    type="text" 
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                    placeholder={t('address_placeholder')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('phone')}</label>
+                  <input 
+                    type="text" 
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                    placeholder="+964..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('email')}</label>
+                  <input 
+                    type="email" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                    placeholder="contact@company.com"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 italic">{t('website')}</label>
+                  <input 
+                    type="text" 
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4 p-4 mt-8">
+              <button 
+                type="button"
+                onClick={() => setView('list')}
+                className="px-10 py-5 text-slate-400 font-bold uppercase tracking-widest text-xs hover:text-slate-600 transition-all"
+              >
+                {t('cancel')}
+              </button>
+              <button 
+                type="submit"
+                className="px-12 py-5 bg-blue-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30 italic"
+              >
+                {editingCompany ? t('update_company') : t('save_company')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

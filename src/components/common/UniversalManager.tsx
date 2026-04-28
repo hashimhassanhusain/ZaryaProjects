@@ -18,6 +18,8 @@ import { UniversalDataTable } from './UniversalDataTable';
 import { UniversalRecordDetail } from './UniversalRecordDetail';
 import { toast } from 'react-hot-toast';
 
+import { rollupToParent, RollupLevel } from '../../services/rollupService';
+
 interface UniversalManagerProps {
   entityType: EntityType;
 }
@@ -63,16 +65,28 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType }
         ...(config.collection === 'projectLogs' ? { type: config.id } : {})
       };
 
+      let docId = recordData.id;
       if (recordData.id) {
         await updateDoc(doc(db, config.collection, recordData.id), finalData);
         toast.success(`${config.label} updated successfully`);
       } else {
-        await addDoc(collection(db, config.collection), {
+        const docRef = await addDoc(collection(db, config.collection), {
           ...finalData,
           createdAt: serverTimestamp()
         });
+        docId = docRef.id;
         toast.success(`New ${config.label} created`);
       }
+
+      // --- Trigger Rollup ---
+      if (config.collection === 'purchaseOrders' && finalData.activityId) {
+        await rollupToParent('po', finalData.activityId);
+      } else if (config.collection === 'activities' && (finalData.divisionId || finalData.wbsId)) {
+        await rollupToParent('workPackage', finalData.divisionId || finalData.wbsId);
+      } else if (config.collection === 'wbs' && finalData.parentId) {
+        await rollupToParent('division', finalData.parentId);
+      }
+
       setView('list');
     } catch (error) {
       console.error('Error saving record:', error);
@@ -88,8 +102,20 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType }
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
+      const recordToDelete = data.find(r => r.id === id);
       await deleteDoc(doc(db, config.collection, id));
       toast.success('Record deleted');
+
+      // --- Trigger Rollup After Delete ---
+      if (recordToDelete) {
+        if (config.collection === 'purchaseOrders' && recordToDelete.activityId) {
+          await rollupToParent('po', recordToDelete.activityId);
+        } else if (config.collection === 'activities' && (recordToDelete.divisionId || recordToDelete.wbsId)) {
+          await rollupToParent('workPackage', recordToDelete.divisionId || recordToDelete.wbsId);
+        } else if (config.collection === 'wbs' && recordToDelete.parentId) {
+          await rollupToParent('division', recordToDelete.parentId);
+        }
+      }
     } catch (error) {
       toast.error('Delete failed');
     }

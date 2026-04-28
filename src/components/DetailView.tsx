@@ -1869,8 +1869,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 <span className="px-2 py-0.5 bg-white border border-slate-100 rounded-full text-[10px] font-bold text-slate-500">{members.length}</span>
               </div>
               <div className="flex flex-wrap gap-2 overflow-y-auto max-h-[200px] pr-2 custom-scrollbar">
-                {members.map(m => (
-                  <div key={m.id} className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl shadow-sm text-[11px] font-medium text-slate-700 flex items-center gap-2">
+                {members.map((m, mIdx) => (
+                  <div key={`${m.id}-${mIdx}`} className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl shadow-sm text-[11px] font-medium text-slate-700 flex items-center gap-2">
                     <div className={cn(
                       "w-1.5 h-1.5 rounded-full",
                       m.influence === 'High' ? "bg-red-500" : m.influence === 'Medium' ? "bg-amber-500" : "bg-blue-500"
@@ -1950,9 +1950,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </div>
                 
                 <div className="flex flex-wrap gap-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar relative z-10">
-                  {members.map(m => (
+                  {members.map((m, mIdx) => (
                     <motion.div 
-                      key={m.id} 
+                      key={`${m.id}-${mIdx}`} 
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-2 hover:shadow-md transition-all cursor-pointer"
@@ -2021,8 +2021,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredAnalysis.map((analysis) => (
-                  <tr key={analysis.id} className="hover:bg-slate-50/50 transition-colors group">
+                {filteredAnalysis.map((analysis, idx) => (
+                  <tr key={`${analysis.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-sm">
@@ -2158,8 +2158,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
               >
                 <option value="">Choose from Register...</option>
-                {stakeholderRegister.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                {stakeholderRegister.map((s, sIdx) => (
+                  <option key={`${s.id}-${sIdx}`} value={s.id}>{s.name} ({s.role})</option>
                 ))}
               </select>
               <p className="text-[10px] text-slate-400 font-medium italic">Only stakeholders from the Register can be analyzed.</p>
@@ -4116,7 +4116,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredStakeholders.map((s, idx) => (
-                      <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr key={`${s.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-6 py-4 text-[10px] font-mono font-semibold text-slate-400 whitespace-nowrap">SR-{String(idx + 1).padStart(3, '0')}</td>
                         <td className="px-6 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">{s.name}</td>
                         <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{s.position}</td>
@@ -4399,6 +4399,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       onSave={() => handleSaveDocument(true)}
       onPrint={() => generatePDF(false)}
       isSaving={isCreating}
+      collectionName={page.collectionName}
       inputs={page.details?.inputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
       tools={page.details?.tools?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}
       outputs={page.details?.outputs?.map(id => ({ id, title: pages.find(p => p.id === id)?.title || id }))}

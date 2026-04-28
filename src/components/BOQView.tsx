@@ -55,23 +55,21 @@ export const BOQView: React.FC = () => {
       ]
     }
   ];
+  const [boqView, setBoqView] = useState<'list' | 'add' | 'edit' | 'import' | 'preview'>('list');
   const [selectedWbsId, setSelectedWbsId] = useState<string | null>('master');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewItems, setPreviewItems] = useState<BOQItem[] | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [isAddingWorkPackage, setIsAddingWorkPackage] = useState(false);
   const [newWorkPackage, setNewWorkPackage] = useState('');
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showAddPackageModal, setShowAddPackageModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string; type: 'item' | 'wbs' } | null>(null);
   
   // Form states
-  const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState<Partial<BOQItem>>({
     description: '',
     unit: 'm3',
@@ -162,7 +160,7 @@ export const BOQView: React.FC = () => {
       await setDoc(doc(db, 'boq', id), fullItem);
       
       if (!customItem) {
-        setShowAddItem(false);
+        setBoqView('list');
         setNewItem({ 
           description: '', 
           unit: 'm3', 
@@ -413,7 +411,7 @@ export const BOQView: React.FC = () => {
       });
 
       setPreviewItems(mappedItems);
-      setShowPreviewModal(true);
+      setBoqView('preview');
       setIsAnalyzing(false);
     } catch (err) {
       console.error("AI Analysis failed:", err);
@@ -429,7 +427,7 @@ export const BOQView: React.FC = () => {
         await setDoc(doc(db, 'boq', item.id), item);
       }
       toast.success(`Successfully imported ${previewItems.length} BOQ items.`);
-      setShowPreviewModal(false);
+      setBoqView('list');
       setPreviewItems(null);
     } catch (err) {
       console.error("Import failed:", err);
@@ -678,7 +676,7 @@ export const BOQView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content Area */}
         <div className="lg:col-span-12">
-          {activeTab === 'boq' && (
+          {activeTab === 'boq' && boqView === 'list' && (
             <div className="space-y-8">
               <div className="space-y-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -719,7 +717,7 @@ export const BOQView: React.FC = () => {
                   <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
                     <HelpTooltip text={th('import_data_summary')} position="bottom">
                       <button 
-                        onClick={() => setShowImportModal(true)}
+                        onClick={() => setBoqView('import')}
                         className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 rounded-2xl font-semibold text-xs hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
                       >
                         {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -729,7 +727,7 @@ export const BOQView: React.FC = () => {
                     
                     <HelpTooltip text={th('add_item_summary')} position="bottom">
                       <button 
-                        onClick={() => setShowAddItem(true)}
+                        onClick={() => setBoqView('add')}
                         className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-semibold text-xs hover:bg-blue-700 transition-all shadow-sm"
                       >
                         <Plus className="w-4 h-4" />
@@ -804,15 +802,15 @@ export const BOQView: React.FC = () => {
                           </td>
                         </tr>
                       ) : (
-                        sortedDivisions.map(divId => {
+                        sortedDivisions.map((divId, divIdx) => {
                           const items = boqItems
                             .filter(i => i.division === divId)
-                            .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()) || i.workPackage.toLowerCase().includes(searchQuery.toLowerCase()));
+                            .filter(i => (i.description || '').toLowerCase().includes(searchQuery.toLowerCase()) || (i.workPackage || '').toLowerCase().includes(searchQuery.toLowerCase()));
                           
                           if (items.length === 0) return null;
 
                           return (
-                            <React.Fragment key={divId}>
+                            <React.Fragment key={`${divId}-${divIdx}`}>
                               <tr className="bg-slate-50/30">
                                 <td colSpan={9} className="px-6 py-2.5">
                                   <div className="flex items-center gap-2">
@@ -833,10 +831,10 @@ export const BOQView: React.FC = () => {
                                 const isSelected = selectedItemIds.includes(item.id);
                                 return (
                                   <tr 
-                                    key={item.id} 
+                                    key={`${item.id}-${idx}`} 
                                     onClick={() => {
                                       setEditingItem(item);
-                                      setShowEditModal(true);
+                                      setBoqView('edit');
                                     }}
                                     className={cn(
                                       "hover:bg-slate-50/50 transition-colors group cursor-pointer",
@@ -982,7 +980,351 @@ export const BOQView: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'export' && (
+            {activeTab === 'boq' && boqView === 'add' && (
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                    <Plus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">{t('add_new_boq_item')}</h3>
+                    <p className="text-sm text-slate-500 font-medium">{t('add_item_hint')}</p>
+                  </div>
+                </div>
+                <button onClick={() => setBoqView('list')} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-2xl transition-all">
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('description')}</label>
+                  <textarea 
+                    value={newItem.description}
+                    onChange={e => setNewItem({...newItem, description: e.target.value})}
+                    placeholder="Enter item description..."
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-base font-medium transition-all h-32 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('cost_account')}</label>
+                  <select 
+                    value={newItem.division}
+                    onChange={e => setNewItem({...newItem, division: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all"
+                  >
+                    {masterFormatDivisions.map(div => (
+                      <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('wbs_location')}</label>
+                   <select 
+                    value={newItem.wbsId}
+                    onChange={e => setNewItem({...newItem, wbsId: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all"
+                  >
+                    <option value="master">Master Project</option>
+                    {wbsLevels.map(level => (
+                      <option key={level.id} value={level.id}>{level.code} - {level.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('quantity')}</label>
+                  <input 
+                    type="number"
+                    value={newItem.quantity}
+                    onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('unit')}</label>
+                  <input 
+                    type="text"
+                    value={newItem.unit}
+                    onChange={e => setNewItem({...newItem, unit: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('unit_rate')}</label>
+                  <div className="flex gap-3">
+                    <input 
+                      type="number"
+                      value={newItem.inputRate}
+                      onChange={e => setNewItem({...newItem, inputRate: parseFloat(e.target.value) || 0})}
+                      className="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all font-mono"
+                    />
+                    <select 
+                      value={newItem.inputCurrency}
+                      onChange={e => setNewItem({...newItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
+                      className="w-32 px-4 py-4 bg-slate-900 text-white rounded-2xl outline-none text-sm font-bold cursor-pointer"
+                    >
+                      <option value="IQD">IQD</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('exchange_rate')}</label>
+                  <input 
+                    type="number" 
+                    value={newItem.exchangeRateUsed}
+                    onChange={e => setNewItem({...newItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
+                    className="w-full px-6 py-4 bg-slate-100 border border-slate-200 rounded-2xl outline-none text-sm font-bold font-mono text-slate-500"
+                  />
+                </div>
+
+                <div className="col-span-2 bg-blue-600 p-8 rounded-[2rem] text-white shadow-xl shadow-blue-600/20 flex flex-col md:flex-row md:items-center justify-between gap-6 mt-4">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1">{t('computed_total')} ({baseCurrency})</div>
+                    <div className="text-4xl font-black font-mono tracking-tighter">
+                      {formatAmount((newItem.quantity || 0) * (newItem.inputRate || 0), newItem.inputCurrency as any, newItem.exchangeRateUsed)}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setBoqView('list')}
+                      className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button 
+                      onClick={() => handleAddBoqItem()}
+                      className="px-10 py-3 bg-white text-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-lg"
+                    >
+                      {t('save_item')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'boq' && boqView === 'edit' && editingItem && (
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                    <RefreshCw className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">{t('edit_item')}</h3>
+                    <p className="text-sm text-slate-500 font-medium">{t('edit_item_hint')}</p>
+                  </div>
+                </div>
+                <button onClick={() => setBoqView('list')} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-2xl transition-all">
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('description')}</label>
+                  <textarea 
+                    value={editingItem.description}
+                    onChange={e => setEditingItem({...editingItem, description: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-base font-medium transition-all h-32 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t('cost_account')}</label>
+                  <select 
+                    value={editingItem.division}
+                    onChange={e => setEditingItem({...editingItem, division: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all"
+                  >
+                    {masterFormatDivisions.map(div => (
+                      <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Unit</label>
+                  <input 
+                    type="text"
+                    value={editingItem.unit}
+                    onChange={e => setEditingItem({...editingItem, unit: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Quantity</label>
+                  <input 
+                    type="number"
+                    value={editingItem.quantity}
+                    onChange={e => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Unit Rate</label>
+                  <div className="flex gap-3">
+                    <input 
+                      type="number"
+                      value={editingItem.inputRate}
+                      onChange={e => setEditingItem({...editingItem, inputRate: parseFloat(e.target.value) || 0})}
+                      className="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-bold transition-all font-mono"
+                    />
+                    <select 
+                      value={editingItem.inputCurrency}
+                      onChange={e => setEditingItem({...editingItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
+                      className="w-32 px-4 py-4 bg-slate-900 text-white rounded-2xl outline-none text-sm font-bold cursor-pointer"
+                    >
+                      <option value="IQD">IQD</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Exchange Rate</label>
+                  <input 
+                    type="number" 
+                    value={editingItem.exchangeRateUsed}
+                    onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
+                    className="w-full px-6 py-4 bg-slate-100 border border-slate-200 rounded-2xl outline-none text-sm font-bold font-mono text-slate-500"
+                  />
+                </div>
+
+                <div className="col-span-2 bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl shadow-slate-900/10 flex flex-col md:flex-row md:items-center justify-between gap-6 mt-4">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Live Valuation ({baseCurrency})</div>
+                    <div className="text-4xl font-black font-mono tracking-tighter text-blue-400">
+                      {formatAmount((editingItem.quantity || 0) * (editingItem.inputRate || 0), editingItem.inputCurrency as any, editingItem.exchangeRateUsed)}
+                    </div>
+                  </div>
+                   <div className="flex gap-3">
+                    <button 
+                      onClick={() => setBoqView('list')}
+                      className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (editingItem) {
+                          await handleUpdateItem(editingItem.id, editingItem);
+                          setBoqView('list');
+                        }
+                      }}
+                      className="px-10 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+                    >
+                      {t('save_changes')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'boq' && boqView === 'import' && (
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 italic uppercase">Import BOQ Matrix</h3>
+                    <p className="text-sm text-slate-500 font-medium">Bulk upload Bill of Quantities data from external schedules.</p>
+                  </div>
+                </div>
+                <button onClick={() => setBoqView('list')} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-2xl transition-all">
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+              </div>
+
+              <DataImportModal 
+                isOpen={true}
+                onClose={() => setBoqView('list')}
+                onImport={handleImportBOQData}
+                targetColumns={boqTargetColumns}
+                title="Import BOQ Items"
+                entityName="Bill of Quantities Items"
+              />
+            </div>
+          )}
+
+          {activeTab === 'boq' && boqView === 'preview' && previewItems && (
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
+              <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">AI Analysis Preview</h3>
+                    <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">Verify extracted BOQ items before final commit</p>
+                  </div>
+                </div>
+                <button onClick={() => setBoqView('list')} className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-slate-600 rounded-2xl transition-all shadow-sm">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-10">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-900 text-white font-black uppercase tracking-[0.2em] italic">
+                    <tr>
+                      <th className="px-6 py-5">Cost Account</th>
+                      <th className="px-6 py-5">Work Package</th>
+                      <th className="px-6 py-5">Description</th>
+                      <th className="px-6 py-5 text-right font-mono">Qty</th>
+                      <th className="px-6 py-5">Unit</th>
+                      <th className="px-6 py-5 text-right font-mono">Rate</th>
+                      <th className="px-6 py-5 text-right font-mono text-blue-400">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {previewItems.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-black text-slate-900 italic tracking-tighter">{item.division}</td>
+                        <td className="px-6 py-4 text-slate-500 font-bold uppercase tracking-widest">{item.workPackage}</td>
+                        <td className="px-6 py-4 font-bold text-slate-700 italic leading-relaxed">{item.description}</td>
+                        <td className="px-6 py-4 text-right font-black text-slate-900 font-mono">{item.quantity.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-slate-400 uppercase font-black tracking-widest">{item.unit}</td>
+                        <td className="px-6 py-4 text-right font-bold text-slate-600 font-mono">{formatAmount(item.inputRate, item.inputCurrency || baseCurrency)}</td>
+                        <td className="px-6 py-4 text-right font-black text-blue-600 font-mono text-sm tracking-tighter italic">{formatAmount(item.amount, baseCurrency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-10 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4">
+                <button 
+                  onClick={() => setBoqView('list')}
+                  className="px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmBoqImport}
+                  className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30 flex items-center gap-3 italic"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  Confirm & Import BOQ
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'export' && (
             <div className="bg-white border border-slate-100 rounded-3xl p-12 shadow-sm text-center">
               <div className="max-w-md mx-auto space-y-8">
                 <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto">
@@ -1198,178 +1540,7 @@ export const BOQView: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {editingItem && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[32px] p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh] border border-slate-100"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900">Edit BOQ Item</h3>
-                  <p className="text-slate-500 text-xs font-medium mt-1">Update the details for this Bill of Quantities entry.</p>
-                </div>
-                <button onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Location / WBS Level</label>
-                  <select 
-                    value={editingItem.wbsId}
-                    onChange={e => setEditingItem({...editingItem, wbsId: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  >
-                    <option value="master">General / Project Wide</option>
-                    {wbsLevels.map(l => (
-                      <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
-                  <textarea 
-                    value={editingItem.description}
-                    onChange={e => setEditingItem({...editingItem, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none h-24 text-sm font-medium resize-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">MasterFormat 16 Cost Accounts</label>
-                  <select 
-                    value={editingItem.division}
-                    onChange={e => {
-                      if (e.target.value === 'new') {
-                        navigate('/page/2.2.1');
-                        return;
-                      }
-                      setEditingItem({...editingItem, division: e.target.value})
-                    }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  >
-                    {masterFormatDivisions.map(div => (
-                      <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Work Package</label>
-                  <select 
-                    value={editingItem.workPackage}
-                    onChange={e => {
-                      if (e.target.value === 'new') {
-                        setShowAddPackageModal(true);
-                        return;
-                      }
-                      setEditingItem({...editingItem, workPackage: e.target.value})
-                    }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  >
-                    <option value="">Select Work Package</option>
-                    {workPackages
-                      .filter(wp => wp.divisionId === editingItem.division)
-                      .map(wp => (
-                        <option key={wp.id} value={wp.title}>{wp.code} - {wp.title}</option>
-                      ))
-                    }
-                    {workPackages.filter(wp => wp.divisionId === editingItem.division).length === 0 && 
-                      masterFormatSections
-                        .filter(s => s.divisionId === editingItem.division)
-                        .map(section => (
-                          <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
-                        ))
-                    }
-                    <option value="new">+ Add New Work Package...</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
-                  <input 
-                    type="number"
-                    value={editingItem.quantity}
-                    onChange={e => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit</label>
-                  <input 
-                    type="text"
-                    value={editingItem.unit}
-                    onChange={e => setEditingItem({...editingItem, unit: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Unit Rate</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="number"
-                      value={editingItem.inputRate}
-                      onChange={e => setEditingItem({...editingItem, inputRate: parseFloat(e.target.value) || 0})}
-                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                    />
-                    <select 
-                      value={editingItem.inputCurrency}
-                      onChange={e => setEditingItem({...editingItem, inputCurrency: e.target.value as 'USD' | 'IQD'})}
-                      className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-bold transition-all"
-                    >
-                      <option value="IQD">IQD</option>
-                      <option value="USD">USD</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exchange Rate</label>
-                  <input 
-                    type="number" 
-                    value={editingItem.exchangeRateUsed}
-                    onChange={e => setEditingItem({...editingItem, exchangeRateUsed: parseFloat(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none text-sm font-medium transition-all"
-                  />
-                </div>
-
-                <div className="bg-blue-50/50 p-6 rounded-[24px] border border-blue-100 col-span-2">
-                  <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Total Amount ({baseCurrency})</div>
-                  <div className="text-3xl font-bold text-slate-900 font-mono">
-                    {formatAmount((editingItem.quantity || 0) * (editingItem.inputRate || 0), editingItem.inputCurrency as any, editingItem.exchangeRateUsed)}
-                  </div>
-                </div>
-
-                <div className="col-span-2 flex gap-4 mt-6">
-                  <button 
-                    onClick={() => { setEditingItem(null); setIsAddingWorkPackage(false); }}
-                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      if (editingItem) {
-                        await handleUpdateItem(editingItem.id, editingItem);
-                        setEditingItem(null);
-                      }
-                    }}
-                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {/* Modals removed for full-page views */}
       </AnimatePresence>
 
       <AddWBSLevelModal 
@@ -1385,91 +1556,8 @@ export const BOQView: React.FC = () => {
         }}
       />
 
-      {showImportModal && (
-        <DataImportModal 
-          isOpen={showImportModal}
-          onClose={() => setShowImportModal(false)}
-          onImport={handleImportBOQData}
-          targetColumns={boqTargetColumns}
-          title="Import BOQ Items"
-          entityName="Bill of Quantities Items"
-        />
-      )}
-      
       <AnimatePresence>
-        {showPreviewModal && previewItems && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">AI BOQ Analysis Preview</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted BOQ items before importing</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowPreviewModal(false)}
-                  className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-auto p-6">
-                <table className="w-full text-left text-[11px]">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-widest">
-                    <tr>
-                      <th className="px-4 py-3">Cost Account</th>
-                      <th className="px-4 py-3">Work Package</th>
-                      <th className="px-4 py-3">Description</th>
-                      <th className="px-4 py-3 text-right">Qty</th>
-                      <th className="px-4 py-3">Unit</th>
-                      <th className="px-4 py-3 text-right">Rate</th>
-                      <th className="px-4 py-3 text-right text-blue-600">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {previewItems.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-bold text-slate-900">{item.division}</td>
-                        <td className="px-4 py-3 text-slate-500">{item.workPackage}</td>
-                        <td className="px-4 py-3 font-medium text-slate-700">{item.description}</td>
-                        <td className="px-4 py-3 text-right font-bold">{item.quantity.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-slate-500 uppercase font-bold">{item.unit}</td>
-                        <td className="px-4 py-3 text-right font-bold">{formatAmount(item.inputRate, item.inputCurrency || baseCurrency)}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatAmount(item.amount, baseCurrency)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-                <button 
-                  onClick={() => setShowPreviewModal(false)}
-                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleConfirmBoqImport}
-                  className="px-8 py-2.5 bg-blue-600 text-white rounded-2xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Confirm & Import BOQ
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {/* Preview and delete confirmations only */}
       </AnimatePresence>
 
       {/* Delete Confirmation Modal */}

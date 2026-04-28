@@ -743,8 +743,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {procPlan.selectionCriteria.map((c) => (
-                    <tr key={c.id} className="group hover:bg-slate-50/30 transition-all">
+                  {procPlan.selectionCriteria.map((c, idx) => (
+                    <tr key={`${c.id}-${idx}`} className="group hover:bg-slate-50/30 transition-all">
                       <td className="px-8 py-6">
                         {isEditing ? (
                           <input 
@@ -872,8 +872,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {procPlan.performanceMetrics.map((m) => (
-                    <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
+                  {procPlan.performanceMetrics.map((m, idx) => (
+                    <tr key={`${m.id}-${idx}`} className="group hover:bg-slate-50/30 transition-all">
                       <td className="px-8 py-6">
                         {isEditing ? (
                           <input 
@@ -974,8 +974,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {versions.length > 0 ? versions.map((v) => (
-                <tr key={v.version}>
+              {versions.length > 0 ? versions.map((v, idx) => (
+                <tr key={`${v.version}-${idx}`}>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">V{v.version.toFixed(1)}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{new Date(v.date).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{v.author}</td>

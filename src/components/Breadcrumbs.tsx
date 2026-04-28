@@ -72,10 +72,10 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
           if (index === crumbs.length - 1) return null;
           return (
             <React.Fragment key={crumb.id}>
-              {index > 0 && <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 mx-1", isRtl && "rotate-180")} />}
+              {index > 0 && <span className="mx-2 opacity-50">→</span>}
               <Link
                 to={`/page/${crumb.id}`}
-                className="hover:text-slate-600 transition-colors font-medium"
+                className="hover:text-slate-600 transition-colors font-bold uppercase tracking-widest"
               >
                 {stripNumericPrefix(t(crumb.id) || crumb.title)}
               </Link>
@@ -85,14 +85,16 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
       </nav>
 
       {/* Main Large Header with Parent > Child relation */}
-      <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+      <h1 className="text-3xl font-black text-slate-900 tracking-tighter flex items-center gap-4 flex-wrap">
         {crumbs.length > 1 && (
           <>
-            <span className="text-slate-400 font-bold opacity-80">{stripNumericPrefix(t(crumbs[crumbs.length - 2].id) || crumbs[crumbs.length - 2].title)}</span>
-            <ChevronRight className={cn("w-6 h-6 text-slate-200 stroke-[3px]", isRtl && "rotate-180")} />
+            <span className="text-slate-300 font-black uppercase italic opacity-60">
+              {stripNumericPrefix(t(crumbs[crumbs.length - 2].id) || crumbs[crumbs.length - 2].title)}
+            </span>
+            <span className="text-slate-200 font-light mx-1">›</span>
           </>
         )}
-        <span>{stripNumericPrefix(t(currentPageId) || currentPage?.title || '')}</span>
+        <span className="uppercase">{stripNumericPrefix(t(currentPageId) || currentPage?.title || '')}</span>
       </h1>
     </div>
   );

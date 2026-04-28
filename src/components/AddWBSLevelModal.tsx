@@ -215,7 +215,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
                 <input 
                   type="text" 
-                  value={newWbs.title}
+                  value={newWbs.title || ''}
                   onChange={e => setNewWbs({...newWbs, title: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="e.g. South Zone, Villa 2, Floor 1"
@@ -224,7 +224,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Type</label>
                 <select 
-                  value={newWbs.type}
+                  value={newWbs.type || 'Zone'}
                   onChange={e => {
                     const type = e.target.value as any;
                     let parentId = newWbs.parentId;
@@ -250,7 +250,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account</label>
                   <select 
-                    value={newWbs.divisionId}
+                    value={newWbs.divisionId || '01'}
                     onChange={e => setNewWbs({...newWbs, divisionId: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   >
@@ -287,7 +287,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                       <div className="relative">
                         <input 
                           type="text" 
-                          value={newWbs.title}
+                          value={newWbs.title || ''}
                           onChange={e => setNewWbs({...newWbs, title: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                           placeholder="Enter custom cost account title..."
@@ -333,7 +333,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                       <div className="relative">
                         <input 
                           type="text" 
-                          value={newWbs.title}
+                          value={newWbs.title || ''}
                           onChange={e => setNewWbs({...newWbs, title: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                           placeholder="Enter custom work package title..."
@@ -356,7 +356,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                   {newWbs.type === 'Work Package' ? 'Parent Cost Account' : 'Parent Level'}
                 </label>
                 <select 
-                  value={newWbs.parentId}
+                  value={newWbs.parentId || ''}
                   onChange={e => setNewWbs({...newWbs, parentId: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 >

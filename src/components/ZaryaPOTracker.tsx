@@ -5,7 +5,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn, getFullWBSCode } from '../lib/utils';
+import { cn, getFullWBSCode, generateZaryaFileName, getRouteForFile } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
@@ -32,7 +32,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
-  const [view, setView] = useState<'list' | 'form'>(page.details?.initialView === 'form' ? 'form' : 'list');
+  const [view, setView] = useState<'list' | 'form' | 'import' | 'preview'>(page.details?.initialView === 'form' ? 'form' : 'list');
 
   // New PO State
   const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
@@ -73,9 +73,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
   const [editingPOId, setEditingPOId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewPOs, setPreviewPOs] = useState<PurchaseOrder[] | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedPOIds, setSelectedPOIds] = useState<string[]>([]);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
   const [newActivityData, setNewActivityData] = useState<Partial<Activity>>({
     description: '',
@@ -588,7 +586,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       });
 
       setPreviewPOs(mappedPOs);
-      setShowPreviewModal(true);
+      setView('preview');
       setIsAnalyzing(false);
     } catch (err) {
       console.error("AI Analysis failed:", err);
@@ -612,7 +610,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         }
 
         toast.success(`Successfully imported ${previewPOs.length} Purchase Orders.`);
-        setShowPreviewModal(false);
+        setView('list');
         setPreviewPOs(null);
       } catch (err) {
       console.error("Import failed:", err);
@@ -796,14 +794,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
 
       const toastId = toast.loading('Uploading contract to Drive...');
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('projectRootId', selectedProject.driveFolderId || '');
+        const division = newPO.masterFormat?.match(/DIV(\d+)/)?.[1] || '01';
+        const finalName = generateZaryaFileName({
+          projectCode: selectedProject.code,
+          type: 'CON',
+          division: division,
+          description: `PO_${newPO.code}_${newPO.description}`,
+        }) + '.' + file.name.split('.').pop();
+
+        const route = getRouteForFile('CON', division);
         
-        // Find Cost Center Folder Name
-        const costCenterName = newPO.masterFormat || 'General';
-        const safeCostCenter = costCenterName.replace(/\s+/g, '_');
-        formData.append('path', `PROCUREMENT_AND_SUBCONTRACTORS_03/03.3_Subcontractors_Hub/${safeCostCenter}/03_Contracts`);
+        const formData = new FormData();
+        formData.append('file', file, finalName);
+        formData.append('projectRootId', selectedProject.driveFolderId || '');
+        formData.append('path', route);
 
         const response = await fetch('/api/drive/upload-by-path', {
           method: 'POST',
@@ -849,7 +853,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Work Package</label>
             <select
-              value={newPO.workPackageId}
+              value={newPO.workPackageId || ''}
               onChange={(e) => {
                 const selectedId = e.target.value;
                 if (selectedId === 'new') {
@@ -905,7 +909,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Activity</label>
             <select
-              value={isAddingNewActivity ? 'new' : newPO.activityId}
+              value={isAddingNewActivity ? 'new' : (newPO.activityId || '')}
               disabled={!newPO.workPackageId}
               onChange={(e) => {
                 if (e.target.value === 'new') {
@@ -947,7 +951,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Activity Name</label>
                   <input
                     type="text"
-                    value={newActivityData.description}
+                    value={newActivityData.description || ''}
                     onChange={(e) => setNewActivityData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="e.g. Concrete Pouring"
                     className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
@@ -957,7 +961,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[10px] font-bold text-blue-400 uppercase mb-1 block">Unit</label>
                   <input
                     type="text"
-                    value={newActivityData.unit}
+                    value={newActivityData.unit || ''}
                     onChange={(e) => setNewActivityData(prev => ({ ...prev, unit: e.target.value }))}
                     placeholder="m3, ton..."
                     className="w-full bg-white border border-blue-200 p-2 text-xs font-bold rounded-lg outline-none"
@@ -998,7 +1002,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">PO Code</label>
             <input
               type="text"
-              value={newPO.id}
+              value={newPO.id || ''}
               disabled={!!editingPOId}
               onChange={(e) => setNewPO(prev => ({ ...prev, id: e.target.value }))}
               placeholder="e.g. PO-2024-001"
@@ -1009,7 +1013,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Order Date</label>
             <input
               type="date"
-              value={newPO.date}
+              value={newPO.date || ''}
               onChange={(e) => setNewPO(prev => ({ ...prev, date: e.target.value }))}
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             />
@@ -1017,7 +1021,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <div className="space-y-2">
             <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Currency</label>
             <select
-              value={newPO.inputCurrency}
+              value={newPO.inputCurrency || ''}
               onChange={(e) => {
                 const newCurr = e.target.value as 'USD' | 'IQD';
                 setNewPO(prev => {
@@ -1038,7 +1042,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
             <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Exchange Rate</label>
             <input
               type="number"
-              value={newPO.exchangeRateUsed}
+              value={newPO.exchangeRateUsed || 0}
               onChange={(e) => {
                 const newRate = parseFloat(e.target.value) || 0;
                 setNewPO(prev => {
@@ -1073,7 +1077,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           <div className="space-y-2">
             <label className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{t('supplier')}</label>
             <select
-              value={newPO.supplier}
+              value={newPO.supplier || ''}
               onChange={(e) => {
                 if (e.target.value === 'new') {
                   navigate('/page/companies');
@@ -1111,7 +1115,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Description</label>
                   <input
                     type="text"
-                    value={item.description}
+                    value={item.description || ''}
                     onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                     className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
                   />
@@ -1120,7 +1124,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Qty</label>
                   <input
                     type="number"
-                    value={item.quantity}
+                    value={item.quantity || 0}
                     onChange={(e) => updateLineItem(item.id, 'quantity', parseFloat(e.target.value))}
                     className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
                   />
@@ -1129,7 +1133,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Unit</label>
                   <input
                     type="text"
-                    value={item.unit}
+                    value={item.unit || ''}
                     onChange={(e) => updateLineItem(item.id, 'unit', e.target.value)}
                     className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
                   />
@@ -1138,7 +1142,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                   <label className="text-[9px] font-bold text-slate-400 uppercase">Rate</label>
                   <input
                     type="number"
-                    value={item.inputRate}
+                    value={item.inputRate || 0}
                     onChange={(e) => updateLineItem(item.id, 'inputRate', parseFloat(e.target.value))}
                     className="w-full bg-white border border-slate-200 p-2 text-xs outline-none focus:border-blue-500 rounded-lg"
                   />
@@ -1733,6 +1737,128 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
     );
   };
 
+  const renderImportView = () => (
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+            <Upload className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 uppercase">Import Purchase Orders</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Upload CSV or Excel files to bulk import PO data</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setView('list')}
+          className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+        >
+          <X className="w-5 h-5 text-slate-400" />
+        </button>
+      </div>
+      <div className="p-8">
+        <DataImportModal 
+          isOpen={true}
+          onClose={() => setView('list')}
+          onImport={handleImportPOData}
+          targetColumns={poTargetColumns}
+          title="Import Purchase Orders"
+          entityName="Purchase Orders"
+        />
+      </div>
+    </div>
+  );
+
+  const renderPreviewView = () => {
+    if (!previewPOs) return null;
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900 tracking-tight">AI Analysis Preview</h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Verify extracted Purchase Orders before importing</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setView('list')}
+            className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-6 space-y-6">
+          {previewPOs.map((po, idx) => (
+            <div key={`${po.id}-${idx}`} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                <div className="flex gap-6">
+                  <div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">PO Number</div>
+                    <div className="text-sm font-black text-blue-600 tracking-tighter italic">{po.id}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('supplier')}</div>
+                    <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Cost Account</div>
+                    <div className="text-sm font-bold text-slate-700">{po.masterFormat}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Amount</div>
+                  <div className="text-lg font-black text-slate-900 font-mono tracking-tighter">{formatAmount(po.amount, baseCurrency)}</div>
+                </div>
+              </div>
+              <table className="w-full text-left text-[11px]">
+                <thead className="bg-white border-b border-slate-100 text-slate-400 font-black uppercase tracking-[0.2em]">
+                  <tr>
+                    <th className="px-6 py-4">Description</th>
+                    <th className="px-6 py-4 text-right">Qty</th>
+                    <th className="px-6 py-4">Unit</th>
+                    <th className="px-6 py-4 text-right">Rate</th>
+                    <th className="px-6 py-4 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {po.lineItems.map((li, lidx) => (
+                    <tr key={`${li.description}-${lidx}`} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-700 italic">{li.description}</td>
+                      <td className="px-6 py-4 text-right font-black text-slate-900">{li.quantity.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-slate-500 uppercase font-bold tracking-widest">{li.unit}</td>
+                      <td className="px-6 py-4 text-right font-bold text-slate-600">{formatAmount(li.rate, baseCurrency)}</td>
+                      <td className="px-6 py-4 text-right font-black text-blue-600 font-mono">{formatAmount(li.amount, baseCurrency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+          <button 
+            onClick={() => setView('list')}
+            className="px-8 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleConfirmImport}
+            className="px-10 py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Confirm & Import Data
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderPOLog = () => {
     return (
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
@@ -1758,7 +1884,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={() => setShowImportModal(true)}
+              onClick={() => setView('import')}
               className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
             >
               {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
@@ -1937,7 +2063,10 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       {page.id === '4.2.4' && renderCumulativeTracking()}
       {page.id === '4.2.5' && renderDashboard()}
       {page.id === '4.2.6' && (
-        view === 'list' ? renderPOLog() : renderPOForm()
+        view === 'list' ? renderPOLog() : 
+        view === 'form' ? renderPOForm() :
+        view === 'import' ? renderImportView() :
+        renderPreviewView()
       )}
 
       <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
@@ -1952,111 +2081,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       </div>
 
       <AnimatePresence>
-        {showImportModal && (
-          <DataImportModal 
-            isOpen={showImportModal}
-            onClose={() => setShowImportModal(false)}
-            onImport={handleImportPOData}
-            targetColumns={poTargetColumns}
-            title="Import Purchase Orders"
-            entityName="Purchase Orders"
-          />
-        )}
-        {showPreviewModal && previewPOs && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">AI Analysis Preview</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Verify extracted Purchase Orders before importing</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowPreviewModal(false)}
-                  className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-auto p-6">
-                <div className="space-y-6">
-                  {previewPOs.map((po, idx) => (
-                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                        <div className="flex gap-4">
-                          <div>
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PO Number</div>
-                            <div className="text-sm font-bold text-blue-600">{po.id}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier')}</div>
-                            <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Cost Account</div>
-                            <div className="text-sm font-bold text-slate-700">{po.masterFormat}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Total Amount</div>
-                          <div className="text-lg font-semibold text-slate-900">{formatAmount(po.amount, baseCurrency)}</div>
-                        </div>
-                      </div>
-                      <table className="w-full text-left text-[11px]">
-                        <thead className="bg-white border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-widest">
-                          <tr>
-                            <th className="px-4 py-3">Description</th>
-                            <th className="px-4 py-3 text-right">Qty</th>
-                            <th className="px-4 py-3">Unit</th>
-                            <th className="px-4 py-3 text-right">Rate</th>
-                            <th className="px-4 py-3 text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {po.lineItems.map((li, lidx) => (
-                            <tr key={lidx}>
-                              <td className="px-4 py-3 font-medium text-slate-700">{li.description}</td>
-                              <td className="px-4 py-3 text-right font-bold">{li.quantity.toLocaleString()}</td>
-                              <td className="px-4 py-3 text-slate-500 uppercase font-bold">{li.unit}</td>
-                              <td className="px-4 py-3 text-right font-bold">{formatAmount(li.rate, baseCurrency)}</td>
-                              <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatAmount(li.amount, baseCurrency)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-                <button 
-                  onClick={() => setShowPreviewModal(false)}
-                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleConfirmImport}
-                  className="px-8 py-2.5 bg-blue-600 text-white rounded-2xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Confirm & Import Data
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {/* Modals removed for full-page views */}
       </AnimatePresence>
     </div>
   );

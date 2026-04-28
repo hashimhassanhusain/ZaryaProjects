@@ -138,8 +138,8 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
   };
 
   const filteredRoles = roles.filter(r => 
-    r.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.responsibility.toLowerCase().includes(searchTerm.toLowerCase())
+    (r.position || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+    (r.responsibility || '').toLowerCase().includes((searchTerm || '').toLowerCase())
   );
 
   if (loading) {

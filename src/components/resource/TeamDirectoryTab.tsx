@@ -161,9 +161,9 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
   };
 
   const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.department.toLowerCase().includes(searchQuery.toLowerCase())
+    (m.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (m.role || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (m.department || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   return (

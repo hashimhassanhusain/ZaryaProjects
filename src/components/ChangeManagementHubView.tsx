@@ -274,8 +274,8 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
   ];
 
   const filteredRequests = requests.filter(r => 
-    r.requestId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (r.requestId || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (r.description || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   if (view === 'new') {

@@ -112,9 +112,9 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
             className="bg-slate-50 border-b border-slate-100 p-4"
           >
             <div className="flex flex-wrap gap-2">
-              {config.columns.map(col => (
+              {config.columns.map((col, idx) => (
                 <button
-                  key={col.key}
+                  key={`col-vis-${col.key}-${idx}`}
                   onClick={() => setVisibleColumns(prev => 
                     prev.includes(col.key) ? prev.filter(k => k !== col.key) : [...prev, col.key]
                   )}
@@ -141,9 +141,9 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
               <th className="w-12 px-4 py-4">
                 <input type="checkbox" className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" />
               </th>
-              {config.columns.filter(c => visibleColumns.includes(c.key)).map(col => (
+              {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
                 <th 
-                  key={col.key}
+                  key={`th-${col.key}-${idx}`}
                   className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest group cursor-pointer hover:text-slate-600 transition-colors"
                   onClick={() => toggleSort(col.key)}
                 >
@@ -159,7 +159,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
           <tbody>
             {sortedData.map((record, idx) => (
               <motion.tr
-                key={record.id || idx}
+                key={`tr-${record.id || 'record'}-${idx}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.02 }}
@@ -169,8 +169,8 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                 <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                   <input type="checkbox" className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" />
                 </td>
-                {config.columns.filter(c => visibleColumns.includes(c.key)).map(col => (
-                  <td key={col.key} className="px-4 py-4">
+                {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
+                  <td key={`td-${col.key}-${idx}`} className="px-4 py-4">
                     {renderCellValue(record[col.key], col.type)}
                   </td>
                 ))}

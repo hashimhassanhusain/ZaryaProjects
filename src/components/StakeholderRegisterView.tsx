@@ -70,8 +70,8 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
   };
 
   const filtered = stakeholders.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.organization.toLowerCase().includes(searchQuery.toLowerCase())
+    (s.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (s.organization || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   return (
@@ -156,8 +156,8 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                 {filtered.map(s => (
-                   <tr key={s.id} className="hover:bg-slate-50/30 transition-colors group">
+                 {filtered.map((s, idx) => (
+                   <tr key={`${s.id}-${idx}`} className="hover:bg-slate-50/30 transition-colors group">
                       <td className="px-8 py-6">
                          <div>
                             <p className="text-sm font-semibold text-slate-900">{s.name}</p>

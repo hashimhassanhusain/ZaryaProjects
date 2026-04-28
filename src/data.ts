@@ -119,6 +119,7 @@ export const pages: Page[] = [
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
     icon: 'UserSearch', 
+    collectionName: 'stakeholders',
     summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
     details: {
       inputs: ['business-case', 'project-charter', 'governance-framework', 'org-structure'],
@@ -287,6 +288,7 @@ export const pages: Page[] = [
     domain: 'finance', 
     focusArea: 'Planning', 
     icon: 'Database', 
+    collectionName: 'boq_items',
     summary: 'Centralized repository of all project quantities, units, and rates mapped to MasterFormat divisions.',
     details: {
       inputs: ['Approved Drawings', 'Technical Specifications'],
@@ -399,6 +401,7 @@ export const pages: Page[] = [
     domain: 'finance', 
     focusArea: 'Executing', 
     icon: 'ShoppingCart', 
+    collectionName: 'purchase_orders',
     summary: 'Tracking system for all project purchase orders from commitment to payment.',
     details: {
       inputs: ['Approved Requisitions', 'Vendor Contracts'],
@@ -483,6 +486,7 @@ export const pages: Page[] = [
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'List', 
+    collectionName: 'activities',
     summary: 'Detailed list of activities, quantities, and attributes sorted by WBS structure.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'detailed-scope-statement'],
@@ -833,6 +837,7 @@ export const pages: Page[] = [
     domain: 'governance', 
     focusArea: 'Initiating', 
     icon: 'Shield', 
+    collectionName: 'charter_entries',
     summary: 'Define the governing framework, roles, and decision-making model for project oversight.',
     details: {
       inputs: ['org-strategy', 'business-case', 'eef', 'opa'],
