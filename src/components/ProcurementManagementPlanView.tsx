@@ -57,8 +57,6 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { DocumentShell } from './shared/DocumentShell';
-import { ShoppingCart } from 'lucide-react';
 
 interface ProcurementManagementPlanViewProps {
   page: Page;
@@ -399,42 +397,9 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
     doc.save(fileName);
   };
 
-  const defaultProcPlan: ProcurementPlanData = {
-    projectTitle: selectedProject?.name ?? '',
-    datePrepared: new Date().toISOString().split('T')[0],
-    authority: '',
-    pmResponsibilities: [],
-    procurementResponsibilities: [],
-    standardDocuments: [],
-    contractType: '',
-    bondingInsurance: '',
-    selectionCriteria: [],
-    assumptionsConstraints: '',
-    integrationWBS: '',
-    integrationSchedule: '',
-    integrationDocumentation: '',
-    integrationRisk: '',
-    performanceReporting: '',
-    performanceMetrics: [],
-  };
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
 
   return (
-    <DocumentShell
-      icon={ShoppingCart}
-      title="Procurement Management Plan"
-      docType="PROC-PLAN"
-      versions={versions}
-      isLoading={loading}
-      isSaving={isSaving}
-      onSaveNew={() => handleSave(true)}
-      onUpdate={() => handleSave(false)}
-      onOpenVersion={(v) => setProcPlan(v.data as ProcurementPlanData)}
-      onNewDraft={() => setProcPlan(defaultProcPlan)}
-      drivePath="01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.1_Governance_Domain"
-    >
-    {loading ? (
-      <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>
-    ) : (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -1026,7 +991,5 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         </div>
       </section>
     </div>
-    )}
-    </DocumentShell>
   );
 };

@@ -54,8 +54,6 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { DocumentShell } from './shared/DocumentShell';
-import { Calculator } from 'lucide-react';
 
 interface CostManagementPlanViewProps {
   page: Page;
@@ -256,37 +254,11 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
     doc.save(fileName);
   };
 
-  const defaultCostPlan: CostPlanData = {
-    projectTitle: selectedProject?.name ?? '',
-    datePrepared: new Date().toISOString().split('T')[0],
-    accuracy: '-10% / +25%',
-    units: 'IQD (Iraqi Dinar)',
-    controlThresholds: 'Report when variance exceeds threshold',
-    thresholdPercentage: 10,
-    performanceRules: '',
-    reportingFormat: 'Monthly Cost Performance Report (CPR)',
-    processManagement: { estimating: '', budgeting: '', monitoring: '' },
-  };
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
 
   const thresholdValue = calculateThresholdValue();
 
   return (
-    <DocumentShell
-      icon={Calculator}
-      title="Cost Management Plan"
-      docType="COST-PLAN"
-      versions={versions}
-      isLoading={loading}
-      isSaving={isSaving}
-      onSaveNew={() => handleSave(true)}
-      onUpdate={() => handleSave(false)}
-      onOpenVersion={(v) => setCostPlan(v.data as CostPlanData)}
-      onNewDraft={() => setCostPlan(defaultCostPlan)}
-      drivePath="01_PROJECT_MANAGEMENT_FORMS/2.0_Planning/2.4_Finance_Domain"
-    >
-    {loading ? (
-      <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>
-    ) : (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -610,7 +582,5 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
         </div>
       </section>
     </div>
-    )}
-    </DocumentShell>
   );
 };

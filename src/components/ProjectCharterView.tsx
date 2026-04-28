@@ -46,7 +46,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { StandardProcessPage } from './StandardProcessPage';
-import { DocumentShell } from './shared/DocumentShell';
 
 interface ProjectCharterViewProps {
   page: Page;
@@ -421,46 +420,6 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     handleDriveUpload(doc, fileName);
   };
 
-  const generatePdfBlob = async (): Promise<Blob | null> => {
-    if (!selectedProject) return null;
-    // Re-run the same PDF logic but return blob instead of saving
-    const pdfDoc = new jsPDF('p', 'mm', 'a4');
-    const margin = 20;
-    const pageWidth = pdfDoc.internal.pageSize.width;
-    pdfDoc.setFontSize(16);
-    pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.text('PROJECT CHARTER', pageWidth / 2, 35, { align: 'center' });
-    autoTable(pdfDoc, {
-      startY: 45,
-      body: [
-        ['Project Title:', charter.projectTitle],
-        ['Project Sponsor:', charter.projectSponsor, 'Date Prepared:', charter.datePrepared],
-        ['Project Manager:', charter.projectManager, 'Customer:', charter.projectCustomer],
-      ],
-      theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 2 },
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 }, 2: { fontStyle: 'bold', cellWidth: 35 } },
-    });
-    const sections = [
-      { title: 'Project Purpose:', content: charter.purpose },
-      { title: 'Project Description:', content: charter.description },
-      { title: 'High-Level Requirements:', content: charter.requirements },
-      { title: 'High-Level Risks:', content: charter.highLevelRisks },
-    ];
-    let y = ((pdfDoc as any).lastAutoTable?.finalY ?? 150) + 10;
-    sections.forEach(s => {
-      pdfDoc.setFontSize(10);
-      pdfDoc.setFont('helvetica', 'bold');
-      pdfDoc.text(s.title, margin, y);
-      y += 6;
-      pdfDoc.setFont('helvetica', 'normal');
-      const lines = pdfDoc.splitTextToSize(s.content || '', pageWidth - 2 * margin);
-      pdfDoc.text(lines, margin, y);
-      y += lines.length * 5 + 8;
-    });
-    return pdfDoc.output('blob');
-  };
-
   const handleDriveUpload = async (doc: jsPDF, fileName: string) => {
     if (!selectedProject) return;
     setIsExporting(true);
@@ -504,45 +463,15 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     });
   };
 
-  const defaultCharterData = {
-    projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code ?? ''})` : '',
-    projectSponsor: '', datePrepared: new Date().toISOString().split('T')[0],
-    projectManager: '', projectCustomer: '', purpose: '', description: '',
-    requirements: '', highLevelRisks: '',
-    objectives: {
-      scope: { objective: '', successCriteria: '', approver: '' },
-      time:  { objective: '', successCriteria: '', approver: '' },
-      cost:  { objective: '', successCriteria: '', approver: '' },
-      other: { objective: '', successCriteria: '', approver: '' },
-    },
-    milestones: [{ id: '1', description: '', dueDate: '' }],
-    estimatedBudget: 0, currency: 'USD' as const, exchangeRate: currentExchangeRate,
-    stakeholders: [{ id: '1', name: '', role: '' }],
-    pmAuthority: '', staffingDecisions: '', budgetManagement: '',
-    technicalDecisions: '', conflictResolution: '',
-    approvals: { pmName: '', pmDate: '', sponsorName: '', sponsorDate: '' },
-  };
-
-  return (
-    <DocumentShell
-      icon={Gavel}
-      title={t('project_charter') || 'Project Charter'}
-      docType="CHARTER"
-      versions={versions}
-      isLoading={loading}
-      isSaving={isSaving}
-      onSaveNew={() => handleSave(true)}
-      onUpdate={() => handleSave(false)}
-      onOpenVersion={(v) => setCharter(v.data as CharterData)}
-      onNewDraft={() => setCharter(defaultCharterData as CharterData)}
-      onGeneratePdf={generatePdfBlob}
-      drivePath="01_PROJECT_MANAGEMENT_FORMS/1.0_Initiating/1.1_Governance_Domain"
-    >
-    {loading ? (
+  if (loading) {
+    return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
-    ) : (
+    );
+  }
+
+  return (
     <StandardProcessPage
       page={page}
       onSave={() => handleSave(true)}
@@ -857,7 +786,5 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         </div>
       </div>
     </StandardProcessPage>
-    )}
-    </DocumentShell>
   );
 };

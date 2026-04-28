@@ -833,12 +833,8 @@ export interface POItem {
 export interface PageVersion {
   version: number;
   date: string;
-  data: Record<string, any>;
+  data: Record<string, string>;
   author: string;
-  /** Optional one-line summary of what changed in this version */
-  changeSummary?: string;
-  /** User ID of the author */
-  authorId?: string;
 }
 
 export interface SavedDocument {
