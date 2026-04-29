@@ -133,9 +133,9 @@ export const Sidebar: React.FC = () => {
                       className="overflow-hidden px-2 space-y-1"
                     >
                        <div className="bg-slate-100/50 p-2 rounded-3xl border border-slate-200/50 space-y-1">
-                          {companies.map(company => (
+                          {companies.map((company, idx) => (
                              <button
-                               key={company.id}
+                               key={`${company.id}-${idx}`}
                                onClick={() => {
                                  setSelectedCompanyId(company.id);
                                  setExpandedCompanies({}); // Close list
@@ -166,9 +166,9 @@ export const Sidebar: React.FC = () => {
                        <div className="space-y-1">
                           {projects
                             .filter(p => p.companyId === (selectedProject?.companyId || selectedCompanyId))
-                            .map(project => (
+                            .map((project, idx) => (
                               <button
-                                key={project.id}
+                                key={`${project.id}-${idx}`}
                                 onClick={() => {
                                   setSelectedProject(project);
                                   navigate(`/project/${project.id}`);
@@ -208,12 +208,12 @@ export const Sidebar: React.FC = () => {
             <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
             
             <div className="space-y-1">
-              {FOCUS_AREAS.map(area => {
+              {FOCUS_AREAS.map((area, idx) => {
                 const isExpanded = expandedAreas[area.id];
                 const AreaIcon = area.icon;
                 
                 return (
-                  <div key={area.id} className="space-y-1">
+                  <div key={`${area.id}-${idx}`} className="space-y-1">
                     <button
                       onClick={() => toggleArea(area.id)}
                       className={cn(
@@ -235,7 +235,7 @@ export const Sidebar: React.FC = () => {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden pl-8 space-y-1"
                         >
-                          {PERFORMANCE_DOMAINS.map(domain => {
+                          {PERFORMANCE_DOMAINS.map((domain, idx) => {
                             const domainPagesInArea = pages.filter(p => p.domain === domain.id && p.focusArea === area.id && p.type === 'terminal');
                             if (domainPagesInArea.length === 0) return null;
 
@@ -245,7 +245,7 @@ export const Sidebar: React.FC = () => {
                             const DomainIcon = domain.icon;
 
                             return (
-                              <div key={domain.id} className="space-y-1 group/domain relative">
+                              <div key={`${domain.id}-${idx}`} className="space-y-1 group/domain relative">
                                 {/* Vertical tree line for Domains */}
                                 <div className="absolute left-2.5 top-0 bottom-0 w-[1px] bg-slate-200 group-hover/domain:bg-blue-300 transition-colors" />
                                 
@@ -265,14 +265,14 @@ export const Sidebar: React.FC = () => {
                                 <div className="pl-6 space-y-1 relative">
                                   {/* Vertical tree line for Terminals */}
                                   <div className="absolute left-4.5 top-0 bottom-4 w-[1px] bg-slate-100" />
-                                  {domainPagesInArea.map(terminalPage => {
+                                  {domainPagesInArea.map((terminalPage, tIdx) => {
                                     const terminalPath = selectedProject ? `/project/${selectedProject.id}/page/${terminalPage.id}` : `/page/${terminalPage.id}`;
                                     const isTerminalActive = currentPath === terminalPath;
                                     if (!canAccess(terminalPage.id)) return null;
 
                                     return (
                                       <Link
-                                        key={terminalPage.id}
+                                        key={`${terminalPage.id}-${tIdx}`}
                                         to={terminalPath}
                                         className={cn(
                                           "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all uppercase tracking-tighter",

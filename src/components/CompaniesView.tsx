@@ -230,9 +230,9 @@ export const CompaniesView: React.FC = () => {
 
           {/* Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompanies.map((company) => (
+            {filteredCompanies.map((company, idx) => (
               <motion.div
-                key={company.id}
+                key={`${company.id}-${idx}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
@@ -414,8 +414,8 @@ export const CompaniesView: React.FC = () => {
                     className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black uppercase tracking-widest focus:ring-8 focus:ring-blue-500/5 transition-all text-slate-900 outline-none"
                   >
                     <option value="">{t('no_parent')}</option>
-                    {companies.filter(c => c.id !== editingCompany?.id).map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                    {companies.filter(c => c.id !== editingCompany?.id).map((c, idx) => (
+                      <option key={`${c.id}-${idx}`} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>

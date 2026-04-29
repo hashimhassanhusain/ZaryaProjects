@@ -34,6 +34,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Page, DecisionLogEntry, DecisionLogVersion, Stakeholder } from '../types';
+import { StandardProcessPage } from './StandardProcessPage';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -64,12 +65,10 @@ interface DecisionLogViewProps {
 export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const [entries, setEntries] = useState<DecisionLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingEntry, setEditingEntry] = useState<DecisionLogEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [showPrompt, setShowPrompt] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [versions, setVersions] = useState<DecisionLogVersion[]>([]);
 
@@ -84,7 +83,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
   });
 
   useEffect(() => {
-    if (!selectedProject) return;
+    if (!selectedProject?.id) return;
 
     const entriesQuery = query(
       collection(db, 'decision_log'),
@@ -94,7 +93,6 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
 
     const unsubEntries = onSnapshot(entriesQuery, (snap) => {
       setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() } as DecisionLogEntry)));
-      setLoading(false);
     });
 
     const fetchStakeholders = async () => {
@@ -108,7 +106,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
   }, [selectedProject?.id]);
 
   useEffect(() => {
-    if (editingEntry) {
+    if (editingEntry?.id) {
       const vQuery = query(
         collection(db, 'decision_log_versions'),
         where('decisionId', '==', editingEntry.id),
@@ -121,7 +119,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     } else {
       setVersions([]);
     }
-  }, [editingEntry]);
+  }, [editingEntry?.id]);
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -166,8 +164,10 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
       if (editingEntry && !isNewVersion) {
         docRef = doc(db, 'decision_log', editingEntry.id);
         await updateDoc(docRef, entryData);
+        toast.success("Decision updated");
       } else {
         docRef = await addDoc(collection(db, 'decision_log'), entryData);
+        toast.success("Decision recorded");
       }
 
       // Version History
@@ -182,55 +182,22 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
         changeSummary: isNewVersion ? 'Created new version' : (editingEntry ? 'Updated existing record' : 'Initial entry')
       });
 
-      // Mandatory Confirmation for financial/time implications
-      if (formData.category === 'Cost/Price' || formData.category === 'Schedule') {
-        setShowPrompt({
-          message: "This decision has financial/time implications. Propose a draft link for review?",
-          onConfirm: () => {
-            console.log('Draft link proposed');
-            setShowPrompt(null);
-            setView('list');
-          }
-        });
-      } else {
-        setView('list');
-      }
-
+      setView('list');
     } catch (err) {
-      handleFirestoreError(err, editingEntry ? OperationType.UPDATE : OperationType.CREATE, 'decision_log');
+      toast.error("Operation failed");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    toast((t) => (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">Delete this decision?</p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                await deleteDoc(doc(db, 'decision_log', id));
-                toast.success('Decision deleted successfully');
-              } catch (error) {
-                handleFirestoreError(error, OperationType.DELETE, 'decision_log');
-              }
-            }}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000 });
+    if (!window.confirm("Retire this decision record?")) return;
+    try {
+      await deleteDoc(doc(db, 'decision_log', id));
+      toast.success('Decision record retired');
+    } catch (error) {
+       toast.error("Deletion failed");
+    }
   };
 
   const generatePDF = async () => {
@@ -239,13 +206,10 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     const margin = 20;
     const pageWidth = pdfDoc.internal.pageSize.width;
 
-    // Logo
     pdfDoc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
-    
     pdfDoc.setFontSize(16);
     pdfDoc.setFont('helvetica', 'bold');
     pdfDoc.text('DECISION LOG', pageWidth / 2, 35, { align: 'center' });
-
     pdfDoc.setFontSize(10);
     pdfDoc.text(`Project Title: ${selectedProject.name}`, margin, 45);
     pdfDoc.text(`Date Prepared: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, 45);
@@ -264,400 +228,346 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: [48, 48, 48], textColor: [255, 255, 255], fontStyle: 'bold' },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 70 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 60 }
-      }
     });
 
-    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const fileName = `${selectedProject.code}-GOV-DEC-LOG-${dateStr}.pdf`;
-    
-    // Auto-save simulation
-    const timestamp = new Date().toISOString();
-    const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
-    const newDoc = {
-      id: `drive_${Date.now()}`,
-      name: fileName,
-      date: timestamp,
-      url: '#',
-      author: user,
-      version: 1.0,
-      pageId: page.id,
-      path: '/01-Management/01-Governance/'
-    };
-
-    const projectDoc = await getDoc(doc(db, 'projects', selectedProject.id));
-    if (projectDoc.exists()) {
-      const pData = projectDoc.data();
-      const updatedDocs = [...(pData.savedDocuments || []), newDoc];
-      await updateDoc(doc(db, 'projects', selectedProject.id), { savedDocuments: updatedDocs });
-    }
-
-    pdfDoc.save(fileName);
+    pdfDoc.save(`${selectedProject.code}-DECISION-LOG.pdf`);
   };
 
   const filteredEntries = entries.filter(e => 
     e.decisionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.decision.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.responsibleParty.toLowerCase().includes(searchQuery.toLowerCase())
+    (e.decision || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (e.responsibleParty || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (view === 'form') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={() => setView('list')}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold text-sm uppercase tracking-wider"
+  return (
+    <StandardProcessPage
+      page={page}
+      viewMode={view === 'form' ? 'edit' : 'grid'}
+      onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
+      onSave={() => handleSave(false)}
+      onPrint={generatePDF}
+      isSaving={isSaving}
+    >
+      <AnimatePresence mode="wait">
+        {view === 'form' ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10 pb-32"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Register
-          </button>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
-              VERSION: v{(formData.version || 1.0).toFixed(1)}
-            </span>
-          </div>
-        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+              {/* Left Column: Decision Details */}
+              <div className="lg:col-span-2 space-y-10">
+                <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden transition-all hover:shadow-xl hover:shadow-slate-200/40">
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                        <Gavel className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                          {editingEntry ? 'Update Decision Entry' : 'Log New Decision'}
+                        </h2>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mt-1 italic">Formalizing project intelligence & authority</p>
+                      </div>
+                    </div>
+                    <div className="px-4 py-1 bg-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      v{(formData.version || 1.0).toFixed(1)}
+                    </div>
+                  </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="p-10 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                  Decision ID
-                  <Tooltip text="Auto-generated unique ID (e.g., ZRY-DEC-001)" />
-                </label>
-                <input 
-                  type="text"
-                  value={formData.decisionId}
-                  onChange={(e) => setFormData({ ...formData, decisionId: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  placeholder="Example: ZRY-DEC-005"
-                />
+                  <div className="p-10 space-y-12">
+                    {/* Identification */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <div className="space-y-2">
+                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Decision ID</label>
+                         <input 
+                           type="text"
+                           value={formData.decisionId}
+                           onChange={(e) => setFormData({ ...formData, decisionId: e.target.value })}
+                           className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Governance Category</label>
+                         <select 
+                           value={formData.category}
+                           onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                           className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
+                         >
+                            {['Scope', 'Cost/Price', 'Schedule', 'Quality', 'Quantity'].map(c => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                         </select>
+                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Responsible Party / Stakeholder</label>
+                      <select 
+                        value={formData.responsibleParty}
+                        onChange={(e) => setFormData({ ...formData, responsibleParty: e.target.value })}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
+                      >
+                        <option value="">Select Responsible Party...</option>
+                        {stakeholders.map(s => (
+                          <option key={s.id} value={s.name}>{s.name} ({s.role})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Decision / Formal Outcome</label>
+                      <textarea 
+                        value={formData.decision}
+                        onChange={(e) => setFormData({ ...formData, decision: e.target.value })}
+                        rows={4}
+                        className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none resize-none leading-relaxed"
+                        placeholder="State the formal decision and its rationale..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Comments & Context</label>
+                      <textarea 
+                        value={formData.comments}
+                        onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                        rows={3}
+                        className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none resize-none leading-relaxed"
+                        placeholder="Additional notes for audit trail..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-4 pt-10 border-t border-slate-50">
+                       <button 
+                         onClick={() => handleSave(true)}
+                         disabled={isSaving}
+                         className="px-8 py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+                       >
+                         Lock Version & Record New
+                       </button>
+                    </div>
+                  </div>
+                </section>
               </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                  Category
-                  <Tooltip text="Mandatory dropdown including Schedule, Cost/Price, Quantity, Quality, Scope" />
-                </label>
-                <select 
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                >
-                  <option value="Schedule">Schedule</option>
-                  <option value="Cost/Price">Cost/Price</option>
-                  <option value="Quantity">Quantity</option>
-                  <option value="Quality">Quality</option>
-                  <option value="Scope">Scope</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                <input 
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                />
-              </div>
-            </div>
 
-            {(formData.category === 'Cost/Price' || formData.category === 'Schedule') && (
-              <div className="bg-amber-50 border border-amber-100 rounded-lg p-6 flex items-start gap-4 animate-pulse">
-                <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
-                <div>
-                  <h4 className="text-sm font-bold text-amber-900 uppercase tracking-tight">Protected Domain Warning</h4>
-                  <p className="text-xs text-amber-700 mt-1 font-medium">
-                    Note: This decision involves protected domains. No changes will be made to POs or Gantt Chart without manual confirmation.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                Responsible Party
-                <Tooltip text="Responsible party for this decision" />
-              </label>
-              <select 
-                value={formData.responsibleParty}
-                onChange={(e) => setFormData({ ...formData, responsibleParty: e.target.value })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-              >
-                <option value="">Select Responsible Party...</option>
-                {stakeholders.map(s => (
-                  <option key={s.id} value={s.name}>{s.name} ({s.role})</option>
-                ))}
-                <option value="Hashim Hassan">Hashim Hassan (Director)</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                Decision
-                <Tooltip text="Example: Approved using cement plaster for basement services to resist moisture" />
-              </label>
-              <textarea 
-                value={formData.decision}
-                onChange={(e) => setFormData({ ...formData, decision: e.target.value })}
-                rows={4}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                placeholder="Describe the decision in detail..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments</label>
-              <textarea 
-                value={formData.comments}
-                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                rows={3}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                placeholder="Additional context or notes..."
-              />
-            </div>
-
-            {/* Version History */}
-            {editingEntry && versions.length > 0 && (
-              <div className="pt-10 border-t border-slate-100">
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                  <History className="w-4 h-4" />
-                  Version History
-                </h3>
-                <div className="space-y-4">
-                  {versions.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                          <span className="text-[10px] font-semibold text-blue-600">v{v.version.toFixed(1)}</span>
+              {/* Right Column: Assessment & History */}
+              <div className="space-y-10">
+                <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-indigo-600/20 transition-all duration-700" />
+                   <div className="relative z-10 space-y-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 text-white">
+                          <CheckCircle2 className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-slate-900">{v.changeSummary}</div>
-                          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">
-                            {v.userName} • {new Date(v.timestamp).toLocaleString('en-US')}
-                          </div>
+                          <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-400 font-sans">Strategic Impact</h3>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Decision Domain Analysis</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => setFormData(v.data as DecisionLogEntry)}
-                        className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-xl p-8 mt-12">
-              <div className="flex items-center gap-4 text-white/60 text-xs font-bold uppercase tracking-widest">
-                <Info className="w-4 h-4" />
-                Decision Log Audit Trail Active
-              </div>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setView('list')}
-                  className="px-8 py-4 text-white font-bold text-sm hover:bg-white/10 rounded-lg transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => handleSave(true)}
-                  disabled={isSaving}
-                  className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-lg hover:bg-white/20 transition-all flex items-center gap-2"
-                >
-                  Save as New Version
-                </button>
-                <button 
-                  onClick={() => handleSave(false)}
-                  disabled={isSaving}
-                  className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Overwrite Current
-                </button>
+                      <div className="space-y-6">
+                        <div className="p-6 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-between group/impact transition-all hover:bg-white/10">
+                           <div className="space-y-1">
+                             <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Selected Category</div>
+                             <div className="text-lg font-black italic text-white uppercase">{formData.category}</div>
+                           </div>
+                           <ShieldCheck className={cn(
+                             "w-8 h-8 transition-all",
+                             (formData.category === 'Cost/Price' || formData.category === 'Schedule') ? "text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "text-emerald-500"
+                           )} />
+                        </div>
+
+                        {(formData.category === 'Cost/Price' || formData.category === 'Schedule') && (
+                          <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] space-y-3">
+                             <div className="flex items-center gap-2 text-amber-500">
+                               <AlertTriangle className="w-4 h-4" />
+                               <span className="text-[10px] font-black uppercase tracking-widest">Baseline Alert</span>
+                             </div>
+                             <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase">
+                               Note: This decision involves protected domains. No changes will be made to POs or Gantt Chart without manual confirmation.
+                             </p>
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                </section>
+
+                {/* Audit History */}
+                {editingEntry && versions.length > 0 && (
+                  <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm flex flex-col p-8 space-y-8">
+                     <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <History className="w-4 h-4 text-indigo-600" />
+                        Audit Trail History
+                     </h3>
+                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        {versions.map(v => (
+                          <div key={v.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 group/version hover:bg-white transition-all">
+                             <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black italic">v{v.version.toFixed(1)}</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date(v.timestamp).toLocaleDateString()}</span>
+                             </div>
+                             <p className="text-[10px] font-bold text-slate-700 leading-tight italic uppercase tracking-tight">{v.changeSummary}</p>
+                             <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+                                <div className="flex items-center gap-2">
+                                   <div className="w-4 h-4 bg-slate-200 rounded-full" />
+                                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">{v.userName}</span>
+                                </div>
+                                <button 
+                                  onClick={() => setFormData(v.data as DecisionLogEntry)}
+                                  className="text-[8px] font-bold text-indigo-600 uppercase tracking-widest opacity-0 group-hover/version:opacity-100 transition-opacity"
+                                >
+                                  Preview Details
+                                </button>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                  </section>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search by ID, Decision or Responsible Party..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-8"
           >
-            <Printer className="w-5 h-5" />
-            Export Log
-          </button>
-          <button 
-            onClick={handleAdd}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-          >
-            <Plus className="w-5 h-5" />
-            New Decision
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Decision</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible Party</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-8 py-12 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-slate-300 mx-auto" />
-                  </td>
-                </tr>
-              ) : filteredEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-8 py-12 text-center text-slate-400 font-medium">
-                    No decisions recorded yet.
-                  </td>
-                </tr>
-              ) : filteredEntries.map((entry) => (
-                <tr key={entry.id} className="group hover:bg-slate-50/50 transition-all">
-                  <td className="px-8 py-5">
-                    <span className="text-sm font-semibold text-slate-900">{entry.decisionId}</span>
-                  </td>
-                  <td className="px-8 py-5">
-                    <span className={cn(
-                      "px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest",
-                      entry.category === 'Cost/Price' ? "bg-red-50 text-red-600" :
-                      entry.category === 'Schedule' ? "bg-amber-50 text-amber-600" :
-                      "bg-slate-100 text-slate-600"
-                    )}>
-                      {entry.category}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="text-sm font-medium text-slate-700 line-clamp-1 max-w-xs">{entry.decision}</div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="text-sm font-bold text-slate-900">{entry.responsibleParty}</div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="text-sm font-medium text-slate-500">{entry.date}</div>
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button 
-                        onClick={() => handleEdit(entry)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(entry.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
+               <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div>
+                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">Decision Governance Log</h2>
+                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic italic">Formalizing project authority: {entries.length} decisions logged</p>
+                 </div>
+                 <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="ID, Category, Stakeholder..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none w-64"
+                      />
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    <button 
+                      onClick={handleAdd}
+                      className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Log Outcome
+                    </button>
+                 </div>
+               </div>
+               
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                    <thead>
+                       <tr className="bg-slate-50/20 border-b border-slate-50">
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Decision ID</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Impact Core</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Formal Outcome</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Authority / Party</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Date</th>
+                          <th className="px-10 py-6"></th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                       {filteredEntries.length === 0 ? (
+                         <tr>
+                            <td colSpan={6} className="px-10 py-32 text-center text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] italic">No decisions recorded for selected criteria.</td>
+                         </tr>
+                       ) : filteredEntries.map((entry) => (
+                        <tr key={entry.id} onClick={() => handleEdit(entry)} className="hover:bg-slate-50 group cursor-pointer transition-colors relative overflow-hidden">
+                           <td className="px-10 py-8">
+                              <span className="text-sm font-black text-slate-900 tracking-tight italic uppercase">{entry.decisionId}</span>
+                           </td>
+                           <td className="px-10 py-8">
+                             <div className={cn(
+                               "inline-flex px-3 py-1 rounded text-[8px] font-black uppercase tracking-[0.1em]",
+                               entry.category === 'Cost/Price' ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                               entry.category === 'Schedule' ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                               "bg-indigo-50 text-indigo-600 border border-indigo-100"
+                             )}>
+                               {entry.category}
+                             </div>
+                           </td>
+                           <td className="px-10 py-8 min-w-[300px]">
+                              <div className="text-xs font-bold text-slate-700 line-clamp-2 max-w-xs uppercase leading-relaxed font-sans">{entry.decision}</div>
+                           </td>
+                           <td className="px-10 py-8">
+                              <div className="flex items-center gap-2">
+                                <User className="w-3 h-3 text-slate-400" />
+                                <span className="text-[10px] font-black text-slate-900 tracking-tight italic uppercase">{entry.responsibleParty}</span>
+                              </div>
+                           </td>
+                           <td className="px-10 py-8">
+                              <div className="text-[10px] font-bold text-slate-400 tracking-widest">{entry.date}</div>
+                           </td>
+                           <td className="px-10 py-8 text-right">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
+                                className="opacity-0 group-hover:opacity-100 p-3 bg-slate-50 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                           </td>
+                        </tr>
+                       ))}
+                    </tbody>
+                 </table>
+               </div>
+            </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 flex items-start gap-6">
-        <HelpCircle className="w-8 h-8 text-blue-500 shrink-0" />
-        <div>
-          <h4 className="text-lg font-bold text-blue-900 mb-2">Decision Log Guidance</h4>
-          <p className="text-sm text-blue-700 leading-relaxed">
-            Use this log to document critical agreements and approvals from Project Leadership. Decisions related to Cost or Schedule are flagged for manual baseline review to maintain data integrity across protected domains.
-          </p>
-        </div>
-      </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col md:flex-row gap-10 items-center shadow-2xl">
+                  <div className="flex-1 space-y-6 relative z-10">
+                    <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center ring-1 ring-indigo-500/30 shadow-inner">
+                      <FileSignature className="w-7 h-7 text-indigo-400" />
+                    </div>
+                    <h3 className="text-3xl font-black italic tracking-tighter leading-none uppercase">Governance<br/>Integrity Hub</h3>
+                    <p className="text-slate-400 font-bold leading-relaxed max-w-xl text-[10px] uppercase tracking-wide opacity-80 font-sans">
+                      The Decision Log formalizes all verbal agreements. High-impact decisions (Cost/Schedule) trigger a manual baseline review to ensure Zarya's data integrity across domains.
+                    </p>
+                  </div>
+                  <div className="absolute right-[-5%] bottom-[-10%] opacity-5 rotate-12 scale-150 pointer-events-none">
+                    <Gavel className="w-96 h-96" />
+                  </div>
+               </div>
 
-      {/* Prompt Modal */}
-      <AnimatePresence>
-        {showPrompt && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowPrompt(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-10 text-center space-y-6">
-                <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto">
-                  <ShieldCheck className="w-10 h-10 text-blue-600" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-900 uppercase tracking-tight">Domain Impact Detected</h3>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                    {showPrompt.message}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <button 
-                    onClick={showPrompt.onConfirm}
-                    className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
-                  >
-                    Yes, Propose Draft Link
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowPrompt(null);
-                      setView('list');
-                    }}
-                    className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-slate-200 transition-all"
-                  >
-                    No, Save Only
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+               <div className="grid grid-cols-2 gap-8">
+                  <div className="bg-white rounded-[3rem] border border-slate-200 p-8 flex flex-col justify-between items-center text-center group hover:border-indigo-500 transition-all cursor-default">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Calculator className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logged Decisions</div>
+                      <div className="text-4xl font-black italic tracking-tighter text-slate-900">{entries.length}</div>
+                    </div>
+                    <div className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">Active Audit Trail</div>
+                  </div>
+                  <div className="bg-white rounded-[3rem] border border-slate-200 p-8 flex flex-col justify-between items-center text-center group hover:border-amber-500 transition-all cursor-default">
+                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Impact Alerts</div>
+                      <div className="text-4xl font-black italic tracking-tighter text-slate-900">
+                        {entries.filter(e => e.category === 'Cost/Price' || e.category === 'Schedule').length}
+                      </div>
+                    </div>
+                    <div className="text-[8px] font-black text-amber-600 uppercase tracking-widest italic leading-none px-4">Manual Review Mandatory</div>
+                  </div>
+               </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </StandardProcessPage>
   );
 };
 

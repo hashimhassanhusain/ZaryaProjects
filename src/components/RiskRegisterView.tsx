@@ -42,7 +42,9 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
   const { formatCurrency } = useCurrency();
   const [risks, setRisks] = useState<Risk[]>([]);
   const [team, setTeam] = useState<{id: string, name: string}[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editingRisk, setEditingRisk] = useState<Risk | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [newRisk, setNewRisk] = useState<Partial<Risk>>({
     title: '',
     category: 'Technical',
@@ -59,26 +61,58 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
     const q = query(collection(db, 'risks'), where('projectId', '==', selectedProject.id));
     const unsub = onSnapshot(q, (snap) => setRisks(snap.docs.map(d => ({ id: d.id, ...d.data() } as Risk))));
     
-    // Static WBS IDs for now
     const unsubTeam = onSnapshot(collection(db, 'users'), (snap) => setTeam(snap.docs.map(d => ({ id: d.id, name: d.data().name }))));
     
     return () => { unsub(); unsubTeam(); };
   }, [selectedProject?.id]);
 
   const handleCreate = async () => {
-    if (!newRisk.title || !selectedProject) return;
+    if (!newRisk.title || !selectedProject) {
+      toast.error("Please provide a title");
+      return;
+    }
+    
+    setIsSaving(true);
     try {
-      await addDoc(collection(db, 'risks'), {
-        ...newRisk,
-        projectId: selectedProject.id,
-        createdAt: serverTimestamp()
-      });
-      setIsAdding(false);
-      setNewRisk({ probability: 3, impact: 3, strategy: 'Mitigate' } as any);
-      toast.success("Risk identified and registered");
+      if (editingRisk) {
+        await updateDoc(doc(db, 'risks', editingRisk.id), {
+          ...newRisk,
+          updatedAt: serverTimestamp()
+        });
+        toast.success("Risk updated");
+      } else {
+        await addDoc(collection(db, 'risks'), {
+          ...newRisk,
+          projectId: selectedProject.id,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        toast.success("Risk identified and registered");
+      }
+      setView('list');
+      setEditingRisk(null);
+      setNewRisk({ probability: 3, impact: 3, responseStrategy: 'Mitigate', status: 'Open' } as any);
     } catch (err) {
       console.error(err);
       toast.error("Registration failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEdit = (risk: Risk) => {
+    setEditingRisk(risk);
+    setNewRisk(risk);
+    setView('form');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to retire this risk record?")) return;
+    try {
+      await deleteDoc(doc(db, 'risks', id));
+      toast.success("Risk entry retired");
+    } catch (err) {
+      toast.error("Deletion failed");
     }
   };
 
@@ -113,250 +147,419 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
   return (
     <StandardProcessPage
       page={page}
+      viewMode={view === 'form' ? 'edit' : 'grid'}
+      onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
+      onSave={handleCreate}
+      onPrint={handlePrint}
+      isSaving={isSaving}
       inputs={[
         { id: '2.1.14', title: 'Risk Mgmt Plan', status: 'Approved' },
         { id: '2.2.5', title: 'WBS', status: 'Approved' }
       ]}
-      outputs={[
-        { id: '2.7.5-OUT', title: 'The Master Risk Register', status: 'Dynamic' }
-      ]}
-      onPrint={handlePrint}
     >
-      <div className="space-y-8 pb-20">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-rose-600 rounded-xl flex items-center justify-center shadow-lg text-white">
-              <ShieldAlert className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Risk Defense Matrix</h2>
-              <p className="text-sm text-slate-500 font-medium tracking-tight">Quantify uncertainty and link ownership to project breakdown structures.</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setIsAdding(!isAdding)}
-            className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-semibold uppercase tracking-widest transition-all flex items-center gap-2",
-              isAdding ? "bg-rose-100 text-rose-600 border border-rose-200" : "bg-slate-900 text-white shadow-xl shadow-slate-900/10"
-            )}
+      <AnimatePresence mode="wait">
+        {view === 'form' ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10 pb-32"
           >
-            {isAdding ? <ChevronDown className="w-4 h-4 rotate-180" /> : <Plus className="w-4 h-4" />}
-            {isAdding ? "Collapse Form" : "Identify Risk"}
-          </button>
-        </header>
-
-        <AnimatePresence>
-           {isAdding && (
-             <motion.div 
-               initial={{ opacity: 0, y: -20 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, y: -20 }}
-               className="bg-white border-2 border-rose-100 p-10 rounded-[2.5rem] shadow-2xl space-y-8"
-             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <div className="space-y-6">
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-semibold uppercase text-slate-400 italic">Risk Identification</label>
-                         <input 
-                           placeholder="e.g. Delay in custom marble delivery from Italy"
-                           value={newRisk.title}
-                           onChange={e => setNewRisk({...newRisk, title: e.target.value})}
-                           className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-rose-500/10 transition-all"
-                         />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+              {/* Left Column: Risk Identification & Details */}
+              <div className="lg:col-span-2 space-y-10">
+                <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden transition-all hover:shadow-xl hover:shadow-slate-200/40">
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/20">
+                        <ShieldAlert className="w-6 h-6 text-white" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-1">
-                            <label className="text-[10px] font-semibold uppercase text-slate-400">Category</label>
-                            <select 
-                              value={newRisk.category}
-                              onChange={e => setNewRisk({...newRisk, category: e.target.value})}
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold"
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                          {editingRisk ? 'Update Risk Record' : 'Identify New Risk'}
+                        </h2>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mt-1">Quantify uncertainty & link ownership</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-10 space-y-12">
+                    {/* Core Identification */}
+                    <section className="space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Risk Identification
+                      </h3>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Risk Title / Description</label>
+                        <input 
+                          type="text"
+                          value={newRisk.title}
+                          onChange={(e) => setNewRisk({ ...newRisk, title: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none"
+                          placeholder="e.g. Delay in custom marble delivery from Italy..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Category</label>
+                          <select 
+                            value={newRisk.category}
+                            onChange={(e) => setNewRisk({ ...newRisk, category: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                          >
+                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Response Strategy</label>
+                          <select 
+                            value={newRisk.responseStrategy}
+                            onChange={(e) => setNewRisk({ ...newRisk, responseStrategy: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                          >
+                            {strategies.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Ownership & Links */}
+                    <section className="space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Ownership & Domain Links
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Risk Owner</label>
+                          <select 
+                            value={newRisk.ownerId}
+                            onChange={(e) => setNewRisk({ ...newRisk, ownerId: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                          >
+                            <option value="">Select Owner...</option>
+                            {team.map(m => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Linked WBS ID</label>
+                          <input 
+                            type="text"
+                            value={newRisk.wbsId}
+                            onChange={(e) => setNewRisk({ ...newRisk, wbsId: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none"
+                            placeholder="e.g. 2.2.1.2 Finishes"
+                          />
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Status Toggle */}
+                    <section className="space-y-6">
+                       <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Operational Status
+                      </h3>
+                      <div className="flex flex-wrap gap-4">
+                        {['Open', 'Mitigated', 'Retired'].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setNewRisk({ ...newRisk, status: s as any })}
+                            className={cn(
+                              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 transition-all",
+                              newRisk.status === s 
+                                ? "bg-slate-900 border-slate-900 text-white shadow-lg" 
+                                : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
+                            )}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Column: Scoring & Impact Assessment */}
+              <div className="space-y-10">
+                <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-rose-600/20 transition-all duration-700" />
+                  <div className="relative z-10 space-y-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/20 text-white">
+                        <Target className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-rose-400">Heat Map Scoring</h3>
+                        <p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest">P × I Matrix Assessment</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* Probability */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Probability</span>
+                          <span className="text-xl font-black italic text-white">{newRisk.probability} / 5</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-2">
+                          {[1,2,3,4,5].map(v => (
+                            <button 
+                              key={`p-${v}`}
+                              onClick={() => setNewRisk({ ...newRisk, probability: v })}
+                              className={cn(
+                                "flex-1 h-12 rounded-xl text-xs font-black transition-all",
+                                newRisk.probability === v 
+                                  ? "bg-rose-600 text-white shadow-lg shadow-rose-600/20" 
+                                  : "bg-white/5 border border-white/10 text-slate-500 hover:bg-white/10"
+                              )}
                             >
-                               {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                         </div>
-                         <div className="space-y-1">
-                            <label className="text-[10px] font-semibold uppercase text-slate-400">Response Strategy</label>
-                            <select 
-                              value={newRisk.responseStrategy}
-                              onChange={e => setNewRisk({...newRisk, responseStrategy: e.target.value})}
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold"
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Impact */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Impact</span>
+                          <span className="text-xl font-black italic text-white">{newRisk.impact} / 5</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-2">
+                          {[1,2,3,4,5].map(v => (
+                            <button 
+                              key={`i-${v}`}
+                              onClick={() => setNewRisk({ ...newRisk, impact: v })}
+                              className={cn(
+                                "flex-1 h-12 rounded-xl text-xs font-black transition-all",
+                                newRisk.impact === v 
+                                  ? "bg-rose-600 text-white shadow-lg shadow-rose-600/20" 
+                                  : "bg-white/5 border border-white/10 text-slate-500 hover:bg-white/10"
+                              )}
                             >
-                               {strategies.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                         </div>
+                              {v}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                   </div>
 
-                   <div className="space-y-6 bg-slate-50 p-8 rounded-3xl">
-                      <div className="grid grid-cols-2 gap-8">
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-semibold uppercase text-slate-400 block">Probability (1-5)</label>
-                            <div className="flex justify-between items-center bg-white p-2 rounded-xl">
-                               {[1,2,3,4,5].map(v => (
-                                 <button 
-                                   key={v}
-                                   onClick={() => setNewRisk({...newRisk, probability: v})}
-                                   className={`w-10 h-10 rounded-lg text-xs font-semibold transition-all ${newRisk.probability === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
-                                 >
-                                   {v}
-                                 </button>
-                               ))}
-                            </div>
-                         </div>
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-semibold uppercase text-slate-400 block">Impact (1-5)</label>
-                            <div className="flex justify-between items-center bg-white p-2 rounded-xl">
-                               {[1,2,3,4,5].map(v => (
-                                 <button 
-                                   key={v}
-                                   onClick={() => setNewRisk({...newRisk, impact: v})}
-                                   className={`w-10 h-10 rounded-lg text-xs font-semibold transition-all ${newRisk.impact === v ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
-                                 >
-                                   {v}
-                                 </button>
-                               ))}
-                            </div>
-                         </div>
+                      {/* Resulting Score */}
+                      <div className={cn(
+                        "p-6 rounded-[2rem] border-2 transition-all flex items-center justify-between group/score",
+                        (newRisk.probability || 0) * (newRisk.impact || 0) >= 12 
+                          ? "bg-rose-600/20 border-rose-600/30 shadow-lg shadow-rose-900/40" 
+                          : "bg-emerald-600/10 border-emerald-600/20"
+                      )}>
+                        <div className="space-y-1">
+                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] group-hover/score:text-rose-400 transition-colors">Exposure Level</div>
+                           <div className="text-2xl font-black tracking-tighter text-white uppercase italic">
+                              {(newRisk.probability || 0) * (newRisk.impact || 0) >= 12 ? 'High Threat' : 
+                               (newRisk.probability || 0) * (newRisk.impact || 0) >= 6 ? 'Medium Concern' : 'Low Risk'}
+                           </div>
+                        </div>
+                        <div className="text-4xl font-black italic text-white drop-shadow-2xl">
+                          {(newRisk.probability || 0) * (newRisk.impact || 0)}
+                        </div>
                       </div>
-                      <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
-                         <p className="text-[10px] font-semibold uppercase text-slate-400">Risk Score (P × I)</p>
-                         <div className={`px-4 py-1.5 rounded-full text-xs font-semibold ${(newRisk.probability || 0) * (newRisk.impact || 0) >= 12 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                            {(newRisk.probability || 0) * (newRisk.impact || 0)}
-                         </div>
-                      </div>
-                   </div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className="p-8 bg-rose-50 rounded-[2.5rem] border border-rose-100 space-y-4">
+                  <div className="flex items-center gap-3 text-rose-600">
+                    <ShieldAlert className="w-5 h-5" />
+                    <h4 className="text-[11px] font-black uppercase tracking-widest">Governance Rule</h4>
+                  </div>
+                  <p className="text-[10px] text-rose-800 font-bold leading-relaxed opacity-70">
+                    Risks with scores above 15 trigger an automated escalation email to the Project Sponsor and must be addressed in the weekly management review.
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-semibold uppercase text-slate-400">Linked Risk Owner (Resources)</label>
-                      <select 
-                        value={newRisk.ownerId}
-                        onChange={e => setNewRisk({...newRisk, ownerId: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold"
-                      >
-                         <option value="">Select Owner...</option>
-                         {team.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                   </div>
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-semibold uppercase text-slate-400">Linked WBS ID (Scope Domain)</label>
-                      <input 
-                        placeholder="e.g. 2.2.1.2 Finishes"
-                        value={newRisk.wbsId}
-                        onChange={e => setNewRisk({...newRisk, wbsId: e.target.value})}
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold"
-                      />
-                   </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                   <button onClick={() => setIsAdding(false)} className="px-8 py-3 text-[10px] font-semibold uppercase text-slate-400">Discard</button>
-                   <button onClick={handleCreate} className="px-10 py-3 bg-rose-600 text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest shadow-xl shadow-rose-600/20">Commit to Register</button>
-                </div>
-             </motion.div>
-           )}
-        </AnimatePresence>
-
-        <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden">
-           <table className="w-full text-left">
-              <thead>
-                 <tr className="bg-slate-50/50">
-                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Risk Description</th>
-                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Score</th>
-                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Owner / WBS</th>
-                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest">Strategy</th>
-                    <th className="px-8 py-6 text-[10px] font-semibold uppercase text-slate-400 tracking-widest text-center">Status</th>
-                    <th className="px-8 py-6"></th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                 {risks.sort((a,b) => (b.probability * b.impact) - (a.probability * a.impact)).map(risk => {
-                    const owner = team.find(m => m.id === risk.ownerId);
-                    return (
-                      <tr key={risk.id} className="hover:bg-slate-50/50 transition-all group">
-                         <td className="px-8 py-6 max-w-md">
-                            <p className="text-sm font-semibold text-slate-900 italic leading-tight mb-1">{risk.title}</p>
-                            <span className="text-[9px] font-semibold uppercase px-2 py-0.5 bg-slate-100 text-slate-500 rounded">{risk.category}</span>
-                         </td>
-                         <td className="px-8 py-6 text-center">
-                            <div className={`w-10 h-10 inline-flex items-center justify-center rounded-xl font-semibold text-xs shadow-sm group-hover:scale-110 transition-transform ${getScoreColor(risk.probability, risk.impact)}`}>
-                               {risk.probability * risk.impact}
-                            </div>
-                         </td>
-                         <td className="px-8 py-6">
-                            <div className="flex flex-col gap-1">
-                               <div className="flex items-center gap-1.5 ">
-                                  <User className="w-3 h-3 text-slate-400" />
-                                  <p className="text-[10px] font-bold text-slate-600">{owner?.name || 'Unassigned'}</p>
-                               </div>
-                               <div className="flex items-center gap-1.5">
-                                  <Target className="w-3 h-3 text-slate-400" />
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase">WBS: {risk.wbsId}</p>
-                               </div>
-                            </div>
-                         </td>
-                         <td className="px-8 py-6">
-                            <div className="flex items-center gap-2">
-                               <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                               <p className="text-[10px] font-semibold uppercase text-slate-900">{risk.responseStrategy}</p>
-                            </div>
-                         </td>
-                         <td className="px-8 py-6 text-center">
-                             <span className={`text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                               risk.status === 'Open' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                               risk.status === 'Mitigated' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'
-                             }`}>
-                                {risk.status}
-                             </span>
-                         </td>
-                         <td className="px-8 py-6 text-right">
-                             <button 
-                               onClick={() => deleteDoc(doc(db, 'risks', risk.id))}
-                               className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-all"
-                             >
-                                <Trash2 className="w-4 h-4" />
-                             </button>
-                         </td>
-                      </tr>
-                    );
-                 })}
-              </tbody>
-           </table>
-        </div>
-
-        <section className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden flex flex-col md:flex-row gap-10 items-center">
-           <div className="flex-1 space-y-6 relative z-10">
-              <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center">
-                 <Zap className="w-7 h-7 text-rose-400" />
               </div>
-              <h3 className="text-3xl font-semibold italic tracking-tighter leading-none">Automated<br/>Escalation Engine</h3>
-              <p className="text-slate-400 font-medium leading-relaxed max-w-xl text-sm">
-                 Risks with a score above **15** are automatically escalated to the Project Sponsor. Zarya calculates the **EMV (Expected Monetary Value)** for each threat and pulls it into the Finance Domain's Reserve Analysis.
-              </p>
-           </div>
-           
-           <div className="flex-none grid grid-cols-2 gap-4 relative z-10">
-              <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-center">
-                 <p className="text-[9px] font-semibold uppercase text-rose-400 mb-2">High Exposure</p>
-                 <p className="text-3xl font-semibold tracking-tighter">
-                    {risks.filter(r => r.probability * r.impact >= 12).length}
-                 </p>
-              </div>
-              <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-center">
-                 <p className="text-[9px] font-semibold uppercase text-rose-400 mb-2">Escalated</p>
-                 <p className="text-3xl font-semibold tracking-tighter">
-                    {risks.filter(r => r.probability * r.impact >= 16).length}
-                 </p>
-              </div>
-           </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-8"
+          >
+            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
+               <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div>
+                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">Risk Identification Log</h2>
+                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Total Exposure: {risks.length} threats logged</p>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setView('form')}
+                      className="px-6 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Threat Record
+                    </button>
+                 </div>
+               </div>
+               
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                    <thead>
+                       <tr className="bg-slate-50/20 border-b border-slate-50">
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Risk Description</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest text-center">Exposure</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Owner / Structure</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Response</th>
+                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest text-center">Status</th>
+                          <th className="px-10 py-6"></th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                       {risks.length === 0 ? (
+                         <tr>
+                           <td colSpan={6} className="px-10 py-32 text-center">
+                              <div className="flex flex-col items-center gap-4">
+                                <div className="p-6 bg-slate-50 rounded-full border border-slate-100 shadow-inner">
+                                  <ShieldAlert className="w-12 h-12 text-slate-200" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">No threats identified in current project cycle.</p>
+                              </div>
+                           </td>
+                         </tr>
+                       ) : risks.sort((a,b) => (b.probability * b.impact) - (a.probability * a.impact)).map((risk, idx) => {
+                          const owner = team.find(m => m.id === risk.ownerId);
+                          const score = risk.probability * risk.impact;
+                          return (
+                            <tr key={`${risk.id}-${idx}`} onClick={() => handleEdit(risk)} className="hover:bg-slate-50 group cursor-pointer transition-colors relative overflow-hidden">
+                               <td className="px-10 py-8 min-w-[300px] relative">
+                                  {score >= 12 && (
+                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500" />
+                                  )}
+                                  <p className="text-sm font-black text-slate-900 tracking-tight leading-tight mb-2 italic uppercase">{risk.title}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">{risk.category}</span>
+                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">ID: {risk.id.slice(0, 8)}</span>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-8 text-center w-[120px]">
+                                  <div className={cn(
+                                    "w-12 h-12 mx-auto inline-flex items-center justify-center rounded-[1.25rem] font-bold text-sm shadow-sm group-hover:scale-110 transition-transform italic",
+                                    getScoreColor(risk.probability, risk.impact)
+                                  )}>
+                                     {score}
+                                  </div>
+                               </td>
+                               <td className="px-10 py-8 w-[200px]">
+                                  <div className="space-y-2">
+                                     <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-lg bg-slate-100 flex items-center justify-center">
+                                          <User className="w-3 h-3 text-slate-400" />
+                                        </div>
+                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-tight">{owner?.name || 'Unassigned'}</p>
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-lg bg-slate-100 flex items-center justify-center">
+                                          <Target className="w-3 h-3 text-slate-400" />
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">{risk.wbsId || 'N/A'}</p>
+                                     </div>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-8 w-[180px]">
+                                  <div className="flex items-center gap-2">
+                                     <div className={cn(
+                                       "w-2 h-2 rounded-full",
+                                       risk.responseStrategy === 'Avoid' ? "bg-rose-500" :
+                                       risk.responseStrategy === 'Mitigate' ? "bg-amber-500" : "bg-blue-500"
+                                     )} />
+                                     <p className="text-[10px] font-black uppercase text-slate-900 tracking-widest">{risk.responseStrategy}</p>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-8 text-center w-[150px]">
+                                   <span className={cn(
+                                     "text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border shadow-sm",
+                                     risk.status === 'Open' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                     risk.status === 'Mitigated' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500'
+                                   )}>
+                                      {risk.status}
+                                   </span>
+                               </td>
+                               <td className="px-10 py-8 text-right">
+                                   <button 
+                                     onClick={(e) => { e.stopPropagation(); handleDelete(risk.id); }}
+                                     className="opacity-0 group-hover:opacity-100 p-3 bg-slate-50 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                   >
+                                      <Trash2 className="w-4 h-4" />
+                                   </button>
+                               </td>
+                            </tr>
+                          );
+                       })}
+                    </tbody>
+                 </table>
+               </div>
+            </div>
 
-           <div className="absolute right-[-5%] bottom-[-10%] opacity-5 rotate-12">
-              <ShieldAlert className="w-80 h-80" />
-           </div>
-        </section>
-      </div>
+            {/* Strategic Dashboard Accents */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+               <div className="lg:col-span-2 bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col md:flex-row gap-10 items-center shadow-2xl">
+                  <div className="flex-1 space-y-6 relative z-10">
+                    <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center ring-1 ring-rose-500/30">
+                      <Zap className="w-7 h-7 text-rose-400 animate-pulse" />
+                    </div>
+                    <h3 className="text-3xl font-black italic tracking-tighter leading-none uppercase">Risk<br/>Intelligence Hub</h3>
+                    <p className="text-slate-400 font-bold leading-relaxed max-w-xl text-xs uppercase tracking-wide opacity-80">
+                      Automated reserve analysis: P × I scores above 15 mandate a contingency budget allocation in the finance domain.
+                    </p>
+                  </div>
+                  
+                  <div className="flex-none grid grid-cols-2 gap-4 relative z-10">
+                    <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 text-center backdrop-blur-sm group hover:bg-rose-500/10 transition-all duration-500 cursor-default">
+                      <p className="text-[10px] font-black uppercase text-rose-400 mb-3 tracking-widest leading-none">Exposure Rank 1</p>
+                      <p className="text-4xl font-black italic tracking-tighter text-white">
+                        {risks.filter(r => r.probability * r.impact >= 12).length}
+                      </p>
+                       <p className="text-[8px] font-bold text-slate-500 uppercase mt-2">High Severity</p>
+                    </div>
+                    <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 text-center backdrop-blur-sm hover:bg-emerald-500/10 transition-all duration-500 cursor-default">
+                      <p className="text-[10px] font-black uppercase text-emerald-400 mb-3 tracking-widest leading-none">Mitigated</p>
+                      <p className="text-4xl font-black italic tracking-tighter text-white">
+                         {risks.filter(r => r.status === 'Mitigated').length}
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase mt-2">Active Defenses</p>
+                    </div>
+                  </div>
+
+                  <div className="absolute right-[-5%] bottom-[-10%] opacity-5 rotate-12 scale-150 pointer-events-none">
+                    <ShieldAlert className="w-96 h-96" />
+                  </div>
+               </div>
+
+               <div className="bg-amber-50 border border-amber-100 rounded-[3rem] p-10 flex flex-col justify-between items-start group">
+                  <div className="space-y-6">
+                    <div className="w-12 h-12 bg-amber-200/50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Info className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-black uppercase tracking-tighter italic text-amber-900 leading-none">Predictive Analytics<br/>Engaged</h4>
+                      <p className="text-[10px] font-bold text-amber-800/60 leading-relaxed uppercase tracking-widest">
+                        Zarya cross-references the Assumption Log (2.1.5). Unvalidated assumptions are tagged here as "Shadow Risks" until formally closed.
+                      </p>
+                    </div>
+                  </div>
+                  <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 group-hover:gap-4 transition-all mt-8">
+                    Review Assumption Links <ChevronDown className="w-3 h-3 -rotate-90" />
+                  </button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </StandardProcessPage>
   );
-};
+};;

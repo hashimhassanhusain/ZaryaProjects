@@ -143,9 +143,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({ company, allCompanies, level, onDro
               className={`absolute top-0 bottom-4 w-px bg-slate-100 ${isRtl ? 'right-[2.75rem]' : 'left-[2.75rem]'}`}
               style={{ marginInlineStart: `${level * 2}rem` }}
             />
-            {children.map(child => (
+            {children.map((child, idx) => (
               <TreeNode 
-                key={child.id} 
+                key={`${child.id}-${idx}`} 
                 company={child} 
                 allCompanies={allCompanies} 
                 level={level + 1}
@@ -257,9 +257,9 @@ export const EnterpriseStructure: React.FC = () => {
               </div>
             )}
 
-            {rootCompanies.map(company => (
+            {rootCompanies.map((company, idx) => (
               <TreeNode 
-                key={company.id} 
+                key={`${company.id}-${idx}`} 
                 company={company} 
                 allCompanies={companies} 
                 level={0}

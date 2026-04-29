@@ -2336,7 +2336,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
           <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
             {analysisVersions.map((v, idx) => (
-              <div key={v.id} className="relative pl-8 pb-6 border-l-2 border-slate-100 last:border-0 last:pb-0">
+              <div key={`${v.id}-${idx}`} className="relative pl-8 pb-6 border-l-2 border-slate-100 last:border-0 last:pb-0">
                 <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
                 <div className="bg-slate-50 rounded-xl p-6 space-y-3">
                   <div className="flex items-center justify-between">
@@ -2853,8 +2853,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {changePlan.ccbMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
+                {changePlan.ccbMembers.map((member, idx) => (
+                  <tr key={`${member.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-semibold text-slate-400">
@@ -2943,8 +2943,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="space-y-6">
           <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {changeVersions.map((v) => (
-              <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
+            {changeVersions.map((v, idx) => (
+              <div key={`${v.id}-${idx}`} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
@@ -3086,8 +3086,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           </div>
           
           <div className="p-8 space-y-4">
-            {qualityVersions.map((v) => (
-              <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
+            {qualityVersions.map((v, idx) => (
+              <div key={`${v.id}-${idx}`} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
@@ -3356,8 +3356,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {qualityPlan.roles.map((role) => (
-                  <tr key={role.id} className="hover:bg-slate-50/50 transition-colors group">
+                {qualityPlan.roles.map((role, idx) => (
+                  <tr key={`${role.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-xs font-semibold text-blue-600">
@@ -3566,7 +3566,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
               <div className="space-y-6">
                 {pmPlan.phases.map((phase, idx) => (
-                  <div key={phase.id} className="group relative bg-slate-50 rounded-3xl p-8 border border-slate-100 hover:border-blue-200 transition-all">
+                  <div key={`${phase.id}-${idx}`} className="group relative bg-slate-50 rounded-3xl p-8 border border-slate-100 hover:border-blue-200 transition-all">
                     <div className="flex items-start justify-between mb-6">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 font-semibold shadow-sm">
@@ -3594,7 +3594,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {phase.deliverables.map((d, i) => (
-                        <span key={i} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold shadow-sm">
+                        <span key={`${phase.id}-deliv-${i}`} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold shadow-sm">
                           {d}
                         </span>
                       ))}
@@ -3621,9 +3621,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pmPlan.tailoringDecisions.map((decision) => (
+                {pmPlan.tailoringDecisions.map((decision, idx) => (
                   <div 
-                    key={decision.id} 
+                    key={`${decision.id}-${idx}`} 
                     className={cn(
                       "p-8 rounded-3xl border transition-all cursor-pointer group",
                       decision.isTailoredOut 
@@ -3750,8 +3750,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <div className="space-y-6">
           <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-widest ml-1">Historical Versions</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pmVersions.map((v) => (
-              <div key={v.id} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
+            {pmVersions.map((v, idx) => (
+              <div key={`${v.id}-${idx}`} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
                   <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleDateString()}</span>
@@ -4958,8 +4958,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-                {changeVersions.map((v) => (
-                  <div key={v.id} className="relative pl-8 pb-8 border-l-2 border-slate-100 last:border-0 last:pb-0">
+                {changeVersions.map((v, idx) => (
+                  <div key={`${v.id}-${idx}`} className="relative pl-8 pb-8 border-l-2 border-slate-100 last:border-0 last:pb-0">
                     <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
                     <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
                       <div className="flex items-center justify-between">

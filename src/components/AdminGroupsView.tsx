@@ -144,9 +144,9 @@ export const AdminGroupsView: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredGroups.map(group => (
+            {filteredGroups.map((group, idx) => (
               <div 
-                key={group.id}
+                key={`${group.id}-${idx}`}
                 className={cn(
                   "bg-white p-6 rounded-2xl border transition-all cursor-pointer group",
                   editingGroup?.id === group.id ? "border-blue-500 ring-2 ring-blue-500/10" : "border-slate-200 hover:border-blue-200"
@@ -234,9 +234,9 @@ export const AdminGroupsView: React.FC = () => {
                   <span className="text-[10px] text-blue-500 normal-case bg-blue-50 px-2 rounded-full">{selectedPages.length} selected</span>
                 </label>
                 <div className="grid grid-cols-1 gap-2 border border-slate-100 rounded-xl p-3 bg-slate-50/30">
-                  {pages.filter(p => p.type === 'terminal').map(page => (
+                  {pages.filter(p => p.type === 'terminal').map((page, idx) => (
                     <label 
-                      key={page.id}
+                      key={`${page.id}-${idx}`}
                       className={cn(
                         "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all border",
                         selectedPages.includes(page.id) ? "bg-white border-blue-100 shadow-sm" : "hover:bg-white/50 border-transparent"
@@ -260,9 +260,9 @@ export const AdminGroupsView: React.FC = () => {
                   <span className="text-[10px] text-emerald-500 normal-case bg-emerald-50 px-2 rounded-full">{selectedMembers.length} selected</span>
                 </label>
                 <div className="grid grid-cols-1 gap-2 border border-slate-100 rounded-xl p-3 bg-slate-50/30">
-                  {users.map(user => (
+                  {users.map((user, idx) => (
                     <label 
-                      key={user.uid}
+                      key={`${user.uid}-${idx}`}
                       className={cn(
                         "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all border",
                         selectedMembers.includes(user.uid) ? "bg-white border-emerald-100 shadow-sm" : "hover:bg-white/50 border-transparent"

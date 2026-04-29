@@ -264,9 +264,10 @@ const PageRenderer = () => {
     '2.1.10', '2.6.5', '2.6.6', '3.3.1', '3.3.4_res', '3.3.6', '5.3.1'
   ].includes(page.id);
   const isCharterPage = page.id === '1.1.1';
+  const isProjectPoliciesPage = page.id === '1.1.2';
   const isProjectManagementPlanPage = page.id === '2.1.2';
   const isGovernanceHubPage = [
-    'gov', '1.1.2', // Hub, Policies
+    'gov', // Hub
     '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
     '2.1.5', '1.2.1', '5.1.1' // Logs
   ].includes(page.id);
@@ -356,6 +357,8 @@ const PageRenderer = () => {
            <ExecutionQAView page={page} />
         ) : isCharterPage ? (
           <ProjectCharterView page={page} />
+        ) : isProjectPoliciesPage ? (
+          <GovernancePoliciesView page={page} />
         ) : isProjectManagementPlanPage ? (
           <ProjectManagementPlanView page={page} />
         ) : isPerformanceMonitoringPage ? (

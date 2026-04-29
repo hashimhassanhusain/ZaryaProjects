@@ -24,9 +24,12 @@ import {
   ChevronRight,
   CheckSquare,
   Square,
-  DollarSign
+  DollarSign,
+  Box,
+  LayoutDashboard,
+  Shield
 } from 'lucide-react';
-import { Page, Stakeholder, Project } from '../types';
+import { Page, Stakeholder, Project, EntityConfig } from '../types';
 import { toast } from 'react-hot-toast';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
@@ -45,10 +48,13 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { StandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface ChangeRequestViewProps {
   page: Page;
@@ -115,6 +121,7 @@ interface ChangeRequestVersion {
 
 export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { t, isRtl } = useLanguage();
   const [entries, setEntries] = useState<ChangeRequest[]>([]);
   const [versions, setVersions] = useState<ChangeRequestVersion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -472,419 +479,416 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
     }
   };
 
-  const filteredEntries = entries.filter(e => 
-    e.requestId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.preparer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.contractor.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (view === 'form') {
-    return (
-      <div className="space-y-6">
-        <button 
-          onClick={() => setView('list')}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold text-sm uppercase tracking-wider"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Register
-        </button>
-
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Change Request Form</h2>
-                <p className="text-sm text-slate-500 font-medium">Official request for project modifications and impact assessment.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <select 
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className={cn(
-                  "px-4 py-2 rounded-xl border font-bold text-xs uppercase tracking-widest outline-none transition-all",
-                  getStatusColor(formData.status || 'Pending')
-                )}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="p-10 space-y-12">
-            {/* Header Info */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Header Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Project Name</label>
-                  <input 
-                    type="text"
-                    value={formData.projectName}
-                    onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                  <input 
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">PO Number</label>
-                  <input 
-                    type="text"
-                    value={formData.poNumber}
-                    onChange={(e) => setFormData({ ...formData, poNumber: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Preparer</label>
-                  <input 
-                    type="text"
-                    value={formData.preparer}
-                    onChange={(e) => setFormData({ ...formData, preparer: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contract Number</label>
-                  <input 
-                    type="text"
-                    value={formData.contractNumber}
-                    onChange={(e) => setFormData({ ...formData, contractNumber: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Contractor</label>
-                  <input 
-                    type="text"
-                    value={formData.contractor}
-                    onChange={(e) => setFormData({ ...formData, contractor: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Category Checkboxes */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Category of Change</h3>
-              <div className="flex flex-wrap gap-8">
-                {Object.entries(formData.categories || {}).map(([key, value]) => (
-                  <button 
-                    key={key}
-                    onClick={() => setFormData({
-                      ...formData,
-                      categories: { ...formData.categories!, [key]: !value }
-                    })}
-                    className="flex items-center gap-3 group"
-                  >
-                    {value ? (
-                      <CheckSquare className="w-6 h-6 text-blue-600" />
-                    ) : (
-                      <Square className="w-6 h-6 text-slate-200 group-hover:text-slate-300 transition-colors" />
-                    )}
-                    <span className="text-sm font-bold text-slate-700 capitalize">{key}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Description & Justification */}
-            <section className="space-y-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Detailed Description of Proposed Change</label>
-                <textarea 
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Justification for Proposed Change</label>
-                <textarea 
-                  value={formData.justification}
-                  onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
-                  rows={4}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-                />
-              </div>
-            </section>
-
-            {/* Financial Summary */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Financial Summary</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Original Contract Value</label>
-                  <input 
-                    type="number"
-                    value={formData.financialSummary?.originalContractValue}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      financialSummary: { ...formData.financialSummary!, originalContractValue: Number(e.target.value) }
-                    })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Previous Changes Value</label>
-                  <input 
-                    type="number"
-                    value={formData.financialSummary?.previousChangesValue}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      financialSummary: { ...formData.financialSummary!, previousChangesValue: Number(e.target.value) }
-                    })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Current Change Value</label>
-                  <input 
-                    type="number"
-                    value={formData.financialSummary?.currentChangeValue}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      financialSummary: { ...formData.financialSummary!, currentChangeValue: Number(e.target.value) }
-                    })}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Total Contract Value</label>
-                  <div className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-semibold text-blue-400 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    {calculateTotal(formData.financialSummary).toLocaleString('en-US')}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Impact Assessment */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Impact Assessment</h3>
-              <div className="space-y-6">
-                {(Object.entries(formData.impact || {}) as [keyof ChangeRequest['impact'], { affected: boolean; details: string }][]).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
-                    <div className="flex items-center gap-3 pt-4">
-                      <button 
-                        onClick={() => setFormData({
-                          ...formData,
-                          impact: { ...formData.impact!, [key]: { ...value, affected: !value.affected } }
-                        })}
-                        className="flex items-center gap-3 group"
-                      >
-                        {value.affected ? (
-                          <CheckSquare className="w-6 h-6 text-blue-600" />
-                        ) : (
-                          <Square className="w-6 h-6 text-slate-200 group-hover:text-slate-300 transition-colors" />
-                        )}
-                        <span className="text-sm font-bold text-slate-700 capitalize">{key} Impact</span>
-                      </button>
-                    </div>
-                    <div className="md:col-span-3 space-y-2">
-                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Impact Details</label>
-                      <input 
-                        type="text"
-                        value={value.details}
-                        disabled={!value.affected}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          impact: { ...formData.impact!, [key]: { ...value, details: e.target.value } }
-                        })}
-                        className={cn(
-                          "w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none",
-                          !value.affected && "opacity-50 cursor-not-allowed"
-                        )}
-                        placeholder={`Describe ${key} impact...`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Actions */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2rem] p-8 mt-12">
-              <div className="flex items-center gap-4 text-white/60 text-xs font-bold uppercase tracking-widest">
-                <History className="w-4 h-4" />
-                Version: v{(formData.version || 1.0).toFixed(1)}
-              </div>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setView('list')}
-                  className="px-8 py-4 text-white font-bold text-sm hover:bg-white/10 rounded-2xl transition-all"
-                >
-                  Discard
-                </button>
-                <button 
-                  onClick={() => handleSave(true)}
-                  disabled={isSaving}
-                  className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all flex items-center gap-2"
-                >
-                  Save as New Version
-                </button>
-                <button 
-                  onClick={() => handleSave(false)}
-                  disabled={isSaving}
-                  className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Overwrite Current
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const gridConfig: EntityConfig = {
+    id: 'changes' as any,
+    label: page.title,
+    icon: FileText,
+    collection: 'change_requests',
+    columns: [
+      { key: 'requestId', label: 'ID', type: 'badge' },
+      { key: 'date', label: 'Date', type: 'date' },
+      { key: 'preparer', label: 'Preparer', type: 'string' },
+      { key: 'contractor', label: 'Contractor', type: 'string' },
+      { key: 'status', label: 'Status', type: 'badge' },
+      { key: 'updatedAt', label: 'Last Updated', type: 'date' }
+    ]
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-end gap-6">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
+    <StandardProcessPage
+      page={page}
+      viewMode={view === 'form' ? 'edit' : 'grid'}
+      onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
+      onSave={() => handleSave(false)}
+      onPrint={generatePDF}
+      isSaving={isSaving}
+      inputs={page.details?.inputs?.map(id => ({ id, title: id })) || []}
+    >
+      <AnimatePresence mode="wait">
+        {view === 'form' ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10 pb-32"
           >
-            <Download className="w-4 h-4" />
-            Export Register
-          </button>
-          <button 
-            onClick={handleAdd}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-          >
-            <Plus className="w-5 h-5" />
-            New Request
-          </button>
-        </div>
-      </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+              {/* Left Column: Form Inputs */}
+              <div className="lg:col-span-2 space-y-10">
+                <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden transition-all hover:shadow-xl hover:shadow-slate-200/40">
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t('change_request_form')}</h2>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('official_documentation')}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select 
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                        className={cn(
+                          "px-4 py-2 rounded-xl border font-bold text-[10px] uppercase tracking-widest outline-none transition-all shadow-sm",
+                          getStatusColor(formData.status || 'Pending')
+                        )}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search requests..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <div className="p-10 space-y-12">
+                    {/* Header Info */}
+                    <section className="space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                        Header Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('request_id')}</label>
+                          <input 
+                            type="text"
+                            value={formData.requestId}
+                            onChange={(e) => setFormData({ ...formData, requestId: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                            placeholder="CR-001"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('date')}</label>
+                          <input 
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('preparer')}</label>
+                          <input 
+                            type="text"
+                            value={formData.preparer}
+                            onChange={(e) => setFormData({ ...formData, preparer: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('contractor')}</label>
+                          <input 
+                            type="text"
+                            value={formData.contractor}
+                            onChange={(e) => setFormData({ ...formData, contractor: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('po_number')}</label>
+                          <input 
+                            type="text"
+                            value={formData.poNumber}
+                            onChange={(e) => setFormData({ ...formData, poNumber: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                          />
+                        </div>
+                        <div className="space-y-2 flex flex-col justify-end">
+                           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                               <Shield className="w-4 h-4 text-blue-600" />
+                               <span className="text-[10px] font-bold text-blue-900 uppercase tracking-widest">Linked Project</span>
+                             </div>
+                             <span className="text-xs font-black text-blue-700 italic tracking-tight">{selectedProject?.code}</span>
+                           </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Change Categories */}
+                    <section className="space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                        Category of Change
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        {Object.entries(formData.categories || {}).map(([key, value]) => (
+                          <button 
+                            key={key}
+                            onClick={() => setFormData({
+                              ...formData,
+                              categories: { ...formData.categories!, [key]: !value }
+                            })}
+                            className={cn(
+                              "flex flex-col items-center gap-3 p-6 rounded-3xl border-2 transition-all group",
+                              value 
+                                ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" 
+                                : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-white"
+                            )}
+                          >
+                            <Box className={cn("w-6 h-6", value ? "text-white" : "group-hover:text-blue-500 transition-colors")} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{t(key)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* Description & Justification */}
+                    <section className="space-y-8">
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('detailed_description')}</label>
+                        <textarea 
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          rows={4}
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('justification_for_change')}</label>
+                        <textarea 
+                          value={formData.justification}
+                          onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
+                          rows={4}
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
+                        />
+                      </div>
+                    </section>
+
+                    {/* Financial Summary */}
+                    <section className="space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                        Financial Summary
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('original_contract_value')}</label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input 
+                              type="number"
+                              value={formData.financialSummary?.originalContractValue}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                financialSummary: { ...formData.financialSummary!, originalContractValue: Number(e.target.value) }
+                              })}
+                              className="w-full pl-11 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('previous_changes_value')}</label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input 
+                              type="number"
+                              value={formData.financialSummary?.previousChangesValue}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                financialSummary: { ...formData.financialSummary!, previousChangesValue: Number(e.target.value) }
+                              })}
+                              className="w-full pl-11 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('current_change_value')}</label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input 
+                              type="number"
+                              value={formData.financialSummary?.currentChangeValue}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                financialSummary: { ...formData.financialSummary!, currentChangeValue: Number(e.target.value) }
+                              })}
+                              className="w-full pl-11 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-blue-600 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('total_revised_value')}</label>
+                          <div className="w-full px-5 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-black text-blue-400 flex items-center justify-between shadow-inner">
+                            <div className="flex items-center gap-3">
+                              <DollarSign className="w-5 h-5 opacity-50" />
+                              <span className="tracking-tight italic">{calculateTotal(formData.financialSummary).toLocaleString('en-US')}</span>
+                            </div>
+                            <span className="text-[10px] opacity-40 uppercase tracking-widest">IQD</span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </section>
+
+                <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm p-10 space-y-8">
+                  <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                    Impact Assessment
+                  </h3>
+                  <div className="space-y-10">
+                    {(Object.entries(formData.impact || {}) as [keyof ChangeRequest['impact'], { affected: boolean; details: string }][]).map(([key, value]) => (
+                      <div key={key} className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+                        <div className="flex items-center gap-3 pt-3">
+                          <button 
+                            onClick={() => setFormData({
+                              ...formData,
+                              impact: { ...formData.impact!, [key]: { ...value, affected: !value.affected } }
+                            })}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all group",
+                              value.affected 
+                                ? "bg-amber-50 border-amber-500 shadow-lg shadow-amber-100" 
+                                : "bg-slate-50 border-slate-100 hover:border-slate-200"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                              value.affected ? "bg-amber-600 text-white" : "bg-white border border-slate-200 text-slate-200"
+                            )}>
+                              <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{t(key)}</span>
+                          </button>
+                        </div>
+                        <div className="md:col-span-3 space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Impact Details</label>
+                          <textarea 
+                            value={value.details}
+                            disabled={!value.affected}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              impact: { ...formData.impact!, [key]: { ...value, details: e.target.value } }
+                            })}
+                            rows={2}
+                            className={cn(
+                              "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none",
+                              !value.affected && "opacity-30 grayscale cursor-not-allowed border-dashed"
+                            )}
+                            placeholder={`Describe ${key} impact if applicable...`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Column: Summaries & Quick Info */}
+              <div className="space-y-10">
+                <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl -mr-24 -mt-24 group-hover:bg-blue-600/20 transition-all duration-700" />
+                  <div className="relative z-10 space-y-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-blue-400">Impact Analysis</h3>
+                        <p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest">Automatic Risk Scoring</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="p-5 bg-white/5 border border-white/10 rounded-[2rem] space-y-1">
+                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('variance_index')}</div>
+                        <div className="text-2xl font-black italic text-blue-400 tracking-tighter">
+                          +{(calculateTotal(formData.financialSummary) / (formData.financialSummary?.originalContractValue || 1) * 100 - 100).toFixed(1)}%
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-white/5 border border-white/10 rounded-[2rem] space-y-1">
+                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('linked_artifacts')}</div>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {Object.entries(formData.impact || {}).filter(([_, v]) => (v as any).affected).map(([k]) => (
+                            <span key={k} className="px-3 py-1 bg-amber-500/20 text-amber-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-500/20">
+                              {k}
+                            </span>
+                          ))}
+                          {Object.entries(formData.impact || {}).filter(([_, v]) => (v as any).affected).length === 0 && (
+                            <span className="text-[10px] text-slate-600 font-bold italic lowercase tracking-wider">no impacts flagged</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-white/10 mt-6">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        <span>{t('approval_chain')}</span>
+                        <span className="text-blue-500">Active</span>
+                      </div>
+                      <div className="mt-4 flex items-center -space-x-3">
+                         {[1,2,3].map(i => (
+                           <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-black italic">
+                             JD
+                           </div>
+                         ))}
+                         <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-blue-600 flex items-center justify-center text-[10px] font-black italic">
+                           +4
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="bg-white rounded-[3rem] p-1 shadow-sm border border-slate-200 overflow-hidden">
+                   <div className="p-8 bg-slate-50/50 border-b border-slate-100 italic font-bold text-[10px] text-slate-500 uppercase tracking-[0.2em]">{t('activity_history')}</div>
+                   <div className="max-h-[300px] overflow-y-auto p-4 space-y-4 no-scrollbar">
+                     {versions.map((v, i) => (
+                       <div key={v.id} className="p-4 bg-white rounded-[1.5rem] border border-slate-100 flex items-start gap-3 relative overflow-hidden group hover:border-blue-200 transition-all">
+                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 transition-all scale-y-0 group-hover:scale-y-100" />
+                         <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+                           <History className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                         </div>
+                         <div className="min-w-0">
+                           <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{v.editorName}</div>
+                           <div className="text-[9px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleString()}</div>
+                           <div className="mt-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[8px] font-black inline-block uppercase">{v.actionType}</div>
+                         </div>
+                       </div>
+                     ))}
+                     {versions.length === 0 && (
+                       <div className="py-10 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">{t('no_history_available')}</div>
+                     )}
+                   </div>
+                </section>
+
+                <div className="p-8 bg-amber-50 rounded-[2.5rem] border border-amber-100 space-y-4">
+                  <div className="flex items-center gap-3 text-amber-600">
+                    <Database className="w-5 h-5" />
+                    <h4 className="text-[11px] font-black uppercase tracking-widest">{t('system_sync')}</h4>
+                  </div>
+                  <p className="text-[10px] text-amber-800 font-bold leading-relaxed opacity-70">
+                    Approved change requests automatically sync with the Project Finance engine and update the PMP Baselines in real-time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="grid"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex-1 flex flex-col"
+          >
+            <UniversalDataTable 
+              config={gridConfig}
+              data={entries}
+              onRowClick={(record) => handleEdit(record as ChangeRequest)}
+              onNewClick={handleAdd}
+              onDeleteRecord={handleDelete}
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-3 text-slate-500 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 transition-all">
-              <Filter className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Request ID</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Preparer</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Contractor</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                      <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Loading Requests...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="p-6 bg-slate-50 rounded-full">
-                        <Database className="w-10 h-10 text-slate-200" />
-                      </div>
-                      <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">No change requests found.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredEntries.map((entry) => (
-                  <tr 
-                    key={entry.id} 
-                    onClick={() => handleEdit(entry)}
-                    className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                  >
-                    <td className="px-8 py-6">
-                      <span className="text-xs font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{entry.requestId}</span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        {entry.date}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <User className="w-4 h-4 text-slate-400" />
-                        {entry.preparer}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="text-sm font-medium text-slate-600">{entry.contractor}</div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={cn(
-                        "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest border",
-                        getStatusColor(entry.status)
-                      )}>
-                        {entry.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEdit(entry); }}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Restricted Data Linking Prompt */}
       <AnimatePresence>
         {showPrompt && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
@@ -919,6 +923,6 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </StandardProcessPage>
   );
 };

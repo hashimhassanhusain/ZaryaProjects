@@ -117,8 +117,8 @@ export const AdminUsersView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.map((user) => (
-                <tr key={user.uid} className="hover:bg-slate-50/50 transition-all group cursor-pointer" onClick={() => handleEditUser(user.uid)}>
+              {filteredUsers.map((user, idx) => (
+                <tr key={`${user.uid}-${idx}`} className="hover:bg-slate-50/50 transition-all group cursor-pointer" onClick={() => handleEditUser(user.uid)}>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       {user.photoURL ? (

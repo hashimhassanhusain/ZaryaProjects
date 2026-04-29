@@ -226,9 +226,9 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
             </div>
             
             <div className="space-y-2 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
-              {wbsLevels.map(wp => (
+              {wbsLevels.map((wp, idx) => (
                 <button
-                  key={wp.id}
+                  key={`${wp.id}-${idx}`}
                   onClick={() => setSelectedWbsId(wp.id)}
                   className={cn(
                     "w-full p-4 rounded-2xl border text-left transition-all group relative overflow-hidden",
@@ -280,10 +280,10 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
                 </div>
 
                 <div className="space-y-3">
-                  {filteredActivities.map((act) => (
+                  {filteredActivities.map((act, idx) => (
                     <motion.div 
                       layout
-                      key={act.id}
+                      key={`${act.id}-${idx}`}
                       className="group p-5 bg-white border border-slate-100 rounded-3xl hover:shadow-xl hover:shadow-blue-500/5 transition-all flex items-center gap-6"
                     >
                       <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">

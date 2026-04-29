@@ -64,9 +64,9 @@ const FolderTreeItem: React.FC<FolderTreeItemProps> = ({
       
       {isOpen && hasChildren && (
         <div className="mt-0.5">
-          {children.map(child => (
+          {children.map((child, idx) => (
             <FolderTreeItem 
-              key={child.id} 
+              key={`${child.id}-${idx}`} 
               folder={child} 
               level={level + 1} 
               allFolders={allFolders}
@@ -343,8 +343,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
               onChange={(e) => setSelectedProjectId(e.target.value)}
               className="text-xs border-none bg-transparent font-bold text-slate-800 focus:ring-0 cursor-pointer max-w-[180px] uppercase tracking-tight"
             >
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+              {projects.map((p, idx) => (
+                <option key={`${p.id}-${idx}`} value={p.id}>{p.code} - {p.name}</option>
               ))}
             </select>
           </div>
@@ -431,14 +431,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                   </tr>
                 </thead>
                 <tbody className="text-slate-600">
-                  {filteredFiles.map((file) => {
+                  {filteredFiles.map((file, idx) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const fileExt = file.name.split('.').pop()?.toUpperCase();
                     const isSelected = selectedFile?.id === file.id;
 
                     return (
                       <tr 
-                        key={file.id} 
+                        key={`${file.id}-${idx}`} 
                         onClick={() => setSelectedFile(file)}
                         onDoubleClick={() => isFolder && navigateToFolder(file.id, file.name)}
                         className={cn(

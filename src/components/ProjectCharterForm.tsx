@@ -315,7 +315,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
             </div>
             <div className="space-y-3">
               {stakeholders.map((s, i) => (
-                <div key={i} className="flex gap-3 items-start">
+                <div key={`${i}-${i}`} className="flex gap-3 items-start">
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     {isEditing ? (
                       <>

@@ -259,8 +259,8 @@ export const AdminProjectsView: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project) => (
-            <div key={project.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group overflow-hidden cursor-pointer" onClick={() => navigate(`/project/${project.id}`)}>
+          {projects.map((project, idx) => (
+            <div key={`${project.id}-${idx}`} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group overflow-hidden cursor-pointer" onClick={() => navigate(`/project/${project.id}`)}>
               <div className={`h-2 w-full ${project.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
               <div className="p-8 space-y-6">
                 <div className="flex justify-between items-start">

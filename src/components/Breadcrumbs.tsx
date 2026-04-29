@@ -68,70 +68,48 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
   const isFav = isFavorite(currentPageId);
 
   return (
-    <div className="space-y-3 mb-8">
-      <nav className={cn("flex items-center text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]", isRtl ? "space-x-reverse space-x-1" : "space-x-1")}>
-        <Link to="/" className="hover:text-blue-600 transition-colors flex items-center gap-1.5 group">
+    <div className="mb-4">
+      <nav className={cn("flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em]", isRtl ? "text-right" : "text-left")}>
+        <Link to="/" className="text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1.5 group shrink-0">
            <Home className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-           <span className="hidden sm:inline">{t('hq')}</span>
+           <span>{t('hq')}</span>
         </Link>
+        
         {crumbs.map((crumb, index) => {
-          if (index === crumbs.length - 1) return null;
+          const isLast = index === crumbs.length - 1;
           return (
             <React.Fragment key={crumb.id}>
-              <span className="text-slate-200 mx-1 flex items-center justify-center">
-                 <ChevronRight className={cn("w-3.5 h-3.5", isRtl && "rotate-180")} />
+              <span className="text-slate-200 flex items-center shrink-0">
+                 <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
               </span>
-              <Link
-                to={`/project/${selectedProject?.id}/page/${crumb.id}`}
-                className="hover:text-slate-600 transition-colors"
-              >
-                {stripNumericPrefix(crumb.title)}
-              </Link>
+              {isLast ? (
+                <span className="text-blue-600 truncate max-w-[200px]">
+                  {stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id))}
+                </span>
+              ) : (
+                <Link
+                  to={`/project/${selectedProject?.id}/page/${crumb.id}`}
+                  className="text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                >
+                  {stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id))}
+                </Link>
+              )}
             </React.Fragment>
           );
         })}
-      </nav>
-
-      {/* Main Large Header with Parent > Child relation */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4 flex-wrap uppercase">
-          {crumbs.length > 1 && (
-            <>
-              <span className="text-slate-300 font-extrabold uppercase italic opacity-60 text-2xl">
-                {stripNumericPrefix(t(crumbs[crumbs.length - 2].id) === crumbs[crumbs.length - 2].id ? crumbs[crumbs.length - 2].title : t(crumbs[crumbs.length - 2].id))}
-              </span>
-              <span className="text-slate-200 font-light mx-1">{'>'}</span>
-            </>
+        
+        <div className="flex-1" />
+        
+        <button 
+          onClick={() => toggleFavorite(currentPageId)}
+          className={cn(
+            "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+            isFav ? "bg-amber-50 text-amber-500" : "text-slate-300 hover:text-slate-500"
           )}
-          <span className="text-slate-900">
-            {stripNumericPrefix(t(currentPageId) === currentPageId ? (currentPage?.title || '') : t(currentPageId))}
-          </span>
-        </h1>
-
-        <div className="flex items-center gap-4">
-           {currentPageId !== '1.1.1' && (
-              <div className="flex -space-x-2">
-                 {[1,2,3].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                       {String.fromCharCode(64 + i)}
-                    </div>
-                 ))}
-                 <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
-                    +
-                 </div>
-              </div>
-           )}
-           <button 
-             onClick={() => toggleFavorite(currentPageId)}
-             className={cn(
-               "p-3 rounded-2xl transition-all border",
-               isFav ? "bg-amber-50 border-amber-200 text-amber-500 shadow-xl shadow-amber-500/10" : "bg-white border-slate-100 text-slate-300 hover:text-slate-600"
-             )}
-           >
-              <Star className={cn("w-5 h-5", isFav && "fill-current")} />
-           </button>
-        </div>
-      </div>
+        >
+          <Star className={cn("w-3.5 h-3.5", isFav && "fill-current")} />
+        </button>
+      </nav>
     </div>
   );
 };

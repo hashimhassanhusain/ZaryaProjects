@@ -216,8 +216,8 @@ export const WorkPackagesView: React.FC = () => {
                     className="bg-transparent focus:outline-none"
                   >
                     <option value="All">All Cost Accounts</option>
-                    {masterFormatData.map(div => (
-                      <option key={div.number} value={div.number}>{div.number} - {div.title}</option>
+                    {masterFormatData.map((div, idx) => (
+                      <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
                     ))}
                   </select>
                 </div>
@@ -237,10 +237,10 @@ export const WorkPackagesView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredPackages.map((wp) => {
+                  {filteredPackages.map((wp, idx) => {
                     const division = masterFormatData.find(d => d.number === wp.divisionCode);
                     return (
-                      <tr key={wp.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <tr key={`${wp.id}-${idx}`} className="group hover:bg-slate-50/50 transition-colors">
                         <td className="px-8 py-5">
                           <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                             {wp.code}
@@ -370,8 +370,8 @@ export const WorkPackagesView: React.FC = () => {
                       className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                     >
                       <option value="">Select Cost Account</option>
-                      {masterFormatData.map(div => (
-                        <option key={div.number} value={div.number}>{div.number} - {div.title}</option>
+                      {masterFormatData.map((div, idx) => (
+                        <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
                       ))}
                     </select>
                   </div>
@@ -418,8 +418,8 @@ export const WorkPackagesView: React.FC = () => {
                           <option value="">Select Title...</option>
                           {masterFormatSections
                             .filter(s => s.divisionId === formData.divisionCode)
-                            .map(section => (
-                              <option key={section.id} value={section.title}>{section.id} - {section.title}</option>
+                            .map((section, idx) => (
+                              <option key={`${section.id}-${idx}`} value={section.title}>{section.id} - {section.title}</option>
                             ))
                           }
                           <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
@@ -468,9 +468,9 @@ export const WorkPackagesView: React.FC = () => {
                    </p>
                    <div className="space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
                     {formData.divisionCode ? (
-                      masterFormatData.find(d => d.number === formData.divisionCode)?.items.map(item => (
+                      masterFormatData.find(d => d.number === formData.divisionCode)?.items.map((item, idx) => (
                         <button
-                          key={item.code}
+                          key={`${item.code}-${idx}`}
                           onClick={() => handleMFSelect(item)}
                           className={cn(
                             "w-full flex items-center justify-between p-4 rounded-2xl text-left transition-all border",

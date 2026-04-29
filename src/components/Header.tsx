@@ -136,8 +136,8 @@ export const Header: React.FC = () => {
                      {/* Company List */}
                      <div className="space-y-1">
                         <div className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('companies')}</div>
-                        {companies.map(company => (
-                          <div key={company.id} className="space-y-1">
+                        {companies.map((company, idx) => (
+                          <div key={`${company.id}-${idx}`} className="space-y-1">
                              <button
                                onClick={() => setSelectedCompanyId(company.id)}
                                className={cn(
@@ -154,9 +154,9 @@ export const Header: React.FC = () => {
                              {/* Projects for this company */}
                              {(selectedProject?.companyId === company.id || selectedCompanyId === company.id) && (
                                <div className="pl-6 space-y-1 mt-1 border-l-2 border-blue-100 ml-6">
-                                  {projects.filter(p => p.companyId === company.id).map(proj => (
+                                  {projects.filter(p => p.companyId === company.id).map((proj, pIdx) => (
                                     <button
-                                      key={proj.id}
+                                      key={`${proj.id}-${pIdx}`}
                                       onClick={() => {
                                         setSelectedProject(proj);
                                         setIsProjectMenuOpen(false);
@@ -186,13 +186,13 @@ export const Header: React.FC = () => {
 
         {/* Global Hubs Navigation */}
         <nav className="flex items-center h-full gap-1 flex-1 px-4">
-           {PERFORMANCE_DOMAINS.map(domain => {
+           {PERFORMANCE_DOMAINS.map((domain, idx) => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
              const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
              return (
                <Link 
-                 key={domain.id} 
+                 key={`${domain.id}-${idx}`} 
                  to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
                  className={cn(
                    "flex items-center gap-2.5 px-6 h-11 rounded-[1.25rem] transition-all relative group shrink-0",
@@ -238,12 +238,12 @@ export const Header: React.FC = () => {
                            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold">{favorites.length}</div>
                         </div>
                         <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
-                           {favorites.map(favId => {
+                           {favorites.map((favId, idx) => {
                               const p = allPages.find(page => page.id === favId);
                               if (!p) return null;
                               return (
                                 <button 
-                                  key={favId}
+                                  key={`${favId}-${idx}`}
                                   onClick={() => { navigate(`/page/${favId}`); setIsFavoritesOpen(false); }}
                                   className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
                                 >
@@ -286,9 +286,9 @@ export const Header: React.FC = () => {
                         
                         <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
                            {searchResults.length > 0 ? (
-                             searchResults.map(p => (
+                             searchResults.map((p, idx) => (
                                <button 
-                                 key={p.id}
+                                 key={`${p.id}-${idx}`}
                                  onClick={() => handlePageNavigate(p.id)}
                                  className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
                                >

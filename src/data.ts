@@ -889,12 +889,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.1.1', 
-    title: 'MOM (Meetings Archive)', 
+    title: 'Change Requests', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Executing', 
     icon: 'MessageSquare', 
-    collectionName: 'meetings',
+    collectionName: 'change_requests',
     summary: 'Official record of meeting minutes, attendance, decisions, and action items.',
     details: {
       inputs: ['meeting-agenda', 'recorded-notes', 'atttendance-list'],

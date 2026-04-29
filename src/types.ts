@@ -170,7 +170,9 @@ export type EntityType =
   | 'milestones' 
   | 'activities' 
   | 'boq' 
-  | 'backlogs';
+  | 'projectCharters'
+  | 'backlogs'
+  | 'meetings';
 
 export interface EntityConfig {
   id: EntityType;

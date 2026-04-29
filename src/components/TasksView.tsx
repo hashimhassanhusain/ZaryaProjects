@@ -665,8 +665,8 @@ export const TasksView: React.FC = () => {
             onChange={(e) => setSelectedWorkspaceId(e.target.value)}
             className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
           >
-            {workspaces.map(w => (
-              <option key={w.id} value={w.id}>{w.name}</option>
+            {workspaces.map((w, idx) => (
+              <option key={`${w.id}-${idx}`} value={w.id}>{w.name}</option>
             ))}
           </select>
         </div>
@@ -918,8 +918,8 @@ export const TasksView: React.FC = () => {
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     >
                       <option value="Unassigned">Unassigned</option>
-                      {dbUsers.map(u => (
-                        <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                      {dbUsers.map((u, idx) => (
+                        <option key={`${u.uid}-${idx}`} value={u.uid}>{u.name} ({u.role})</option>
                       ))}
                     </select>
                   </div>
@@ -965,8 +965,8 @@ export const TasksView: React.FC = () => {
                     onChange={(e) => setNewTask({ ...newTask, status: e.target.value as any })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   >
-                    {customStatuses.map(s => (
-                      <option key={s} value={s}>{translateStatus(s)}</option>
+                    {customStatuses.map((s, idx) => (
+                      <option key={`${s}-${idx}`} value={s}>{translateStatus(s)}</option>
                     ))}
                   </select>
                 </div>
@@ -1093,8 +1093,8 @@ export const TasksView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4 max-w-3xl">
-                  {selectedTask.notes?.slice().reverse().map(note => (
-                    <div key={note.id} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
+                  {selectedTask.notes?.slice().reverse().map((note, idx) => (
+                    <div key={`${note.id}-${idx}`} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           {getAssignee(note.userId)?.photoURL ? (
@@ -1124,7 +1124,7 @@ export const TasksView: React.FC = () => {
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-slate-100">
                   {selectedTask.history?.map((item, idx) => (
-                    <div key={item.id} className="relative py-2 group">
+                    <div key={`${item.id}-${idx}`} className="relative py-2 group">
                       <div className="absolute -left-[21px] top-4 w-4 h-4 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-blue-400 transition-colors"></div>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
@@ -1148,8 +1148,8 @@ export const TasksView: React.FC = () => {
                     onChange={(e) => updateTaskStatus(selectedTask.id, e.target.value as TaskStatus)}
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                   >
-                    {customStatuses.map(c => (
-                      <option key={c} value={c}>{translateStatus(c)}</option>
+                    {customStatuses.map((c, idx) => (
+                      <option key={`${c}-${idx}`} value={c}>{translateStatus(c)}</option>
                     ))}
                   </select>
                 </div>
@@ -1162,8 +1162,8 @@ export const TasksView: React.FC = () => {
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                   >
                     <option value="Unassigned">Unassigned</option>
-                    {dbUsers.map(u => (
-                      <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                    {dbUsers.map((u, idx) => (
+                      <option key={`${u.uid}-${idx}`} value={u.uid}>{u.name} ({u.role})</option>
                     ))}
                   </select>
                 </div>
