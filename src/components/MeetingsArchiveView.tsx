@@ -37,7 +37,11 @@ export const MeetingsArchiveView: React.FC<MeetingsArchiveViewProps> = ({ projec
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!project?.id) return;
+    // Robust null check for project and project.id
+    if (!project || !project.id) {
+      console.log('MeetingsArchiveView: No project selected or project ID missing');
+      return;
+    }
 
     const q = query(
       collection(db, 'meetings'),

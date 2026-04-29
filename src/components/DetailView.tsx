@@ -49,12 +49,26 @@ import { MeetingMinutesForm } from './MeetingMinutesForm';
 import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion, QualityAudit, Meeting } from '../types';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { VarianceAnalysisView } from './VarianceAnalysisView';
+import { ZaryaPOTracker } from './ZaryaPOTracker';
+import { BOQView } from './BOQView';
+import { WBSView } from './WBSView';
+import { EVMReportView } from './EVMReportView';
+import { DailyReportView } from './DailyReportView';
+import { TasksView } from './TasksView';
+import { FileExplorer } from './FileExplorer';
+import { ScheduleMilestoneOverview } from './ScheduleMilestoneOverview';
+import { ScheduleActivityDefinition } from './ScheduleActivityDefinition';
+import { ScheduleLogicEstimation } from './ScheduleLogicEstimation';
+import { ScheduleProgressTracking } from './ScheduleProgressTracking';
+import { ScheduleCadenceDashboard } from './ScheduleCadenceDashboard';
+import { ScheduleForecasting } from './ScheduleForecasting';
+import { ScheduleLessonsLearned } from './ScheduleLessonsLearned';
+import { WorkPackagesView } from './WorkPackagesView';
+import { UniversalManager } from './common/UniversalManager';
+import { StandardProcessPage } from './StandardProcessPage';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-
-import { StandardProcessPage } from './StandardProcessPage';
-import { UniversalManager } from './common/UniversalManager';
 
 export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
@@ -62,13 +76,15 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const navigate = useNavigate();
   const isCharterPage = page.id === '1.1.1';
   const isQualityAuditPage = page.id === '3.1.4';
-  const isMeetingsPage = page.id === '3.6.4';
+  const isMeetingsPage = page.id === '3.1.1' || page.id === '3.6.4';
   const isVarianceAnalysisPage = page.id === '4.3.2';
   
   // Mapping for Grid First logic
   const GRID_COLLECTION_MAP: Record<string, string> = {
     '1.2.1': 'stakeholders',
-    '3.1.2': 'projectLogs', // Change Log
+    '3.1.2': 'correspondence_log',
+    '4.1.2': 'change_requests',
+    '5.1.1': 'lessons_learned',
     '2.1.5': 'projectLogs', // App Log
     '1.2.2': 'projectLogs', // Req Doc
     '2.3.1': 'activities', // Activity List
@@ -4521,6 +4537,38 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 onCancel={() => setMeetingViewMode('archive')}
               />
             )
+          ) : page.id === '3.6.3' ? (
+            <TasksView />
+          ) : page.id === 'files' ? (
+            <FileExplorer projectId={selectedProject?.id || ''} />
+          ) : page.id === '2.4.1' ? (
+            <BOQView />
+          ) : page.id === '2.2.5' ? (
+            <WBSView />
+          ) : page.id === '2.2.7' ? (
+            <WorkPackagesView />
+          ) : page.id === '4.2.2' ? (
+            <EVMReportView page={page} />
+          ) : (page.id === '3.3.3' || page.id === 'dailylogs') ? (
+            <DailyReportView page={page} />
+          ) : page.id === '1.3.1' ? (
+            <ScheduleMilestoneOverview page={page} />
+          ) : page.id === '2.3.1' ? (
+            <ScheduleActivityDefinition page={page} />
+          ) : page.id === '2.3.2' ? (
+            <ScheduleLogicEstimation page={page} />
+          ) : (page.id === '2.3.3' || page.id === '3.3.2') ? (
+            <ProjectScheduleView page={page} />
+          ) : page.id === '3.5.1' ? (
+            <ScheduleCadenceDashboard page={page} />
+          ) : page.id === '4.5.1' ? (
+            <ScheduleProgressTracking page={page} />
+          ) : page.id === '4.5.2' ? (
+            <ScheduleForecasting page={page} />
+          ) : page.id === '5.5.1' ? (
+            <ScheduleLessonsLearned page={page} />
+          ) : ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id) ? (
+            <ZaryaPOTracker page={page} />
           ) : isVarianceAnalysisPage ? (
             <VarianceAnalysisView project={selectedProject!} />
           ) : isEditing ? (

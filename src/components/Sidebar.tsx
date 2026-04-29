@@ -233,7 +233,7 @@ export const Sidebar: React.FC = () => {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden pl-11 space-y-1"
+                          className="overflow-hidden pl-8 space-y-1"
                         >
                           {PERFORMANCE_DOMAINS.map(domain => {
                             const domainPagesInArea = pages.filter(p => p.domain === domain.id && p.focusArea === area.id && p.type === 'terminal');
@@ -245,20 +245,26 @@ export const Sidebar: React.FC = () => {
                             const DomainIcon = domain.icon;
 
                             return (
-                              <div key={domain.id} className="space-y-1 group/domain">
+                              <div key={domain.id} className="space-y-1 group/domain relative">
+                                {/* Vertical tree line for Domains */}
+                                <div className="absolute left-2.5 top-0 bottom-0 w-[1px] bg-slate-200 group-hover/domain:bg-blue-300 transition-colors" />
+                                
                                 <Link
                                   to={path}
                                   onClick={() => setSelectedFocusArea(area.id)}
                                   className={cn(
-                                    "flex items-center gap-3 px-4 py-2 rounded-xl transition-all",
+                                    "flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all relative z-10",
                                     isHubActive ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-100" : "text-slate-400 hover:text-slate-900"
                                   )}
                                 >
-                                  <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.3)]" : "text-slate-300 group-hover/domain:text-blue-500")} />
-                                  <span className="text-[11px] font-black tracking-tight uppercase opacity-80">{stripNumericPrefix(t(domain.id))}</span>
+                                  <div className="w-2 h-[1px] bg-slate-200 shrink-0" />
+                                  <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600" : "text-slate-300 group-hover/domain:text-blue-500")} />
+                                  <span className="text-[10px] font-black tracking-tight uppercase opacity-80">{stripNumericPrefix(t(domain.id))}</span>
                                 </Link>
 
-                                <div className="pl-6 border-l border-slate-200/50 ml-5 space-y-1">
+                                <div className="pl-6 space-y-1 relative">
+                                  {/* Vertical tree line for Terminals */}
+                                  <div className="absolute left-4.5 top-0 bottom-4 w-[1px] bg-slate-100" />
                                   {domainPagesInArea.map(terminalPage => {
                                     const terminalPath = selectedProject ? `/project/${selectedProject.id}/page/${terminalPage.id}` : `/page/${terminalPage.id}`;
                                     const isTerminalActive = currentPath === terminalPath;
@@ -269,10 +275,11 @@ export const Sidebar: React.FC = () => {
                                         key={terminalPage.id}
                                         to={terminalPath}
                                         className={cn(
-                                          "block px-3 py-2 rounded-xl text-[10px] font-bold transition-all uppercase tracking-tighter",
-                                          isTerminalActive ? "bg-blue-50 text-blue-600 shadow-inner" : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                                          "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all uppercase tracking-tighter",
+                                          isTerminalActive ? "bg-blue-50 text-blue-600 font-black" : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
                                         )}
                                       >
+                                        <div className="w-1.5 h-[1px] bg-slate-200 shrink-0" />
                                         {stripNumericPrefix(terminalPage.title)}
                                       </Link>
                                     );

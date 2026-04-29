@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, User as UserIcon, LogOut, Shield, Search, Star, 
   FileText as FileIcon, Info, Building, FolderOpen, ChevronDown,
-  LayoutDashboard, Menu, X
+  LayoutDashboard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -40,6 +40,7 @@ export const Header: React.FC = () => {
   const [user, setUser] = useState(auth.currentUser);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,6 +56,13 @@ export const Header: React.FC = () => {
   const { favorites, toggleFavorite } = useUI();
 
   const selectedCompany = companies.find(c => c.id === (selectedProject?.companyId || selectedCompanyId));
+
+  const searchResults = searchQuery.trim().length > 0 
+    ? allPages.filter(p => 
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        p.id.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 10)
+    : [];
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -82,9 +90,37 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handlePageNavigate = (pageId: string) => {
+    if (selectedProject) {
+      navigate(`/project/${selectedProject.id}/page/${pageId}`);
+    } else {
+      navigate(`/page/${pageId}`);
+    }
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  };
+
   return (
     <header className="h-[72px] bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm">
-      <div className="flex items-center gap-6 w-full h-full">
+      <div className="flex items-center gap-2 w-full h-full">
+        {/* Main Logo & Hub Indicator */}
+        <Link to="/" className="flex items-center gap-3 group px-2 hover:opacity-80 transition-opacity shrink-0">
+          <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:scale-105 transition-transform duration-300 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-700/20" />
+            <span className="text-2xl font-black italic tracking-tighter relative z-10">Z</span>
+          </div>
+          <div className="flex flex-col hidden lg:flex">
+             <div className="flex items-center gap-2">
+                <span className="text-xl font-black text-slate-900 tracking-tighter leading-none italic">ZARYA</span>
+                <span className="px-1.5 py-0.5 bg-blue-600 text-[8px] font-black text-white rounded-md tracking-widest">PMIS</span>
+             </div>
+             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">Operations Command</span>
+          </div>
+        </Link>
+
+        {/* Separator */}
+        <div className="w-px h-8 bg-slate-100 mx-2 hidden sm:block" />
+
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
@@ -253,9 +289,46 @@ export const Header: React.FC = () => {
                    {isSearchOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl p-4"
+                       className="absolute top-full right-0 mt-3 w-96 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-4"
                      >
-                        <input autoFocus placeholder={t('search_pmis')} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" />
+                        <div className="relative mb-4">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <input 
+                            autoFocus 
+                            placeholder={t('search_pmis')} 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" 
+                          />
+                        </div>
+                        
+                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
+                           {searchResults.length > 0 ? (
+                             searchResults.map(p => (
+                               <button 
+                                 key={p.id}
+                                 onClick={() => handlePageNavigate(p.id)}
+                                 className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
+                               >
+                                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                     <FileIcon className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex flex-col text-left">
+                                     <span className="text-[11px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
+                                     <span className="text-[8px] font-bold text-slate-400 uppercase">{p.domain} ({p.id})</span>
+                                  </div>
+                               </button>
+                             ))
+                           ) : searchQuery.length > 0 ? (
+                             <div className="p-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-loose">
+                               {t('no_results_found')}
+                             </div>
+                           ) : (
+                             <div className="p-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-loose">
+                               {t('type_to_search')}
+                             </div>
+                           )}
+                        </div>
                      </motion.div>
                    )}
                  </AnimatePresence>

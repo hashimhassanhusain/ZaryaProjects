@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation, Link } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { DetailView } from './components/DetailView';
@@ -110,7 +109,8 @@ const PageRenderer = () => {
   useEffect(() => {
     if (!pageTitle) return;
     const projectPrefix = selectedProject ? `[${selectedProject.code}] ` : '';
-    document.title = `${projectPrefix}${pageTitle} | ${selectedCompanyName} PMIS`;
+    const cleanTitle = stripNumericPrefix(pageTitle);
+    document.title = `${projectPrefix}${cleanTitle} | ${selectedCompanyName} PMIS`;
   }, [pageTitle, selectedProject, selectedCompanyName]);
 
   if (!page) return <Navigate to="/page/gov" />;
@@ -142,6 +142,47 @@ const PageRenderer = () => {
         </div>
       );
     }
+  }
+
+  // --- PROJECT SELECTION REQUIREMENT ---
+  // Most pages (except global ones like companies or admin - though those are handled by other routes)
+  // require a selected project.
+  const globalPages = ['companies', 'explorer', 'profile'];
+  if (!selectedProject && !globalPages.includes(page.id)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl border border-slate-100 relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+          
+          <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
+             <div className="absolute inset-0 bg-blue-500/10 animate-ping rounded-[2rem] opacity-20" />
+             <LayoutDashboard className="w-10 h-10 text-blue-600 relative z-10" />
+          </div>
+          
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4 uppercase">{t('project_required')}</h2>
+          <p className="text-slate-500 text-sm leading-relaxed mb-10">
+            {t('please_select_project_to_continue')}
+            <br />
+            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mt-4 block">ZARYA PMIS Command Center</span>
+          </p>
+          
+          <div className="space-y-4">
+             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 text-left">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">1</div>
+                <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('click_select_project_in_header')}</div>
+             </div>
+             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 text-left">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">2</div>
+                <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('choose_company_and_project')}</div>
+             </div>
+          </div>
+        </motion.div>
+      </div>
+    );
   }
 
   // If it's a schedule page, always use ScheduleHubView or the direct view
@@ -347,7 +388,6 @@ import { AIAssistant } from './components/AIAssistant';
 
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
-  const { isSidebarOpen, closeSidebar, sidebarWidth, selectedDomain, selectedFocusArea, setSelectedFocusArea } = useUI();
   const location = useLocation();
 
   useEffect(() => {
@@ -370,19 +410,6 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Mobile Sidebar Overlay - Only on mobile */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeSidebar}
-            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
       {/* Sidebar removed as per user request */}
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">

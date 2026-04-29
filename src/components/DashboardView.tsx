@@ -225,43 +225,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
             </section>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child, idx) => {
               const Icon = getDomainIcon(child.domain, child.title);
+              const translatedTitle = t(child.id);
+              const isIdTranslation = translatedTitle === child.id || stripNumericPrefix(translatedTitle) === '';
+              const displayTitle = stripNumericPrefix(isIdTranslation ? child.title : translatedTitle);
+              
               return (
                 <motion.div
                   key={child.id}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
                   transition={{ delay: idx * 0.1 }}
                 >
                   <Link
                     to={`/page/${child.id}`}
-                    className="group block p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
+                    className="group h-full flex flex-col p-6 bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-300 transition-all"
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                        <Icon className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors shadow-inner">
+                        <Icon className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:scale-110" />
                       </div>
                       <StatusIcon status={child.status} />
                     </div>
-                    <h3 className="text-base font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {(() => {
-                        const translated = t(child.id);
-                        const isIdTranslation = translated === child.id || stripNumericPrefix(translated) === '';
-                        const display = isIdTranslation ? child.title : translated;
-                        return stripNumericPrefix(display);
-                      })()}
-                    </h3>
-                    <div className="text-[10px] text-slate-400 font-normal mb-2 uppercase tracking-wider">
-                      {child.focusArea || ''}
+                    
+                    <div className="flex-1 space-y-2">
+                      <div className="text-[10px] text-blue-600 font-bold uppercase tracking-widest opacity-60">
+                        {child.focusArea || ''}
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+                        {displayTitle}
+                      </h3>
+                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-3">
+                        {child.summary || child.content || 'Standard project artifact and management documentation.'}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 mb-3 line-clamp-2">
-                      {child.summary || child.content}
-                    </p>
-                    <div className="flex items-center text-xs font-semibold text-blue-600">
-                      {t('view_details')}
-                      <ArrowRight className="w-3 h-3 ms-1 group-hover:translate-x-1 transition-transform" />
+
+                    <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+                      <div className="flex items-center text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                        {t('view_artifact')}
+                        <ArrowRight className="w-3.5 h-3.5 ms-1.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
                     </div>
                   </Link>
                 </motion.div>

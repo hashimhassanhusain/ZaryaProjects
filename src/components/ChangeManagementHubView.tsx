@@ -26,6 +26,7 @@ import {
   FileSignature,
   History,
   User,
+  ChevronRight,
   MoreHorizontal
 } from 'lucide-react';
 import { Page, PurchaseOrder, Project } from '../types';
@@ -33,6 +34,7 @@ import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, getDocs, getDoc } from 'firebase/firestore';
 import jsPDF from 'jspdf';
@@ -92,6 +94,7 @@ interface ChangeRequest {
 }
 
 export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = ({ page }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
   const [loading, setLoading] = useState(true);
@@ -658,6 +661,24 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
 
   return (
     <div className="space-y-10 pb-20">
+      <header className="px-8 py-6 bg-white border-b border-slate-100 flex items-center justify-between -mx-8 -mt-10 mb-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1.5">
+              <span>{t('change_management')}</span>
+              <ChevronRight className="w-2.5 h-2.5 opacity-50" />
+              <span className="text-blue-600">{view === 'hub' ? t('hub') : view === 'new' ? t('new_request') : selectedRequest?.requestId}</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none uppercase">
+              {view === 'hub' ? t('change_management_hub') : view === 'new' ? t('new_request') : selectedRequest?.requestId}
+            </h2>
+          </div>
+        </div>
+      </header>
+
       <div className="flex items-center justify-end">
         <button 
           onClick={() => navigate('/page/2.1.1')}

@@ -23,19 +23,28 @@ import { ResourceManagerDashboard } from './ResourceManagerDashboard';
 import { ResourceAcquisitionView } from './ResourceAcquisitionView';
 import { ResourceReleaseView } from './ResourceReleaseView';
 
+import { DomainDashboard } from './DomainDashboard';
+
 interface ResourcesHubViewProps {
   page: Page;
 }
 
-type TabType = 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 'release' | 'plan';
+type TabType = 'overview' | 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 'release' | 'plan';
 
 export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('utilization');
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
   const ribbonGroups: RibbonGroup[] = [
+    {
+      id: 'domain-overview',
+      label: t('navigation'),
+      tabs: [
+        { id: 'overview', label: t('overview'), icon: Grid, size: 'large' },
+      ]
+    },
     {
       id: 'planning',
       label: t('strategy_structure'),
@@ -65,6 +74,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'resources' && p.id !== page.id)} initialTab="overview" />;
       case 'raci': return <RACIMatrixView page={page} />;
       case 'utilization': return <ResourceManagerDashboard page={page} />;
       case 'acquisition': return <ResourceAcquisitionView page={page} />;
@@ -81,15 +91,27 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
              <span>{stripNumericPrefix(t(page.domain || 'resources'))}</span>
              <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
              <span className="text-slate-900">{t(page.focusArea)}</span>
+             {activeTab !== 'overview' && (
+               <>
+                 <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
+                 <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
+               </>
+             )}
           </div>
           <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
-            {parentPage && (
+            {activeTab === 'overview' ? (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+                {parentPage && (
+                  <>
+                    <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                    <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+                  </>
+                )}
+                {stripNumericPrefix(t(page.id) || page.title)}
               </>
+            ) : (
+              stripNumericPrefix(t(activeTab))
             )}
-            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

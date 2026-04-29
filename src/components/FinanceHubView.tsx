@@ -139,15 +139,27 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
              <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
              <ChevronRight className="w-3 h-3" />
              <span className="text-slate-900">{t(page.focusArea)}</span>
+             {activeTab !== 'overview' && (
+               <>
+                 <ChevronRight className="w-3 h-3" />
+                 <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
+               </>
+             )}
           </div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
-            {parentPage && (
+            {activeTab === 'overview' ? (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
+                {parentPage && (
+                  <>
+                    <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                    <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
+                  </>
+                )}
+                {stripNumericPrefix(t(page.id) || page.title)}
               </>
+            ) : (
+              stripNumericPrefix(t(activeTab))
             )}
-            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

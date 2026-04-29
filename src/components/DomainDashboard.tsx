@@ -169,6 +169,55 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     return userProfile.accessiblePages?.includes(child.id);
   });
 
+  // Artifact-based mapping for each domain
+  const ARTIFACT_MAPPING: Record<string, { primary: string[], secondary: string[] }> = {
+    'governance': {
+      primary: ['1.1.1', '1.1.2', '3.1.2'], // Charter, Business Case, Correspondence
+      secondary: ['3.1.1', '5.1.1', '4.1.2', '2.1.1', '2.1.2', '4.1.1', '5.1.2'] // MOM, Lessons, Change Log, etc.
+    },
+    'stakeholders': {
+      primary: ['1.5.1', '2.5.1'],
+      secondary: ['1.5.2', '2.5.2', '3.5.1', '4.5.1', '5.5.1']
+    },
+    'delivery': { // Refers to Scope & Delivery
+      primary: ['2.2.2', '2.2.5', '2.2.7', '3.2.1'], 
+      secondary: ['1.2.1', '1.2.2', '2.2.1', '2.2.3', '3.2.2', '4.2.1', '4.2.2', '5.2.1', '5.2.2']
+    },
+    'schedule': {
+      primary: ['2.3.3', '3.3.3', '2.3.1'],
+      secondary: ['1.3.1', '1.3.2', '2.3.2', '2.3.4', '2.3.5', '3.3.1', '3.3.2', '4.3.1', '4.3.2', '5.3.1', '5.3.2']
+    },
+    'finance': {
+      primary: ['2.4.1', '3.4.3', '1.4.2'],
+      secondary: ['1.4.1', '2.4.2', '2.4.3', '3.4.1', '3.4.2', '3.4.4', '4.4.1', '4.4.2', '5.4.1', '5.4.2']
+    },
+    'resources': {
+      primary: ['2.6.1', '2.6.2', '3.6.3'],
+      secondary: ['1.6.1', '1.6.2', '2.6.3', '3.6.1', '3.6.2', '3.6.4', '4.6.1', '4.6.2', '5.6.1', '5.6.2']
+    },
+    'risk': {
+      primary: ['1.7.1', '2.7.2', '4.7.1'],
+      secondary: ['1.7.2', '2.7.1', '2.7.3', '3.7.1', '4.7.2', '5.7.1', '5.7.2']
+    }
+  };
+
+  // Define high-usage processes for large icons
+  const domainArtifacts = ARTIFACT_MAPPING[domainKey];
+  const highUsageIds = domainArtifacts ? domainArtifacts.primary : [
+    '2.6.21', '3.3.3', '3.6.4', 
+    'daily-reports', '3.6.3', '3.1.3',
+    '2.4.1', '5.2.1', '3.1.1',
+    '2.7.5', '2.1.6', '2.3.3', '3.3.2'
+  ];
+
+  // Filter children to ONLY show artifacts if mapped, otherwise show all
+  const ribbonChildren = domainArtifacts 
+    ? filteredChildren.filter(c => [...domainArtifacts.primary, ...domainArtifacts.secondary].includes(c.id))
+    : filteredChildren;
+
+  // Filter children based on permissions
+  const finalChildren = ribbonChildren;
+
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
   // Always use Focus Area division for the ribbon as per user request
@@ -176,16 +225,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   // Group processes by focus area for the ribbon
   const focusAreas = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
-  
-  // Define high-usage processes for large icons
-  const highUsageIds = [
-    '2.6.21', '3.3.3', '3.6.4', 
-    'daily-reports', '3.6.3', '3.1.3',
-    '2.4.1', '5.2.1', '3.1.1',
-    '2.7.5', '2.1.6', '2.3.3', '3.3.2'
-  ];
-
-  const areas = focusAreas; // Alias for backward compatibility if used in JSX
+  const areas = focusAreas; 
 
   // Add the "Overview" tab first
   ribbonGroups.push({
@@ -205,24 +245,36 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   // Group children by focus area
   focusAreas.forEach(area => {
-    const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
+    const areaChildren = finalChildren.filter(c => c.focusArea?.includes(area));
     if (areaChildren.length > 0) {
       ribbonGroups.push({
         id: area.toLowerCase().replace(/\s+/g, '_'),
         label: t(area),
-        tabs: areaChildren.map(child => {
-          const translatedLabel = t(child.id);
-          const label = translatedLabel === child.id ? child.title : translatedLabel;
-          
-          return {
-            id: child.id,
-            label: stripNumericPrefix(label),
-            icon: ICON_MAP[child.icon || 'FileText'] || FileText,
-            description: th(child.id + '_summary') || child.summary,
-            focusArea: area, // This adds the colored dot
-            size: highUsageIds.includes(child.id) ? 'large' : 'small'
-          };
-        })
+        tabs: areaChildren
+          .sort((a, b) => {
+            // Sort by primary vs secondary within the same focus area
+            if (domainArtifacts) {
+              const aPrimary = domainArtifacts.primary.includes(a.id);
+              const bPrimary = domainArtifacts.primary.includes(b.id);
+              if (aPrimary && !bPrimary) return -1;
+              if (!aPrimary && bPrimary) return 1;
+              return domainArtifacts.primary.indexOf(a.id) - domainArtifacts.primary.indexOf(b.id);
+            }
+            return 0;
+          })
+          .map(child => {
+            const translatedLabel = t(child.id);
+            const label = translatedLabel === child.id ? child.title : translatedLabel;
+            
+            return {
+              id: child.id,
+              label: stripNumericPrefix(label),
+              icon: ICON_MAP[child.icon || 'FileText'] || FileText,
+              description: th(child.id + '_summary') || child.summary,
+              focusArea: area, 
+              size: highUsageIds.includes(child.id) ? 'large' : 'small'
+            };
+          })
       });
     }
   });

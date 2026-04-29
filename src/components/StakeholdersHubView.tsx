@@ -22,24 +22,33 @@ import { StakeholderRegisterView } from './StakeholderRegisterView';
 import { StakeholderEngagementView } from './StakeholderEngagementView';
 import { CommunicationsPlanView } from './CommunicationsPlanView';
 
+import { DomainDashboard } from './DomainDashboard';
+
 interface StakeholdersHubViewProps {
   page: Page;
 }
 
-type TabType = 'analysis' | 'register' | 'engagement' | 'comms' | 'sentiment' | 'nps';
+type TabType = 'overview' | 'analysis' | 'register' | 'engagement' | 'comms' | 'sentiment' | 'nps';
 
 export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('analysis');
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
   const ribbonGroups: RibbonGroup[] = [
     {
+      id: 'domain-overview',
+      label: t('navigation'),
+      tabs: [
+        { id: 'overview', label: t('overview'), icon: LayoutGrid, size: 'large' },
+      ]
+    },
+    {
       id: 'identification',
       label: t('identification_priority'),
       tabs: [
-        { id: 'analysis', label: t('power_interest_matrix'), icon: LayoutGrid },
+        { id: 'analysis', label: t('stakeholder_matrix'), icon: Target },
         { id: 'register', label: t('stakeholder_register'), icon: Users },
       ]
     },
@@ -63,6 +72,7 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'stakeholders' && p.id !== page.id)} initialTab="overview" />;
       case 'analysis': return <StakeholderMatrixView page={page} />;
       case 'register': return <StakeholderRegisterView page={page} />;
       case 'engagement': return <StakeholderEngagementView page={page} />;
@@ -81,15 +91,27 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
              <span>{stripNumericPrefix(t(page.domain || 'stakeholders'))}</span>
              <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
              <span className="text-slate-900">{t(page.focusArea)}</span>
+             {activeTab !== 'overview' && (
+               <>
+                 <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
+                 <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
+               </>
+             )}
           </div>
           <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
-            {parentPage && (
+            {activeTab === 'overview' ? (
               <>
-                <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+                {parentPage && (
+                  <>
+                    <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                    <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+                  </>
+                )}
+                {stripNumericPrefix(t(page.id) || page.title)}
               </>
+            ) : (
+              stripNumericPrefix(t(activeTab))
             )}
-            {stripNumericPrefix(t(page.id) || page.title)}
           </h1>
         </div>
       </div>

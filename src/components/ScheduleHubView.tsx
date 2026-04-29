@@ -349,6 +349,25 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         onTabChange={handleTabChange}
       />
       <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {activeTab !== 'overview' && (
+          <header className="px-8 py-6 bg-white border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1.5">
+                  <span>{stripNumericPrefix(t(page.id === 'sched' ? 'schedule' : page.title))}</span>
+                  <ChevronRight className="w-2.5 h-2.5 opacity-50" />
+                  <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                  {stripNumericPrefix(t(activeTab))}
+                </h2>
+              </div>
+            </div>
+          </header>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

@@ -8,7 +8,8 @@ import {
   TrendingDown, 
   LineChart, 
   Lock, 
-  AlertTriangle 
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -16,14 +17,18 @@ import { RiskRegisterView } from './RiskRegisterView';
 import { RiskDashboardView } from './RiskDashboardView';
 import { StandardProcessPage } from './StandardProcessPage';
 
+import { DomainDashboard } from './DomainDashboard';
+import { pages } from '../data';
+
 interface RiskOpportunityHubProps {
   page: Page;
 }
 
 export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) => {
-  const [activeTab, setActiveTab] = useState<'Planning' | 'Monitoring' | 'Executing'>('Planning');
+  const [activeTab, setActiveTab] = useState<'Overview' | 'Planning' | 'Monitoring' | 'Executing'>('Overview');
 
   const tabs = [
+    { id: 'Overview', label: 'Domain Overview', icon: Grid },
     { id: 'Planning', label: 'Defense Strategy', icon: Settings },
     { id: 'Executing', label: 'Response Tracking', icon: AlertTriangle },
     { id: 'Monitoring', label: 'Reserve Control', icon: TrendingDown },
@@ -31,6 +36,8 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'Overview':
+        return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'risk' && p.id !== page.id)} initialTab="overview" />;
       case 'Planning':
         return <RiskRegisterView page={page} />;
       case 'Monitoring':
@@ -51,6 +58,24 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
 
   return (
     <div className="space-y-6">
+      <header className="px-12 py-6 bg-white border-b border-slate-100 flex items-center justify-between -mx-4 -mt-6 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1.5">
+              <span>Risk & Opportunity</span>
+              <ChevronRight className="w-2.5 h-2.5 opacity-50" />
+              <span className="text-blue-600">{activeTab}</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none uppercase">
+              {activeTab === 'Overview' ? 'Risk Opportunity Hub' : activeTab}
+            </h2>
+          </div>
+        </div>
+      </header>
+
       {/* Risk Ribbon Navigation */}
       <div className="bg-white/80 backdrop-blur-md sticky top-[calc(var(--header-height)+1px)] z-30 border-b border-slate-100 px-12 py-4">
         <div className="flex items-center gap-2">

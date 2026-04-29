@@ -98,12 +98,14 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
           {crumbs.length > 1 && (
             <>
               <span className="text-slate-300 font-extrabold uppercase italic opacity-60 text-2xl">
-                {stripNumericPrefix(crumbs[crumbs.length - 2].title)}
+                {stripNumericPrefix(t(crumbs[crumbs.length - 2].id) === crumbs[crumbs.length - 2].id ? crumbs[crumbs.length - 2].title : t(crumbs[crumbs.length - 2].id))}
               </span>
-              <ChevronRight className="text-slate-200 w-6 h-6 shrink-0" strokeWidth={3} />
+              <span className="text-slate-200 font-light mx-1">{'>'}</span>
             </>
           )}
-          <span className="text-slate-900">{stripNumericPrefix(currentPage?.title || '')}</span>
+          <span className="text-slate-900">
+            {stripNumericPrefix(t(currentPageId) === currentPageId ? (currentPage?.title || '') : t(currentPageId))}
+          </span>
         </h1>
 
         <div className="flex items-center gap-4">

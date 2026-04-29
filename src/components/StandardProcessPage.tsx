@@ -547,11 +547,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                                 <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight flex items-center gap-4 flex-wrap uppercase">
                                   {parentPage && (
                                     <>
-                                      <span className="text-slate-200">{stripNumericPrefix(parentTitle)}</span>
-                                      <span className="text-slate-100 font-light mx-1">›</span>
+                                      <span className="text-slate-300 font-extrabold uppercase italic opacity-60 text-2xl">{stripNumericPrefix(parentTitle)}</span>
+                                      <span className="text-slate-200 font-light mx-1">{'>'}</span>
                                     </>
                                   )}
-                                  <span>{stripNumericPrefix(displayTitle)}</span>
+                                  <span className="text-slate-900">{stripNumericPrefix(displayTitle)}</span>
                                 </h2>
                                 <button 
                                   onClick={toggleFavorite}
@@ -590,8 +590,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                          </div>
                       </div>
                       <div className={cn("text-right space-y-2", isRtl && "text-left")}>
-                         <h2 className="text-2xl font-semibold uppercase tracking-tight italic">
-                           {parentPage && `${stripNumericPrefix(parentTitle)} › `}
+                         <h2 className="text-2xl font-black uppercase tracking-tighter italic">
+                           {parentPage && (
+                              <>
+                                <span className="opacity-30">{stripNumericPrefix(parentTitle)}</span>
+                                <span className="mx-2 opacity-20">›</span>
+                              </>
+                           )}
                            {stripNumericPrefix(displayTitle)}
                          </h2>
                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('project')}: {selectedProject?.name}</p>

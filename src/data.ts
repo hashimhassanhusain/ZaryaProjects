@@ -111,16 +111,16 @@ export const pages: Page[] = [
   { id: 'res', title: 'Resources', type: 'hub', domain: 'resources', parentId: '', icon: 'Package', focusArea: 'Planning' },
   { id: 'risk', title: 'Risk', type: 'hub', domain: 'risk', parentId: '', icon: 'AlertTriangle', focusArea: 'Planning' },
 
-  // --- STAKEHOLDERS DOMAIN (REFINED PMBOK 8) ---
+  // --- STAKEHOLDERS DOMAIN (ARTIFACT-CENTRIC) ---
   { 
     id: '1.5.1', 
-    title: 'Identify Stakeholders', 
+    title: 'Stakeholder Register (Initial)', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
     icon: 'UserSearch', 
     collectionName: 'stakeholders',
-    summary: 'Identify all individuals, groups, or organizations that could impact or be impacted by the project.',
+    summary: 'The formal register identifying all project stakeholders, their roles, and basic requirements.',
     details: {
       inputs: ['business-case', 'project-charter', 'governance-framework', 'org-structure'],
       tools: ['Stakeholder Identification Techniques', 'Expert Judgment', 'Document Analysis'],
@@ -129,12 +129,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.5.2', 
-    title: 'Analyze Stakeholders', 
+    title: 'Stakeholder Analysis Matrix', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Initiating', 
     icon: 'Layout', 
-    summary: 'Systematically gather and analyze stakeholders interests, expectations, and influence.',
+    summary: 'A detailed analysis matrix mapping stakeholder power, interest, and influence.',
     details: {
       inputs: ['stakeholder-register', 'stakeholder-list'],
       tools: ['Power-Interest Grid', 'Influence Analysis', 'Stakeholder Mapping'],
@@ -143,12 +143,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.5.1', 
-    title: 'Develop Stakeholder Engagement Plan', 
+    title: 'Stakeholder Engagement Plan', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Planning', 
     icon: 'UserPlus', 
-    summary: 'Define strategies to effectively engage stakeholders based on their needs, interests, and impact.',
+    summary: 'The formal plan defining strategies to effectively engage stakeholders throughout the project lifecycle.',
     details: {
       inputs: ['stakeholder-register', 'stakeholder-analysis-matrix', 'comm-requirements', 'governance-management-plan'],
       tools: ['Engagement Planning Techniques', 'Communication Planning', 'Expert Judgment'],
@@ -157,12 +157,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.5.2', 
-    title: 'Define Communication Framework', 
+    title: 'Communications Management Plan', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Planning', 
     icon: 'MessageSquare', 
-    summary: 'Establish the project communication standards, channels, and reporting structures.',
+    summary: 'Establishes project communication standards, channels, and reporting structures.',
     details: {
       inputs: ['stakeholder-engagement-plan', 'stakeholder-requirements', 'org-comm-policies', 'governance-management-plan'],
       tools: ['Communication Models', 'Information Distribution Planning', 'Technology Selection'],
@@ -171,12 +171,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.5.1', 
-    title: 'Manage Stakeholder Engagement', 
+    title: 'Stakeholder Engagement Records', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Executing', 
     icon: 'Handshake', 
-    summary: 'Communicating and working with stakeholders to meet their needs and address issues as they occur.',
+    summary: 'Logs and records of all engagement activities and issues addressed with stakeholders.',
     details: {
       inputs: ['stakeholder-engagement-plan', 'communication-plan', 'stakeholder-register'],
       tools: ['Communication Tools', 'Conflict Management', 'Interpersonal Skills'],
@@ -185,12 +185,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.5.2', 
-    title: 'Facilitate Stakeholder Communication', 
+    title: 'Project Communications Log', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Executing', 
     icon: 'MessagesSquare', 
-    summary: 'Execute the project communication plan to ensure timely distribution of project information.',
+    summary: 'A comprehensive log of all formal project communications and distributed information.',
     details: {
       inputs: ['communication-plan', 'stakeholder-feedback-data', 'project-updates'],
       tools: ['Meetings', 'Reports', 'Collaboration Platforms'],
@@ -199,12 +199,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.5.1', 
-    title: 'Monitor Stakeholder Engagement', 
+    title: 'Stakeholder Engagement Reports', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Eye', 
-    summary: 'Monitor project stakeholder relationships and tailor engagement strategies as needed.',
+    summary: 'Periodic reports monitoring the effectiveness of stakeholder engagement strategies.',
     details: {
       inputs: ['stakeholder-engagement-plan', 'communication-logs', 'stakeholder-feedback-data', 'work-performance-data'],
       tools: ['Engagement Assessment Matrix', 'Surveys', 'Performance Reviews'],
@@ -213,12 +213,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.5.2', 
-    title: 'Manage Stakeholder Issues', 
+    title: 'Stakeholder Issue Log', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'MessageCircleWarning', 
-    summary: 'Identify and resolve project issues affecting stakeholder relationships and commitment.',
+    summary: 'A register of all stakeholder-related issues and their resolution status.',
     details: {
       inputs: ['issue-logs', 'stakeholder-feedback-data', 'stakeholder-engagement-reports'],
       tools: ['Root Cause Analysis', 'Negotiation Techniques', 'Decision-Making Frameworks'],
@@ -227,12 +227,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.5.1', 
-    title: 'Evaluate Stakeholder Satisfaction', 
+    title: 'Stakeholder Satisfaction Surveys', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Closing', 
     icon: 'Smile', 
-    summary: 'Conduct end-of-project evaluations to assess stakeholder satisfaction and capture lessons learned.',
+    summary: 'End-of-project surveys assessing stakeholder satisfaction and capturing final feedback.',
     details: {
       inputs: ['stakeholder-feedback-data', 'stakeholder-engagement-reports', 'accepted-deliverables'],
       tools: ['Surveys', 'Interviews', 'Lessons Learned Workshops'],
@@ -241,12 +241,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.5.2', 
-    title: 'Archive Stakeholder Records', 
+    title: 'Stakeholder Project Archive', 
     type: 'terminal', 
     domain: 'stakeholders', 
     focusArea: 'Closing', 
     icon: 'Archive', 
-    summary: 'Securely archive all stakeholder records, communication logs, and feedback reports.',
+    summary: 'Final collection of all stakeholder-related documentation and records archived for closure.',
     details: {
       inputs: ['stakeholder-documents', 'communication-logs', 'issue-logs', 'feedback-reports'],
       tools: ['Document Management Systems', 'Archiving Standards'],
@@ -255,12 +255,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.4.1', 
-    title: 'Define Financial Feasibility', 
+    title: 'Financial Feasibility Report', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Initiating', 
     icon: 'LineChart', 
-    summary: 'Evaluate the economic viability of the project and define initial investment justifications.',
+    summary: 'A formal report evaluating the economic viability and investment justification of the project.',
     details: {
       inputs: ['business-case', 'project-charter', 'org-strategy', 'high-level-scope-statement'],
       tools: ['Cost-Benefit Analysis', 'Financial Modeling', 'Expert Judgment'],
@@ -269,12 +269,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.4.2', 
-    title: 'Establish Funding Strategy', 
+    title: 'Funding Strategy Plan', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Initiating', 
     icon: 'Wallet', 
-    summary: 'Identify funding sources and establish the high-level budget allocation model.',
+    summary: 'The formal plan identifying funding sources and budget allocation models for project execution.',
     details: {
       inputs: ['financial-feasibility-report', 'org-fin-policies', 'funding-sources-data'],
       tools: ['Funding Analysis', 'Scenario Analysis', 'Stakeholder Negotiation'],
@@ -298,12 +298,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.4.2', 
-    title: 'Develop Cost Estimates', 
+    title: 'Cost Estimates & Basis', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Planning', 
     icon: 'Calculator', 
-    summary: 'Determine the specific costs for all project activities and resources.',
+    summary: 'Detailed financial documentation of estimated costs and the assumptions behind them.',
     details: {
       inputs: ['scope-baseline', 'wbs-structure', 'res-requirements', 'schedule-baseline'],
       tools: ['Parametric Estimation', 'Bottom-Up Estimation', 'Analogous Estimation'],
@@ -312,12 +312,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.4.3', 
-    title: 'Develop Project Budget', 
+    title: 'Project Cost Baseline', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Planning', 
     icon: 'Banknote', 
-    summary: 'Aggregate cost estimates and reserves to establish the formal Cost Baseline.',
+    summary: 'The approved, time-phased cost baseline and budget aggregating all estimates and reserves.',
     details: {
       inputs: ['cost-estimates', 'funding-strategy-plan', 'schedule-baseline'],
       tools: ['Cost Aggregation', 'Reserve Analysis', 'Expert Judgment'],
@@ -326,12 +326,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.4.4', 
-    title: 'Define Financial Control Framework', 
+    title: 'Financial Control Plan', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Planning', 
     icon: 'Lock', 
-    summary: 'Establish the reporting and tracking mechanisms for financial monitoring.',
+    summary: 'A formal document establishing the reporting, tracking, and control mechanisms for project finances.',
     details: {
       inputs: ['cost-baseline', 'governance-management-plan', 'org-fin-policies', 'governance-framework'],
       tools: ['Financial Control Systems', 'KPI Definition', 'Reporting Framework Design'],
@@ -340,12 +340,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.4.1', 
-    title: 'Manage Project Funding', 
+    title: 'Funding Disbursement Records', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
     icon: 'Coins', 
-    summary: 'Coordinate fund disbursements and monitor project cash flow.',
+    summary: 'Formal records of all fund disbursements and cash flow tracking against the funding plan.',
     details: {
       inputs: ['project-budget', 'funding-strategy-plan', 'cash-flow-forecast'],
       tools: ['Financial Management Systems', 'Payment Scheduling', 'Fund Allocation Methods'],
@@ -354,12 +354,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.4.2', 
-    title: 'Record Project Costs', 
+    title: 'Project Cost Ledger', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Executing', 
     icon: 'Receipt', 
-    summary: 'Maintain accurate ledgers of all project expenses and actual resource usage costs.',
+    summary: 'An accurate ledger recording all actual project expenses and resource costs.',
     details: {
       inputs: ['actual-performance-data', 'res-usage-data', 'fin-transactions-log'],
       tools: ['Cost Tracking Systems', 'Accounting Tools', 'Time & Cost Logging'],
@@ -368,12 +368,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.4.1', 
-    title: 'Monitor Financial Performance', 
+    title: 'Cost Performance Reports (EVM)', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'PieChart', 
-    summary: 'Perform EVM analysis to track cost variance and forecast final expenditure.',
+    summary: 'Comprehensive performance reports using EVM to track status and forecast final expenditure.',
     details: {
       inputs: ['cost-baseline', 'actual-cost-data', 'work-performance-data'],
       tools: ['Earned Value Analysis (EVM)', 'Variance Analysis', 'Trend Analysis'],
@@ -382,12 +382,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.4.2', 
-    title: 'Control Budget Changes', 
+    title: 'Budget Change Log', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Scale', 
-    summary: 'Manage budget modifications through controlled change requests and impact analysis.',
+    summary: 'A formal log tracking all approved budget modifications and their impact on the baseline.',
     details: {
       inputs: ['cost-baseline', 'change-requests', 'cost-performance-reports'],
       tools: ['Change Control System', 'Impact Analysis', 'What-if Analysis'],
@@ -425,12 +425,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.4.1', 
-    title: 'Final Financial Closure', 
+    title: 'Final Financial Reconciliation', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Closing', 
     icon: 'CheckCircle', 
-    summary: 'Finalize financial reconciliations and obtain official cost closure approval.',
+    summary: 'The final reconciliation report obtaining formal financial closure and audit approval.',
     details: {
       inputs: ['actual-cost-data', 'project-budget', 'cost-performance-reports', 'accepted-deliverables'],
       tools: ['Financial Reconciliation', 'Audit Procedures'],
@@ -439,12 +439,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.4.2', 
-    title: 'Archive Financial Records', 
+    title: 'Financial Document Archive', 
     type: 'terminal', 
     domain: 'finance', 
     focusArea: 'Closing', 
     icon: 'FolderArchive', 
-    summary: 'Officially archive all financial ledgers, audit logs, and reports in the repository.',
+    summary: 'The final repository of all archived financial ledgers, audit logs, and reports.',
     details: {
       inputs: ['financial-documents', 'cost-reports', 'budget-logs', 'audit-records'],
       tools: ['Document Management Systems', 'Archiving Standards'],
@@ -453,12 +453,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.3.1', 
-    title: 'Define High-Level Timeline', 
+    title: 'High-Level Project Timeline', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Initiating', 
     icon: 'Clock', 
-    summary: 'Establish the broad project timeline and identify critical milestones for the project lifecycle.',
+    summary: 'The preliminary project timeline identifying critical milestones and time constraints phase-by-phase.',
     details: {
       inputs: ['business-case', 'project-charter', 'high-level-scope-statement', 'stakeholder-register'],
       tools: ['Expert Judgment', 'Analogous Estimation', 'Milestone Analysis'],
@@ -467,12 +467,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.3.2', 
-    title: 'Identify Major Activities', 
+    title: 'Preliminary Activity List', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Initiating', 
     icon: 'ListTodo', 
-    summary: 'Decompose core deliverables into the primary activities required for execution.',
+    summary: 'An initial list of major project activities required to deliver high-level project outcomes.',
     details: {
       inputs: ['high-level-scope-statement', 'initial-deliverables-list', 'wbs-structure'],
       tools: ['Decomposition', 'Expert Judgment', 'Rolling Wave Planning'],
@@ -481,13 +481,13 @@ export const pages: Page[] = [
   },
   { 
     id: '2.3.1', 
-    title: 'Activity Definition Table', 
+    title: 'Detailed Activity Registry', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'List', 
     collectionName: 'activities',
-    summary: 'Detailed list of activities, quantities, and attributes sorted by WBS structure.',
+    summary: 'A comprehensive registry of activities, quantities, and attributes mapped to the WBS structure.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'detailed-scope-statement'],
       tools: ['Decomposition', 'Rolling Wave Planning'],
@@ -496,12 +496,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.3.2', 
-    title: 'Sequence Activities (Network)', 
+    title: 'Project Network Diagram', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'ArrowRightLeft', 
-    summary: 'Identify dependencies and establish the logical progression of tasks.',
+    summary: 'A visual representation of activity dependencies and the logical flow of project work.',
     details: {
       inputs: ['detailed-activity-list', 'activity-attributes'],
       tools: ['Precedence Diagramming Method (PDM)', 'Dependency Determination', 'Network Analysis'],
@@ -510,12 +510,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.3.3', 
-    title: 'Master Schedule (Gantt)', 
+    title: 'Baseline Master Schedule', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'BarChart3', 
-    summary: 'The master project schedule showing all activities, dependencies, and critical path in a Gantt view.',
+    summary: 'The formal, approved project master schedule including Gantt view and critical path analysis.',
     details: {
       inputs: ['Activity List', 'Activity Attributes', 'Project Network Diagram', 'Resource Calendars'],
       tools: ['Scheduling Software', 'Critical Path Method', 'Resource Leveling'],
@@ -524,12 +524,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.3.2', 
-    title: 'Progress Update (Gantt)', 
+    title: 'Current Schedule Status (Gantt)', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Executing', 
     icon: 'TrendingUp', 
-    summary: 'Executive schedule view showing progress bars and updated actual dates against the baseline.',
+    summary: 'A real-time Gantt view showing actual progress against the approved schedule baseline.',
     details: {
       inputs: ['Schedule Baseline', 'Actual Progress Data'],
       tools: ['Variance Visualization', 'Status Reporting'],
@@ -538,12 +538,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.3.4', 
-    title: 'Estimate Activity Durations', 
+    title: 'Activity Duration Estimates', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'History', 
-    summary: 'Determine the time required to complete each activity using various estimation techniques.',
+    summary: 'Formal documentation of time estimates for each activity and the basis for those estimates.',
     details: {
       inputs: ['detailed-activity-list', 'res-requirements', 'historical-data', 'activity-sequencing-data'],
       tools: ['Three-Point Estimation', 'Parametric Estimation', 'Expert Judgment'],
@@ -552,12 +552,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.3.5', 
-    title: 'Develop Schedule Baseline', 
+    title: 'Schedule Baseline Document', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Planning', 
     icon: 'CalendarDays', 
-    summary: 'Aggregate durations and sequences to create the formal Project Schedule and Baseline.',
+    summary: 'The formal document aggregating durations and sequences as the project time baseline.',
     details: {
       inputs: ['activity-sequencing-data', 'activity-duration-estimates', 'resource-availability', 'detailed-scope-statement'],
       tools: ['Critical Path Method (CPM)', 'Schedule Compression', 'Scheduling Software'],
@@ -566,12 +566,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.3.1', 
-    title: 'Manage Schedule Execution', 
+    title: 'Schedule Execution Log', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Executing', 
     icon: 'Play', 
-    summary: 'Coordinate team actions and track daily progress against the established schedule model.',
+    summary: 'A record of daily execution data and task tracking against the schedule baseline.',
     details: {
       inputs: ['schedule-baseline', 'resource-assignments', 'resource-management-plan'],
       tools: ['Task Tracking Systems', 'Team Coordination', 'Progress Updates'],
@@ -580,12 +580,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.3.3', 
-    title: 'Daily Progress Reports', 
+    title: 'Daily Progress Report Log', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Executing', 
     icon: 'FileText', 
-    summary: 'Formal daily logs of site activities, manpower, equipment, and weather conditions.',
+    summary: 'A repository for all formal daily site logs, manpower data, and weather reports.',
     details: {
       inputs: ['Schedule Baseline', 'Site Observation Logs', 'Manpower Logs'],
       tools: ['Daily Log Templates', 'Mobile Field Reporting'],
@@ -594,12 +594,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.3.1', 
-    title: 'Monitor Schedule Performance', 
+    title: 'Schedule Performance Report', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Gauge', 
-    summary: 'Analyze schedule variance and utilize EVM to ensure the project remains on track.',
+    summary: 'A formal report analyzing schedule variance, trends, and SPI performance metrics.',
     details: {
       inputs: ['work-performance-data', 'schedule-baseline', 'progress-reports'],
       tools: ['Schedule Variance Analysis', 'Earned Value Analysis (EVM)', 'Trend Analysis'],
@@ -608,12 +608,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.3.2', 
-    title: 'Control Schedule Changes', 
+    title: 'Schedule Change Log', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Settings2', 
-    summary: 'Formally manage modifications to the schedule baseline through impact analysis.',
+    summary: 'A formal log tracking all schedule modifications, impact assessments, and approvals.',
     details: {
       inputs: ['schedule-baseline', 'change-requests', 'schedule-performance-reports'],
       tools: ['Change Control System', 'Impact Analysis', 'What-if Scenario Analysis'],
@@ -622,12 +622,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.3.1', 
-    title: 'Final Schedule Validation', 
+    title: 'Schedule Evaluation Report', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Closing', 
     icon: 'CheckCircle2', 
-    summary: 'Obtain stakeholder acceptance for the final schedule performance and project duration.',
+    summary: 'A final evaluation of project schedule performance and formal acceptance record.',
     details: {
       inputs: ['final-schedule-data', 'accepted-deliverables', 'schedule-performance-reports'],
       tools: ['Final Analysis', 'Stakeholder Review Meetings'],
@@ -636,12 +636,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.3.2', 
-    title: 'Archive Schedule Records', 
+    title: 'Schedule Project Archive', 
     type: 'terminal', 
     domain: 'schedule', 
     focusArea: 'Closing', 
     icon: 'Library', 
-    summary: 'Consolidate and archive all schedule artifacts, baselines, and logs for future reference.',
+    summary: 'The final repository of all schedule artifacts, baselines, and logs archived for record.',
     details: {
       inputs: ['schedule-baseline', 'schedule-performance-reports', 'schedule-change-log'],
       tools: ['Document Management Systems', 'Archiving Standards'],
@@ -650,12 +650,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.2.1', 
-    title: 'Define High-Level Scope', 
+    title: 'High-Level Scope Statement', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Initiating', 
     icon: 'DraftingCompass', 
-    summary: 'Identify the broad boundaries, high-level deliverables, and initial scope constraints.',
+    summary: 'The initial scope statement identifying broad boundaries and high-level deliverables.',
     details: {
       inputs: ['business-case', 'project-charter', 'stakeholder-register', 'governance-framework'],
       tools: ['Expert Judgment', 'Stakeholder Workshops', 'Document Analysis'],
@@ -664,12 +664,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.2.2', 
-    title: 'Identify Key Requirements', 
+    title: 'Requirements Documentation', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Initiating', 
     icon: 'ClipboardList', 
-    summary: 'Gather and prioritize high-level stakeholder needs and project requirements.',
+    summary: 'A record of prioritized stakeholder needs and project technical requirements.',
     details: {
       inputs: ['stakeholder-register', 'high-level-scope-statement', 'business-needs'],
       tools: ['Interviews', 'Brainstorming', 'Surveys & Questionnaires'],
@@ -678,12 +678,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.2.1', 
-    title: 'Develop Detailed Scope Baseline', 
+    title: 'Detailed Scope Statement', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'FileSearch', 
-    summary: 'Expand high-level scope into a detailed baseline with firm assumptions and constraints.',
+    summary: 'The comprehensive document defining project scope, deliverables, assumptions, and constraints.',
     details: {
       inputs: ['high-level-scope-statement', 'initial-requirements-list', 'stakeholder-needs-matrix'],
       tools: ['Requirements Analysis', 'Decomposition', 'Scope Modeling'],
@@ -692,12 +692,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.2.2', 
-    title: 'Create Work Breakdown Structure (WBS)', 
+    title: 'WBS Dictionary', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'Network', 
-    summary: 'Decompose project deliverables into manageable work packages.',
+    summary: 'The formal decomposition of project deliverables into manageable work packages and descriptions.',
     details: {
       inputs: ['detailed-scope-statement', 'scope-baseline'],
       tools: ['Decomposition Techniques', 'WBS Templates', 'Expert Judgment'],
@@ -706,12 +706,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.2.3', 
-    title: 'Define Scope Validation Criteria', 
+    title: 'Scope Validation Criteria', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'CheckSquare', 
-    summary: 'Establish the formal acceptance criteria for all project deliverables.',
+    summary: 'Documented acceptance criteria for formal project deliverable verification and validation.',
     details: {
       inputs: ['scope-baseline', 'initial-requirements-list'],
       tools: ['Acceptance Criteria Definition', 'Quality Planning Techniques'],
@@ -720,12 +720,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.2.5', 
-    title: 'WBS Explorer (Zones/Areas)', 
+    title: 'WBS Structure (Zones/Areas)', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'Layers', 
-    summary: 'Hierarchical view of the WBS divided by project Zones, Areas, Buildings, and Work Packages.',
+    summary: 'The hierarchical spatial-WBS mapping by Zones, Areas, and Buildings.',
     details: {
       inputs: ['WBS Dictionary', 'Project Layout'],
       tools: ['Hierarchical Visualization', 'Drill-down Analysis'],
@@ -734,12 +734,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.2.7', 
-    title: 'Work Package Definitions', 
+    title: 'Work Package Dictionary', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'Package', 
-    summary: 'Detailed definitions and requirements for individual project work packages.',
+    summary: 'Detailed definitions and technical requirements for each individual work package.',
     details: {
       inputs: ['WBS Structure', 'Scope Baseline'],
       tools: ['Decomposition', 'Rolling Wave Planning'],
@@ -748,12 +748,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.2.1', 
-    title: 'Manage Scope Execution', 
+    title: 'Scope Performance Data', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Executing', 
     icon: 'ClipboardList', 
-    summary: 'Directly manage the production of deliverables based on work package definitions.',
+    summary: 'Real-time performance data tracking the production of project deliverables.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'scope-baseline'],
       tools: ['Task Management Systems', 'Team Coordination', 'Work Authorization Systems'],
@@ -762,12 +762,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.2.2', 
-    title: 'Validate Deliverables', 
+    title: 'Deliverable Validation Records', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Executing', 
     icon: 'ShieldCheck', 
-    summary: 'Verify that completed deliverables meet the defined acceptance criteria.',
+    summary: 'Official records of technical verification and validation for project deliverables.',
     details: {
       inputs: ['completed-deliverables', 'acceptance-criteria', 'scope-validation-plan'],
       tools: ['Inspections', 'Reviews', 'Testing'],
@@ -776,12 +776,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.2.1', 
-    title: 'Control Scope Changes', 
+    title: 'Scope Change Log', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'GitBranch', 
-    summary: 'Manage changes to the scope baseline through impact analysis and formal approvals.',
+    summary: 'A register tracking all changes to the scope baseline and their approval status.',
     details: {
       inputs: ['scope-baseline', 'change-requests', 'scope-performance-data'],
       tools: ['Change Control System', 'Impact Analysis', 'Decision Frameworks'],
@@ -790,12 +790,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.2.2', 
-    title: 'Monitor Scope Performance', 
+    title: 'Scope Performance Report', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Activity', 
-    summary: 'Track scope variance and trend performance against the baseline.',
+    summary: 'Analytical report monitoring scope variance and trend performance against the baseline.',
     details: {
       inputs: ['scope-performance-data', 'scope-baseline', 'validation-records'],
       tools: ['Variance Analysis', 'Trend Analysis', 'Performance Reviews'],
@@ -804,12 +804,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.2.1', 
-    title: 'Final Scope Validation', 
+    title: 'Scope Acceptance Certificate', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Closing', 
     icon: 'Flag', 
-    summary: 'Obtain formal stakeholder sign-off for the completed project scope.',
+    summary: 'The formal certificate for client sign-off and acceptance of project scope.',
     details: {
       inputs: ['accepted-deliverables', 'scope-baseline', 'scope-performance-reports'],
       tools: ['Final Inspection', 'Stakeholder Approval Meetings'],
@@ -818,12 +818,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.2.2', 
-    title: 'Archive Scope Documentation', 
+    title: 'Scope Project Archive', 
     type: 'terminal', 
     domain: 'delivery', 
     focusArea: 'Closing', 
     icon: 'Archive', 
-    summary: 'Store all final scope records, WBS data, and validation logs in the project archive.',
+    summary: 'The final repository of scope statements, WBS data, and validation logs archived for record.',
     details: {
       inputs: ['detailed-scope-statement', 'wbs-structure', 'validation-records', 'scope-change-log'],
       tools: ['Document Management Systems', 'Archiving Standards'],
@@ -832,155 +832,159 @@ export const pages: Page[] = [
   },
   { 
     id: '1.1.1', 
-    title: 'Project Charter (Governance Framework)', 
+    title: 'Project Charter', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Initiating', 
     icon: 'Shield', 
     collectionName: 'charter_entries',
-    summary: 'Define the governing framework, roles, and decision-making model for project oversight.',
+    summary: 'The formal document that authorizes the project and defines initial governance structure.',
     details: {
-      inputs: ['org-strategy', 'business-case', 'eef', 'opa'],
-      tools: ['Expert Judgment', 'Governance Framework Modeling', 'Stakeholder Alignment Workshops'],
-      outputs: ['governance-framework', 'governance-structure', 'decision-making-model']
+      inputs: ['business-case', 'strategic-objectives', 'eef', 'opa'],
+      tools: ['Charter Template', 'Expert Judgment', 'Stakeholder Alignment'],
+      outputs: ['project-charter', 'signed-approval']
     }
   },
   { 
     id: '1.1.2', 
-    title: 'Define Project Value Alignment', 
+    title: 'Business Case', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Initiating', 
     icon: 'Target', 
-    summary: 'Ensure project objectives align with organizational value targets and strategic KPIs.',
+    summary: 'Justification for the project based on business needs, cost-benefit analysis, and strategic alignment.',
     details: {
-      inputs: ['business-case', 'strategic-objectives', 'stakeholder-expectations'],
-      tools: ['Value Analysis', 'Benefit Mapping', 'Alignment Workshops'],
-      outputs: ['value-alignment-statement', 'success-criteria-definition', 'high-level-kpis']
+      inputs: ['strategic-plan', 'market-analysis', 'customer-needs'],
+      tools: ['Cost-Benefit Analysis', 'NPV/ROI Calculation', 'Business Modeling'],
+      outputs: ['business-case-document', 'value-alignment-map']
     }
   },
   { 
     id: '2.1.1', 
-    title: 'Develop Governance Management Plan', 
+    title: 'Governance Management Plan', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Planning', 
     icon: 'FileText', 
-    summary: 'Formalize the plan for managing governance, including escalation and approval workflows.',
+    summary: 'Formalize the plan for project oversight, decision authorities, and escalation paths.',
     details: {
-      inputs: ['governance-framework', 'value-alignment-statement', 'org-policies'],
-      tools: ['Planning Workshops', 'Governance Templates', 'Expert Judgment'],
-      outputs: ['governance-management-plan', 'escalation-procedures', 'approval-workflows']
+      inputs: ['project-charter', 'org-policies', 'stakeholder-register'],
+      tools: ['Governance Framework Modeling', 'Review Cycles', 'Approval Workflows'],
+      outputs: ['governance-plan', 'delegation-of-authority']
     }
   },
   { 
     id: '2.1.2', 
-    title: 'Project Management Plan (Metrics & Control)', 
+    title: 'Project Policies & Procedures', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Planning', 
-    icon: 'Activity', 
-    summary: 'Establish the KPIs and dashboard structures for governance monitoring.',
+    icon: 'BookOpen', 
+    summary: 'Establish the project-specific rules, quality standards, and operating procedures.',
     details: {
-      inputs: ['governance-management-plan', 'success-criteria-definition', 'org-kpis'],
-      tools: ['KPI Definition Techniques', 'Performance Measurement Frameworks', 'Benchmarking'],
-      outputs: ['gov-metrics-framework', 'perf-indicators-dashboard', 'reporting-templates']
+      inputs: ['org-standards', 'industry-best-practices', 'governance-plan'],
+      tools: ['Document Control', 'Standardization', 'Audit Planning'],
+      outputs: ['project-manual', 'sop-documents']
     }
   },
   { 
     id: '3.1.1', 
-    title: 'Implement Governance Framework', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Executing', 
-    icon: 'Zap', 
-    summary: 'Activate the governance system and maintain records of decisions and meetings.',
-    details: {
-      inputs: ['governance-management-plan', 'governance-structure', 'approval-workflows'],
-      tools: ['Communication Systems', 'Workflow Automation Tools', 'Collaboration Platforms'],
-      outputs: ['active-governance-system', 'decision-logs', 'meeting-records']
-    }
-  },
-  { 
-    id: '3.1.2', 
-    title: 'Enable Governance Communication', 
+    title: 'MOM (Meetings Archive)', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Executing', 
     icon: 'MessageSquare', 
-    summary: 'Distribute governance reports and manage stakeholder updates.',
+    collectionName: 'meetings',
+    summary: 'Official record of meeting minutes, attendance, decisions, and action items.',
     details: {
-      inputs: ['governance-management-plan', 'communication-requirements'],
-      tools: ['Communication Planning', 'Reporting Systems', 'Dashboard Tools'],
-      outputs: ['governance-reports', 'stakeholder-updates', 'communication-logs']
+      inputs: ['meeting-agenda', 'recorded-notes', 'atttendance-list'],
+      tools: ['MOM Template', 'Decision Recording', 'Task Assignment'],
+      outputs: ['minutes-of-meeting', 'action-item-log']
+    }
+  },
+  { 
+    id: '3.1.2', 
+    title: 'Official Correspondence Log', 
+    type: 'terminal', 
+    domain: 'governance', 
+    focusArea: 'Executing', 
+    icon: 'FilePlus', 
+    collectionName: 'correspondence_log',
+    summary: 'Centralized registry of all incoming and outgoing official letters, memos, and transmittals.',
+    details: {
+      inputs: ['incoming-letters', 'draft-responses', 'transmittal-slips'],
+      tools: ['Registry System', 'Numbering Convention', 'Status Tracking'],
+      outputs: ['correspondence-register', 'archived-letters']
     }
   },
   { 
     id: '4.1.1', 
-    title: 'Monitor Governance Performance', 
+    title: 'Project Performance Reports', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Monitoring & Controlling', 
-    icon: 'Activity', 
-    summary: 'Analyze performance data and trends to identify governance deviations.',
+    icon: 'BarChart3', 
+    summary: 'Executive dashboards and reports reflecting the overall status and governance health of the project.',
     details: {
-      inputs: ['gov-metrics-framework', 'governance-reports', 'decision-logs'],
-      tools: ['Performance Analysis', 'Variance Analysis', 'Trend Analysis'],
-      outputs: ['gov-performance-reports', 'deviation-analysis', 'gov-recommendations']
+      inputs: ['work-performance-data', 'kpi-baselines', 'variance-data'],
+      tools: ['Reporting Automation', 'Dashboard Aggregation', 'Trend Analysis'],
+      outputs: ['executive-report', 'health-dashboard']
     }
   },
   { 
     id: '4.1.2', 
-    title: 'Manage Governance Issues & Escalations', 
+    title: 'Change Management Log', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Monitoring & Controlling', 
-    icon: 'AlertCircle', 
-    summary: 'Resolve governance conflicts and manage escalations through defined procedures.',
+    icon: 'GitBranch', 
+    collectionName: 'change_requests',
+    summary: 'Log of all change requests, their analysis, and official approval/rejection status.',
     details: {
-      inputs: ['issue-logs', 'gov-performance-reports', 'escalation-procedures'],
-      tools: ['Root Cause Analysis', 'Decision Frameworks', 'Escalation Models'],
-      outputs: ['resolved-issues-log', 'escalation-records', 'corrective-actions']
+      inputs: ['change-requests', 'impact-analysis', 'contract-terms'],
+      tools: ['CCB Review', 'Status Tracking', 'Financial Impact Analysis'],
+      outputs: ['change-register', 'approved-changes']
     }
   },
   { 
     id: '5.1.1', 
-    title: 'Evaluate Governance Effectiveness', 
+    title: 'Lessons Learned Register', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Closing', 
-    icon: 'Award', 
-    summary: 'Conduct a final review of governance effectiveness and recommend future improvements.',
+    icon: 'Library', 
+    collectionName: 'lessons_learned',
+    summary: 'Continuous registry of project insights, challenges, and solutions for future reference.',
     details: {
-      inputs: ['gov-performance-reports', 'lessons-learned-data', 'stakeholder-feedback'],
-      tools: ['Performance Review', 'Lessons Learned Workshops', 'Benchmarking'],
-      outputs: ['gov-evaluation-report', 'improvement-recommendations', 'gov-best-practices']
+      inputs: ['issue-logs', 'qa-records', 'stakeholder-feedback'],
+      tools: ['Lessons Learned Workshops', 'Categorization'],
+      outputs: ['lessons-learned-db', 'final-knowledge-transfer']
     }
   },
   { 
     id: '5.1.2', 
-    title: 'Archive Governance Artifacts', 
+    title: 'Project Close-out Report', 
     type: 'terminal', 
     domain: 'governance', 
     focusArea: 'Closing', 
-    icon: 'Box', 
-    summary: 'Officially archive all governance records and decision logs to the project repository.',
+    icon: 'Flag', 
+    summary: 'Final administrative and financial report confirming project completion and handover.',
     details: {
-      inputs: ['project-documents', 'governance-reports', 'decision-logs'],
-      tools: ['Document Management Systems', 'Archiving Standards'],
-      outputs: ['archived-gov-records', 'structured-folder-drive', 'final-gov-documentation']
+      inputs: ['accepted-deliverables', 'final-budget-audit', 'contract-closure-docs'],
+      tools: ['Final Reconciliation', 'Stakeholder Evaluation'],
+      outputs: ['close-out-report', 'official-handover-cert']
     }
   },
 
-  // --- RESOURCES DOMAIN (REFINED PMBOK 8) ---
+  // --- RESOURCES DOMAIN (ARTIFACT-CENTRIC) ---
   { 
     id: '1.6.1', 
-    title: 'Identify Resource Requirements (High-Level)', 
+    title: 'High-Level Resource Strategy', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Initiating', 
     icon: 'Search', 
-    summary: 'Identify the broad types and categories of resources needed for the project lifecycle.',
+    summary: 'Preliminary strategy identifying broad project resource requirements and sourcing categories.',
     details: {
       inputs: ['business-case', 'project-charter', 'high-level-scope-statement', 'initial-stakeholder-requirements'],
       tools: ['Expert Judgment', 'Analogous Estimation', 'Stakeholder Workshops'],
@@ -989,12 +993,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.6.2', 
-    title: 'Define Resource Strategy', 
+    title: 'Resource Acquisition Strategy', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Initiating', 
     icon: 'Compass', 
-    summary: 'Establish the high-level sourcing and acquisition model for project resources.',
+    summary: 'The documented approach for acquiring project-specific technical and human resources.',
     details: {
       inputs: ['high-level-resource-requirements', 'org-resource-policies', 'market-availability-data'],
       tools: ['Resource Sourcing Analysis', 'Make-or-Buy Analysis', 'Capacity Planning'],
@@ -1003,12 +1007,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.6.1', 
-    title: 'Estimate Detailed Resource Requirements', 
+    title: 'Resource Requirements Matrix', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Planning', 
     icon: 'Calculator', 
-    summary: 'Analyze work packages and activities to determine specific resource needs.',
+    summary: 'A detailed matrix mapping resource requirements to specific project work packages.',
     details: {
       inputs: ['wbs-structure', 'work-packages-list', 'detailed-activity-list', 'resource-strategy-plan'],
       tools: ['Bottom-Up Estimation', 'Parametric Estimation', 'Expert Judgment'],
@@ -1017,12 +1021,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.6.2', 
-    title: 'Develop Resource Plan', 
+    title: 'Resource Management Plan', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Planning', 
     icon: 'Briefcase', 
-    summary: 'Create a formal plan for managing, allocating, and tracking project resources.',
+    summary: 'The formal plan defining roles, responsibilities, and resource management methodologies.',
     details: {
       inputs: ['detailed-resource-requirements', 'schedule-baseline', 'resource-availability'],
       tools: ['Resource Planning Techniques', 'Resource Calendars', 'Optimization Methods'],
@@ -1031,12 +1035,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.6.3', 
-    title: 'Define Resource Control Framework', 
+    title: 'Resource Control Framework', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Planning', 
     icon: 'ShieldCheck', 
-    summary: 'Establish the KPIs and tracking systems for monitoring resource performance.',
+    summary: 'The established KPIs and tracking systems for monitoring physical and human resource usage.',
     details: {
       inputs: ['resource-management-plan', 'governance-management-plan', 'org-policies', 'governance-framework'],
       tools: ['KPI Definition', 'Resource Tracking Systems', 'Performance Framework Design'],
@@ -1050,7 +1054,7 @@ export const pages: Page[] = [
     domain: 'resources', 
     focusArea: 'Executing', 
     icon: 'CheckSquare', 
-    summary: 'Comprehensive task management system for assigning and tracking work package execution.',
+    summary: 'The central system for assigning work tasks and tracking real-time completion status.',
     details: {
       inputs: ['WBS Dictionary', 'Resource Management Plan'],
       tools: ['Kanban Boards', 'Agile Task Management'],
@@ -1059,12 +1063,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.6.4', 
-    title: 'Meetings & Minutes', 
+    title: 'Minutes of Meeting (MOM)', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Executing', 
     icon: 'MessagesSquare', 
-    summary: 'Centralized repository for all project meetings, agendas, and formal minutes of meetings.',
+    summary: 'Formal documentation of meeting discussions, decisions, and assigned actions.',
     details: {
       inputs: ['Stakeholder Register', 'Project Charter'],
       tools: ['Meeting Management Systems', 'Transcription Tools'],
@@ -1073,12 +1077,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.6.1', 
-    title: 'Acquire Resources', 
+    title: 'Resource Assignment Records', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Executing', 
     icon: 'UserPlus', 
-    summary: 'Secure the necessary human, material, and equipment resources for execution.',
+    summary: 'Official records of resources assigned to technical roles and work activities.',
     details: {
       inputs: ['resource-management-plan', 'resource-strategy-plan', 'detailed-resource-requirements'],
       tools: ['Procurement Processes', 'Recruitment', 'Negotiation'],
@@ -1087,12 +1091,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.6.2', 
-    title: 'Develop and Manage Team / Resources', 
+    title: 'Team Performance Assessments', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Executing', 
     icon: 'Users', 
-    summary: 'Focus on improving team performance and managing resource utilization.',
+    summary: 'Formal assessment reports on team efficiency and resource utilization performance.',
     details: {
       inputs: ['acquired-resources', 'resource-management-plan', 'actual-performance-data'],
       tools: ['Training', 'Team Building', 'Performance Management'],
@@ -1101,12 +1105,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.6.1', 
-    title: 'Monitor Resource Performance', 
+    title: 'Resource Performance Reports', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Activity', 
-    summary: 'Analyze resource consumption and performance data against metrics.',
+    summary: 'Analytical reports mapping actual resource consumption against baseline metrics.',
     details: {
       inputs: ['resource-utilization-data', 'resource-performance-metrics', 'actual-performance-data'],
       tools: ['Performance Analysis', 'Variance Analysis', 'Productivity Measurement'],
@@ -1115,12 +1119,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.6.2', 
-    title: 'Control Resource Allocation', 
+    title: 'Resource Change Log', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Settings', 
-    summary: 'Ensure resource assignments are optimized through reallocation and balancing.',
+    summary: 'A register tracking all changes to resource assignments and allocation plans.',
     details: {
       inputs: ['resource-management-plan', 'resource-performance-reports', 'change-requests'],
       tools: ['Resource Optimization', 'Reallocation Techniques', 'What-if Analysis'],
@@ -1129,12 +1133,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.6.1', 
-    title: 'Release Resources', 
+    title: 'Resource Release Records', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Closing', 
     icon: 'LogOut', 
-    summary: 'Formal release and offboarding of resources upon project completion.',
+    summary: 'Official documentation for the offboarding and release of project resources.',
     details: {
       inputs: ['resource-assignment-records', 'final-accepted-scope', 'contracts', 'accepted-deliverables'],
       tools: ['Resource Release Procedures', 'Contract Closure'],
@@ -1143,12 +1147,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.6.2', 
-    title: 'Archive Resource Records', 
+    title: 'Resource Project Archive', 
     type: 'terminal', 
     domain: 'resources', 
     focusArea: 'Closing', 
     icon: 'Box', 
-    summary: 'Archive final utilization logs, performance reviews, and contract data.',
+    summary: 'The final repository of resource-related logs, reviews, and contract closure data.',
     details: {
       inputs: ['archived-resource-records', 'resource-performance-reports', 'contracts', 'resource-utilization-data'],
       tools: ['Document Management Systems', 'Archiving Standards'],
@@ -1159,12 +1163,12 @@ export const pages: Page[] = [
   // --- RISK DOMAIN (REFINED PMBOK 8) ---
   { 
     id: '1.7.1', 
-    title: 'Identify High-Level Risks', 
+    title: 'Initial Risk Register', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Initiating', 
     icon: 'ShieldAlert', 
-    summary: 'Identify broad project risks and opportunities early in the project initiation phase.',
+    summary: 'The preliminary registry capturing high-level project risks and opportunities.',
     details: {
       inputs: ['business-case', 'project-charter', 'high-level-scope-statement', 'stakeholder-register', 'eef'],
       tools: ['Expert Judgment', 'Brainstorming', 'SWOT Analysis'],
@@ -1173,12 +1177,12 @@ export const pages: Page[] = [
   },
   { 
     id: '1.7.2', 
-    title: 'Define Risk Strategy', 
+    title: 'Risk Management Strategy', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Initiating', 
     icon: 'Compass', 
-    summary: 'Establish the methodology and appetite for project risk management.',
+    summary: 'The formal strategy defining methodology and appetite for project risk management.',
     details: {
       inputs: ['initial-risk-register', 'org-risk-policies', 'governance-framework'],
       tools: ['Risk Strategy Workshops', 'Expert Judgment', 'Policy Analysis'],
@@ -1187,12 +1191,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.7.1', 
-    title: 'Identify Detailed Risks', 
+    title: 'Comprehensive Risk Register', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Planning', 
     icon: 'Search', 
-    summary: 'Conduct 360-degree risk identification sessions to capture all technical and organizational risks.',
+    summary: 'The main project repository capturing all identified project risks and descriptions.',
     details: {
       inputs: ['scope-baseline', 'schedule-baseline', 'cost-baseline', 'stakeholder-analysis-matrix', 'risk-management-strategy'],
       tools: ['Brainstorming', 'Delphi Technique', 'Checklist Analysis'],
@@ -1201,12 +1205,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.7.2', 
-    title: 'Perform Qualitative Risk Analysis', 
+    title: 'Qualitative Risk Analysis Matrix', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Planning', 
     icon: 'BarChart3', 
-    summary: 'Prioritize risks for further analysis or action by assessing their probability and impact.',
+    summary: 'A matrix prioritizing risks based on probability-impact scores and rankings.',
     details: {
       inputs: ['updated-risk-register', 'risk-categories-rbs', 'risk-criteria'],
       tools: ['Probability-Impact Matrix', 'Expert Judgment', 'Risk Ranking Methods'],
@@ -1215,12 +1219,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.7.3', 
-    title: 'Perform Quantitative Risk Analysis', 
+    title: 'Quantitative Risk Report', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Planning', 
     icon: 'Calculator', 
-    summary: 'Analyze the effect of identified risks on overall project objectives using statistical modeling.',
+    summary: 'A statistical report analyzing risk impact on project objectives through modeling.',
     details: {
       inputs: ['prioritized-risk-list', 'cost-baseline', 'schedule-baseline'],
       tools: ['Monte Carlo Simulation', 'Sensitivity Analysis', 'Decision Tree Analysis'],
@@ -1229,12 +1233,12 @@ export const pages: Page[] = [
   },
   { 
     id: '2.7.4', 
-    title: 'Plan Risk Responses', 
+    title: 'Risk Response Plan', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Planning', 
     icon: 'ShieldCheck', 
-    summary: 'Develop options and actions to enhance opportunities and reduce threats.',
+    summary: 'The formal plan defining actions and strategies for risk mitigation and opportunities.',
     details: {
       inputs: ['prioritized-risk-list', 'quant-risk-report', 'risk-management-strategy'],
       tools: ['Response Strategies', 'Contingency Planning', 'Expert Judgment'],
@@ -1243,12 +1247,12 @@ export const pages: Page[] = [
   },
   { 
     id: '3.7.1', 
-    title: 'Implement Risk Responses', 
+    title: 'Risk Response Implementation Log', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Executing', 
     icon: 'Zap', 
-    summary: 'Ensure that agreed-upon risk responses are executed as planned.',
+    summary: 'A log tracking the execution and effectiveness of agreed-upon risk responses.',
     details: {
       inputs: ['risk-response-plan', 'updated-risk-register', 'resource-assignment-records'],
       tools: ['Task Management Systems', 'Coordination', 'Communication'],
@@ -1257,12 +1261,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.7.1', 
-    title: 'Monitor Risks', 
+    title: 'Risk Performance Reports', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Eye', 
-    summary: 'Track identified risks, monitor residual risks, and identify new risks.',
+    summary: 'Analytical reports monitoring risk status, trends, and new emerging risks.',
     details: {
       inputs: ['updated-risk-register', 'actual-performance-data', 'risk-action-status'],
       tools: ['Risk Audits', 'Variance Analysis', 'Trend Analysis'],
@@ -1271,12 +1275,12 @@ export const pages: Page[] = [
   },
   { 
     id: '4.7.2', 
-    title: 'Control Risk Responses', 
+    title: 'Risk Change Log', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Settings', 
-    summary: 'Manage risk response adjustments and ensure effectiveness through change control.',
+    summary: 'A register tracking all modifications and adjustments to risk responses.',
     details: {
       inputs: ['risk-performance-reports', 'updated-risk-register', 'change-requests'],
       tools: ['Change Control System', 'Root Cause Analysis', 'What-if Analysis'],
@@ -1285,12 +1289,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.7.1', 
-    title: 'Evaluate Risk Management Effectiveness', 
+    title: 'Risk Management Evaluation Report', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Closing', 
     icon: 'Award', 
-    summary: 'Conduct a final audit on risk effectiveness and capture lessons learned.',
+    summary: 'A final assessment report of the overall effectiveness of project risk management.',
     details: {
       inputs: ['risk-performance-reports', 'final-risk-register', 'lessons-learned-data'],
       tools: ['Lessons Learned Workshops', 'Performance Review', 'Benchmarking'],
@@ -1299,12 +1303,12 @@ export const pages: Page[] = [
   },
   { 
     id: '5.7.2', 
-    title: 'Archive Risk Records', 
+    title: 'Risk Project Archive', 
     type: 'terminal', 
     domain: 'risk', 
     focusArea: 'Closing', 
     icon: 'Archive', 
-    summary: 'Archive final risk register and response logs in the project repository.',
+    summary: 'The final repository of risk registers, logs, and evaluation reports archived for closure.',
     details: {
       inputs: ['risk-documents', 'final-risk-register', 'risk-performance-reports', 'risk-change-log'],
       tools: ['Document Management Systems', 'Archiving Standards'],
