@@ -295,7 +295,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                          <select 
                            value={formData.category}
                            onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                           className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
+                           className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
                          >
                             {['Scope', 'Cost/Price', 'Schedule', 'Quality', 'Quantity'].map(c => (
                               <option key={c} value={c}>{c}</option>
@@ -309,7 +309,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                       <select 
                         value={formData.responsibleParty}
                         onChange={(e) => setFormData({ ...formData, responsibleParty: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none"
                       >
                         <option value="">Select Responsible Party...</option>
                         {stakeholders.map(s => (
@@ -451,7 +451,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                         placeholder="ID, Category, Stakeholder..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none w-64"
+                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none w-64"
                       />
                     </div>
                     <button 

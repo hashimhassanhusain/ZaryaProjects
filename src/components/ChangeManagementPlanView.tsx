@@ -250,11 +250,11 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
               <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 text-slate-900">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
                       <input type="text" value={cmp.projectTitle} onChange={(e) => setCmp({ ...cmp, projectTitle: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
                       <input type="date" value={cmp.datePrepared} onChange={(e) => setCmp({ ...cmp, datePrepared: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
                     </div>
                  </div>
@@ -286,15 +286,15 @@ export const ChangeManagementPlanView: React.FC<ChangeManagementPlanViewProps> =
                        {['schedule', 'budget', 'scope', 'documents'].map(key => (
                          <div key={key} className="space-y-1.5">
                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key}</label>
-                            <input value={(cmp.definitions as any)[key]} onChange={(e) => setCmp({...cmp, definitions: {...cmp.definitions, [key]: e.target.value}})} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none" />
+                            <input value={(cmp.definitions as any)[key]} onChange={(e) => setCmp({...cmp, definitions: {...cmp.definitions, [key]: e.target.value}})} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
                          </div>
                        ))}
                     </div>
                  </div>
 
                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Management Approach</label>
-                    <textarea value={cmp.approach} onChange={(e) => setCmp({...cmp, approach: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Management Approach</label>
+                    <textarea value={cmp.approach} onChange={(e) => setCmp({...cmp, approach: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                  </div>
               </div>
             </motion.div>

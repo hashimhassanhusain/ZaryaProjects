@@ -259,7 +259,7 @@ export const QualityManagementPlanView: React.FC<QualityManagementPlanViewProps>
                key={tab.id}
                onClick={() => setActiveSubTab(tab.id as any)}
                className={cn(
-                 "flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
+                 "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold uppercase tracking-widest transition-all",
                  activeSubTab === tab.id 
                    ? "bg-white text-blue-600 shadow-md" 
                    : "text-slate-400 hover:text-slate-600"

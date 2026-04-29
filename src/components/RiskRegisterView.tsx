@@ -207,7 +207,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                           <select 
                             value={newRisk.category}
                             onChange={(e) => setNewRisk({ ...newRisk, category: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
                           >
                             {categories.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
@@ -217,7 +217,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                           <select 
                             value={newRisk.responseStrategy}
                             onChange={(e) => setNewRisk({ ...newRisk, responseStrategy: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
                           >
                             {strategies.map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
@@ -237,7 +237,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                           <select 
                             value={newRisk.ownerId}
                             onChange={(e) => setNewRisk({ ...newRisk, ownerId: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none appearance-none"
                           >
                             <option value="">Select Owner...</option>
                             {team.map(m => (
@@ -251,7 +251,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                             type="text"
                             value={newRisk.wbsId}
                             onChange={(e) => setNewRisk({ ...newRisk, wbsId: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none"
                             placeholder="e.g. 2.2.1.2 Finishes"
                           />
                         </div>

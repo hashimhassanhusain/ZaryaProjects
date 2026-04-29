@@ -253,7 +253,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
                     {['collection', 'analysis', 'categories', 'documentation', 'prioritization', 'metrics', 'traceabilityStructure', 'tracking', 'reporting', 'validation', 'configurationManagement'].map((key) => (
                       <div key={key} className="space-y-1.5">
                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
-                         <textarea value={(rmp as any)[key]} onChange={(e) => setRmp({...rmp, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                         <textarea value={(rmp as any)[key]} onChange={(e) => setRmp({...rmp, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                       </div>
                     ))}
                  </div>

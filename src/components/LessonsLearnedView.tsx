@@ -330,7 +330,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                         className={cn(
-                          "px-4 py-2 rounded-xl border font-bold text-[10px] uppercase tracking-widest outline-none transition-all shadow-sm",
+                          "px-4 py-2 rounded-xl border font-bold text-sm uppercase tracking-widest outline-none transition-all shadow-sm",
                           formData.status === 'Published' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                           formData.status === 'Archived' ? "bg-slate-50 text-slate-500 border-slate-200" :
                           "bg-amber-50 text-amber-600 border-amber-100"
@@ -351,21 +351,21 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Lesson ID</label>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Lesson ID</label>
                           <input 
                             type="text"
                             value={formData.lessonId}
                             onChange={(e) => setFormData({ ...formData, lessonId: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none"
                             placeholder="LL-001"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Category</label>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Category</label>
                           <select 
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none appearance-none"
                           >
                             <option value="Technical">Technical / تقني</option>
                             <option value="Management">Management / إداري</option>
@@ -384,23 +384,23 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                         Descriptive Content
                       </h3>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Description of Lesson Learned</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Description of Lesson Learned</label>
                         <textarea 
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           rows={4}
-                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none resize-none"
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none resize-none"
                           placeholder={t('describe_lesson_placeholder')}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Recommendation for Future Improvements</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Recommendation for Future Improvements</label>
                         <textarea 
                           value={formData.recommendation}
                           onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
                           rows={4}
-                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none resize-none"
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none resize-none"
                           placeholder={t('recommendation_placeholder')}
                         />
                       </div>
@@ -438,11 +438,11 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Owner / Primary Contributor</label>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Owner / Primary Contributor</label>
                           <select 
                             value={formData.ownerId}
                             onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none appearance-none"
                           >
                             <option value="">Select Personnel...</option>
                             {stakeholders.map(s => (

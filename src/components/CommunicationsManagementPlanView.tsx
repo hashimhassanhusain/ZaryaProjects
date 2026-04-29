@@ -285,7 +285,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                     {['assumptions', 'constraints', 'glossary'].map((key) => (
                       <div key={key} className="space-y-1.5 col-span-1 even:col-span-1 last:md:col-span-2">
                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key}</label>
-                         <textarea value={(commPlan as any)[key]} onChange={(e) => setCommPlan({...commPlan, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                         <textarea value={(commPlan as any)[key]} onChange={(e) => setCommPlan({...commPlan, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                       </div>
                     ))}
                  </div>

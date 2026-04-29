@@ -334,7 +334,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                  <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
-                        <label className={cn("text-[9px] font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
+                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
                         <input 
                           type="text"
                           value={pmp.projectTitle}
@@ -343,7 +343,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className={cn("text-[9px] font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
+                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
                         <input 
                           type="date"
                           value={pmp.datePrepared}
@@ -370,7 +370,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                               <div className="space-y-1">
-                                <label className="text-[8px] font-bold text-slate-400 uppercase">Phase Name</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Phase Name</label>
                                 <input 
                                   value={l.phase}
                                   onChange={(e) => {
@@ -378,11 +378,11 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                                     newLife[idx].phase = e.target.value;
                                     setPmp({...pmp, lifeCycle: newLife});
                                   }}
-                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[8px] font-bold text-slate-400 uppercase">Key Deliverables</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Key Deliverables</label>
                                 <input 
                                   value={l.deliverables}
                                   onChange={(e) => {
@@ -390,7 +390,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                                     newLife[idx].deliverables = e.target.value;
                                     setPmp({...pmp, lifeCycle: newLife});
                                   }}
-                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
                                 />
                               </div>
                            </div>

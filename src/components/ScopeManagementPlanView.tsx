@@ -295,7 +295,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                  <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
-                        <label className={cn("text-[9px] font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
+                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
                         <input 
                           type="text"
                           value={scope.projectTitle}
@@ -304,7 +304,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className={cn("text-[9px] font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
+                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
                         <input 
                           type="date"
                           value={scope.datePrepared}
@@ -321,33 +321,33 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                       </h3>
                       <div className="grid grid-cols-1 gap-4">
                          <div className="space-y-1.5">
-                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Scope Statement Development</label>
+                           <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Scope Statement Development</label>
                            <textarea 
                              value={scope.scopeStatement}
                              onChange={(e) => setScope({...scope, scopeStatement: e.target.value})}
-                             className="w-full h-24 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium outline-none"
+                             className="w-full h-24 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium outline-none"
                              placeholder="Define the process for developing the project scope statement..."
                            />
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <div className="space-y-1.5">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                 <BarChart3 className="w-3 h-3" />
                                 WBS Structure
                               </label>
                               <input 
                                 value={scope.wbsStructure}
                                 onChange={(e) => setScope({...scope, wbsStructure: e.target.value})}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none"
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
                                 placeholder="Example: 03-Concrete Works > 03.1-Foundations"
                               />
                            </div>
                            <div className="space-y-1.5">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">WBS Dictionary Approach</label>
+                              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">WBS Dictionary Approach</label>
                               <input 
                                 value={scope.wbsDictionary}
                                 onChange={(e) => setScope({...scope, wbsDictionary: e.target.value})}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none"
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
                                 placeholder="Detail level, mandatory fields..."
                               />
                            </div>
@@ -362,12 +362,12 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                        </h3>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
-                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Baseline Maintenance</label>
-                             <textarea value={scope.baselineMaintenance} onChange={(e) => setScope({...scope, baselineMaintenance: e.target.value})} className="w-full h-20 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Baseline Maintenance</label>
+                             <textarea value={scope.baselineMaintenance} onChange={(e) => setScope({...scope, baselineMaintenance: e.target.value})} className="w-full h-20 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                           </div>
                           <div className="space-y-1.5">
-                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Scope Change Process</label>
-                             <textarea value={scope.scopeChange} onChange={(e) => setScope({...scope, scopeChange: e.target.value})} className="w-full h-20 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Scope Change Process</label>
+                             <textarea value={scope.scopeChange} onChange={(e) => setScope({...scope, scopeChange: e.target.value})} className="w-full h-20 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                           </div>
                        </div>
                     </div>

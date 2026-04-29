@@ -271,11 +271,11 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                     <div className="space-y-1.5">
                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pending Stakeholder Changes</label>
-                       <textarea value={smp.pendingChanges} onChange={(e) => setSmp({...smp, pendingChanges: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                       <textarea value={smp.pendingChanges} onChange={(e) => setSmp({...smp, pendingChanges: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                     </div>
                     <div className="space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Stakeholder Relationships</label>
-                       <textarea value={smp.relationships} onChange={(e) => setSmp({...smp, relationships: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Stakeholder Relationships</label>
+                       <textarea value={smp.relationships} onChange={(e) => setSmp({...smp, relationships: e.target.value})} className="w-full h-32 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                     </div>
                  </div>
               </div>

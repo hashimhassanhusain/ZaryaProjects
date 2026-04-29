@@ -240,11 +240,11 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
               <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 text-slate-900">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
                       <input type="text" value={riskPlan.projectTitle} onChange={(e) => setRiskPlan({ ...riskPlan, projectTitle: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
                       <input type="date" value={riskPlan.datePrepared} onChange={(e) => setRiskPlan({ ...riskPlan, datePrepared: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
                     </div>
                  </div>
@@ -252,8 +252,8 @@ export const RiskManagementPlanView: React.FC<RiskManagementPlanViewProps> = ({ 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {['methodology', 'roles', 'categories', 'funding', 'contingencyProtocols', 'timing', 'audit'].map((key) => (
                       <div key={key} className="space-y-1.5">
-                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
-                         <textarea value={(riskPlan as any)[key]} onChange={(e) => setRiskPlan({...riskPlan, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
+                         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
+                         <textarea value={(riskPlan as any)[key]} onChange={(e) => setRiskPlan({...riskPlan, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
                       </div>
                     ))}
                  </div>

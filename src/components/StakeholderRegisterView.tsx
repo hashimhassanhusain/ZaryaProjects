@@ -246,7 +246,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                                 key={c}
                                 onClick={() => setNewSh({ ...newSh, category: c as any })}
                                 className={cn(
-                                  "px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                                  "px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border",
                                   newSh.category === c 
                                     ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-600/20" 
                                     : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
@@ -323,7 +323,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                         placeholder="Search identities, roles, orgs..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all outline-none w-64"
+                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all outline-none w-64"
                       />
                     </div>
                     <button 

@@ -362,7 +362,7 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
                        value={newReport.incidentSummary}
                        onChange={(e) => setNewReport({ ...newReport, incidentSummary: e.target.value })}
                        rows={4}
-                       className="w-full px-5 py-4 bg-white border border-rose-100 rounded-2xl text-xs font-bold text-rose-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none placeholder:text-rose-200"
+                       className="w-full px-5 py-4 bg-white border border-rose-100 rounded-2xl text-sm font-bold text-rose-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none placeholder:text-rose-200"
                        placeholder="List any safety incidents or critical delays..."
                      />
                    </div>
@@ -400,7 +400,7 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
                         placeholder={t('search_reports')} 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none w-64"
+                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none w-64"
                       />
                     </div>
                     <button 
