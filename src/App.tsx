@@ -425,6 +425,7 @@ const AppLayout = () => {
           <div className="max-w-[1600px] mx-auto w-full">
             <Routes>
               <Route path="/page/:id" element={<PageRenderer />} />
+          <Route path="/project/:projectId/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
             <Route path="/profile" element={<UserFormView />} />
             <Route path="/admin/users" element={<AdminSettings />} />
