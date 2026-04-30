@@ -223,7 +223,7 @@ export const Sidebar: React.FC = () => {
                       <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
                         <AreaIcon className="w-4 h-4" />
                       </div>
-                      <span className="flex-1 text-left text-[11px] font-black text-slate-700 uppercase tracking-wider">{t(area.id)}</span>
+                        <span className="flex-1 text-left text-[11px] font-black text-slate-700 uppercase tracking-wider">{stripNumericPrefix(t(area.id))}</span>
                       {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-300" /> : <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300", isRtl && "rotate-180")} />}
                     </button>
 
@@ -233,8 +233,11 @@ export const Sidebar: React.FC = () => {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden pl-8 space-y-1"
+                          className="overflow-hidden pl-6 space-y-1 relative"
                         >
+                          {/* Vertical tree line from Focus Area */}
+                          <div className="absolute left-6 top-0 bottom-4 w-[1px] bg-slate-200" />
+                          
                           {PERFORMANCE_DOMAINS.map((domain, idx) => {
                             const domainPagesInArea = pages.filter(p => p.domain === domain.id && p.focusArea === area.id && p.type === 'terminal');
                             if (domainPagesInArea.length === 0) return null;
@@ -246,9 +249,6 @@ export const Sidebar: React.FC = () => {
 
                             return (
                               <div key={`${domain.id}-${idx}`} className="space-y-1 group/domain relative">
-                                {/* Vertical tree line for Domains */}
-                                <div className="absolute left-2.5 top-0 bottom-0 w-[1px] bg-slate-200 group-hover/domain:bg-blue-300 transition-colors" />
-                                
                                 <Link
                                   to={path}
                                   onClick={() => setSelectedFocusArea(area.id)}
@@ -257,14 +257,16 @@ export const Sidebar: React.FC = () => {
                                     isHubActive ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-100" : "text-slate-400 hover:text-slate-900"
                                   )}
                                 >
-                                  <div className="w-2 h-[1px] bg-slate-200 shrink-0" />
+                                  {/* Branch line from Domain to Terminal */}
+                                  <div className="w-3 h-[1px] bg-slate-200 shrink-0" />
                                   <DomainIcon className={cn("w-3.5 h-3.5", isHubActive ? "text-blue-600" : "text-slate-300 group-hover/domain:text-blue-500")} />
-                                  <span className="text-[10px] font-black tracking-tight uppercase opacity-80">{stripNumericPrefix(t(domain.id))}</span>
+                                  <span className="text-[10px] font-black tracking-tight uppercase opacity-80 leading-none">{stripNumericPrefix(t(domain.id))}</span>
                                 </Link>
 
-                                <div className="pl-6 space-y-1 relative">
-                                  {/* Vertical tree line for Terminals */}
-                                  <div className="absolute left-4.5 top-0 bottom-4 w-[1px] bg-slate-100" />
+                                <div className="pl-8 space-y-1 relative">
+                                  {/* Vertical line for Terminals within Domain */}
+                                  <div className="absolute left-6 top-0 bottom-4 w-[1px] bg-slate-100" />
+                                  
                                   {domainPagesInArea.map((terminalPage, tIdx) => {
                                     const terminalPath = selectedProject ? `/project/${selectedProject.id}/page/${terminalPage.id}` : `/page/${terminalPage.id}`;
                                     const isTerminalActive = currentPath === terminalPath;
@@ -275,12 +277,12 @@ export const Sidebar: React.FC = () => {
                                         key={`${terminalPage.id}-${tIdx}`}
                                         to={terminalPath}
                                         className={cn(
-                                          "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all uppercase tracking-tighter",
+                                          "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all uppercase tracking-tighter relative",
                                           isTerminalActive ? "bg-blue-50 text-blue-600 font-black" : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
                                         )}
                                       >
-                                        <div className="w-1.5 h-[1px] bg-slate-200 shrink-0" />
-                                        {stripNumericPrefix(terminalPage.title)}
+                                        <div className="w-2 h-[1px] bg-slate-200 shrink-0" />
+                                        <span className="truncate">{stripNumericPrefix(terminalPage.title)}</span>
                                       </Link>
                                     );
                                   })}

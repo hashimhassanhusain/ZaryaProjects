@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Page } from '../types';
+import { Page, EntityConfig } from '../types';
 import { 
   Plus, 
   Search, 
@@ -21,9 +21,12 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { db, auth, OperationType, handleFirestoreError } from '../firebase';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { DetailView } from './DetailView';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface LogManagementViewProps {
   page: Page;
@@ -39,11 +42,12 @@ interface LogEntry {
 
 export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
+  const { t } = useLanguage();
+  const context = useStandardProcessPage();
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!selectedProject || !page.id) return;
@@ -59,7 +63,7 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
         id: d.id,
         ...d.data()
       } as LogEntry));
-      setEntries(docs.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
+      setEntries(docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
       setLoading(false);
     }, (err) => {
       handleFirestoreError(err, OperationType.LIST, `project_records/${page.id}`);
@@ -80,8 +84,8 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
 
   const handleDelete = async (id: string) => {
     toast((t) => (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this record?</p>
+      <div className="flex flex-col gap-4 text-slate-900">
+        <p className="text-sm font-bold">Are you sure you want to delete this record?</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={() => toast.dismiss(t.id)}
@@ -108,137 +112,60 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
     ), { duration: 5000 });
   };
 
-  const filteredEntries = entries.filter(entry => {
-    const searchStr = searchQuery.toLowerCase();
-    return Object.values(entry.data).some(val => 
-      String(val).toLowerCase().includes(searchStr)
-    );
-  });
+  const gridConfig: EntityConfig = {
+    id: page.id as any,
+    label: page.title,
+    icon: FileText,
+    collection: 'project_records',
+    columns: (page.formFields || []).map(f => ({
+      key: f,
+      label: f,
+      type: 'string'
+    }))
+  };
 
-  if (view === 'form') {
-    return (
-      <div className="space-y-6">
-        <button 
-          onClick={() => setView('list')}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold text-sm uppercase tracking-wider"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to {page.title}
-        </button>
-        <DetailView page={page} />
-      </div>
-    );
-  }
+  const flattenedData = entries.map(entry => ({
+    id: entry.id,
+    status: entry.status,
+    ...entry.data
+  }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
-        <button
-          onClick={handleAdd}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-        >
-          <Plus className="w-5 h-5" />
-          Add {page.title.replace(' Management', '')}
-        </button>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder={`Search ${page.title.toLowerCase()}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+    <StandardProcessPage
+      page={page}
+      viewMode={view === 'form' ? 'edit' : 'grid'}
+      onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
+      onSave={() => {}} // DetailView handles save
+    >
+      <AnimatePresence mode="wait">
+        {view === 'form' ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <DetailView page={page} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col"
+          >
+            <UniversalDataTable 
+              config={gridConfig}
+              data={flattenedData}
+              onRowClick={(row) => handleEdit(entries.find(e => e.id === row.id)!)}
+              onNewClick={handleAdd}
+              onDeleteRecord={handleDelete}
+              title={context?.pageHeader}
+              favoriteControl={context?.favoriteControl}
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-slate-500 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all">
-              <Filter className="w-4 h-4" />
-            </button>
-            <button className="p-2 text-slate-500 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all">
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
-                {page.formFields?.slice(0, 4).map(field => (
-                  <th key={field} className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{field}</th>
-                ))}
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-sm text-slate-400 font-medium">Loading records...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="p-4 bg-slate-50 rounded-full">
-                        <FileText className="w-8 h-8 text-slate-200" />
-                      </div>
-                      <p className="text-sm text-slate-400 font-medium">No records found.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredEntries.map((entry, idx) => (
-                  <tr key={`${entry.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4 text-xs text-slate-400 font-mono">{idx + 1}</td>
-                    {page.formFields?.slice(0, 4).map(field => (
-                      <td key={field} className="px-6 py-4">
-                        <span className="text-sm font-medium text-slate-700">{entry.data[field] || '-'}</span>
-                      </td>
-                    ))}
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                        entry.status === 'Approved' ? "bg-green-100 text-green-700" :
-                        entry.status === 'Pending' ? "bg-amber-100 text-amber-700" :
-                        "bg-slate-100 text-slate-700"
-                      )}>
-                        {entry.status || 'Draft'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => handleEdit(entry)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(entry.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </StandardProcessPage>
   );
 };

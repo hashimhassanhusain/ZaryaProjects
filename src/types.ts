@@ -421,6 +421,44 @@ export interface ProjectFinance {
   updatedBy: string;
 }
 
+export interface ClosureReportEntry {
+  id: string;
+  reportId: string;
+  projectId: string;
+  status: 'Draft' | 'Final' | 'Archived';
+  datePrepared: string;
+  preparedBy: string;
+  summaryOfProject: string;
+  deliverablesPerformance: string;
+  schedulePerformanceSummary: string;
+  costPerformanceSummary: string;
+  qualitySummary: string;
+  scopeSummary: string;
+  risksSummary: string;
+  lessonsLearnedSummary: string;
+  handoverSummary: string;
+  adminClosureNotes: string;
+  financialClosureNotes: string;
+  finalApprovalStatus: 'Pending' | 'Approved' | 'Rejected';
+  version: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface ClosureReportVersion {
+  id: string;
+  reportEntryId: string;
+  projectId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<ClosureReportEntry>;
+  changeSummary: string;
+}
+
 export interface LessonEntry {
   id: string;
   lessonId: string;

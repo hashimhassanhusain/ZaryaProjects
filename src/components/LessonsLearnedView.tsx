@@ -49,7 +49,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { StandardProcessPage } from './StandardProcessPage';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface LessonsLearnedViewProps {
@@ -68,6 +68,7 @@ interface LessonVersion {
 export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
+  const context = useStandardProcessPage();
   const [entries, setEntries] = useState<LessonEntry[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [versions, setVersions] = useState<LessonVersion[]>([]);
@@ -608,6 +609,8 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
               onRowClick={(record) => handleEdit(record as LessonEntry)}
               onNewClick={handleAdd}
               onDeleteRecord={handleDelete}
+              title={context?.pageHeader}
+              favoriteControl={context?.favoriteControl}
             />
           </motion.div>
         )}

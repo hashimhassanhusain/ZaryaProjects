@@ -390,7 +390,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                           <select 
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none appearance-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none appearance-none"
                           >
                             <option value="Assumption">Assumption / افتراض</option>
                             <option value="Constraint">Constraint / قيد</option>
@@ -402,7 +402,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                             type="date"
                             value={formData.dueDate}
                             onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
                           />
                         </div>
                       </div>

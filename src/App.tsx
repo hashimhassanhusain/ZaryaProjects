@@ -15,6 +15,7 @@ import { DecisionLogView } from './components/DecisionLogView';
 import { RiskRegisterView } from './components/RiskRegisterView';
 import { StakeholderRegisterView } from './components/StakeholderRegisterView';
 import { LessonsLearnedView } from './components/LessonsLearnedView';
+import { ClosureReportView } from './components/ClosureReportView';
 import { ChangeRequestView } from './components/ChangeRequestView';
 import { ProjectCharterView } from './components/ProjectCharterView';
 import { GovernanceHubView } from './components/GovernanceHubView';
@@ -32,6 +33,7 @@ import { SupplierMasterRegister } from './components/SupplierMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
+import { CorrespondenceLogView } from './components/CorrespondenceLogView';
 import { MasterPlanAssemblyView } from './components/MasterPlanAssemblyView';
 import { SourcingStrategyView } from './components/SourcingStrategyView';
 import { ExecutionQAView } from './components/ExecutionQAView';
@@ -277,10 +279,12 @@ const PageRenderer = () => {
     '1.2.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
   ].includes(page.id);
   const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
+  const isCorrespondenceLogPage = page.id === '3.1.2';
   const isFinancePage = page.domain === 'finance' || [
     '1.4.1', '2.4.1', '2.4.2', '2.4.3', '2.4.4', '4.4.1', '4.4.2', '5.4.1', '4.2.2', '4.2.6', '5.2.1'
   ].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
+  const isClosureReportPage = page.id === '5.1.2';
 
   return (
     <AnimatePresence mode="wait">
@@ -377,8 +381,12 @@ const PageRenderer = () => {
           <SupplierMasterRegister page={page} />
         ) : isLogManagementPage ? (
           <LogManagementView page={page} />
+        ) : isCorrespondenceLogPage ? (
+          <CorrespondenceLogView page={page} />
         ) : isFormalAcceptancePage ? (
           <FormalAcceptanceView page={page} />
+        ) : isClosureReportPage ? (
+          <ClosureReportView page={page} />
         ) : (
           <DetailView page={page} />
         )}

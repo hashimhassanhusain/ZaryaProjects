@@ -128,7 +128,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
             <textarea
               value={value}
               onChange={(e) => updateField(fieldName, e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px] resize-none"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none min-h-[120px] resize-none transition-all shadow-inner"
               placeholder={`Enter ${label.toLowerCase()}...`}
             />
           ) : (
@@ -136,7 +136,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               type={type}
               value={value}
               onChange={(e) => updateField(fieldName, e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-inner"
               placeholder={`Enter ${label.toLowerCase()}...`}
             />
           )
@@ -165,7 +165,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               <select
                 value={formData['Base Currency'] || 'IQD'}
                 onChange={(e) => updateField('Base Currency', e.target.value)}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-inner"
               >
                 <option value="IQD">IQD (Iraqi Dinar)</option>
                 <option value="USD">USD (US Dollar)</option>
@@ -277,7 +277,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
                   type="text"
                   value={formData['Estimated Budget'] || ''}
                   onChange={(e) => updateField('Estimated Budget', e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-inner"
                   placeholder="Enter estimated budget..."
                 />
               ) : (

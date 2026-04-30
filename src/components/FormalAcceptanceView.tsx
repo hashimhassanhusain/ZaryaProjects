@@ -59,19 +59,94 @@ interface FormalAcceptanceViewProps {
   embedded?: boolean;
 }
 
-export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page, embedded = false }) => {
+import React, { useState, useEffect } from 'react';
+import { 
+  Save, 
+  Download, 
+  History, 
+  Plus, 
+  Trash2, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  FileText,
+  Printer,
+  Loader2,
+  X,
+  ArrowLeft,
+  ChevronRight,
+  Search,
+  Filter,
+  MoreVertical,
+  Edit2,
+  ShieldAlert,
+  ClipboardCheck,
+  Layers,
+  Box,
+  Activity,
+  DollarSign,
+  Info,
+  CheckCircle,
+  XCircle,
+  HelpCircle,
+  Calculator,
+  UserCheck,
+  FileSignature
+} from 'lucide-react';
+import { Page, Project, PageVersion, WBSLevel, QualityMetricEntry, FormalAcceptanceEntry, FormalAcceptanceVersion, EntityConfig } from '../types';
+import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { 
+  updateDoc, 
+  doc, 
+  onSnapshot,
+  collection,
+  query,
+  where,
+  addDoc,
+  getDocs,
+  getDoc,
+  orderBy,
+  deleteDoc
+} from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
+import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { StandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
+
+interface FormalAcceptanceViewProps {
+  page: Page;
+}
+
+export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page }) => {
+  const { t, language, isRtl } = useLanguage();
   const { selectedProject } = useProject();
+  
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [acceptances, setAcceptances] = useState<FormalAcceptanceEntry[]>([]);
   const [metrics, setMetrics] = useState<QualityMetricEntry[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [versions, setVersions] = useState<FormalAcceptanceVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<Partial<FormalAcceptanceEntry> | null>(null);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [governanceRoles, setGovernanceRoles] = useState<any[]>([]);
+
+  const [formData, setFormData] = useState<Partial<FormalAcceptanceEntry>>({
+    acceptanceId: '',
+    requirement: '',
+    acceptanceCriteria: '',
+    validationMethod: '',
+    status: 'Pending',
+    comments: '',
+    signoffBy: '',
+    version: 1.0
+  });
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -79,31 +154,12 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
     const acceptQuery = query(
       collection(db, 'formal_acceptances'),
       where('projectId', '==', selectedProject.id),
-      orderBy('acceptanceId', 'asc')
+      orderBy('createdAt', 'desc')
     );
 
     const unsubAccept = onSnapshot(acceptQuery, async (snap) => {
-      if (snap.empty && selectedProject) {
-        // Add default sample data
-        const sampleEntry = {
-          projectId: selectedProject.id,
-          acceptanceId: 'ZRY-ACC-001',
-          requirement: 'Basement Waterproofing',
-          acceptanceCriteria: 'No leakage after 48h water test',
-          validationMethod: 'Visual inspection after 48h flood test',
-          status: 'Pending',
-          comments: 'Initial baseline requirement',
-          signoffBy: '',
-          version: 1.0,
-          createdAt: new Date().toISOString(),
-          createdBy: 'System',
-          updatedAt: new Date().toISOString(),
-          updatedBy: 'System'
-        };
-        await addDoc(collection(db, 'formal_acceptances'), sampleEntry);
-      } else {
-        setAcceptances(snap.docs.map(d => ({ id: d.id, ...d.data() } as FormalAcceptanceEntry)));
-      }
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as FormalAcceptanceEntry));
+      setAcceptances(data);
       setLoading(false);
     });
 
@@ -119,7 +175,6 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
       setWbsLevels(list);
     });
 
-    // Fetch Governance Roles
     const fetchGovernance = async () => {
       const docRef = doc(db, 'projects', selectedProject.id);
       const snap = await getDoc(docRef);
@@ -140,27 +195,40 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
   }, [selectedProject?.id]);
 
   useEffect(() => {
-    if (editingEntry?.id) {
-      const vQuery = query(
-        collection(db, 'formal_acceptance_versions'),
-        where('acceptanceEntryId', '==', editingEntry.id),
-        orderBy('version', 'desc')
-      );
-      const unsubVersions = onSnapshot(vQuery, (snap) => {
-        setVersions(snap.docs.map(d => ({ id: d.id, ...d.data() } as FormalAcceptanceVersion)));
+    if (selectedRecordId && viewMode === 'edit') {
+      const record = acceptances.find(r => r.id === selectedRecordId);
+      if (record) {
+        setFormData(record);
+        
+        // Fetch versions
+        const vQuery = query(
+          collection(db, 'formal_acceptance_versions'),
+          where('acceptanceEntryId', '==', selectedRecordId),
+          orderBy('version', 'desc')
+        );
+        const unsubVersions = onSnapshot(vQuery, (snap) => {
+          setVersions(snap.docs.map(d => ({ id: d.id, ...d.data() } as FormalAcceptanceVersion)));
+        });
+        return () => unsubVersions();
+      }
+    } else if (!selectedRecordId && viewMode === 'edit') {
+      const nextId = `ACC-${(acceptances.length + 1).toString().padStart(3, '0')}`;
+      setFormData({
+        acceptanceId: nextId,
+        requirement: '',
+        acceptanceCriteria: '',
+        validationMethod: '',
+        status: 'Pending',
+        comments: '',
+        signoffBy: '',
+        version: 1.0
       });
-      return () => unsubVersions();
+      setVersions([]);
     }
-  }, [editingEntry?.id]);
+  }, [selectedRecordId, viewMode, acceptances]);
 
-  const filteredAcceptances = acceptances.filter(a => 
-    a.requirement.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.acceptanceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleSaveEntry = async (isNewVersion: boolean = false) => {
-    if (!selectedProject || !editingEntry) return;
+  const handleSave = async (isNewVersion: boolean = false) => {
+    if (!selectedProject || !formData) return;
     setIsSaving(true);
 
     try {
@@ -168,25 +236,23 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
       const entryData = {
-        ...editingEntry,
+        ...formData,
         projectId: selectedProject.id,
-        version: isNewVersion ? (editingEntry.version || 1.0) + 0.1 : (editingEntry.version || 1.0),
+        version: isNewVersion ? (formData.version || 1.0) + 0.1 : (formData.version || 1.0),
         updatedAt: timestamp,
         updatedBy: user,
-        createdAt: editingEntry.createdAt || timestamp,
-        createdBy: editingEntry.createdBy || user,
-        status: editingEntry.status || 'Pending'
+        createdAt: formData.createdAt || timestamp,
+        createdBy: formData.createdBy || user
       };
 
       let docRef;
-      if (editingEntry.id && !isNewVersion) {
-        docRef = doc(db, 'formal_acceptances', editingEntry.id);
+      if (selectedRecordId && !isNewVersion) {
+        docRef = doc(db, 'formal_acceptances', selectedRecordId);
         await updateDoc(docRef, entryData);
       } else {
         docRef = await addDoc(collection(db, 'formal_acceptances'), entryData);
       }
 
-      // Version History
       await addDoc(collection(db, 'formal_acceptance_versions'), {
         acceptanceEntryId: docRef.id,
         version: entryData.version,
@@ -194,60 +260,36 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
         userId: auth.currentUser?.uid || 'system',
         userName: user,
         data: entryData,
-        changeSummary: isNewVersion ? `Created new version ${entryData.version.toFixed(1)}` : (editingEntry.id ? 'Updated existing record' : 'Initial entry')
+        changeSummary: isNewVersion ? `Created v${entryData.version.toFixed(1)}` : 'Update recorded'
       });
 
-      // Restriction Policy Prompt
       if (entryData.status === 'Accepted') {
         setShowPrompt({
           type: 'Status Update',
-          message: "The PO and Schedule are protected. Do you want to propose a status update based on this acceptance?",
+          message: "The PO and Schedule are protected. Propose a status update base on this acceptance?",
           onConfirm: () => {
-            console.log('Status update proposal confirmed');
             setShowPrompt(null);
           }
         });
       }
 
-      setIsFormOpen(false);
-      setEditingEntry(null);
-
+      toast.success('Acceptance record saved');
+      setViewMode('grid');
     } catch (err) {
-      handleFirestoreError(err, editingEntry.id ? OperationType.UPDATE : OperationType.CREATE, 'formal_acceptances');
+      handleFirestoreError(err, OperationType.WRITE, 'formal_acceptances');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    toast((t) => (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this acceptance record?</p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                await deleteDoc(doc(db, 'formal_acceptances', id));
-                toast.success('Record deleted successfully');
-              } catch (error) {
-                console.error('Error deleting entry:', error);
-                toast.error('Failed to delete record');
-              }
-            }}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000 });
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('confirm_delete'))) return;
+    try {
+      await deleteDoc(doc(db, 'formal_acceptances', id));
+      toast.success('Record deleted');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'formal_acceptances');
+    }
   };
 
   const generatePDF = () => {
@@ -256,339 +298,232 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
     const margin = 20;
     const pageWidth = pdfDoc.internal.pageSize.width;
 
-    // Header with Logo
     pdfDoc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
     pdfDoc.setFontSize(16);
-    pdfDoc.setFont('helvetica', 'bold');
     pdfDoc.text('FORMAL ACCEPTANCE FORM', pageWidth / 2, 35, { align: 'center' });
-
-    pdfDoc.setFontSize(10);
-    pdfDoc.setFont('helvetica', 'normal');
-    pdfDoc.text(`Project Title: ${selectedProject.name}`, margin, 45);
-    pdfDoc.text(`Date Prepared: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, 45);
-
+    
     autoTable(pdfDoc, {
-      startY: 55,
-      head: [['ID', 'Requirement', 'Acceptance Criteria', 'Validation Method', 'Status', 'Signoff']],
-      body: acceptances.map(a => [a.acceptanceId, a.requirement, a.acceptanceCriteria, a.validationMethod, a.status, a.signoffBy]),
-      theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 7, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 35 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 20 },
-        5: { cellWidth: 25 }
-      }
+        startY: 45,
+        head: [['ID', 'Requirement', 'Criteria', 'Status']],
+        body: acceptances.map(a => [a.acceptanceId, a.requirement, a.acceptanceCriteria, a.status]),
+        theme: 'grid',
+        headStyles: { fillColor: [15, 23, 42] }
     });
 
-    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const fileName = `[${selectedProject.code}]-QUA-ACC-FORM-${dateStr}.pdf`;
-    pdfDoc.save(fileName);
+    pdfDoc.save(`${selectedProject.code}-ACCEPTANCES.pdf`);
   };
 
-  const acceptedCount = acceptances.filter(a => a.status === 'Accepted').length;
-  const totalCount = acceptances.length;
-  const percentComplete = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
+  const gridConfig: EntityConfig = {
+    id: 'formal_acceptances',
+    label: t('deliverable_acceptance'),
+    icon: ClipboardCheck,
+    collection: 'formal_acceptances',
+    columns: [
+      { key: 'acceptanceId', label: 'ID', type: 'badge' },
+      { key: 'requirement', label: 'Requirement', type: 'string' },
+      { key: 'status', label: 'Status', type: 'badge' },
+      { key: 'signoffBy', label: 'Authority', type: 'string' },
+      { key: 'updatedAt', label: 'Last Update', type: 'date' }
+    ]
+  };
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
 
   return (
-    <div className={cn("space-y-8", embedded && "mt-0 pt-0")}>
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search requirements..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
-          >
-            <Printer className="w-4 h-4" />
-            Export Form
-          </button>
-          <button 
-            onClick={() => {
-              const nextId = `ZRY-ACC-${(acceptances.length + 1).toString().padStart(3, '0')}`;
-              setEditingEntry({ 
-                acceptanceId: nextId, 
-                requirement: '', 
-                acceptanceCriteria: '', 
-                validationMethod: '', 
-                status: 'Pending',
-                comments: '',
-                signoffBy: '',
-                version: 1.0
-              });
-              setIsFormOpen(true);
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
-          >
-            <Plus className="w-4 h-4" />
-            New Sign-off
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50">
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">ID</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Requirement</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Criteria</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
-              <th className="px-8 py-5 w-20"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filteredAcceptances.map((a) => (
-              <tr key={a.id} className="group hover:bg-slate-50/30 transition-all cursor-pointer" onClick={() => { setEditingEntry(a); setIsFormOpen(true); }}>
-                <td className="px-8 py-6">
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{a.acceptanceId}</span>
-                </td>
-                <td className="px-8 py-6">
-                  <p className="text-sm font-bold text-slate-900">{a.requirement}</p>
-                </td>
-                <td className="px-8 py-6">
-                  <p className="text-sm text-slate-600 font-medium line-clamp-1">{a.acceptanceCriteria}</p>
-                </td>
-                <td className="px-8 py-6">
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs line-clamp-1">{a.validationMethod}</p>
-                </td>
-                <td className="px-8 py-6">
-                  <div className="flex justify-center">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest flex items-center gap-1.5",
-                      a.status === 'Accepted' ? "bg-green-100 text-green-600" :
-                      a.status === 'Rejected' ? "bg-red-100 text-red-600" :
-                      a.status === 'In Progress' ? "bg-blue-100 text-blue-600" :
-                      "bg-amber-100 text-amber-600"
-                    )}>
-                      {a.status === 'Accepted' ? <CheckCircle className="w-3 h-3" /> : 
-                       a.status === 'Rejected' ? <XCircle className="w-3 h-3" /> : 
-                       <Clock className="w-3 h-3" />}
-                      {a.status}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-8 py-6 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setEditingEntry(a); setIsFormOpen(true); }}
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteEntry(a.id); }}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Entry Form Modal */}
-      <AnimatePresence>
-        {isFormOpen && editingEntry && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+    <StandardProcessPage
+      page={page}
+      onSave={() => handleSave(false)}
+      onPrint={generatePDF}
+      isSaving={isSaving}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+    >
+      <div className="space-y-6">
+        <AnimatePresence mode="wait">
+          {viewMode === 'grid' ? (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="min-h-[400px]"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                    <FileSignature className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">Formal Acceptance Sign-off</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">{editingEntry.acceptanceId}</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-all">
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
+              <UniversalDataTable 
+                config={gridConfig}
+                data={acceptances}
+                onRowClick={(row) => {
+                  setSelectedRecordId(row.id);
+                  setViewMode('edit');
+                }}
+                onNewClick={() => {
+                  setSelectedRecordId(null);
+                  setViewMode('edit');
+                }}
+                onDeleteRecord={handleDelete}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="edit"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-10"
+            >
+              <div className="flex justify-end">
+                 <button 
+                   onClick={() => setViewMode('grid')}
+                   className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
+                 >
+                   <ArrowLeft className="w-3.5 h-3.5" />
+                   {t('back_to_list')}
+                 </button>
               </div>
 
-              <div className="p-8 overflow-y-auto space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                      Requirement
-                      <Tooltip text="Formal Acceptance is the final gateway before project handover or payment release." />
-                    </label>
-                    <select 
-                      value={editingEntry.requirement}
-                      onChange={(e) => setEditingEntry({ ...editingEntry, requirement: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Requirement...</option>
-                      {wbsLevels.map(w => (
-                        <option key={w.id} value={w.title}>{w.code} - {w.title}</option>
-                      ))}
-                      <option value="Basement Waterproofing">Basement Waterproofing</option>
-                      <option value="Structural Concrete">Structural Concrete</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
-                    <textarea 
-                      value={editingEntry.acceptanceCriteria}
-                      onChange={(e) => setEditingEntry({ ...editingEntry, acceptanceCriteria: e.target.value })}
-                      rows={2}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
-                      placeholder="e.g. No leakage after 48h water test"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Validation Method</label>
-                    <select 
-                      value={editingEntry.validationMethod}
-                      onChange={(e) => setEditingEntry({ ...editingEntry, validationMethod: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Method...</option>
-                      {metrics.map(m => (
-                        <option key={m.id} value={m.measurementMethod}>{m.measurementMethod}</option>
-                      ))}
-                      <option value="Visual Inspection">Visual Inspection</option>
-                      <option value="Lab Test">Lab Test</option>
-                      <option value="Survey">Survey</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Sign-off Authority</label>
-                    <select 
-                      value={editingEntry.signoffBy}
-                      onChange={(e) => setEditingEntry({ ...editingEntry, signoffBy: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Sign-off Authority...</option>
-                      {governanceRoles.map(r => (
-                        <option key={r.id} value={r.name}>{r.name} ({r.title})</option>
-                      ))}
-                      <option value="Hashim Hassan">Hashim Hassan (Technical Approver)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Comments / Observations</label>
-                  <textarea 
-                    value={editingEntry.comments}
-                    onChange={(e) => setEditingEntry({ ...editingEntry, comments: e.target.value })}
-                    rows={3}
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
-                    placeholder="Enter any additional notes..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Status</label>
-                  <div className="flex gap-2">
-                    {['Pending', 'In Progress', 'Accepted', 'Rejected'].map((status) => (
-                      <button 
-                        key={status}
-                        onClick={() => setEditingEntry({ ...editingEntry, status: status as any })}
-                        className={cn(
-                          "flex-1 py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest border transition-all",
-                          editingEntry.status === status 
-                            ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200" 
-                            : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
-                        )}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Version History */}
-                {editingEntry.id && versions.length > 0 && (
-                  <div className="pt-8 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                      <History className="w-4 h-4" />
-                      Revision History
-                    </h3>
-                    <div className="space-y-3">
-                      {versions.map(v => (
-                        <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                          <div>
-                            <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
-                            <p className="text-xs font-bold text-slate-900 mt-1">{v.changeSummary}</p>
-                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleString()}</p>
-                          </div>
-                          <button 
-                            onClick={() => setEditingEntry(v.data as FormalAcceptanceEntry)}
-                            className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
-                          >
-                            Restore
-                          </button>
-                        </div>
-                      ))}
+              {/* Acceptance Canvas */}
+              <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-8 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center">
+                      <FileSignature className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">Sign-off Canvas</h2>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{formData.acceptanceId}</p>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
 
-              <div className="p-8 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-white/40 text-[10px] font-semibold uppercase tracking-widest">
-                  <ShieldAlert className="w-4 h-4" />
-                  Governance Protection Active
+                <div className="p-10 space-y-10">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Requirement Source</label>
+                        <select 
+                          value={formData.requirement}
+                          onChange={(e) => setFormData({ ...formData, requirement: e.target.value })}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        >
+                          <option value="">Select Requirement...</option>
+                          {wbsLevels.map(w => (
+                            <option key={w.id} value={w.title}>{w.code} - {w.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Sign-off Authority</label>
+                        <select 
+                          value={formData.signoffBy}
+                          onChange={(e) => setFormData({ ...formData, signoffBy: e.target.value })}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        >
+                          <option value="">Select Sign-off Authority...</option>
+                          {governanceRoles.map(r => (
+                            <option key={r.id} value={r.name}>{r.name} ({r.title})</option>
+                          ))}
+                        </select>
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Acceptance Criteria</label>
+                        <textarea 
+                          value={formData.acceptanceCriteria}
+                          onChange={(e) => setFormData({ ...formData, acceptanceCriteria: e.target.value })}
+                          rows={3}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/5 transition-all resize-none"
+                          placeholder="What constitutes success?"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Comments / Observations</label>
+                        <textarea 
+                          value={formData.comments}
+                          onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                          rows={3}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/5 transition-all resize-none"
+                          placeholder="Evidence found during validation..."
+                        />
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Acceptance Status</label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                         {['Pending', 'In Progress', 'Accepted', 'Rejected'].map(s => (
+                            <button 
+                               key={s}
+                               onClick={() => setFormData({ ...formData, status: s as any })}
+                               className={cn(
+                                 "py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] border transition-all",
+                                 formData.status === s ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"
+                               )}
+                            >
+                               {s}
+                            </button>
+                         ))}
+                      </div>
+                   </div>
+
+                   {/* History Stack */}
+                   {versions.length > 0 && (
+                     <div className="pt-10 border-t border-slate-100">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                           <History className="w-4 h-4" />
+                           Revision Stack
+                        </h4>
+                        <div className="space-y-3">
+                           {versions.map(v => (
+                              <div key={v.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group">
+                                 <div>
+                                    <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded tracking-widest">v{v.version.toFixed(1)}</span>
+                                    <p className="text-xs font-bold text-slate-900 mt-1">{v.changeSummary}</p>
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleString()}</p>
+                                 </div>
+                                 <button 
+                                   onClick={() => setFormData(v.data as FormalAcceptanceEntry)}
+                                   className="px-4 py-2 bg-white text-[9px] font-black text-blue-600 uppercase tracking-widest rounded-lg border border-slate-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                 >
+                                   Restore
+                                 </button>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                   )}
                 </div>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setIsFormOpen(false)}
-                    className="px-8 py-4 text-white/60 font-bold text-sm hover:text-white transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={() => handleSaveEntry(true)}
-                    disabled={isSaving}
-                    className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
-                  >
-                    Save as New Version
-                  </button>
-                  <button 
-                    onClick={() => handleSaveEntry(false)}
-                    disabled={isSaving}
-                    className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
-                  >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Overwrite Current
-                  </button>
+
+                <div className="bg-slate-900 p-8 flex items-center justify-between border-t border-slate-800">
+                   <div className="flex items-center gap-6">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">Active Revision</span>
+                        <span className="text-xl font-black text-white italic tracking-tighter">v{formData.version?.toFixed(1)}</span>
+                      </div>
+                   </div>
+                   <div className="flex gap-4">
+                      {selectedRecordId && (
+                        <button 
+                          onClick={() => handleSave(true)}
+                          className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all border border-white/10"
+                        >
+                          New Snapshot
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleSave(false)}
+                        className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all shadow-2xl shadow-blue-500/20 flex items-center gap-2"
+                      >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {selectedRecordId ? 'Update Record' : 'Log Acceptance'}
+                      </button>
+                   </div>
                 </div>
-              </div>
+              </section>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
 
-      {/* Prompt Modal */}
       <AnimatePresence>
         {showPrompt && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
@@ -596,36 +531,37 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100 text-center"
+              className="bg-white rounded-[3rem] p-12 max-w-md w-full shadow-2xl border border-slate-100 text-center"
             >
-              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-blue-50">
                 <Layers className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Cross-Domain Sync</h3>
-              <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+              <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight italic">Cross-Domain Sync</h3>
+              <p className="text-slate-500 font-medium mb-10 leading-relaxed">
                 {showPrompt.message}
               </p>
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={showPrompt.onConfirm}
-                  className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                  className="w-full py-5 bg-blue-600 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                 >
-                  Yes, Propose Update
+                  Propose Update
                 </button>
                 <button 
                   onClick={() => setShowPrompt(null)}
-                  className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+                  className="w-full py-5 bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-100 transition-all"
                 >
-                  No, Keep Protected
+                  Keep Protected
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </StandardProcessPage>
   );
 };
+
 
 const Tooltip = ({ text }: { text: string }) => (
   <div className="group relative inline-block">

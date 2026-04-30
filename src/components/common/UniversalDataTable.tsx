@@ -22,6 +22,8 @@ interface UniversalDataTableProps {
   onRowClick: (record: any) => void;
   onNewClick: () => void;
   onDeleteRecord: (id: string) => void;
+  title?: React.ReactNode;
+  favoriteControl?: React.ReactNode;
 }
 
 export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
@@ -29,7 +31,9 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   data,
   onRowClick,
   onNewClick,
-  onDeleteRecord
+  onDeleteRecord,
+  title,
+  favoriteControl
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -66,38 +70,54 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   return (
     <div className="flex flex-col h-full bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Table Header / Action Bar */}
-      <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        {/* Left Side: Title & Info */}
+        <div className="flex items-center gap-6 shrink-0">
+          {title && (
+            <div className="flex items-center gap-3">
+              {title}
+              {favoriteControl}
+            </div>
+          )}
+        </div>
+
+        {/* Middle: Search bar occupies remaining space */}
+        <div className="flex-1 max-w-2xl group mx-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
             <input 
               type="text" 
-              placeholder={`Search ${config.label}...`}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder={`Search registry documents...`}
+              className="w-full pl-12 pr-6 py-2.5 bg-slate-100/50 border border-transparent rounded-[1.25rem] text-sm font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 outline-none transition-all placeholder:text-slate-400"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button 
-            onClick={() => setShowColumnControls(!showColumnControls)}
-            className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-all"
-            title="Column Settings"
-          >
-            <Settings2 className="w-4 h-4" />
-          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
-            <Download className="w-4 h-4" />
+        {/* Right Side: Primary Actions */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button 
+            onClick={() => setShowColumnControls(!showColumnControls)}
+            className="p-2.5 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 text-slate-400 hover:text-blue-600 transition-all shrink-0 shadow-sm border-b-2 border-b-slate-100 active:translate-y-0.5"
+            title="Configure Dashboard"
+          >
+            <Settings2 className="w-4.5 h-4.5" />
+          </button>
+          
+          <div className="h-6 w-px bg-slate-100 mx-1" />
+
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm border-b-2 border-b-slate-100 active:translate-y-0.5">
+            <Download className="w-3.5 h-3.5" />
             Export
           </button>
+          
           <button 
             onClick={onNewClick}
-            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 active:translate-y-0.5"
           >
-            <Plus className="w-4 h-4" />
-            New {config.label.slice(0, -1)}
+            <Plus className="w-4 h-4 font-black" />
+            Add Entry
           </button>
         </div>
       </div>

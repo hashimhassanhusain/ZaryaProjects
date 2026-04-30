@@ -71,35 +71,27 @@ export const ProjectFormView: React.FC = () => {
     setSaving(true);
     try {
       if (isNew) {
-        // 1. Try to initialize Google Drive Folders (non-blocking)
-        let rootFolderId: string | null = null;
-        try {
-          const driveRes = await fetch('/api/projects/init-drive', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectName: formData.name,
-              projectCode: formData.code,
-              userEmail: auth.currentUser?.email ?? undefined
-            })
-          });
-          if (driveRes.ok) {
-            const driveData = await driveRes.json();
-            rootFolderId = driveData.rootFolderId ?? null;
-          } else {
-            const errorData = await driveRes.json().catch(() => ({}));
-            console.warn('Google Drive init failed (project will be saved without Drive):', errorData.error);
-            toast('Project saved without Google Drive — Drive integration unavailable.', { icon: '⚠️' });
-          }
-        } catch (driveErr) {
-          console.warn('Google Drive init error (project will be saved without Drive):', driveErr);
-          toast('Project saved without Google Drive — Drive integration unavailable.', { icon: '⚠️' });
-        }
+        // 1. Initialize Google Drive Folders
+        const driveRes = await fetch('/api/projects/init-drive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectName: formData.name,
+            projectCode: formData.code,
+            userEmail: auth.currentUser?.email ?? undefined
+          })
+        });
 
-        // 2. Save to Firestore regardless of Drive result
+        if (!driveRes.ok) {
+          const errorData = await driveRes.json().catch(() => ({ error: 'Failed to initialize Google Drive' }));
+          throw new Error(errorData.error);
+        }
+        const { rootFolderId } = await driveRes.json();
+
+        // 2. Save to Firestore
         const projectData = {
           ...formData,
-          ...(rootFolderId ? { driveFolderId: rootFolderId } : {}),
+          driveFolderId: rootFolderId,
           createdAt: new Date().toISOString(),
           // Pre-populate charter data with common fields
           charterData: {

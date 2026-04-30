@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Page } from '../types';
+import { Page, EntityConfig, Project } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
+
+interface StandardProcessPageContextType {
+  pageHeader: React.ReactNode;
+  favoriteControl: React.ReactNode;
+}
+
+export const StandardProcessPageContext = React.createContext<StandardProcessPageContextType | null>(null);
+
+export const useStandardProcessPage = () => {
+  const context = React.useContext(StandardProcessPageContext);
+  return context;
+};
+
 import { 
   FileText, 
   ArrowRight, 
@@ -26,9 +41,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
 
 import { UniversalDataTable } from './common/UniversalDataTable';
-import { EntityConfig } from '../types';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 
 interface StandardProcessPageProps {
   page: Page;
@@ -253,21 +265,38 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
     window.dispatchEvent(new Event('storage'));
   };
 
-  const finalGridConfig: EntityConfig = {
-    id: (collectionName as any) || 'generic',
-    label: displayTitle,
-    icon: FileText,
-    collection: collectionName || '',
-    columns: (page.formFields || []).map(f => ({
-      key: f.replace(/\s+/g, ''),
-      label: f,
-      type: 'string'
-    })),
-    ...gridConfig
-  };
+  const pageHeader = (
+    <div className="flex items-center gap-2 shrink-0 overflow-hidden">
+      {parentPage && (
+        <>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">
+             {stripNumericPrefix(parentTitle)}
+          </span>
+          <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300", isRtl && "rotate-180")} />
+        </>
+      )}
+      <h2 className={cn("text-[14px] font-black text-slate-900 tracking-tight uppercase whitespace-nowrap", isRtl && "flex-row-reverse")}>
+        {stripNumericPrefix(displayTitle)}
+      </h2>
+      <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50 block shrink-0">{page.id}</span>
+    </div>
+  );
+
+  const favoriteControl = (
+    <button 
+      onClick={toggleFavorite} 
+      className={cn(
+        "w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm hover:border-slate-200 active:scale-90 shrink-0", 
+        isFavorite && "bg-amber-50 border-amber-200 text-amber-500"
+      )}
+    >
+      <Star className={cn("w-4 h-4", isFavorite && "fill-current")} />
+    </button>
+  );
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] flex flex-col print:bg-white print:p-0">
+    <StandardProcessPageContext.Provider value={{ pageHeader, favoriteControl }}>
+      <div className="min-h-screen bg-[#fcfcfc] flex flex-col print:bg-white print:p-0">
       <QuickViewModal 
         isOpen={quickView.isOpen} 
         onClose={() => setQuickView({ ...quickView, isOpen: false })}
@@ -277,23 +306,37 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
       <div className="flex-1 w-full px-4 md:px-6 py-4 print:block print:p-0">
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
-          <aside className="col-span-3 space-y-4 print:hidden">
-            <div className="flex items-center justify-between px-1">
-               <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                  <Box className="w-3.5 h-3.5 text-blue-500" />
+          <aside className="col-span-3 space-y-6 print:hidden">
+            <div className="flex items-center justify-between px-1 mb-6">
+               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center">
+                    <Box className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
                   {t('input_arsenal')}
                </h3>
-               <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{inputs.length}</span>
+               <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
             </div>
-            <div className="grid grid-cols-4 gap-1 flex-wrap">
+            <div className="grid grid-cols-2 gap-3 pb-8">
               {inputs.map((input, idx) => {
+                const linkedPage = pages.find(p => p.id === input.id);
                 const inputTranslated = t(input.id);
                 const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
                 return (
-                  <div key={`${input.id}-${idx}`} onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} className={cn("group p-1.5 bg-white border border-slate-100 rounded-lg hover:shadow-md hover:shadow-blue-500/5 transition-all cursor-pointer border-t-2 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center aspect-square text-center", isRtl && "text-right")}>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[6px] font-bold text-slate-300 uppercase tracking-tighter">{input.id}</span>
-                      <h4 className={cn("text-[8px] font-bold text-slate-800 leading-[1.1] line-clamp-2 px-0.5")}>{stripNumericPrefix(inputDisplay)}</h4>
+                  <div 
+                    key={`${input.id}-${idx}`} 
+                    onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} 
+                    className={cn(
+                      "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm", 
+                      isRtl && "text-right"
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
+                       <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="w-full">
+                      <h4 className={cn("text-[10px] font-black text-slate-900 leading-tight tracking-tight uppercase italic line-clamp-2")}>
+                        {stripNumericPrefix(inputDisplay)}
+                      </h4>
                     </div>
                   </div>
                 );
@@ -304,55 +347,57 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           <section className="col-span-12 md:col-span-9 space-y-6 flex flex-col">
             <div className="flex-1 bg-white rounded-[3rem] shadow-sm border border-slate-50 overflow-hidden flex flex-col min-h-[700px] print:border-none relative">
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
-                 <AnimatePresence mode="wait">
+                  <AnimatePresence mode="wait">
                     {viewMode === 'grid' && collectionName ? (
-                      <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 p-8 overflow-hidden flex flex-col">
-                        <UniversalDataTable config={finalGridConfig} data={gridData} onRowClick={() => setViewMode('edit')} onNewClick={() => setViewMode('edit')} onDeleteRecord={() => {}} />
+                      <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 overflow-hidden flex flex-col">
+                        <UniversalDataTable 
+                          config={{
+                            id: (collectionName as any) || 'generic',
+                            label: displayTitle,
+                            icon: FileText,
+                            collection: collectionName || '',
+                            columns: (page.formFields || []).map(f => ({
+                              key: f.replace(/\s+/g, ''),
+                              label: f,
+                              type: 'string'
+                            })),
+                            ...gridConfig
+                          }} 
+                          data={gridData} 
+                          onRowClick={() => setViewMode('edit')} 
+                          onNewClick={() => setViewMode('edit')} 
+                          onDeleteRecord={() => {}} 
+                          title={pageHeader}
+                          favoriteControl={favoriteControl}
+                        />
                       </motion.div>
                     ) : (
                       <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col min-h-0">
                         <div className="flex-1 p-6 overflow-y-auto">
-                         {driveSyncStatus === 'syncing' ? (
-                           <div className="flex flex-col items-center justify-center p-20 animate-in zoom-in-95 duration-700 space-y-12 flex-1">
-                             <div className="w-full max-w-sm aspect-[1/1.414] bg-white rounded-3xl border-8 border-slate-50 shadow-2xl flex flex-col relative overflow-hidden">
-                               <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center gap-8">
+                          {driveSyncStatus === 'syncing' ? (
+                            <div className="flex flex-col items-center justify-center p-20 animate-in zoom-in-95 duration-700 space-y-12 flex-1">
+                              <div className="w-full max-w-sm aspect-[1/1.414] bg-white rounded-3xl border-8 border-slate-50 shadow-2xl flex flex-col relative overflow-hidden">
+                                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center gap-8">
                                   <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Cloud className="w-16 h-16 text-blue-400" /></motion.div>
                                   <p className="text-[12px] font-semibold text-white uppercase tracking-widest">Synchronizing Artifact...</p>
-                               </div>
-                             </div>
-                           </div>
-                         ) : (
-                          <div className="space-y-6">
-                            <div className="flex flex-col space-y-2">
-                              <div className={cn("flex items-center justify-between px-4", isRtl && "flex-row-reverse")}>
-                                <div className="flex flex-col">
-                                  <h2 className={cn("text-[11px] font-bold text-slate-900 tracking-tight uppercase flex items-center gap-1.5", isRtl && "flex-row-reverse")}>
-                                    {grandParentPage && (
-                                      <>
-                                        <span className="text-slate-400 italic font-medium">{stripNumericPrefix(grandParentTitle)}</span>
-                                        <ChevronRight className="w-3 h-3 text-slate-300" />
-                                      </>
-                                    )}
-                                    {parentPage && (
-                                      <>
-                                        <span className="text-slate-400 italic font-medium">{stripNumericPrefix(parentTitle)}</span>
-                                        <ChevronRight className="w-3 h-3 text-slate-300" />
-                                      </>
-                                    )}
-                                    <span>{stripNumericPrefix(displayTitle)}</span>
-                                  </h2>
-                                  <p className={cn("text-[8px] font-bold text-blue-500 uppercase tracking-widest mt-0.5", isRtl && "text-right")}>Zarya Artifact Hub • {page.id}</p>
                                 </div>
-                                <button onClick={toggleFavorite} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm hover:border-slate-200", isFavorite && "bg-amber-50 border-amber-200 text-amber-500")}><Star className={cn("w-4 h-4", isFavorite && "fill-current")} /></button>
                               </div>
                             </div>
-                            <div className="px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">{children}</div>
-                          </div>
-                         )}
+                          ) : (
+                            <div className="space-y-6">
+                              <div className="flex flex-col space-y-2">
+                                <div className={cn("flex items-center justify-between px-4 mt-2", isRtl && "flex-row-reverse")}>
+                                  {pageHeader}
+                                  {favoriteControl}
+                                </div>
+                              </div>
+                              <div className="px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">{children}</div>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}
-                 </AnimatePresence>
+                  </AnimatePresence>
                  <div className="hidden print:block print:w-full">
                    <header className={cn("flex items-center justify-between border-b-4 border-slate-900 pb-10 mb-16", isRtl && "flex-row-reverse")}>
                       <div className="flex items-center gap-4">
@@ -390,5 +435,6 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         </div>
       </div>
     </div>
+    </StandardProcessPageContext.Provider>
   );
 };

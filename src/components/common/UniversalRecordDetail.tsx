@@ -173,7 +173,7 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
 };
 
 const renderInputField = (col: any, value: any, onChange: (val: any) => void) => {
-  const commonClasses = "w-full bg-slate-50 border border-slate-100 p-4 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none rounded-2xl transition-all";
+  const commonClasses = "w-full bg-slate-50 border border-slate-100 p-5 text-lg font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none rounded-2xl transition-all shadow-inner placeholder:text-slate-200";
 
   switch (col.type) {
     case 'number':

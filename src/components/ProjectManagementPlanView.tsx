@@ -28,7 +28,7 @@ import {
   BarChart3,
   Search
 } from 'lucide-react';
-import { StandardProcessPage } from './StandardProcessPage';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
 import { EntityConfig, Page, Project, PageVersion } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
@@ -101,6 +101,7 @@ const KNOWLEDGE_AREAS = [
 export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
+  const context = useStandardProcessPage();
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
@@ -310,6 +311,8 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                title={context?.pageHeader}
+                favoriteControl={context?.favoriteControl}
               />
             </motion.div>
           ) : (

@@ -145,6 +145,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   });
 
   const [charters, setCharters] = useState<any[]>([]);
+  const [versions, setVersions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -177,6 +178,17 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
           ...charter,
           ...record
         });
+        
+        // Fetch versions
+        const vQuery = query(
+          collection(db, 'project_charter_versions'),
+          where('reportEntryId', '==', selectedRecordId),
+          orderBy('version', 'desc')
+        );
+        const unsubVersions = onSnapshot(vQuery, (snap) => {
+          setVersions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+        return () => unsubVersions();
       }
     } else if (!selectedRecordId && viewMode === 'edit') {
       setCharter({
@@ -210,8 +222,10 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
           pmDate: '',
           sponsorName: '',
           sponsorDate: '',
-        }
-      });
+        },
+        version: '1.0'
+      } as any);
+      setVersions([]);
     }
   }, [selectedRecordId, viewMode, charters]);
 
@@ -221,25 +235,40 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     try {
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
+      const nextVersion = isNew ? (parseFloat((charter as any).version || '1.0') + 0.1).toFixed(1) : ((charter as any).version || '1.0');
       
       const charterData = {
         ...charter,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: isNew ? (charters.length + 1).toFixed(1) : (charter as any).version || '1.0'
+        version: nextVersion,
+        createdAt: (charter as any).createdAt || timestamp
       };
 
-      if (isNew || !selectedRecordId) {
-        await addDoc(collection(db, 'projectCharters'), {
+      let docRef;
+      if (!selectedRecordId || isNew) {
+        docRef = await addDoc(collection(db, 'projectCharters'), {
           ...charterData,
           createdAt: timestamp
         });
-        toast.success(t('charter_created_success'));
       } else {
-        await updateDoc(doc(db, 'projectCharters', selectedRecordId), charterData);
-        toast.success(t('charter_updated_success'));
+        docRef = doc(db, 'projectCharters', selectedRecordId);
+        await updateDoc(docRef, charterData);
       }
+
+      // Save versioning snapshot
+      await addDoc(collection(db, 'project_charter_versions'), {
+        reportEntryId: selectedRecordId || docRef.id,
+        version: nextVersion,
+        timestamp,
+        userId: auth.currentUser?.uid || 'system',
+        userName: user,
+        data: charterData,
+        changeSummary: isNew ? 'Baseline Revised' : 'Charter Updated'
+      });
+
+      toast.success(isNew ? t('charter_created_success') : t('charter_updated_success'));
       setViewMode('grid');
       setSelectedRecordId(null);
     } catch (err) {
@@ -566,6 +595,36 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                     </div>
                  </div>
               </section>
+               {/* History Stack */}
+               {versions.length > 0 && (
+                 <div className="pt-10 border-t border-slate-100">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                       <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                          <History className="w-4 h-4 text-slate-400" />
+                          <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">{t('charter_history')}</h3>
+                       </div>
+                       <div className="p-2 max-h-[400px] overflow-y-auto no-scrollbar">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                             {versions.map(v => (
+                               <div 
+                                 key={v.id} 
+                                 onClick={() => setCharter(v.data as CharterData)}
+                                 className="p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer group flex items-start gap-4 border border-transparent hover:border-slate-100"
+                               >
+                                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all font-black text-[10px]">
+                                     v{parseFloat(v.version).toFixed(1)}
+                                  </div>
+                                  <div className="min-w-0">
+                                     <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight truncate">{v.changeSummary}</div>
+                                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleDateString()}</div>
+                                  </div>
+                               </div>
+                             ))}
+                          </div>
+                      </div>
+                    </div>
+                 </div>
+               )}
             </motion.div>
           )}
         </AnimatePresence>

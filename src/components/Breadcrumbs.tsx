@@ -77,21 +77,23 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
         
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1;
+          const label = stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id));
+          
           return (
             <React.Fragment key={crumb.id}>
-              <span className="text-slate-200 flex items-center shrink-0">
-                 <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
+              <span className="text-slate-300 flex items-center shrink-0">
+                 <ChevronRight className={cn("w-3 h-3 mx-1", isRtl && "rotate-180")} />
               </span>
               {isLast ? (
-                <span className="text-blue-600 truncate max-w-[200px]">
-                  {stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id))}
+                <span className="text-blue-600 font-black truncate max-w-[250px]">
+                  {label}
                 </span>
               ) : (
                 <Link
                   to={`/project/${selectedProject?.id}/page/${crumb.id}`}
-                  className="text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                  className="text-slate-400 hover:text-blue-500 transition-colors shrink-0"
                 >
-                  {stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id))}
+                  {label}
                 </Link>
               )}
             </React.Fragment>

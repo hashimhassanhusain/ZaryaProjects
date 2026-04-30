@@ -101,27 +101,27 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[72px] bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm">
+    <header className="h-[56px] bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
              className={cn(
-               "flex items-center gap-3 px-4 py-2 rounded-2xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
+               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
                isProjectMenuOpen && "border-blue-100 bg-blue-50/50 shadow-sm"
              )}
            >
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                 <Building className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                 <Building className="w-4 h-4" />
               </div>
               <div className="flex flex-col text-left">
-                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">ZARYA PMIS</span>
-                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-slate-900 uppercase tracking-tight truncate max-w-[150px]">
+                 <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">ZARYA PMIS</span>
+                 <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight truncate max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
-                    <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
+                    <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
                  </div>
               </div>
            </button>
@@ -130,7 +130,7 @@ export const Header: React.FC = () => {
              {isProjectMenuOpen && (
                <motion.div
                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                 className="absolute top-full left-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-3"
+                 className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                >
                   <div className="max-h-[70vh] overflow-y-auto no-scrollbar space-y-4">
                      {/* Company List */}
@@ -141,19 +141,19 @@ export const Header: React.FC = () => {
                              <button
                                onClick={() => setSelectedCompanyId(company.id)}
                                className={cn(
-                                 "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left",
+                                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left",
                                  (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
                                    ? "bg-blue-50 text-blue-700 font-bold"
                                    : "text-slate-600 hover:bg-slate-50"
                                )}
                              >
-                                <Building className="w-4 h-4 opacity-50" />
-                                <span className="text-[11px] uppercase tracking-wider truncate">{company.name}</span>
+                                <Building className="w-3.5 h-3.5 opacity-50" />
+                                <span className="text-[10px] uppercase tracking-wider truncate">{company.name}</span>
                              </button>
                              
                              {/* Projects for this company */}
                              {(selectedProject?.companyId === company.id || selectedCompanyId === company.id) && (
-                               <div className="pl-6 space-y-1 mt-1 border-l-2 border-blue-100 ml-6">
+                               <div className="pl-5 space-y-0.5 mt-0.5 border-l-2 border-blue-100 ml-5">
                                   {projects.filter(p => p.companyId === company.id).map((proj, pIdx) => (
                                     <button
                                       key={`${proj.id}-${pIdx}`}
@@ -163,14 +163,14 @@ export const Header: React.FC = () => {
                                         navigate(`/project/${proj.id}`);
                                       }}
                                       className={cn(
-                                        "w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-left",
+                                        "w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-left",
                                         selectedProject?.id === proj.id
                                           ? "bg-slate-900 text-white font-bold shadow-lg"
                                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                                       )}
                                     >
-                                       <FolderOpen className="w-3.5 h-3.5 opacity-50" />
-                                       <span className="text-[10px] uppercase truncate">{proj.name}</span>
+                                       <FolderOpen className="w-3 h-3 opacity-50" />
+                                       <span className="text-[9px] uppercase truncate">{proj.name}</span>
                                     </button>
                                   ))}
                                </div>
@@ -185,7 +185,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Global Hubs Navigation */}
-        <nav className="flex items-center h-full gap-1 flex-1 px-4">
+        <nav className="flex items-center h-full gap-0.5 flex-1 px-4 overflow-x-auto no-scrollbar">
            {PERFORMANCE_DOMAINS.map((domain, idx) => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
@@ -195,18 +195,18 @@ export const Header: React.FC = () => {
                  key={`${domain.id}-${idx}`} 
                  to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
                  className={cn(
-                   "flex items-center gap-2.5 px-6 h-11 rounded-[1.25rem] transition-all relative group shrink-0",
+                   "flex items-center gap-2 px-4 h-9 rounded-xl transition-all relative group shrink-0",
                    isActive 
-                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200" 
+                    ? "bg-slate-900 text-white shadow-lg" 
                     : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                  )}
                >
-                 <Icon className={cn("w-4 h-4", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-600")} strokeWidth={isActive ? 2.5 : 2} />
-                 <span className="text-[11px] font-black uppercase tracking-widest leading-none">
+                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-600")} strokeWidth={isActive ? 2.5 : 2} />
+                 <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                     {stripNumericPrefix(t(domain.id))}
                  </span>
                  {isActive && (
-                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-blue-500/5 rounded-[1.25rem] -z-10" />
+                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-blue-500/5 rounded-xl -z-10" />
                  )}
                </Link>
              );
@@ -214,30 +214,30 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Global Actions */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
            {/* Favorites & Search */}
-           <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
               <div className="relative" ref={favoritesRef}>
                  <button 
                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
                    className={cn(
-                     "p-2.5 rounded-xl transition-all",
+                     "p-2 rounded-lg transition-all",
                      isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-slate-400 hover:text-slate-600"
                    )}
                  >
-                    <Star className={cn("w-4 h-4", favorites.length > 0 && "fill-amber-400 text-amber-400")} />
+                    <Star className={cn("w-3.5 h-3.5", favorites.length > 0 && "fill-amber-400 text-amber-400")} />
                  </button>
                  <AnimatePresence>
                    {isFavoritesOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-3 w-80 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-3"
+                       className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                      >
-                        <div className="px-4 py-4 bg-slate-50 rounded-2xl mb-2 flex items-center justify-between">
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('favorites')}</span>
-                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold">{favorites.length}</div>
+                        <div className="px-3 py-3 bg-slate-50 rounded-xl mb-1.5 flex items-center justify-between">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('favorites')}</span>
+                           <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[8px] font-bold">{favorites.length}</div>
                         </div>
-                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
+                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-0.5">
                            {favorites.map((favId, idx) => {
                               const p = allPages.find(page => page.id === favId);
                               if (!p) return null;
@@ -245,14 +245,14 @@ export const Header: React.FC = () => {
                                 <button 
                                   key={`${favId}-${idx}`}
                                   onClick={() => { navigate(`/page/${favId}`); setIsFavoritesOpen(false); }}
-                                  className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
+                                  className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-all group"
                                 >
-                                   <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
-                                      <FileIcon className="w-4 h-4" />
+                                   <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                      <FileIcon className="w-3.5 h-3.5" />
                                    </div>
                                    <div className="flex flex-col text-left">
-                                      <span className="text-[11px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
-                                      <span className="text-[8px] font-bold text-slate-400 uppercase">{p.domain}</span>
+                                      <span className="text-[10px] font-bold text-slate-700 tracking-tight truncate max-w-[200px]">{stripNumericPrefix(p.title)}</span>
+                                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">{p.domain}</span>
                                    </div>
                                 </button>
                               );
@@ -264,49 +264,49 @@ export const Header: React.FC = () => {
               </div>
 
               <div className="relative" ref={searchRef}>
-                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2.5 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
-                    <Search className="w-4 h-4" />
+                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg transition-all">
+                    <Search className="w-3.5 h-3.5" />
                  </button>
                  <AnimatePresence>
                    {isSearchOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-3 w-96 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-[100] p-4"
+                       className="absolute top-full right-0 mt-2 w-96 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-3"
                      >
-                        <div className="relative mb-4">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <div className="relative mb-3">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                           <input 
                             autoFocus 
                             placeholder={t('search_pmis')} 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" 
+                            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 pl-10 pr-3 text-[11px] font-bold focus:ring-1 focus:ring-blue-500 outline-none" 
                           />
                         </div>
                         
-                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
+                        <div className="max-h-80 overflow-y-auto no-scrollbar space-y-0.5">
                            {searchResults.length > 0 ? (
                              searchResults.map((p, idx) => (
                                <button 
                                  key={`${p.id}-${idx}`}
                                  onClick={() => handlePageNavigate(p.id)}
-                                 className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-all group"
+                                 className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-all group"
                                >
-                                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
-                                     <FileIcon className="w-4 h-4" />
+                                  <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                     <FileIcon className="w-3.5 h-3.5" />
                                   </div>
                                   <div className="flex flex-col text-left">
-                                     <span className="text-[11px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
-                                     <span className="text-[8px] font-bold text-slate-400 uppercase">{p.domain} ({p.id})</span>
+                                     <span className="text-[10px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
+                                     <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">{p.domain} ({p.id})</span>
                                   </div>
                                </button>
                              ))
                            ) : searchQuery.length > 0 ? (
-                             <div className="p-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-loose">
+                             <div className="p-6 text-center text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
                                {t('no_results_found')}
                              </div>
                            ) : (
-                             <div className="p-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-loose">
+                             <div className="p-6 text-center text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
                                {t('type_to_search')}
                              </div>
                            )}
@@ -321,10 +321,10 @@ export const Header: React.FC = () => {
            <div className="relative" ref={userMenuRef}>
               <button 
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-3 pl-4 border-l border-slate-200 group active:scale-95 transition-all"
+                className="flex items-center gap-2 pl-3 border-l border-slate-200 group active:scale-95 transition-all"
               >
-                 <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 p-0.5 shadow-sm group-hover:border-blue-400 transition-all">
-                    <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[0.85rem] object-cover" />
+                 <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 p-0.5 shadow-sm group-hover:border-blue-400 transition-all">
+                    <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[0.7rem] object-cover" />
                  </div>
               </button>
 
@@ -334,25 +334,25 @@ export const Header: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute top-full right-0 mt-3 w-64 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-50 p-2"
+                    className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 p-1.5"
                   >
-                     <div className="p-5 bg-slate-50 rounded-2xl mb-2 text-center">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-white border border-slate-200 p-1 mx-auto mb-3 shadow-sm">
-                           <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1.1rem] object-cover" />
+                     <div className="p-4 bg-slate-50 rounded-xl mb-1.5 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1 mx-auto mb-2.5 shadow-sm">
+                           <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1rem] object-cover" />
                         </div>
-                        <div className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
-                        <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{appUser?.role}</div>
+                        <div className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
+                        <div className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{appUser?.role}</div>
                      </div>
-                     <div className="space-y-1">
-                        <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
-                           <UserIcon className="w-4 h-4" /> {t('my_profile')}
+                     <div className="space-y-0.5">
+                        <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                           <UserIcon className="w-3.5 h-3.5" /> {t('my_profile')}
                         </button>
-                        <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
-                           <Shield className="w-4 h-4" /> {t('admin_portal')}
+                        <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                           <Shield className="w-3.5 h-3.5" /> {t('admin_portal')}
                         </button>
                         <div className="h-px bg-slate-100 my-1 mx-2" />
-                        <button onClick={() => signOut(auth)} className="w-full flex items-center gap-3 p-3 hover:bg-rose-50 rounded-xl text-[11px] font-black uppercase tracking-widest text-rose-500 transition-all italic">
-                           <LogOut className="w-4 h-4" /> {t('sign_out')}
+                        <button onClick={() => signOut(auth)} className="w-full flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-lg text-[10px] font-black uppercase tracking-widest text-rose-500 transition-all italic">
+                           <LogOut className="w-3.5 h-3.5" /> {t('sign_out')}
                         </button>
                      </div>
                   </motion.div>
