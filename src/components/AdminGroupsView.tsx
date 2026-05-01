@@ -82,13 +82,11 @@ export const AdminGroupsView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this group?')) {
-      try {
-        await deleteDoc(doc(db, 'groups', id));
-        toast.success('Group deleted');
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, 'groups');
-      }
+    try {
+      await deleteDoc(doc(db, 'groups', id));
+      toast.success('Group deleted');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'groups');
     }
   };
 

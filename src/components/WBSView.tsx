@@ -13,7 +13,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
 import { cn, formatCurrency } from '../lib/utils';
-import { GoogleGenAI, Type } from "@google/genai";
 import { toast } from 'react-hot-toast';
 import { masterFormatDivisions } from '../data';
 import { masterFormatSections } from '../constants/masterFormat';
@@ -302,40 +301,23 @@ export const WBSView: React.FC = () => {
       });
       const base64Data = await base64Promise;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          {
-            parts: [
-              { text: `Analyze this project document and generate a comprehensive Work Breakdown Structure (WBS) for the project: ${selectedProject.name}. 
-              The WBS should be hierarchical (Zone -> Area -> Building -> Cost Account -> Work Package). 
-              Use the 'Cost Account' type for Cost Account Divisions (01-16). 
+      const prompt = `Analyze this project document (base64 encoded, mimeType: ${file.type}) and generate a comprehensive Work Breakdown Structure (WBS) for the project: ${selectedProject.name}.
+              The WBS should be hierarchical (Zone -> Area -> Building -> Cost Account -> Work Package).
+              Use the 'Cost Account' type for Cost Account Divisions (01-16).
               Use the 'Work Package' type for specific work packages under Cost Accounts.
               Avoid redundant naming (e.g., don't create a sub-level with the same name as its parent).
-              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Cost Account, Work Package, or Other), and parentTitle (if applicable).` },
-              { inlineData: { data: base64Data, mimeType: file.type } }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                type: { type: Type.STRING, enum: ['Zone', 'Area', 'Building', 'Cost Account', 'Work Package', 'Other'] },
-                parentTitle: { type: Type.STRING }
-              },
-              required: ['title', 'type']
-            }
-          }
-        }
-      });
+              Return the WBS as a JSON array of objects with: title, type (Zone, Area, Building, Cost Account, Work Package, or Other), and parentTitle (if applicable).
+              Document (base64): ${base64Data}`;
 
-      const generatedWbs = JSON.parse(response.text || '[]');
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.0-flash', responseType: 'json' }),
+      });
+      if (!response.ok) throw new Error('AI generation failed');
+      const { text } = await response.json();
+
+      const generatedWbs = JSON.parse(text || '[]');
       
       // Map to store created IDs by title to handle hierarchy
       const titleToId: Record<string, string> = {};

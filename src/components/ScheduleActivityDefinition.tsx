@@ -123,7 +123,6 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
   };
 
   const deleteActivity = async (id: string) => {
-    if (!window.confirm('Delete this activity?')) return;
     try {
       await deleteDoc(doc(db, 'activities', id));
       toast.success('Activity deleted');

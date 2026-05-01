@@ -102,7 +102,6 @@ export const RolesResponsibilitiesTab: React.FC<RolesResponsibilitiesTabProps> =
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this role definition?')) return;
     try {
       await deleteDoc(doc(db, 'roles_responsibilities', id));
     } catch (error) {

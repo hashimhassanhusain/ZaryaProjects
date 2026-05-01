@@ -146,7 +146,6 @@ export const ContactsView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this contact?')) return;
     try {
       await deleteDoc(doc(db, 'contacts', id));
     } catch (error) {

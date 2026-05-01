@@ -92,7 +92,6 @@ export const TeamDirectoryTab: React.FC<TeamDirectoryTabProps> = ({ projectId })
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to remove this team member?')) return;
     try {
       await deleteDoc(doc(db, 'team_members', id));
     } catch (err) {

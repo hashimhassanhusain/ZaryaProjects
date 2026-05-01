@@ -225,7 +225,6 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
   };
 
   const handleDeleteMetric = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this metric?')) return;
     try {
       await deleteDoc(doc(db, 'quality_metrics', id));
     } catch (error) {

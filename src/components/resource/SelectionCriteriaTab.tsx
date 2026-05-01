@@ -266,7 +266,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                   </button>
                   <button
                     onClick={async () => {
-                      if (window.confirm('Delete criterion?')) await deleteDoc(doc(db, 'selection_criteria', crit.id));
+                      await deleteDoc(doc(db, 'selection_criteria', crit.id));
                     }}
                     className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-red-600 transition-all"
                   >
@@ -368,7 +368,7 @@ export const SelectionCriteriaTab: React.FC<SelectionCriteriaTabProps> = ({ proj
                       </button>
                       <button
                         onClick={async () => {
-                          if (window.confirm('Delete evaluation?')) await deleteDoc(doc(db, 'vendor_evaluations', ev.id));
+                          await deleteDoc(doc(db, 'vendor_evaluations', ev.id));
                         }}
                         className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-red-600 transition-all shadow-sm"
                       >

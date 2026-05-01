@@ -6,7 +6,6 @@ import { db } from '../firebase';
 import { collection, onSnapshot, query, where, updateDoc, doc, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
 
 interface Stakeholder {
   id: string;
@@ -86,21 +85,21 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
     setIsAnalyzing(true);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey });
-
-      const prompt = `Analyze the sentiment of this project stakeholder note: "${newNote}". 
-      Return JSON with fields: 
+      const prompt = `Analyze the sentiment of this project stakeholder note: "${newNote}".
+      Return JSON with fields:
       - sentiment: "Positive", "Neutral", "Negative", or "Conflict"
       - analysis: "One sentence explanation"
       - confidence: 0 to 1`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.0-flash', responseType: 'json' }),
       });
+      if (!response.ok) throw new Error('AI generation failed');
+      const { text } = await response.json();
 
-      const data = JSON.parse((response.text || '{}').replace(/```json|```/g, ''));
+      const data = JSON.parse((text || '{}').replace(/```json|```/g, ''));
 
       await addDoc(collection(db, 'stakeholder-logs'), {
         projectId: selectedProject.id,

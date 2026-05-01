@@ -158,7 +158,7 @@ export const ProcessImprovementTab: React.FC<ProcessImprovementTabProps> = ({ pr
                   </button>
                   <button
                     onClick={async () => {
-                      if (window.confirm('Delete improvement?')) await deleteDoc(doc(db, 'process_improvements', imp.id));
+                      await deleteDoc(doc(db, 'process_improvements', imp.id));
                     }}
                     className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-red-600 transition-all"
                   >

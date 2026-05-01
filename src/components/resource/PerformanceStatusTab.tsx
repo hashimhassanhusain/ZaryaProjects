@@ -41,6 +41,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -238,23 +239,22 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
 
       // Lessons Learned Trigger
       if (statusData.rootCauseOfVariances) {
-        if (window.confirm('Alert: Record this finding in the Lessons Learned Log?')) {
-          await addDoc(collection(db, 'lessons_learned'), {
-            projectId,
-            lessonId: `LL-${Date.now().toString().slice(-4)}`,
-            category: 'Process',
-            description: `Variance Root Cause: ${statusData.rootCauseOfVariances}`,
-            recommendation: statusData.plannedCorrectiveActions || 'Review process for future mitigation.',
-            impact: 'Negative',
-            ownerId: member.id,
-            status: 'Draft',
-            version: 1,
-            createdAt: timestamp,
-            createdBy: auth.currentUser?.displayName || 'System',
-            updatedAt: timestamp,
-            updatedBy: auth.currentUser?.displayName || 'System'
-          });
-        }
+        toast('Recording in Lessons Learned Log', { icon: 'ℹ️' });
+        await addDoc(collection(db, 'lessons_learned'), {
+          projectId,
+          lessonId: `LL-${Date.now().toString().slice(-4)}`,
+          category: 'Process',
+          description: `Variance Root Cause: ${statusData.rootCauseOfVariances}`,
+          recommendation: statusData.plannedCorrectiveActions || 'Review process for future mitigation.',
+          impact: 'Negative',
+          ownerId: member.id,
+          status: 'Draft',
+          version: 1,
+          createdAt: timestamp,
+          createdBy: auth.currentUser?.displayName || 'System',
+          updatedAt: timestamp,
+          updatedBy: auth.currentUser?.displayName || 'System'
+        });
       }
 
       setIsFormOpen(false);

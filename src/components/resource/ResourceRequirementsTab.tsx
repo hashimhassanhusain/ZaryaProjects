@@ -218,7 +218,6 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this requirement?')) return;
     try {
       await deleteDoc(doc(db, 'resource_requirements', id));
     } catch (error) {

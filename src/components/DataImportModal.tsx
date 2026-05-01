@@ -7,7 +7,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { GoogleGenAI, Type } from "@google/genai";
 import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
 
@@ -95,41 +94,31 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
   const suggestMapping = async (fileHeaders: string[]) => {
     setIsSuggesting(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const model = "gemini-3-flash-preview";
-
       const prompt = `You are a data integration assistant.
       User is importing data for ${entityName}.
-      
+
       Target Columns (the fields we need in our app):
       ${targetColumns.map(c => `- ${c.key} (${c.label}): ${c.description || ''}`).join('\n')}
-      
+
       File Headers from the uploaded file:
       ${fileHeaders.join(', ')}
-      
+
       Instructions:
-      Match each Target Column to the most likely File Header. 
+      Match each Target Column to the most likely File Header.
       If no clear match exists, return null for that column.
       Your output must be a valid JSON object where keys are Target Column IDs and values are File Headers.
-      
+
       Try to be smart about synonyms (e.g., 'Qty' matches 'quantity', 'Rate' matches 'price', 'Desc' matches 'description').`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: targetColumns.reduce((acc, col) => {
-              acc[col.key] = { type: Type.STRING };
-              return acc;
-            }, {} as any)
-          }
-        }
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.0-flash', responseType: 'json' }),
       });
+      if (!response.ok) throw new Error('AI generation failed');
+      const { text } = await response.json();
 
-      const suggestedMapping = JSON.parse(response.text || '{}');
+      const suggestedMapping = JSON.parse(text || '{}');
       
       // Clean up suggested mapping to only include valid headers
       const validHeaders = new Set(fileHeaders);

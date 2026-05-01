@@ -120,7 +120,6 @@ export const ResourcesView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this resource?')) return;
     try {
       await deleteDoc(doc(db, 'resources', id));
     } catch (error) {

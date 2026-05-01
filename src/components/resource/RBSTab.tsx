@@ -80,7 +80,6 @@ export const RBSTab: React.FC<RBSTabProps> = ({ projectId }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure? This will not delete children but they will lose their parent.')) return;
     try {
       await deleteDoc(doc(db, 'rbs', id));
     } catch (error) {

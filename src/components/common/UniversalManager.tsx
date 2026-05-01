@@ -101,7 +101,6 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
       const recordToDelete = data.find(r => r.id === id);
       await deleteDoc(doc(db, config.collection, id));

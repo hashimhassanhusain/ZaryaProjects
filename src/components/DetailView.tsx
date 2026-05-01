@@ -1075,7 +1075,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
 
   const handleDeleteStakeholder = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this stakeholder?')) return;
     try {
       await deleteDoc(doc(db, 'stakeholders', id));
       // Log deletion

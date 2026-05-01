@@ -465,11 +465,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       });
       const base64Data = await base64Promise;
 
-      // Initialize Gemini
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const model = "gemini-3-flash-preview"; 
-
-      const prompt = `Extract all Purchase Orders (PO) from the provided document.
+      const prompt = `Extract all Purchase Orders (PO) from the provided document (base64 encoded, mimeType: ${file.type || 'application/pdf'}).
       For each PO, identify:
       - PO Number/ID
       - Date (YYYY-MM-DD)
@@ -483,60 +479,20 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
         - Unit (e.g., 'pcs', 'm3', 'ton')
         - Unit Rate (number)
         - Total Amount for the line item (number)
-      
+
       Return the result as a JSON array of objects.
-      The document may have multiple pages, please extract everything.`;
+      The document may have multiple pages, please extract everything.
+      Document (base64): ${base64Data}`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType: file.type || 'application/pdf'
-                }
-              }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                poId: { type: Type.STRING, description: "Purchase Order Number/ID" },
-                date: { type: Type.STRING, description: "Order Date (YYYY-MM-DD)" },
-                supplier: { type: Type.STRING, description: "Supplier Name" },
-                costAccount: { type: Type.STRING, description: "Cost Account / Masterformat / Division" },
-                workPackage: { type: Type.STRING, description: "Work Package Name" },
-                completion: { type: Type.NUMBER, description: "Percentage completion (0-100)" },
-                lineItems: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      description: { type: Type.STRING },
-                      quantity: { type: Type.NUMBER },
-                      unit: { type: Type.STRING },
-                      rate: { type: Type.NUMBER },
-                      amount: { type: Type.NUMBER }
-                    },
-                    required: ["description", "quantity", "unit", "rate", "amount"]
-                  }
-                }
-              },
-              required: ["poId", "date", "supplier", "lineItems"]
-            }
-          }
-        }
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.0-flash', responseType: 'json' }),
       });
+      if (!response.ok) throw new Error('AI generation failed');
+      const { text } = await response.json();
 
-      const extractedPOs = JSON.parse(response.text || "[]");
+      const extractedPOs = JSON.parse(text || "[]");
       
       if (extractedPOs.length === 0) {
         toast.error("No Purchase Orders could be extracted from the document.");
