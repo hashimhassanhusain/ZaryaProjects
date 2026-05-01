@@ -76,7 +76,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const isAdmin = userProfile?.role === 'admin' || userProfile?.email === 'hashim.h.husain@gmail.com';
+  const isAdmin = userProfile?.role === 'admin';
 
   return (
     <UserContext.Provider value={{ userProfile, loading, isAdmin }}>

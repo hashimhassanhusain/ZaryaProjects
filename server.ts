@@ -12,11 +12,26 @@ import { Readable } from 'stream';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv', 'application/zip'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(express.urlencoded({ extended: false }));
+app.use(cors({
+  origin: process.env.APP_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 
 // Google Drive Auth
 const getDriveClient = () => {
@@ -91,7 +106,7 @@ const getDriveClient = () => {
     }
     credentials.private_key = pk;
 
-    console.log('Initializing GoogleAuth for:', credentials.client_email);
+    if (process.env.NODE_ENV !== 'production') console.log('Initializing GoogleAuth for:', credentials.client_email);
     
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -296,7 +311,7 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
   const { drive, error } = getDriveClient();
   
   if (error || !drive || !file || !projectRootId || !path) {
-    return res.status(500).json({ error: error || 'Missing required parameters' });
+    return res.status(400).json({ error: error || 'Missing required parameters' });
   }
 
   try {
@@ -311,36 +326,39 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
     // Archive existing file if it exists
     await archiveExistingFile(drive, targetFolderId, file.originalname);
 
-    const resDrive = await drive.files.create({
-      requestBody: {
-        name: file.originalname,
-        parents: [targetFolderId],
-      },
-      media: {
-        mimeType: file.mimetype,
-        body: fs.createReadStream(file.path),
-      },
-      supportsAllDrives: true,
-      // @ts-ignore
-      uploadType: 'multipart',
-    } as any);
-    
-    fs.unlinkSync(file.path);
+    let resDrive;
+    try {
+      resDrive = await drive.files.create({
+        requestBody: {
+          name: file.originalname,
+          parents: [targetFolderId],
+        },
+        media: {
+          mimeType: file.mimetype,
+          body: fs.createReadStream(file.path),
+        },
+        supportsAllDrives: true,
+        // @ts-ignore
+        uploadType: 'multipart',
+      } as any);
+    } finally {
+      fs.unlinkSync(file.path);
+    }
     res.json({ fileId: resDrive.data.id, folderId: targetFolderId });
   } catch (error: any) {
     console.error('Upload by path failed:', error);
     const errorMessage = error.response?.data?.error?.message || error.message || 'Upload failed';
-    
+
     // Check for storage quota error specifically
     if (errorMessage.includes('storage quota')) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "System Storage Permission Error: Please ensure the Service Account is added to the Shared Drive as a Manager.",
         details: error.response?.data?.error?.errors || null
       });
     }
 
     const errorDetails = error.response?.data?.error?.errors || null;
-    res.status(500).json({ 
+    res.status(500).json({
       error: errorMessage,
       details: errorDetails
     });
@@ -553,7 +571,7 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
     }
 
     const zipBuffer = zip.toBuffer();
-    const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'UTC' }).replace(/[/, :]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `Zarya_Source_Backup_${timestamp}.zip`;
 
     console.log(`Uploading ${fileName} to Drive folder: ${backupFolderId}`);
@@ -562,27 +580,31 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
     const tempPath = path.join(process.cwd(), 'temp_backup.zip');
     fs.writeFileSync(tempPath, zipBuffer);
 
-    const response = await drive.files.create({
-      requestBody: {
-        name: fileName,
-        parents: [backupFolderId],
-      },
-      media: {
-        mimeType: 'application/zip',
-        body: fs.createReadStream(tempPath),
-      },
-      fields: 'id, name',
-      supportsAllDrives: true,
-      // @ts-ignore
-      uploadType: 'multipart',
-    });
+    let response;
+    try {
+      response = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          parents: [backupFolderId],
+        },
+        media: {
+          mimeType: 'application/zip',
+          body: fs.createReadStream(tempPath),
+        },
+        fields: 'id, name',
+        supportsAllDrives: true,
+        // @ts-ignore
+        uploadType: 'multipart',
+      });
+    } finally {
+      fs.unlinkSync(tempPath);
+    }
 
-    fs.unlinkSync(tempPath);
     console.log('Backup successful! File ID:', response.data.id);
-    res.json({ 
-      success: true, 
-      fileId: response.data.id, 
-      fileName: response.data.name 
+    res.json({
+      success: true,
+      fileId: response.data.id,
+      fileName: response.data.name
     });
   } catch (error: any) {
     console.error('Backup process crashed:', error);
@@ -633,21 +655,25 @@ app.post('/api/upload', upload.single('file'), async (req: any, res: any) => {
   const { drive, error } = getDriveClient();
   if (error || !drive || !file) return res.status(500).json({ error: error || 'Drive client or file missing' });
 
+  let resDrive;
   try {
-    const resDrive = await drive.files.create({
-      requestBody: {
-        name: file.originalname,
-        parents: [folderId],
-      },
-      media: {
-        mimeType: file.mimetype,
-        body: fs.createReadStream(file.path),
-      },
-      supportsAllDrives: true,
-      // @ts-ignore
-      uploadType: 'multipart',
-    });
-    fs.unlinkSync(file.path); // Delete temp file
+    try {
+      resDrive = await drive.files.create({
+        requestBody: {
+          name: file.originalname,
+          parents: [folderId],
+        },
+        media: {
+          mimeType: file.mimetype,
+          body: fs.createReadStream(file.path),
+        },
+        supportsAllDrives: true,
+        // @ts-ignore
+        uploadType: 'multipart',
+      });
+    } finally {
+      fs.unlinkSync(file.path); // Delete temp file
+    }
     res.json({ fileId: resDrive.data.id });
   } catch (error) {
     console.error('Upload failed:', error);
@@ -733,10 +759,36 @@ app.get('/api/admin/drive-status', (req: any, res: any) => {
   const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
   
   res.json({
-    isConfigured: !!envCreds && envCreds.length > 50, // Simple check for JSON content
+    isConfigured: !!envCreds && envCreds.length > 50,
     hasParentFolder: !!parentId,
-    parentFolderId: parentId
   });
+});
+
+app.post('/api/ai/generate', async (req: any, res: any) => {
+  const { prompt, model = 'gemini-2.0-flash', responseType } = req.body;
+  if (!prompt || typeof prompt !== 'string' || prompt.length > 50000) {
+    return res.status(400).json({ error: 'Invalid prompt' });
+  }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'AI service not configured' });
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          ...(responseType === 'json' ? { generationConfig: { responseMimeType: 'application/json' } } : {})
+        }),
+      }
+    );
+    const data = await response.json() as any;
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    res.json({ text });
+  } catch (err: any) {
+    res.status(500).json({ error: 'AI generation failed' });
+  }
 });
 
 // Catch-all for undefined API routes to prevent falling through to SPA fallback

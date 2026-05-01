@@ -80,6 +80,13 @@ import { UserProvider, useAuth } from './context/UserContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { Toaster } from 'react-hot-toast';
 
+const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin, loading } = useAuth();
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 const PageRenderer = () => {
   const { t } = useLanguage();
   const { userProfile, isAdmin } = useAuth();
@@ -401,12 +408,12 @@ const AppLayout = () => {
               <Route path="/project/:projectId/page/:id" element={<PageRenderer />} />
             <Route path="/explorer/:folderId" element={<DriveFolderView />} />
             <Route path="/profile" element={<UserFormView />} />
-            <Route path="/admin/users" element={<AdminSettings />} />
-            <Route path="/admin/users/new" element={<UserFormView />} />
-            <Route path="/admin/users/:uid" element={<UserFormView />} />
-            <Route path="/admin/enterprise" element={<EnterpriseStructure />} />
-            <Route path="/admin/projects" element={<AdminSettings />} />
-            <Route path="/admin/projects/:id" element={<ProjectFormView />} />
+            <Route path="/admin/users" element={<RequireAdmin><AdminSettings /></RequireAdmin>} />
+            <Route path="/admin/users/new" element={<RequireAdmin><UserFormView /></RequireAdmin>} />
+            <Route path="/admin/users/:uid" element={<RequireAdmin><UserFormView /></RequireAdmin>} />
+            <Route path="/admin/enterprise" element={<RequireAdmin><EnterpriseStructure /></RequireAdmin>} />
+            <Route path="/admin/projects" element={<RequireAdmin><AdminSettings /></RequireAdmin>} />
+            <Route path="/admin/projects/:id" element={<RequireAdmin><ProjectFormView /></RequireAdmin>} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={
               <div className="min-h-full bg-slate-50 p-6 lg:p-10 space-y-10">
@@ -577,7 +584,7 @@ export default function App() {
   useEffect(() => {
     const seedUsers = async () => {
       // Only attempt to seed if authenticated and admin, to avoid permission errors
-      if (!user || user.email !== 'hashim.h.husain@gmail.com') return;
+      if (!user) return;
       
       try {
         const usersRef = collection(db, 'users');
@@ -605,12 +612,11 @@ export default function App() {
             const userRef = doc(db, 'users', user.uid);
             const userSnap = await getDoc(userRef);
             if (!userSnap.exists()) {
-              const isAdminEmail = user.email === 'hashim.h.husain@gmail.com';
               await setDoc(userRef, {
                 uid: user.uid,
                 name: user.displayName || 'New User',
                 email: user.email || '',
-                role: isAdminEmail ? 'admin' : 'engineer',
+                role: 'engineer',
                 photoURL: user.photoURL || '',
                 accessiblePages: [],
                 accessibleProjects: []

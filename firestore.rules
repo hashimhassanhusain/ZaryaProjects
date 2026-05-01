@@ -18,7 +18,7 @@ service cloud.firestore {
     }
 
     match /test_connection/status {
-      allow read: if true;
+      allow read: if isAuthenticated();
     }
 
     match /team_members/{memberId} {
@@ -76,8 +76,17 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    match /{document=**} {
+    match /projects/{projectId} {
       allow read, write: if isAuthenticated();
+    }
+
+    match /projects/{projectId}/{subcollection=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

@@ -31,7 +31,7 @@ export const ProjectFormView: React.FC = () => {
     endDate: '',
     location: '',
     description: '',
-    adminPin: '1234',
+    adminPin: '',
   });
 
   const isNew = !id || id === 'new';

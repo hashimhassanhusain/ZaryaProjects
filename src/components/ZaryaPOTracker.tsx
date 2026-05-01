@@ -10,7 +10,6 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
 import { DollarSign, Coins, RefreshCw } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { DataImportModal } from './DataImportModal';

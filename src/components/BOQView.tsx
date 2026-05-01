@@ -19,7 +19,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { loadArabicFont } from '../lib/pdfUtils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { GoogleGenAI, Type } from "@google/genai";
 import { DollarSign, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AddWBSLevelModal } from './AddWBSLevelModal';
@@ -325,10 +324,6 @@ export const BOQView: React.FC = () => {
       });
       const base64Data = await base64Promise;
 
-      // Initialize Gemini
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const model = "gemini-3-flash-preview";
-
       const prompt = `Extract all Bill of Quantities (BOQ) items from the provided document.
       For each item, identify:
       - MasterFormat 16 Cost Accounts ID (e.g., '01', '03', '09')
@@ -338,50 +333,24 @@ export const BOQView: React.FC = () => {
       - Unit (e.g., 'm3', 'ton', 'm2', 'LS')
       - Unit Rate (number)
       - Currency (either 'USD' or 'IQD')
-      
+
       If the document uses a specific exchange rate, please note it.
       If Quantity, Unit, or Rate are not explicitly listed but a Total Amount is provided, set Quantity to 1, Unit to 'LS', and Rate to the Total Amount.
       If a row represents a sub-item or a detail, include it as a separate item.
       Return the result as a JSON array of objects.
-      The document may have multiple pages, please extract everything.`;
+      The document may have multiple pages, please extract everything.
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType: file.type || 'application/pdf'
-                }
-              }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                division: { type: Type.STRING, description: "MasterFormat 16 Cost Accounts ID" },
-                workPackage: { type: Type.STRING, description: "Work Package name" },
-                description: { type: Type.STRING, description: "Detailed description of the item" },
-                quantity: { type: Type.NUMBER, description: "Quantity of the item" },
-                unit: { type: Type.STRING, description: "Unit of measurement" },
-                rate: { type: Type.NUMBER, description: "Unit rate" },
-                currency: { type: Type.STRING, description: "Currency (USD or IQD)" }
-              },
-              required: ["division", "workPackage", "description", "quantity", "unit", "rate", "currency"]
-            }
-          }
-        }
+      Document (base64): ${base64Data}`;
+
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model: 'gemini-2.0-flash', responseType: 'json' }),
       });
+      if (!response.ok) throw new Error('AI generation failed');
+      const { text } = await response.json();
 
-      const extractedItems = JSON.parse(response.text || "[]");
+      const extractedItems = JSON.parse(text || "[]");
       
       if (extractedItems.length === 0) {
         toast.error("No items could be extracted from the PDF. Please ensure it's a valid BOQ document.");
@@ -452,7 +421,6 @@ export const BOQView: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedItemIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedItemIds.length} items?`)) return;
 
     try {
       for (const id of selectedItemIds) {
