@@ -189,18 +189,19 @@ export const Header: React.FC = () => {
         <Link 
           to={selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`}
           className={cn(
-            "mx-2 flex items-center gap-2.5 px-4 h-9 rounded-xl transition-all group shrink-0",
+            "mx-4 flex items-center gap-3 px-6 h-11 rounded-2xl transition-all group shrink-0 relative overflow-hidden",
             activePageId === 'foundation' 
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
-              : "bg-slate-50 border border-slate-100 text-slate-600 hover:border-blue-200 hover:text-blue-600"
+              ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" 
+              : "bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700"
           )}
         >
-           <Database className={cn("w-3.5 h-3.5 transition-transform group-hover:scale-110", activePageId === 'foundation' ? "text-white" : "text-blue-500")} />
-           <div className="flex flex-col -space-y-0.5">
-              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-60">
+           <div className="absolute top-0 right-0 w-8 h-8 bg-white/10 rounded-full -mr-4 -mt-4 blur-xl group-hover:scale-150 transition-transform" />
+           <Database className={cn("w-4 h-4 transition-transform group-hover:scale-110 relative z-10", activePageId === 'foundation' ? "text-blue-400" : "text-white")} />
+           <div className="flex flex-col -space-y-0.5 relative z-10">
+              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-80">
                  {t('initiating')}
               </span>
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+              <span className="text-[11px] font-black uppercase tracking-widest leading-none">
                  {t('foundation_center') || 'Master Data'}
               </span>
            </div>

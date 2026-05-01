@@ -271,7 +271,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     parentId: 'fin',
     domain: 'finance', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'LineChart', 
     summary: 'A formal report evaluating the economic viability and investment justification of the project.',
     details: {
@@ -285,7 +285,7 @@ export const pages: Page[] = [
     title: 'Funding Strategy Plan', 
     type: 'terminal', 
     domain: 'finance', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'Wallet', 
     summary: 'The formal plan identifying funding sources and budget allocation models for project execution.',
     details: {
@@ -470,7 +470,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     parentId: 'sched',
     domain: 'schedule', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'Clock', 
     summary: 'The preliminary project timeline identifying critical milestones and time constraints phase-by-phase.',
     details: {
@@ -484,7 +484,7 @@ export const pages: Page[] = [
     title: 'Preliminary Activity List', 
     type: 'terminal', 
     domain: 'schedule', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'ListTodo', 
     summary: 'An initial list of major project activities required to deliver high-level project outcomes.',
     details: {
@@ -668,7 +668,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     parentId: 'scope',
     domain: 'delivery', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'DraftingCompass', 
     summary: 'The initial scope statement identifying broad boundaries and high-level deliverables.',
     details: {
@@ -682,7 +682,7 @@ export const pages: Page[] = [
     title: 'Requirements Documentation', 
     type: 'terminal', 
     domain: 'delivery', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'ClipboardList', 
     summary: 'A record of prioritized stakeholder needs and project technical requirements.',
     details: {
@@ -1015,7 +1015,7 @@ export const pages: Page[] = [
     title: 'High-Level Resource Strategy', 
     type: 'terminal', 
     domain: 'resources', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'Search', 
     summary: 'Preliminary strategy identifying broad project resource requirements and sourcing categories.',
     details: {
@@ -1029,7 +1029,7 @@ export const pages: Page[] = [
     title: 'Resource Acquisition Strategy', 
     type: 'terminal', 
     domain: 'resources', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'Compass', 
     summary: 'The documented approach for acquiring project-specific technical and human resources.',
     details: {
@@ -1211,7 +1211,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     parentId: 'risk',
     domain: 'risk', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'ShieldAlert', 
     summary: 'The preliminary registry capturing high-level project risks and opportunities.',
     details: {
@@ -1226,7 +1226,7 @@ export const pages: Page[] = [
     type: 'terminal', 
     parentId: 'risk',
     domain: 'risk', 
-    focusArea: 'Initiating', 
+    focusArea: 'Planning', 
     icon: 'Compass', 
     summary: 'The formal strategy defining methodology and appetite for project risk management.',
     details: {

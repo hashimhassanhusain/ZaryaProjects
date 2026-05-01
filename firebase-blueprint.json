@@ -504,6 +504,31 @@
       },
       "required": ["projectId"]
     },
+    "ProjectDesign": {
+      "title": "Project Design File",
+      "description": "Technical drawings, 3D models, and engineering specifications with smart naming.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "originator": { "type": "string", "enum": ["ARCH", "STR", "MECH", "ELEC", "SUB", "CLT"] },
+        "division": { "type": "string", "enum": ["Div 02", "Div 03", "Div 15", "Div 16"] },
+        "type": { "type": "string", "enum": ["PLN", "SEC", "DET", "SCH", "3DM"] },
+        "refNo": { "type": "string" },
+        "description": { "type": "string" },
+        "version": { "type": "string" },
+        "date": { "type": "string" },
+        "fullName": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Work in Progress"] },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "extension": { "type": "string" },
+        "size": { "type": "string" }
+      },
+      "required": ["projectId", "originator", "division", "type", "refNo", "description", "version", "date", "fullName", "status"]
+    },
     "Stakeholder": {
       "title": "Stakeholder",
       "description": "Project stakeholder information and analysis.",
@@ -659,6 +684,10 @@
     "/stakeholders/{id}": {
       "schema": "Stakeholder",
       "description": "Detailed project stakeholder register."
+    },
+    "/project_designs/{id}": {
+      "schema": "ProjectDesign",
+      "description": "Technical drawings and engineering records."
     }
   }
 }

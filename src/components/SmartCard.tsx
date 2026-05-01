@@ -47,7 +47,8 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
       <button 
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
-        className="p-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-all shadow-lg group"
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-all shadow-lg group cursor-pointer active:scale-95"
       >
         <Icon className="w-4 h-4" />
       </button>
@@ -55,11 +56,11 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            initial={{ opacity: 0, scale: 0.9, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            exit={{ opacity: 0, scale: 0.9, y: -10 }}
             className={cn(
-              "absolute bottom-full mb-4 w-72 md:w-80 bg-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10 z-[100]",
+              "absolute top-full mt-4 w-72 md:w-80 bg-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10 z-[100]",
               isRtl ? "right-0" : "left-0"
             )}
           >
@@ -85,7 +86,7 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
                          <div className={cn("text-[9px] font-black text-slate-500 uppercase mb-2", isRtl && "text-right")}>Internal constraints</div>
                          <div className="flex flex-wrap gap-2">
                             {Object.entries(data.eefs?.internal || {}).map(([k, v]) => v === true && (
-                              <span key={k} className="px-2 py-1 bg-white/5 rounded text-[8px] font-bold uppercase tracking-wider">{k}</span>
+                               <span key={k} className="px-2 py-1 bg-white/5 rounded text-[8px] font-bold uppercase tracking-wider">{k}</span>
                             ))}
                          </div>
                       </div>
@@ -93,7 +94,7 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
                          <div className={cn("text-[9px] font-black text-slate-500 uppercase mb-2", isRtl && "text-right")}>External constraints</div>
                          <div className="flex flex-wrap gap-2">
                             {Object.entries(data.eefs?.external || {}).map(([k, v]) => v === true && (
-                              <span key={k} className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-[8px] font-bold uppercase tracking-wider">{k}</span>
+                               <span key={k} className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-[8px] font-bold uppercase tracking-wider">{k}</span>
                             ))}
                          </div>
                       </div>
@@ -133,7 +134,7 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
 
             {/* Triangle indicator */}
             <div className={cn(
-              "absolute top-full -mt-2 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-slate-900",
+              "absolute bottom-full -mb-2 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-slate-900",
               isRtl ? "right-6" : "left-6"
             )} />
           </motion.div>

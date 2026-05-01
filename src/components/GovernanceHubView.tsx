@@ -31,7 +31,8 @@ import {
   Target,
   Info,
   GraduationCap,
-  ListChecks
+  ListChecks,
+  Database
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
@@ -40,6 +41,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { UniversalManager } from './common/UniversalManager';
 import { DomainDashboard } from './DomainDashboard';
+import { useProject } from '../context/ProjectContext';
+import { Link } from 'react-router-dom';
 
 import { ProjectCharterView } from './ProjectCharterView';
 import { GovernancePoliciesView } from './GovernancePoliciesView';
@@ -56,6 +59,7 @@ interface GovernanceHubViewProps {
 export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
   const { userProfile, isAdmin } = useAuth();
+  const { selectedProject } = useProject();
   const navigate = useNavigate();
   
   // Initialize tab based on page.id
@@ -149,6 +153,28 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
             </header>
 
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Master Data / Foundation Center - Primary Entry Point */}
+              <Link 
+                to={selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`}
+                className="group bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl shadow-slate-900/20 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500 rounded-full translate-x-16 -translate-y-16 opacity-10 blur-3xl animate-pulse" />
+                <div className="relative z-10 space-y-6">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-600/30">
+                    <Database className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white italic tracking-tight uppercase">{t('foundation_center') || 'Foundation Center'}</h3>
+                    <p className="text-[10px] text-blue-200 mt-2 font-black leading-relaxed opacity-60 uppercase tracking-[0.2em]">
+                       Project Master Data • Variables • PMBOK 8
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                    {t('open_center')} <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </Link>
+
               {accessiblePlans.map((plan) => (
                 <div 
                   key={plan.id}
