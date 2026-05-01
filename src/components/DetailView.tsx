@@ -1197,9 +1197,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           name: updatedStakeholder.name,
           role: updatedStakeholder.role,
           department: updatedStakeholder.position,
-          email: updatedStakeholder.contactInfo,
-          phone: updatedStakeholder.contactInfo,
-          location: 'Main Site',
+          email: updatedStakeholder.email || '',
+          phone: updatedStakeholder.phone || '',
+          location: updatedStakeholder.location || 'Main Site',
           workHours: '08:00 - 17:00'
         });
       } catch (e) {
@@ -1236,8 +1236,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           stakeholderId: stakeholderId,
           stakeholderName: updatedStakeholder.name,
           information: updatedStakeholder.requirements || 'Project Updates',
-          method: updatedStakeholder.classification === 'Internal' ? 'Email/Meeting' : 'Official Letter',
-          frequency: updatedStakeholder.communicationFrequency,
+          method: updatedStakeholder.type === 'Internal' ? 'Email/Meeting' : 'Official Letter',
+          frequency: 'Monthly',
           sender: 'Project Manager',
           status: 'Active'
         });
@@ -1246,7 +1246,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       }
 
       // --- TO VENDOR REGISTER SYNC ---
-      if (updatedStakeholder.classification === 'External' && (updatedStakeholder.role?.toLowerCase().includes('subcontractor') || updatedStakeholder.role?.toLowerCase().includes('vendor'))) {
+      if (updatedStakeholder.type === 'External' && (updatedStakeholder.role?.toLowerCase().includes('subcontractor') || updatedStakeholder.role?.toLowerCase().includes('vendor'))) {
         try {
           const vendorId = `vendor_${stakeholderId}`;
           const vendorRef = doc(db, 'vendors', vendorId);
@@ -1258,8 +1258,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             name: updatedStakeholder.name,
             contactDetails: {
               address: updatedStakeholder.position || 'N/A',
-              phone: updatedStakeholder.contactInfo || 'N/A',
-              email: updatedStakeholder.contactInfo || 'N/A',
+              phone: updatedStakeholder.phone || 'N/A',
+              email: updatedStakeholder.email || 'N/A',
             },
             discipline: '01 - General Requirements',
             status: 'Active'
@@ -1479,18 +1479,26 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 projectId: selectedProject.id,
                 name: s.name,
                 position: position,
+                organization: 'Charter Reference',
                 role: position,
-                contactInfo: '',
-                classification: 'Internal',
+                email: '',
+                phone: '',
+                location: '',
+                type: 'Internal',
                 influence: 'Medium',
                 interest: 'Medium',
                 expectations: '',
                 requirements: '',
-                priorityScore: 5,
-                influenceScore: 2,
-                engagementLevel: 'Amber',
-                communicationFrequency: 'Weekly',
-                category: 'Charter'
+                powerScore: 5,
+                interestScore: 5,
+                currentEngagement: 'Neutral',
+                desiredEngagement: 'Supportive',
+                phaseOfMostInterest: 'Initiation',
+                status: 'Active',
+                updatedAt: new Date().toISOString(),
+                updatedBy: 'System',
+                createdAt: new Date().toISOString(),
+                createdBy: 'System'
               };
               await addDoc(collection(db, 'stakeholders'), newStakeholder);
             }

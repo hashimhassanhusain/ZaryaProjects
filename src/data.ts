@@ -104,17 +104,19 @@ export const projects: Project[] = [];
 export const pages: Page[] = [
   // --- HUBS (DOMAINS) ---
   { id: 'gov', title: 'Governance', type: 'hub', domain: 'governance', parentId: '', icon: 'Shield', focusArea: 'Planning' },
+  { id: 'foundation', title: 'Foundation Center', type: 'hub', domain: 'initiating', parentId: '', icon: 'Database', focusArea: 'Initiating' },
   { id: 'scope', title: 'Scope', type: 'hub', domain: 'delivery', parentId: '', icon: 'DraftingCompass', focusArea: 'Planning' },
   { id: 'sched', title: 'Schedule', type: 'hub', domain: 'schedule', parentId: '', icon: 'Calendar', focusArea: 'Planning' },
   { id: 'fin', title: 'Finance', type: 'hub', domain: 'finance', parentId: '', icon: 'Banknote', focusArea: 'Planning' },
   { id: 'stak', title: 'Stakeholders', type: 'hub', domain: 'stakeholders', parentId: '', icon: 'Users', focusArea: 'Planning' },
   { id: 'res', title: 'Resources', type: 'hub', domain: 'resources', parentId: '', icon: 'Package', focusArea: 'Planning' },
   { id: 'risk', title: 'Risk', type: 'hub', domain: 'risk', parentId: '', icon: 'AlertTriangle', focusArea: 'Planning' },
+  { id: 'design_hub', title: 'Design & Engineering', type: 'terminal', domain: 'delivery', parentId: 'scope', icon: 'DraftingCompass', focusArea: 'Planning', summary: 'Central repository for AutoCAD drawings, 3D models, and engineering specifications.' },
 
   // --- STAKEHOLDERS DOMAIN (ARTIFACT-CENTRIC) ---
   { 
     id: '1.5.1', 
-    title: 'Stakeholder Register (Initial)', 
+    title: 'Stakeholder Register', 
     type: 'terminal', 
     parentId: 'stak',
     domain: 'stakeholders', 
@@ -857,6 +859,22 @@ export const pages: Page[] = [
       inputs: ['business-case', 'strategic-objectives', 'eef', 'opa'],
       tools: ['Charter Template', 'Expert Judgment', 'Stakeholder Alignment'],
       outputs: ['project-charter', 'signed-approval']
+    }
+  },
+  { 
+    id: '1.1.3', 
+    title: 'Assumption Log', 
+    type: 'terminal', 
+    domain: 'governance', 
+    parentId: 'gov',
+    focusArea: 'Initiating', 
+    icon: 'ListChecks', 
+    collectionName: 'assumptions',
+    summary: 'A dynamic log tracking all project assumptions and constraints from initiation through closure.',
+    details: {
+      inputs: ['business-case', 'project-charter', 'stakeholder-feedback', 'org-policies'],
+      tools: ['Assumption Analysis', 'Constraint Identification', 'Impact Mapping'],
+      outputs: ['assumption-log', 'constraint-register', 'risk-inputs']
     }
   },
   { 

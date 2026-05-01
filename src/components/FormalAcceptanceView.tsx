@@ -32,67 +32,6 @@ import {
   UserCheck,
   FileSignature
 } from 'lucide-react';
-import { Page, Project, PageVersion, WBSLevel, QualityMetricEntry, FormalAcceptanceEntry, FormalAcceptanceVersion } from '../types';
-import { db, OperationType, handleFirestoreError, auth } from '../firebase';
-import { 
-  updateDoc, 
-  doc, 
-  onSnapshot,
-  collection,
-  query,
-  where,
-  addDoc,
-  getDocs,
-  getDoc,
-  orderBy,
-  deleteDoc
-} from 'firebase/firestore';
-import { useProject } from '../context/ProjectContext';
-import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
-import { toast } from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
-interface FormalAcceptanceViewProps {
-  page: Page;
-  embedded?: boolean;
-}
-
-import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  Download, 
-  History, 
-  Plus, 
-  Trash2, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  FileText,
-  Printer,
-  Loader2,
-  X,
-  ArrowLeft,
-  ChevronRight,
-  Search,
-  Filter,
-  MoreVertical,
-  Edit2,
-  ShieldAlert,
-  ClipboardCheck,
-  Layers,
-  Box,
-  Activity,
-  DollarSign,
-  Info,
-  CheckCircle,
-  XCircle,
-  HelpCircle,
-  Calculator,
-  UserCheck,
-  FileSignature
-} from 'lucide-react';
 import { Page, Project, PageVersion, WBSLevel, QualityMetricEntry, FormalAcceptanceEntry, FormalAcceptanceVersion, EntityConfig } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 

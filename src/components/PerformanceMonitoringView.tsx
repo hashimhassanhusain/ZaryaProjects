@@ -53,6 +53,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [records, setRecords] = useState<any[]>([]);
+  const [versions, setVersions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 

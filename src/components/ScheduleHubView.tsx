@@ -102,7 +102,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     {
       id: 'initiating',
       label: t('initiating'),
-      tabs: schedulePages.filter(p => p.group === 'initiating').map(p => {
+      tabs: schedulePages.filter(p => p.group === 'initiating' && p.id !== '1.3.1').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
         return {
@@ -278,7 +278,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {schedulePages.map((p) => (
+        {schedulePages.filter(p => p.id !== '1.3.1').map((p) => (
           <div 
             key={p.id}
             onClick={() => handleTabChange(p.id)}

@@ -437,6 +437,106 @@
         "status": { "type": "string", "enum": ["Draft", "Active", "Ended", "Suspended"] }
       },
       "required": ["contractId", "projectId", "vendorId", "contractValue", "contractType", "status"]
+    },
+    "ProjectFoundation": {
+      "title": "Project Foundation (Master Data)",
+      "description": "Core foundational data for a project including business documents, agreements, EEFs, and OPAs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "businessDocuments": {
+          "type": "object",
+          "properties": {
+            "feasibilityStudy": { "type": "string" },
+            "roi": { "type": "number" },
+            "feasibilityPdfUrl": { "type": "string" },
+            "benefitsPlan": { "type": "string" },
+            "benefitMetrics": { "type": "string" },
+            "benefitDuration": { "type": "string" }
+          }
+        },
+        "agreements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string", "enum": ["Contract", "MOU", "SLA"] },
+              "milestones": { "type": "string" },
+              "penalties": { "type": "string" },
+              "initialScope": { "type": "string" },
+              "pdfUrl": { "type": "string" }
+            }
+          }
+        },
+        "eefs": {
+          "type": "object",
+          "properties": {
+            "internal": {
+              "type": "object",
+              "properties": {
+                "infrastructure": { "type": "boolean" },
+                "software": { "type": "boolean" },
+                "culture": { "type": "boolean" },
+                "custom": { "type": "string" }
+              }
+            },
+            "external": {
+              "type": "object",
+              "properties": {
+                "legal": { "type": "boolean" },
+                "government": { "type": "boolean" },
+                "market": { "type": "boolean" },
+                "custom": { "type": "string" }
+              }
+            }
+          }
+        },
+        "opas": {
+          "type": "object",
+          "properties": {
+            "importedTemplates": { "type": "array", "items": { "type": "string" } },
+            "lessonsLearnedIds": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["projectId"]
+    },
+    "Stakeholder": {
+      "title": "Stakeholder",
+      "description": "Project stakeholder information and analysis.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "name": { "type": "string" },
+        "position": { "type": "string" },
+        "organization": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "requirements": { "type": "string" },
+        "expectations": { "type": "string" },
+        "influence": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "interest": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "phaseOfMostInterest": { "type": "string" },
+        "type": { "type": "string", "enum": ["Internal", "External"] },
+        "directionOfInfluence": { "type": "string", "enum": ["Upward", "Downward", "Outward", "Sideward"] },
+        "currentEngagement": { "type": "string", "enum": ["Unaware", "Resistant", "Neutral", "Supportive", "Leading"] },
+        "desiredEngagement": { "type": "string", "enum": ["Unaware", "Resistant", "Neutral", "Supportive", "Leading"] },
+        "strategy": { "type": "string" },
+        "powerScore": { "type": "number" },
+        "interestScore": { "type": "number" },
+        "status": { "type": "string", "enum": ["Active", "Inactive"] },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["projectId", "name", "status"]
     }
   },
   "firestore": {
@@ -551,6 +651,14 @@
     "/contracts/{id}": {
       "schema": "ProjectContract",
       "description": "Official project contracts and agreements."
+    },
+    "/projectFoundations/{projectId}": {
+      "schema": "ProjectFoundation",
+      "description": "Foundational master data for each project."
+    },
+    "/stakeholders/{id}": {
+      "schema": "Stakeholder",
+      "description": "Detailed project stakeholder register."
     }
   }
 }

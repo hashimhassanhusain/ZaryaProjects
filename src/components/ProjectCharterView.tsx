@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Save, 
   Download, 
@@ -26,7 +27,9 @@ import {
   Award,
   Gavel,
   Box,
-  LayoutDashboard
+  LayoutDashboard,
+  ListChecks,
+  Database
 } from 'lucide-react';
 import { Page, Project, PageVersion, Stakeholder, ProjectIssue, EntityConfig } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
@@ -38,6 +41,7 @@ import {
   getDoc,
   query,
   where,
+  orderBy,
   addDoc,
   deleteDoc
 } from 'firebase/firestore';
@@ -54,6 +58,7 @@ import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface ProjectCharterViewProps {
   page: Page;
+  embedded?: boolean;
 }
 
 interface Milestone {
@@ -71,13 +76,19 @@ interface CharterStakeholder {
 interface CharterData {
   projectTitle: string;
   projectSponsor: string;
+  sponsorAuthority: string;
   datePrepared: string;
   projectManager: string;
+  pmResponsibility: string;
+  pmAuthorityLevel: string;
   projectCustomer: string;
   purpose: string;
-  description: string;
-  requirements: string;
-  highLevelRisks: string;
+  description: string; // High-level description
+  boundaries: string;
+  deliverables: string; // Key Deliverables
+  requirements: string; // High-level requirements
+  highLevelRisks: string; // Overall project risk
+  assumptions: string; // High-level assumptions and constraints
   objectives: {
     scope: { objective: string; successCriteria: string; approver: string };
     time: { objective: string; successCriteria: string; approver: string };
@@ -86,14 +97,12 @@ interface CharterData {
   };
   milestones: Milestone[];
   estimatedBudget: number;
+  budgetDescription: string;
   currency: 'USD' | 'IQD';
   exchangeRate: number;
   stakeholders: CharterStakeholder[];
-  pmAuthority: string;
-  staffingDecisions: string;
-  budgetManagement: string;
-  technicalDecisions: string;
-  conflictResolution: string;
+  approvalRequirements: string;
+  exitCriteria: string;
   approvals: {
     pmName: string;
     pmDate: string;
@@ -102,8 +111,9 @@ interface CharterData {
   };
 }
 
-export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) => {
+export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, embedded = false }) => {
   const { t, language, isRtl } = useLanguage();
+  const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { exchangeRate: currentExchangeRate } = useCurrency();
   
@@ -113,13 +123,19 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
   const [charter, setCharter] = useState<CharterData>({
     projectTitle: '',
     projectSponsor: '',
+    sponsorAuthority: '',
     datePrepared: new Date().toISOString().split('T')[0],
     projectManager: '',
+    pmResponsibility: '',
+    pmAuthorityLevel: '',
     projectCustomer: '',
     purpose: '',
     description: '',
+    boundaries: '',
+    deliverables: '',
     requirements: '',
     highLevelRisks: '',
+    assumptions: '',
     objectives: {
       scope: { objective: '', successCriteria: '', approver: '' },
       time: { objective: '', successCriteria: '', approver: '' },
@@ -128,14 +144,12 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
     },
     milestones: [{ id: '1', description: '', dueDate: '' }],
     estimatedBudget: 0,
+    budgetDescription: '',
     currency: 'USD',
     exchangeRate: currentExchangeRate,
     stakeholders: [{ id: '1', name: '', role: '' }],
-    pmAuthority: '',
-    staffingDecisions: '',
-    budgetManagement: '',
-    technicalDecisions: '',
-    conflictResolution: '',
+    approvalRequirements: '',
+    exitCriteria: '',
     approvals: {
       pmName: '',
       pmDate: '',
@@ -143,6 +157,40 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       sponsorDate: '',
     }
   });
+
+  const handleAutoFill = async () => {
+    if (!selectedProject) return;
+    const loadingToast = toast.loading('Fetching Master Data...');
+    try {
+      const docRef = doc(db, 'projectFoundations', selectedProject.id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const found = docSnap.data();
+        const biz = found.businessDocuments || {};
+        const agreements = found.agreements || [];
+        const eefs = found.eefs || {};
+
+        setCharter(prev => ({
+          ...prev,
+          projectTitle: selectedProject.name,
+          purpose: biz.feasibilityStudy || prev.purpose,
+          description: agreements.length > 0 ? agreements[0].initialScope : prev.description,
+          budgetDescription: biz.roi ? `Expected ROI: ${biz.roi}%` : prev.budgetDescription,
+          milestones: agreements.length > 0 && agreements[0].milestones 
+            ? agreements[0].milestones.split('\n').map((m: string, i: number) => ({ id: `${Date.now()}-${i}`, description: m, dueDate: '' }))
+            : prev.milestones,
+          assumptions: `Internal EEFs: ${Object.keys(eefs.internal || {}).filter(k => eefs.internal[k] === true).join(', ')}\nExternal EEFs: ${Object.keys(eefs.external || {}).filter(k => eefs.external[k] === true).join(', ')}`
+        }));
+        toast.success('Successfully auto-filled from Foundation Center!', { id: loadingToast });
+      } else {
+        toast.error('No Foundation Data found for this project.', { id: loadingToast });
+      }
+    } catch (err) {
+      console.error('Error auto-filling charter:', err);
+      toast.error('Failed to fetch master data', { id: loadingToast });
+    }
+  };
 
   const [charters, setCharters] = useState<any[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
@@ -194,11 +242,16 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       setCharter({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
         projectSponsor: '',
+        sponsorAuthority: '',
         datePrepared: new Date().toISOString().split('T')[0],
         projectManager: '',
+        pmResponsibility: '',
+        pmAuthorityLevel: '',
         projectCustomer: '',
         purpose: '',
         description: '',
+        boundaries: '',
+        deliverables: '',
         requirements: '',
         highLevelRisks: '',
         objectives: {
@@ -209,14 +262,12 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         },
         milestones: [{ id: '1', description: '', dueDate: '' }],
         estimatedBudget: 0,
+        budgetDescription: '',
         currency: 'USD',
         exchangeRate: currentExchangeRate,
         stakeholders: [{ id: '1', name: '', role: '' }],
-        pmAuthority: '',
-        staffingDecisions: '',
-        budgetManagement: '',
-        technicalDecisions: '',
-        conflictResolution: '',
+        approvalRequirements: '',
+        exitCriteria: '',
         approvals: {
           pmName: '',
           pmDate: '',
@@ -341,9 +392,14 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
     const pdfSections = [
       { title: 'Project Purpose or Justification:', content: charter.purpose },
-      { title: 'Project Description:', content: charter.description },
+      { title: 'High-Level Project Description:', content: charter.description },
+      { title: 'Project Boundaries:', content: charter.boundaries },
+      { title: 'Key Deliverables:', content: charter.deliverables },
       { title: 'High-Level Requirements:', content: charter.requirements },
-      { title: 'High-Level Risks:', content: charter.highLevelRisks }
+      { title: 'Overall Project Risks:', content: charter.highLevelRisks },
+      { title: 'Assumptions & Constraints:', content: charter.assumptions },
+      { title: 'Project Approval Requirements:', content: charter.approvalRequirements },
+      { title: 'Project Exit Criteria:', content: charter.exitCriteria }
     ];
 
     let y = (docObj as any).lastAutoTable.finalY + 10;
@@ -410,6 +466,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
         ...page,
         title: viewMode === 'edit' ? t('edit_view') : page.title
       }}
+      embedded={embedded}
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}
@@ -423,6 +480,17 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
       onViewModeChange={setViewMode}
     >
       <div className="space-y-6">
+        {viewMode === 'edit' && (
+          <div className="flex justify-start">
+             <button 
+               onClick={handleAutoFill}
+               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm"
+             >
+                <Database className="w-4 h-4" />
+                Auto-fill from Foundation Center
+             </button>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {viewMode === 'grid' ? (
             <motion.div
@@ -472,7 +540,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    {/* Identification Card */}
                     <div className="lg:col-span-1 space-y-4">
                       <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
                          <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/10">
@@ -488,6 +557,24 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                             />
                          </div>
                          <div className="space-y-1">
+                            <label className={cn("text-[8px] font-bold text-slate-400 uppercase tracking-widest px-0.5 block", isRtl && "text-right")}>{t('project_manager')}</label>
+                            <input 
+                              type="text"
+                              value={charter.projectManager}
+                              onChange={(e) => setCharter({ ...charter, projectManager: e.target.value })}
+                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                            />
+                         </div>
+                         <div className="space-y-1">
+                            <label className={cn("text-[8px] font-bold text-slate-400 uppercase tracking-widest px-0.5 block", isRtl && "text-right")}>{t('pm_authority_level')}</label>
+                            <input 
+                              type="text"
+                              value={charter.pmAuthorityLevel}
+                              onChange={(e) => setCharter({ ...charter, pmAuthorityLevel: e.target.value })}
+                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                            />
+                         </div>
+                         <div className="space-y-1">
                             <label className={cn("text-[8px] font-bold text-slate-400 uppercase tracking-widest px-0.5 block", isRtl && "text-right")}>{t('project_sponsor')}</label>
                             <input 
                               type="text"
@@ -499,24 +586,121 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                       </div>
                     </div>
 
-                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_boundaries')}</h3>
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_purpose')}</h3>
                           <textarea 
                              className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
-                             rows={3}
+                             rows={2}
+                             value={charter.purpose}
+                             onChange={(e) => setCharter({ ...charter, purpose: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('measurable_project_objectives')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={charter.objectives.scope.objective}
+                             placeholder="Summary objectives and success criteria..."
+                             onChange={(e) => setCharter({ 
+                               ...charter, 
+                               objectives: { 
+                                 ...charter.objectives, 
+                                 scope: { ...charter.objectives.scope, objective: e.target.value } 
+                               } 
+                             })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('high_level_project_description')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
                              value={charter.description}
                              onChange={(e) => setCharter({ ...charter, description: e.target.value })}
                           />
                        </div>
 
                        <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('success_criteria')}</h3>
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_boundaries')}</h3>
                           <textarea 
                              className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
-                             rows={3}
+                             rows={2}
+                             value={charter.boundaries}
+                             onChange={(e) => setCharter({ ...charter, boundaries: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('high_level_deliverables')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={charter.deliverables}
+                             onChange={(e) => setCharter({ ...charter, deliverables: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('high_level_requirements')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
                              value={charter.requirements}
                              onChange={(e) => setCharter({ ...charter, requirements: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('overall_project_risk')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={charter.highLevelRisks}
+                             onChange={(e) => setCharter({ ...charter, highLevelRisks: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('summary_milestone_schedule')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={JSON.stringify(charter.milestones)}
+                             placeholder="List major dates..."
+                             onChange={(e) => {
+                               try {
+                                 const val = JSON.parse(e.target.value);
+                                 if (Array.isArray(val)) setCharter({ ...charter, milestones: val });
+                               } catch (err) {
+                                 // Allow manual entry bypass for now by just setting description
+                               }
+                             }}
+                          />
+                       </div>
+                       
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_approval_requirements')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={charter.approvalRequirements}
+                             placeholder="Who decides success? Who signs off?"
+                             onChange={(e) => setCharter({ ...charter, approvalRequirements: e.target.value })}
+                          />
+                       </div>
+
+                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_exit_criteria')}</h3>
+                          <textarea 
+                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             rows={2}
+                             value={charter.exitCriteria}
+                             placeholder="Conditions for closing or cancellation..."
+                             onChange={(e) => setCharter({ ...charter, exitCriteria: e.target.value })}
                           />
                        </div>
 
@@ -566,7 +750,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
 
               <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-6 border-t border-slate-100">
                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                    <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">{t('financials')}</h3>
+                    <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">{t('preapproved_financial_resources')}</h3>
                     <div className="space-y-2">
                        <input 
                          type="number"
@@ -576,11 +760,11 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page }) 
                          placeholder={t('estimated_budget')}
                        />
                        <textarea 
-                         value={charter.budgetManagement}
-                         onChange={(e) => setCharter({ ...charter, budgetManagement: e.target.value })}
+                         value={charter.budgetDescription}
+                         onChange={(e) => setCharter({ ...charter, budgetDescription: e.target.value })}
                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 bg-white text-xs"
                          rows={2}
-                         placeholder={t('budget_management')}
+                         placeholder={t('budget_description')}
                        />
                     </div>
                  </div>

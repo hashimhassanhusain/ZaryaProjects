@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, User as UserIcon, LogOut, Shield, Search, Star, 
   FileText as FileIcon, Info, Building, FolderOpen, ChevronDown,
-  LayoutDashboard
+  LayoutDashboard, Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -19,6 +19,7 @@ import { db } from '../firebase';
 import { pages as allPages } from '../data';
 import { User as AppUser } from '../types';
 import { PERFORMANCE_DOMAINS } from '../constants/navigation';
+import { SmartCard } from './SmartCard';
 
 const hubIds: Record<string, string> = {
   'governance': 'gov',
@@ -183,6 +184,34 @@ export const Header: React.FC = () => {
              )}
            </AnimatePresence>
         </div>
+
+        {/* Foundation Center Button */}
+        <Link 
+          to={selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`}
+          className={cn(
+            "mx-2 flex items-center gap-2.5 px-4 h-9 rounded-xl transition-all group shrink-0",
+            activePageId === 'foundation' 
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
+              : "bg-slate-50 border border-slate-100 text-slate-600 hover:border-blue-200 hover:text-blue-600"
+          )}
+        >
+           <Database className={cn("w-3.5 h-3.5 transition-transform group-hover:scale-110", activePageId === 'foundation' ? "text-white" : "text-blue-500")} />
+           <div className="flex flex-col -space-y-0.5">
+              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-60">
+                 {t('initiating')}
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                 {t('foundation_center') || 'Master Data'}
+              </span>
+           </div>
+        </Link>
+
+        {selectedProject && (
+          <div className="flex items-center gap-1 mx-2">
+             <SmartCard type="eef" />
+             <SmartCard type="opa" />
+          </div>
+        )}
 
         {/* Global Hubs Navigation */}
         <nav className="flex items-center h-full gap-0.5 flex-1 px-4 overflow-x-auto no-scrollbar">

@@ -58,7 +58,6 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
       id: 'execution',
       label: t('acquisition_booking'),
       tabs: [
-        { id: 'acquisition', label: t('resource_acquisition'), icon: UserPlus },
         { id: 'assignments', label: t('calendars'), icon: Calendar },
       ]
     },
@@ -74,7 +73,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'resources' && p.id !== page.id)} initialTab="overview" />;
+      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'resources' && p.id !== page.id && p.id !== '1.6.1' && p.id !== '1.6.2')} initialTab="overview" />;
       case 'raci': return <RACIMatrixView page={page} />;
       case 'utilization': return <ResourceManagerDashboard page={page} />;
       case 'acquisition': return <ResourceAcquisitionView page={page} />;

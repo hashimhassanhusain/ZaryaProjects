@@ -48,6 +48,7 @@ import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface GovernancePoliciesViewProps {
   page: Page;
+  embedded?: boolean;
 }
 
 interface GovernanceRole {
@@ -70,7 +71,7 @@ interface PolicyData {
   version?: string;
 }
 
-export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ page }) => {
+export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ page, embedded = false }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   
@@ -285,6 +286,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
         ...page,
         title: viewMode === 'edit' ? t('edit_view') : page.title
       }}
+      embedded={embedded}
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}

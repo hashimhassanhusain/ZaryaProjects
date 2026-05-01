@@ -32,7 +32,15 @@ type TabType = 'overview' | 'analysis' | 'register' | 'engagement' | 'comms' | '
 
 export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  
+  // Initialize tab based on page.id
+  const getInitialTab = (): TabType => {
+    if (page.id === '1.5.1' || page.id === '2.5.1' || page.id === '3.5.1' || page.id === '4.5.1') return 'register';
+    if (page.id === '1.2.5' || page.id === '2.5.2') return 'analysis';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
 
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
 
@@ -42,14 +50,6 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
       label: t('navigation'),
       tabs: [
         { id: 'overview', label: t('overview'), icon: LayoutGrid, size: 'large' },
-      ]
-    },
-    {
-      id: 'identification',
-      label: t('identification_priority'),
-      tabs: [
-        { id: 'analysis', label: t('stakeholder_matrix'), icon: Target },
-        { id: 'register', label: t('stakeholder_register'), icon: Users },
       ]
     },
     {
@@ -72,9 +72,9 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'stakeholders' && p.id !== page.id)} initialTab="overview" />;
-      case 'analysis': return <StakeholderMatrixView page={page} />;
-      case 'register': return <StakeholderRegisterView page={page} />;
+      case 'overview': return <DomainDashboard page={page} childrenPages={pages.filter(p => p.domain === 'stakeholders' && p.id !== page.id && p.id !== '1.5.1' && p.id !== '1.5.2')} initialTab="overview" />;
+      case 'analysis': return <StakeholderMatrixView page={page} embedded={true} />;
+      case 'register': return <StakeholderRegisterView page={page} embedded={true} />;
       case 'engagement': return <StakeholderEngagementView page={page} />;
       case 'comms': return <CommunicationsPlanView page={page} />;
       case 'sentiment': return <StakeholderEngagementView page={page} defaultTab="sentiment" />;

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocatio
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { DetailView } from './components/DetailView';
+import { FoundationCenterView } from './components/FoundationCenterView';
 import { ZaryaPOTracker } from './components/ZaryaPOTracker';
 import { BOQView } from './components/BOQView';
 import { WBSView } from './components/WBSView';
@@ -34,6 +35,7 @@ import { ProjectManagementPlanView } from './components/ProjectManagementPlanVie
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
 import { CorrespondenceLogView } from './components/CorrespondenceLogView';
+import { DesignHubView } from './components/DesignHubView';
 import { MasterPlanAssemblyView } from './components/MasterPlanAssemblyView';
 import { SourcingStrategyView } from './components/SourcingStrategyView';
 import { ExecutionQAView } from './components/ExecutionQAView';
@@ -250,10 +252,10 @@ const PageRenderer = () => {
   const isWorkPackagesPage = page.id === '2.2.7';
   const isEVMPage = page.id === '4.2.2';
   const isProgressReportPage = page.id === '3.3.3' || page.id === 'dailylogs';
-  const isAssumptionLogPage = page.id === '2.1.5';
+  const isAssumptionLogPage = ['1.1.3', '2.1.5', '2.2.1'].includes(page.id);
   const isVendorRegisterPage = page.id === '3.3.4';
   const isQualityMetricsPage = page.id === '2.1.4';
-  const isStakeholderRegisterPage = page.id === '1.2.1';
+  const isStakeholderRegisterPage = page.id === '1.5.1';
   const isLessonsLearnedPage = page.id === '5.1.1';
   const isMasterPlanPage = page.id === '2.1.2';
   const isSourcingStrategyPage = page.id === '2.1.13';
@@ -270,21 +272,24 @@ const PageRenderer = () => {
   const isProjectManagementPlanPage = page.id === '2.1.2';
   const isGovernanceHubPage = [
     'gov', // Hub
+    '1.1.1', '1.1.2', '1.1.3', // Initiating
     '2.1.1', '2.1.3', '2.1.4', '2.1.6', '2.1.7', '2.1.8', '2.1.9', '2.1.10', '2.1.11', '2.1.12', '2.1.14', // Plans
-    '2.1.5', '1.2.1', '5.1.1' // Logs
+    '2.1.5', '1.5.1', '5.1.1' // Logs
   ].includes(page.id);
   const isChangeRequestPage = page.id === '3.1.1';
   const isChangeManagementHubPage = page.id === '3.4';
   const isStakeholdersPage = page.domain === 'stakeholders' || [
-    '1.2.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
+    '1.5.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
   ].includes(page.id);
-  const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
+  const isLogManagementPage = ['1.5.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isCorrespondenceLogPage = page.id === '3.1.2';
   const isFinancePage = page.domain === 'finance' || [
     '1.4.1', '2.4.1', '2.4.2', '2.4.3', '2.4.4', '4.4.1', '4.4.2', '5.4.1', '4.2.2', '4.2.6', '5.2.1'
   ].includes(page.id);
   const isFormalAcceptancePage = page.id === '4.1.2';
   const isClosureReportPage = page.id === '5.1.2';
+  const isFoundationPage = page.id === 'foundation';
+  const isDesignHubPage = page.id === 'design_hub';
 
   return (
     <AnimatePresence mode="wait">
@@ -387,6 +392,10 @@ const PageRenderer = () => {
           <FormalAcceptanceView page={page} />
         ) : isClosureReportPage ? (
           <ClosureReportView page={page} />
+        ) : isFoundationPage ? (
+          <FoundationCenterView page={page} />
+        ) : isDesignHubPage ? (
+          <DesignHubView page={page} />
         ) : (
           <DetailView page={page} />
         )}
@@ -396,6 +405,7 @@ const PageRenderer = () => {
 };
 
 import { AIAssistant } from './components/AIAssistant';
+import { FoundationInsights } from './components/FoundationInsights';
 
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
@@ -603,6 +613,7 @@ const AppLayout = () => {
             </Routes>
           </div>
         </main>
+        <FoundationInsights />
       </div>
     </div>
   );

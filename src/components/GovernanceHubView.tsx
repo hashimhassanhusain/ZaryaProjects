@@ -30,7 +30,8 @@ import {
   AlertTriangle,
   Target,
   Info,
-  GraduationCap
+  GraduationCap,
+  ListChecks
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
@@ -40,6 +41,14 @@ import { Ribbon, RibbonGroup } from './Ribbon';
 import { UniversalManager } from './common/UniversalManager';
 import { DomainDashboard } from './DomainDashboard';
 
+import { ProjectCharterView } from './ProjectCharterView';
+import { GovernancePoliciesView } from './GovernancePoliciesView';
+import { AssumptionConstraintView } from './AssumptionConstraintView';
+import { ProjectManagementPlanView } from './ProjectManagementPlanView';
+import { SourcingStrategyView } from './SourcingStrategyView';
+import { ExecutionQAView } from './ExecutionQAView';
+import { PerformanceMonitoringView } from './PerformanceMonitoringView';
+
 interface GovernanceHubViewProps {
   page: Page;
 }
@@ -48,18 +57,31 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   const { t, isRtl } = useLanguage();
   const { userProfile, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  
+  // Initialize tab based on page.id
+  const getInitialTab = (): string => {
+    if (page.id === 'gov') return 'overview';
+    return page.id;
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab());
   
   const allManagementPlans = [
+    { id: '1.1.1', title: t('1.1.1'), icon: Target, desc: 'Project authorization and high-level vision hub.', focusArea: 'Initiating' },
+    { id: '1.1.3', title: t('1.1.3'), icon: ListChecks, desc: 'Detailed log for tracking assumptions and constraints.', focusArea: 'Initiating' },
+    { id: '1.1.2', title: t('1.1.2'), icon: ShieldCheck, desc: 'Core management policies and governance guidelines.', focusArea: 'Initiating' },
     { id: '2.1.2', title: t('2.1.2'), icon: FileText, desc: 'Assembly of all subsidiary plans into a cohesive blueprint.', focusArea: 'Planning' },
     { id: '2.1.13', title: t('2.1.13'), icon: ShoppingCart, desc: 'Strategic methodology for vendor and resource acquisition.', focusArea: 'Planning' },
     { id: '3.1.3', title: t('3.1.3'), icon: ShieldCheck, desc: 'Formal execution oversight and quality assurance verification.', focusArea: 'Executing' },
-    { id: '4.1.1', title: t('4.1.1'), icon: Activity, desc: 'Real-time tracking of governance KPIs and plan variances.', focusArea: 'Monitoring & Controlling' },
-    { id: '1.1.1', title: t('1.1.1'), icon: Target, desc: 'Project authorization and high-level vision hub.', focusArea: 'Initiating' },
-    { id: '1.1.2', title: t('1.1.2'), icon: ShieldCheck, desc: 'Core management policies and governance guidelines.', focusArea: 'Initiating' }
+    { id: '4.1.1', title: t('4.1.1'), icon: Activity, desc: 'Real-time tracking of governance KPIs and plan variances.', focusArea: 'Monitoring & Controlling' }
   ];
 
   const accessiblePlans = allManagementPlans.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.id));
+
+  // Group plans by focus area
+  const initiatingPlans = accessiblePlans.filter(p => p.focusArea === 'Initiating');
+  const planningPlans = accessiblePlans.filter(p => p.focusArea === 'Planning');
+  const otherPlans = accessiblePlans.filter(p => !['Initiating', 'Planning'].includes(p.focusArea));
 
   const ribbonGroups: RibbonGroup[] = [
     {
@@ -68,47 +90,46 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       tabs: [
         { 
           id: 'overview', 
-          label: (() => {
-            const translated = t(page.domain || 'governance');
-            const stripped = stripNumericPrefix(translated);
-            if (stripped && stripped.trim() !== '' && stripped !== translated) return stripped;
-            return stripNumericPrefix(page.title).replace(/\s*Hub$/i, '').replace(/\s*Domain$/i, '');
-          })(),
+          label: t('overview'),
           icon: Gavel, 
-          description: t('domain_overview_desc'),
           size: 'large'
         }
       ]
     },
     {
-      id: 'performance-logs',
-      label: 'Performance Logs & Registers',
-      tabs: [
-        { id: 'risks', label: 'Risk Register', icon: AlertTriangle, size: 'large' },
-        { id: 'issues', label: 'Issue Log', icon: Activity, size: 'small' },
-        { id: 'changes', label: 'Change Log', icon: Layers, size: 'small' },
-        { id: 'stakeholders', label: 'Stakeholders', icon: Users, size: 'small' },
-        { id: 'assumptions', label: 'Assumptions', icon: ClipboardList, size: 'small' },
-        { id: 'lessons', label: 'Lessons Learned', icon: GraduationCap, size: 'small' },
-      ]
+      id: 'initiating',
+      label: t('1.0'), // Initiating Focus Area
+      tabs: initiatingPlans.map(p => ({
+        id: p.id,
+        label: stripNumericPrefix(t(p.id) === p.id ? p.title : t(p.id)),
+        icon: p.icon,
+        size: 'large'
+      }))
     },
     {
-      id: 'governance-processes',
-      label: t('core_governance_processes'),
-      tabs: allManagementPlans.map(p => {
-        const translated = t(p.id);
-        const stripped = stripNumericPrefix(translated === p.id ? p.title : translated);
-        return {
-          id: p.id,
-          label: (stripped && stripped.trim() !== '') ? stripped : p.title,
-          icon: p.icon,
-          description: p.desc,
-          size: 'large',
-          focusArea: p.focusArea
-        };
-      })
+      id: 'planning',
+      label: t('2.0'), // Planning Focus Area
+      tabs: planningPlans.map(p => ({
+        id: p.id,
+        label: stripNumericPrefix(t(p.id) === p.id ? p.title : t(p.id)),
+        icon: p.icon,
+        size: 'large'
+      }))
+    },
+    {
+      id: 'performance-logs',
+      label: t('monitoring'),
+      tabs: [
+        { id: 'risks', label: t('risk_register'), icon: AlertTriangle },
+        { id: 'issues', label: t('issue_log'), icon: Activity },
+        { id: 'changes', label: t('change_log'), icon: Layers },
+        { id: 'lessons', label: t('lessons_learned'), icon: GraduationCap },
+      ]
     }
   ];
+
+  // Helper to get current target page object
+  const targetPage = pages.find(p => p.id === activeTab) || page;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -121,18 +142,17 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                   <Gavel className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">Governance Control Center</h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMBOK 8 Standard Framework</p>
+                  <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">{t('governance_hub')}</h2>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMO Performance Standards</p>
                 </div>
               </div>
             </header>
 
-            {/* Domain Status Matrix */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {accessiblePlans.map((plan) => (
                 <div 
                   key={plan.id}
-                  onClick={() => navigate(`/page/${plan.id}`)}
+                  onClick={() => setActiveTab(plan.id)}
                   className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-blue-50 transition-colors" />
@@ -144,7 +164,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
 
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                        {stripNumericPrefix(plan.title)}
+                        {stripNumericPrefix(t(plan.id) === plan.id ? plan.title : t(plan.id))}
                       </h3>
                       <p className="text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
                         {plan.desc}
@@ -154,10 +174,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                     <div className="flex items-center justify-between pt-4">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600">Baselined</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600">Active</span>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
-                        Open Hub <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                        {t('view_details')} <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   </div>
@@ -166,23 +186,34 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
             </section>
           </div>
         );
+      
+      // Management Plans
+      case '1.1.1': return <ProjectCharterView page={targetPage} embedded={true} />;
+      case '1.1.2': return <GovernancePoliciesView page={targetPage} embedded={true} />;
+      case '1.1.3':
+      case '2.1.5':
+      case '2.2.1': 
+        return <AssumptionConstraintView page={targetPage} embedded={true} />;
+      case '2.1.2': return <ProjectManagementPlanView page={targetPage} embedded={true} />;
+      case '2.1.13': return <SourcingStrategyView page={targetPage} embedded={true} />;
+      case '3.1.3': return <ExecutionQAView page={targetPage} embedded={true} />;
+      case '4.1.1': return <PerformanceMonitoringView page={targetPage} embedded={true} />;
+      
+      // Logs
       case 'risks': return <UniversalManager entityType="risks" />;
       case 'issues': return <UniversalManager entityType="issues" />;
       case 'changes': return <UniversalManager entityType="changes" />;
-      case 'stakeholders': return <UniversalManager entityType="stakeholders" />;
-      case 'assumptions': return <UniversalManager entityType="assumptions" />;
       case 'lessons': return <UniversalManager entityType="lessons" />;
-      default: return null;
+      default: return <DomainDashboard page={page} childrenPages={accessiblePlans.map(p => ({ ...pages.find(p2 => p2.id === p.id), ...p } as any))} initialTab="overview" />;
     }
   };
 
   useEffect(() => {
-    // Navigate only if it's a specific plan ID (not one of our logs)
-    const logs = ['risks', 'issues', 'changes', 'stakeholders', 'assumptions', 'lessons'];
-    if (activeTab !== 'overview' && activeTab !== '' && !logs.includes(activeTab)) {
-      navigate(`/page/${activeTab}`);
+    // If external page changes, update internal tab
+    if (page.id !== 'gov' && page.id !== activeTab) {
+      setActiveTab(page.id);
     }
-  }, [activeTab, navigate]);
+  }, [page.id]);
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#fcfcfc]">

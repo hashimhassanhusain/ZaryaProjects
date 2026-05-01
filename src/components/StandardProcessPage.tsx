@@ -44,6 +44,7 @@ import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface StandardProcessPageProps {
   page: Page;
+  embedded?: boolean;
   inputs?: { id: string; title: string; status?: string }[];
   tools?: { id: string; title: string }[];
   outputs?: { id: string; title: string; status?: string }[];
@@ -192,6 +193,7 @@ const QuickViewModal: React.FC<{
 
 export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({ 
   page, 
+  embedded = false,
   inputs = [], 
   tools = [],
   children,
@@ -267,6 +269,14 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
   const pageHeader = (
     <div className="flex items-center gap-2 shrink-0 overflow-hidden">
+      {grandParentPage && (
+        <>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[120px]">
+             {stripNumericPrefix(grandParentTitle)}
+          </span>
+          <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 opacity-50", isRtl && "rotate-180")} />
+        </>
+      )}
       {parentPage && (
         <>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">
@@ -304,48 +314,50 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         id={quickView.id}
       />
 
-      <div className="flex-1 w-full px-4 md:px-6 py-4 print:block print:p-0">
+      <div className={cn("flex-1 w-full px-4 md:px-6 py-4 print:block print:p-0", embedded && "p-0")}>
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
-          <aside className="col-span-3 space-y-6 print:hidden">
-            <div className="flex items-center justify-between px-1 mb-6">
-               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                  <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center">
-                    <Box className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                  {t('input_arsenal')}
-               </h3>
-               <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pb-8">
-              {inputs.map((input, idx) => {
-                const linkedPage = pages.find(p => p.id === input.id);
-                const inputTranslated = t(input.id);
-                const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
-                return (
-                  <div 
-                    key={`${input.id}-${idx}`} 
-                    onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} 
-                    className={cn(
-                      "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm", 
-                      isRtl && "text-right"
-                    )}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
-                       <FileText className="w-4 h-4 text-blue-600" />
+          {!embedded && (
+            <aside className="col-span-3 space-y-6 print:hidden">
+              <div className="flex items-center justify-between px-1 mb-6">
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center">
+                      <Box className="w-3.5 h-3.5 text-slate-400" />
                     </div>
-                    <div className="w-full">
-                      <h4 className={cn("text-[10px] font-black text-slate-900 leading-tight tracking-tight uppercase italic line-clamp-2")}>
-                        {stripNumericPrefix(inputDisplay)}
-                      </h4>
+                    {t('input_arsenal')}
+                 </h3>
+                 <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pb-8">
+                {inputs.map((input, idx) => {
+                  const linkedPage = pages.find(p => p.id === input.id);
+                  const inputTranslated = t(input.id);
+                  const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
+                  return (
+                    <div 
+                      key={`${input.id}-${idx}`} 
+                      onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} 
+                      className={cn(
+                        "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm", 
+                        isRtl && "text-right"
+                      )}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
+                         <FileText className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="w-full">
+                        <h4 className={cn("text-[10px] font-black text-slate-900 leading-tight tracking-tight uppercase italic line-clamp-2")}>
+                          {stripNumericPrefix(inputDisplay)}
+                        </h4>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </aside>
+                  );
+                })}
+              </div>
+            </aside>
+          )}
 
-          <section className="col-span-12 md:col-span-9 space-y-6 flex flex-col">
-            <div className="flex-1 bg-white rounded-[3rem] shadow-sm border border-slate-50 overflow-hidden flex flex-col min-h-[700px] print:border-none relative">
+          <section className={cn("col-span-12 space-y-6 flex flex-col", !embedded && "md:col-span-9")}>
+            <div className={cn("flex-1 bg-white rounded-[3rem] shadow-sm border border-slate-50 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
                     {viewMode === 'grid' && collectionName ? (
@@ -386,10 +398,12 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           ) : (
                             <div className="space-y-6">
                               <div className="flex flex-col space-y-2">
-                                <div className={cn("flex items-center justify-between px-4 mt-2", isRtl && "flex-row-reverse")}>
-                                  {pageHeader}
-                                  {favoriteControl}
-                                </div>
+                                {!embedded && (
+                                  <div className={cn("flex items-center justify-between px-4 mt-2", isRtl && "flex-row-reverse")}>
+                                    {pageHeader}
+                                    {favoriteControl}
+                                  </div>
+                                )}
                               </div>
                               <div className="px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">{children}</div>
                             </div>

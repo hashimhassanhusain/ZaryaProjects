@@ -76,6 +76,11 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
+    match /stakeholders/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     match /{document=**} {
       allow read, write: if isAuthenticated();
     }

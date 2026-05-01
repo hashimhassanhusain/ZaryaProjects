@@ -18,9 +18,10 @@ interface Stakeholder {
 
 interface StakeholderMatrixViewProps {
   page: Page;
+  embedded?: boolean;
 }
 
-export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ page }) => {
+export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ page, embedded = false }) => {
   const { selectedProject } = useProject();
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
 
@@ -52,6 +53,7 @@ export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ pa
   return (
     <StandardProcessPage
       page={page}
+      embedded={embedded}
       inputs={[
         { id: '1.1.1', title: 'Project Charter', status: 'Approved' }
       ]}
@@ -60,15 +62,17 @@ export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ pa
       ]}
     >
       <div className="space-y-8 pb-20">
-        <header className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg text-white">
-            <LayoutGrid className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Power / Interest Matrix</h2>
-            <p className="text-sm text-slate-500 font-medium">Prioritize stakeholders based on their influence and level of concern.</p>
-          </div>
-        </header>
+        {!embedded && (
+          <header className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg text-white">
+              <LayoutGrid className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Power / Interest Matrix</h2>
+              <p className="text-sm text-slate-500 font-medium">Prioritize stakeholders based on their influence and level of concern.</p>
+            </div>
+          </header>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Matrix Area - 3 Columns */}

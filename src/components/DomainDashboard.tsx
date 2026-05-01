@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { 
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
   DollarSign, Users, ShieldAlert, Target, Info,
-  Shield, DraftingCompass, Calendar, Banknote, Package,
+  Shield, DraftingCompass, Calendar, Banknote, Package, Box,
   LayoutDashboard, FileText, ChevronRight, Zap, Activity,
   Flag, BookOpen, ClipboardList, BarChart3, List, Table,
   LayoutGrid, Layers, Briefcase, User, Users2,
@@ -83,6 +83,7 @@ import { DecisionLogView } from './DecisionLogView';
 import { SupplierMasterRegister } from './SupplierMasterRegister';
 import { LogManagementView } from './LogManagementView';
 import { FormalAcceptanceView } from './FormalAcceptanceView';
+import { DesignHubView } from './DesignHubView';
 
 // Risk Components
 import { RiskRegisterTab } from './risk/RiskRegisterTab';
@@ -109,7 +110,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const ICON_MAP: Record<string, any> = {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
   DollarSign, Users, ShieldAlert, Target, Info,
-  Shield, DraftingCompass, Calendar, Banknote, Package,
+  Shield, DraftingCompass, Calendar, Banknote, Package, Box,
   Zap, Activity, Flag, BookOpen, ClipboardList, BarChart3,
   List, Table, LayoutGrid, Layers, Briefcase, User, Users2,
   ShieldCheck, Award, ShoppingCart, GitBranch, MessageSquare,
@@ -172,7 +173,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   // Artifact-based mapping for each domain
   const ARTIFACT_MAPPING: Record<string, { primary: string[], secondary: string[] }> = {
     'governance': {
-      primary: ['1.1.1', '1.1.2', '3.1.2'], // Charter, Business Case, Correspondence
+      primary: ['1.1.1', '1.1.3', '1.1.2', '3.1.2'], // Charter, Assumption Log, Business Case, Correspondence
       secondary: ['3.1.1', '5.1.1', '4.1.2', '2.1.1', '2.1.2', '4.1.1', '5.1.2'] // MOM, Lessons, Change Log, etc.
     },
     'stakeholders': {
@@ -180,7 +181,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       secondary: ['1.5.2', '2.5.2', '3.5.1', '4.5.1', '5.5.1']
     },
     'delivery': { // Refers to Scope & Delivery
-      primary: ['2.2.2', '2.2.5', '2.2.7', '3.2.1'], 
+      primary: ['design_hub', '2.2.2', '2.2.5', '2.2.7', '3.2.1'], 
       secondary: ['1.2.1', '1.2.2', '2.2.1', '2.2.3', '3.2.2', '4.2.1', '4.2.2', '5.2.1', '5.2.2']
     },
     'schedule': {
@@ -508,7 +509,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isEVMPage = p.id === '4.2.2';
     const isProgressReportPage = p.id === '3.3.3';
     const isSchedulePage = p.id === '2.3';
-    const isAssumptionLogPage = ['2.1.5', '2.2.1'].includes(p.id);
+    const isAssumptionLogPage = ['1.1.3', '2.1.5', '2.2.1'].includes(p.id);
     const isVendorRegisterPage = p.id === '3.3.4';
     const isQualityMetricsPage = p.id === '2.1.4';
     const isRiskRegisterPage = p.id === '2.7.5';
@@ -526,6 +527,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isChangeManagementHubPage = p.id === '3.4';
     const isLogManagementPage = ['1.2.1', '2.7.5', '5.1.1', 'logs'].includes(p.id);
     const isFormalAcceptancePage = p.id === '4.1.2';
+    const isDesignHubPage = p.id === 'design_hub';
 
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
     if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
@@ -583,6 +585,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (isVendorRegisterPage) return <SupplierMasterRegister page={p} />;
     if (isLogManagementPage) return <LogManagementView page={p} />;
     if (isFormalAcceptancePage) return <FormalAcceptanceView page={p} />;
+    if (isDesignHubPage) return <DesignHubView page={p} />;
     
     // Resource specific terminal views
     if (p.id === 'contacts') return <ContactsView />;

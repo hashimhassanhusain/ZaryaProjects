@@ -172,7 +172,12 @@ export type EntityType =
   | 'boq' 
   | 'projectCharters'
   | 'backlogs'
-  | 'meetings';
+  | 'meetings'
+  | 'correspondence_log'
+  | 'closure_reports'
+  | 'formal_acceptances'
+  | 'performance_reports'
+  | 'assumption_log';
 
 export interface EntityConfig {
   id: EntityType;
@@ -794,6 +799,37 @@ export interface Task {
   projectId?: string;
 }
 
+export interface AssumptionEntry {
+  id: string; // e.g. ZRY-ASL-001
+  projectId: string;
+  description: string;
+  type: 'Assumption' | 'Constraint';
+  level: 'High' | 'Low';
+  ownerId: string;
+  ownerName: string;
+  status: 'Open' | 'Closed' | 'Updated';
+  impactLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  dateIdentified: string;
+  lastValidated?: string;
+  sourceId?: string; // Link to project charter for high-level ones
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface AssumptionVersion {
+  id: string;
+  assumptionId: string;
+  version: number;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  data: Partial<AssumptionEntry>;
+  changeSummary: string;
+}
+
 export interface AssumptionConstraintEntry {
   id: string;
   projectId: string;
@@ -1077,23 +1113,34 @@ export interface Stakeholder {
   projectId: string;
   name: string;
   position: string;
+  organization: string;
   role: string;
-  contactInfo: string;
-  classification: 'Internal' | 'External';
+  email: string;
+  phone: string;
+  // Identification Information (Identification Information)
+  location: string;
+  // Assessment Information (Assessment Information)
+  requirements: string;
+  expectations: string;
   influence: 'Low' | 'Medium' | 'High';
   interest: 'Low' | 'Medium' | 'High';
-  expectations: string;
-  requirements: string;
-  priorityScore: number;
-  influenceScore: number;
-  criticalityIndex: number;
-  communicationFrequency: string;
-  engagementLevel: 'Green' | 'Amber' | 'Red';
-  category?: string;
+  phaseOfMostInterest: string;
+  // Classification
+  type: 'Internal' | 'External';
+  directionOfInfluence: 'Upward' | 'Downward' | 'Outward' | 'Sideward';
+  // Engagement
+  currentEngagement: 'Unaware' | 'Resistant' | 'Neutral' | 'Supportive' | 'Leading';
+  desiredEngagement: 'Unaware' | 'Resistant' | 'Neutral' | 'Supportive' | 'Leading';
+  strategy?: string;
+  // Scoring/Mapping
+  powerScore: number; // 1-10
+  interestScore: number; // 1-10
+  status: 'Active' | 'Inactive';
   version?: number;
-  isSystemUser?: boolean;
-  systemAccessLevel?: string;
-  loginCredentials?: string;
+  updatedAt: string;
+  updatedBy: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 export interface StakeholderAnalysis {
