@@ -15,7 +15,7 @@ export const AdminSettings: React.FC = () => {
     <div className="w-full py-6 px-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Admin Settings</h2>
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">Admin Settings</h2>
           <p className="text-sm text-slate-500 mt-1">Manage users, groups and project configurations</p>
         </div>
         

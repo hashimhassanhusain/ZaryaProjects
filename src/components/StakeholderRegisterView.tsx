@@ -26,7 +26,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { Page, Stakeholder } from '../types';
+import { Page, Stakeholder, EntityConfig } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -45,9 +45,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { StandardProcessPage } from './StandardProcessPage';
+import { generateStandardPDF } from '../lib/pdfService';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface StakeholderRegisterViewProps {
   page: Page;
@@ -189,34 +189,26 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
 
   const generatePDF = () => {
     if (!selectedProject) return;
-    const doc = new jsPDF('l', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.width;
-
-    doc.setFontSize(16);
-    doc.text(t('stakeholder_register').toUpperCase(), pageWidth / 2, 20, { align: 'center' });
     
-    doc.setFontSize(10);
-    doc.text(`${t('project')}: ${selectedProject.name}`, 14, 30);
-    doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 14, 35);
+    const columns = [t('name'), t('position'), t('organization'), t('type'), t('direction'), t('power'), t('interest'), t('engagement')];
+    const rows = stakeholders.map(s => [
+      s.name,
+      s.position,
+      s.organization,
+      t(s.type.toLowerCase()),
+      t(s.directionOfInfluence.toLowerCase()),
+      s.powerScore,
+      s.interestScore,
+      t(s.currentEngagement.toLowerCase())
+    ]);
 
-    autoTable(doc, {
-      startY: 45,
-      head: [[t('name'), t('position'), t('organization'), t('internal_external'), t('influence_direction'), t('power'), t('interest'), t('engagement_level')]],
-      body: stakeholders.map(s => [
-        s.name,
-        s.position,
-        s.organization,
-        t(s.type.toLowerCase()),
-        t(s.directionOfInfluence.toLowerCase()),
-        s.powerScore,
-        s.interestScore,
-        t(s.currentEngagement.toLowerCase())
-      ]),
-      styles: { font: 'helvetica', fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255] }
+    generateStandardPDF({
+      page,
+      project: selectedProject,
+      data: stakeholders,
+      columns,
+      rows
     });
-
-    doc.save(`StakeholderRegister_${selectedProject.code || selectedProject.id}.pdf`);
   };
 
   const getEngagementColor = (level: string) => {
@@ -237,15 +229,28 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
     return t('monitor');
   };
 
-  const filteredStakeholders = stakeholders.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.position.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const gridConfig: EntityConfig = {
+    id: 'stakeholders',
+    label: t('stakeholder_register'),
+    icon: Users,
+    collection: 'stakeholders',
+    columns: [
+      { key: 'name', label: t('name'), type: 'string' },
+      { key: 'position', label: t('position'), type: 'string' },
+      { key: 'organization', label: t('organization'), type: 'string' },
+      { key: 'type', label: t('internal_external'), type: 'badge' },
+      { key: 'currentEngagement', label: t('engagement'), type: 'badge' },
+      { key: 'directionOfInfluence', label: t('influence_direction'), type: 'string' },
+      { key: 'updatedAt', label: t('updated_at'), type: 'date' }
+    ]
+  };
+
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
+  const [activeView, setActiveView] = useState<'list' | 'matrix'>('list');
 
   const content = (
     <AnimatePresence mode="wait">
-      {view === 'form' ? (
+      {viewMode === 'edit' ? (
         <motion.div
           key="form"
           initial={{ opacity: 0, y: 10 }}
@@ -253,6 +258,15 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
           exit={{ opacity: 0, y: -10 }}
           className="space-y-8 pb-20 px-1"
         >
+          <div className="flex justify-end pr-2">
+            <button 
+              onClick={() => setViewMode('grid')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
+            >
+              <ChevronRight className="w-3 h-3 rotate-180" />
+              {t('back_to_list')}
+            </button>
+          </div>
           {/* Form Container */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
              {/* Left Column: Core Identity */}
@@ -470,147 +484,47 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                 </section>
              </div>
           </div>
-
-          <div className="flex justify-end gap-4">
-             <button onClick={() => setView('list')} className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold uppercase tracking-widest text-[10px]">{t('cancel')}</button>
-             <button onClick={handleSave} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-blue-600/20">{t('save')}</button>
-          </div>
         </motion.div>
       ) : (
         <motion.div
-          key="list"
+          key="grid"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="space-y-6 pb-20"
+          className="space-y-6 pb-20 flex-1 flex flex-col"
         >
-           {/* Toolbar */}
-           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text"
-                placeholder={t('search_stakeholders')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                <button 
-                  onClick={() => setView('list')}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                    view === 'list' ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20" : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  {t('list')}
-                </button>
-                <button 
-                  onClick={() => setView('matrix')}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                    view === 'matrix' ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20" : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  {t('matrix')}
-                </button>
-              </div>
-              
-              <button 
-                onClick={handleAdd}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-              >
-                <Plus className="w-4 h-4" />
-                {t('add_stakeholder')}
-              </button>
-            </div>
+          <div className="flex justify-start px-2 mb-2">
+             <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+               <button 
+                 onClick={() => setActiveView('list')}
+                 className={cn(
+                   "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                   activeView === 'list' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+                 )}
+               >
+                 {t('list')}
+               </button>
+               <button 
+                 onClick={() => setActiveView('matrix')}
+                 className={cn(
+                   "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                   activeView === 'matrix' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+                 )}
+               >
+                 {t('matrix')}
+               </button>
+             </div>
           </div>
 
-          {view === 'list' ? (
-            <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 border-b border-slate-100">
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('stakeholder')}</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('organization')} / {t('position')}</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('internal_external')}</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('influence_direction')}</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('engagement')}</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">{t('actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {loading ? (
-                        <tr>
-                          <td colSpan={6} className="px-6 py-12 text-center">
-                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-                          </td>
-                        </tr>
-                      ) : filteredStakeholders.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-xs italic">
-                            {t('no_stakeholders_found')}
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredStakeholders.map((s) => (
-                          <tr key={s.id} className="hover:bg-slate-50/80 transition-all group cursor-pointer" onClick={() => handleEdit(s)}>
-                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                   <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xs uppercase">
-                                      {s.name.substring(0, 2)}
-                                   </div>
-                                   <span className="text-xs font-bold text-slate-900">{s.name}</span>
-                                </div>
-                             </td>
-                             <td className="px-6 py-4">
-                                <div className="space-y-0.5">
-                                   <div className="text-[11px] font-bold text-slate-700">{s.organization}</div>
-                                   <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.position}</div>
-                                </div>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className={cn(
-                                   "px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest",
-                                   s.type === 'Internal' ? "bg-amber-50 text-amber-600" : "bg-purple-50 text-purple-600"
-                                )}>
-                                   {t(s.type.toLowerCase())}
-                                </span>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t(s.directionOfInfluence.toLowerCase())}</span>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className={cn("px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest", getEngagementColor(s.currentEngagement))}>
-                                   {t(s.currentEngagement.toLowerCase())}
-                                </span>
-                             </td>
-                             <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEdit(s); }}
-                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button 
-                                    onClick={(e) => handleDelete(s.id, e)}
-                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                             </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-              </div>
-            </div>
+          {activeView === 'list' ? (
+            <UniversalDataTable 
+              config={gridConfig}
+              data={stakeholders}
+              onRowClick={handleEdit}
+              onNewClick={handleAdd}
+              onDeleteRecord={(id) => handleDelete(id)}
+              title={useStandardProcessPage()?.pageHeader}
+              favoriteControl={useStandardProcessPage()?.favoriteControl}
+            />
           ) : (
             /* Power/Interest Matrix View */
             <div className="relative aspect-square md:aspect-video w-full bg-slate-900 rounded-[3.5rem] p-12 overflow-hidden shadow-2xl border-4 border-slate-800">
@@ -707,11 +621,15 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
   return (
     <StandardProcessPage
       page={page}
-      viewMode={view === 'form' ? 'edit' : 'grid'}
-      onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
       onSave={handleSave}
       onPrint={generatePDF}
       isSaving={isSaving}
+      inputs={[
+        { id: '1.2.2', title: 'Power/Interest Matrix' },
+        { id: '1.1.2', title: 'Communications Plan' }
+      ]}
     >
       {content}
     </StandardProcessPage>

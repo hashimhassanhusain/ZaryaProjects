@@ -203,7 +203,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
     const doc = new jsPDF('l', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.width;
 
-    // Center Zarya Logo
+    // Center System Logo
     doc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
     
     doc.setFontSize(16);
@@ -371,7 +371,7 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                 >
                   <option value="">Select Owner...</option>
-                  <optgroup label="Zarya Employees">
+                  <optgroup label="Internal Team">
                     {users.map(u => (
                       <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
                     ))}

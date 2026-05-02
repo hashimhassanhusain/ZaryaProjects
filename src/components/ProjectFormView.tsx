@@ -190,7 +190,7 @@ export const ProjectFormView: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
-                  placeholder="e.g. Zarya Oil Field Development"
+                  placeholder="e.g. PMIS Oil Field Development"
                 />
               </div>
 
@@ -203,7 +203,7 @@ export const ProjectFormView: React.FC = () => {
                   value={formData.code}
                   onChange={(e) => setFormData({...formData, code: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
-                  placeholder="e.g. ZRY-2024-001"
+                  placeholder="e.g. PMIS-2024-001"
                 />
               </div>
 

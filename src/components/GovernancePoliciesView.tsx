@@ -239,7 +239,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = policies.version || '1.0';
-    docObj.save(`${selectedProject.code}-ZRY-MGT-MAN-POL-${dateStr}-V${vStr}.pdf`);
+    docObj.save(`${selectedProject.code}-PMIS-MGT-MAN-POL-${dateStr}-V${vStr}.pdf`);
   };
 
   const addRole = () => {

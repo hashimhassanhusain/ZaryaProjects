@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProject } from '../context/ProjectContext';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, stripNumericPrefix } from '../lib/utils';
 import { GoogleGenAI, Type } from "@google/genai";
 import { toast } from 'react-hot-toast';
 import { masterFormatDivisions } from '../data';
@@ -27,8 +27,12 @@ import { Ribbon, RibbonGroup } from './Ribbon';
 import { useLanguage } from '../context/LanguageContext';
 import { Flag } from 'lucide-react';
 
+import { StandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
+import { EntityConfig } from '../types';
+
 export const WBSView: React.FC = () => {
-  const { t, isRtl } = useLanguage();
+  const { t, th, language, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const location = useLocation();
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
@@ -40,6 +44,24 @@ export const WBSView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
   const [selectedWbsIds, setSelectedWbsIds] = useState<string[]>([]);
+  const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    id: string;
+    type: 'wbs' | 'package';
+    title: string;
+  } | null>(null);
+  
+  const [isManualTitle, setIsManualTitle] = useState(false);
+  const [isManualWbsTitle, setIsManualWbsTitle] = useState(false);
+
+  const hierarchyRules: Record<string, string[]> = {
+    'Zone': [],
+    'Area': ['Zone'],
+    'Building': ['Area', 'Zone'],
+    'Cost Account': ['Building', 'Area', 'Zone', 'Root'],
+    'Work Package': ['Cost Account']
+  };
 
   const ribbonGroups: RibbonGroup[] = [
     {
@@ -60,6 +82,32 @@ export const WBSView: React.FC = () => {
     }
   ];
 
+  const packagesGridConfig: EntityConfig = {
+    id: 'packages',
+    label: t('work_packages'),
+    icon: Package,
+    collection: 'wbs',
+    columns: [
+      { key: 'code', label: t('code'), type: 'string' },
+      { key: 'title', label: t('title'), type: 'string' },
+      { key: 'divisionCode', label: t('cost_account'), type: 'badge' },
+      { key: 'parentId', label: t('parent'), type: 'string' },
+      { key: 'status', label: t('status'), type: 'badge' }
+    ]
+  };
+
+  const costGridConfig: EntityConfig = {
+    id: 'cost_accounts',
+    label: t('cost_accounts'),
+    icon: Database,
+    collection: 'wbs',
+    columns: [
+      { key: 'code', label: t('code'), type: 'string' },
+      { key: 'title', label: t('title'), type: 'string' },
+      { key: 'progress', label: t('progress'), type: 'progress' }
+    ]
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -70,25 +118,11 @@ export const WBSView: React.FC = () => {
     if (tab === 'activities') setActiveTab('activities');
   }, [location.search]);
 
-  const toggleSelectAllWbs = (type: string) => {
-    const filtered = wbsLevels.filter(l => l.type === type);
-    if (selectedWbsIds.filter(id => filtered.some(f => f.id === id)).length === filtered.length && filtered.length > 0) {
-      setSelectedWbsIds(prev => prev.filter(id => !filtered.some(f => f.id === id)));
-    } else {
-      setSelectedWbsIds(prev => [...new Set([...prev, ...filtered.map(l => l.id)])]);
-    }
-  };
-
-  const toggleSelectAllPackages = () => {
-    const wbsPks = wbsLevels.filter(l => l.type === 'Work Package');
-    const isAllSelected = selectedWbsIds.filter(id => wbsPks.some(p => p.id === id)).length === wbsPks.length && 
-                          (wbsPks.length > 0);
-
-    if (isAllSelected) {
-      setSelectedWbsIds(prev => prev.filter(id => !wbsPks.some(p => p.id === id)));
-    } else {
-      setSelectedWbsIds(prev => [...new Set([...prev, ...wbsPks.map(p => p.id)])]);
-    }
+  const toggleSelectWbs = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedWbsIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const filteredWbsForTree = useMemo(() => {
@@ -119,107 +153,6 @@ export const WBSView: React.FC = () => {
     
     return wbsLevels.filter(l => matchingIds.has(l.id));
   }, [wbsLevels, searchTerm]);
-
-  const toggleSelectWbs = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedWbsIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkDeleteWbs = async () => {
-    const selectedInType = selectedWbsIds.filter(id => {
-      const level = wbsLevels.find(l => l.id === id);
-      return level?.type === (activeTab === 'costaccount' ? 'Cost Account' : 'Work Package');
-    });
-
-    if (selectedInType.length === 0) return;
-    
-    toast((t: any) => (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">Delete {selectedInType.length} selected items?</p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                const deletePromises = selectedInType.map(id => deleteDoc(doc(db, 'wbs', id)));
-                await Promise.all(deletePromises);
-                setSelectedWbsIds(prev => prev.filter(id => !selectedInType.includes(id)));
-                toast.success(`${selectedInType.length} items deleted successfully`);
-              } catch (error) {
-                handleFirestoreError(error, OperationType.DELETE, 'wbs');
-              }
-            }}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-          >
-            Delete All
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000 });
-  };
-
-  const handleBulkDeletePackages = async () => {
-    const wbsPksToDelete = selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package');
-
-    if (wbsPksToDelete.length === 0) return;
-    
-    toast((t: any) => (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">Delete {wbsPksToDelete.length} selected work packages?</p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                const wbsPromises = wbsPksToDelete.map(id => deleteDoc(doc(db, 'wbs', id)));
-                await Promise.all(wbsPromises);
-                
-                setSelectedWbsIds(prev => prev.filter(id => !wbsPksToDelete.includes(id)));
-                toast.success(`${wbsPksToDelete.length} work packages deleted successfully`);
-              } catch (error) {
-                handleFirestoreError(error, OperationType.DELETE, 'wbs');
-              }
-            }}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-          >
-            Delete All
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000 });
-  };
-  const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
-  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    id: string;
-    type: 'wbs' | 'package';
-    title: string;
-  } | null>(null);
-  
-  const [isManualTitle, setIsManualTitle] = useState(false);
-  const [isManualWbsTitle, setIsManualWbsTitle] = useState(false);
-
-  const hierarchyRules: Record<string, string[]> = {
-    'Zone': [],
-    'Area': ['Zone'],
-    'Building': ['Area', 'Zone'],
-    'Cost Account': ['Building', 'Area', 'Zone', 'Root'],
-    'Work Package': ['Cost Account']
-  };
 
   useEffect(() => {
     if (!editingWbs) return;
@@ -702,318 +635,140 @@ export const WBSView: React.FC = () => {
   if (!selectedProject) return null;
 
   const milestones = activities.filter(a => a.activityType === 'Milestone');
+  const page = { 
+    id: '2.2.1', 
+    title: t('wbs_hierarchy'), 
+    type: 'terminal', 
+    domain: 'Planning', 
+    focusArea: 'Scope' 
+  } as Page;
 
   return (
-    <div className="w-full flex flex-col h-[calc(100vh-140px)] overflow-hidden">
-      {/* Ribbon Navigation */}
-      <Ribbon 
-        groups={ribbonGroups}
-        activeTabId={activeTab}
-        onTabChange={(id) => setActiveTab(id as any)}
-      />
-
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
-
-      {activeTab === 'hierarchy' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-12 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
-                <input 
-                  type="text"
-                  placeholder={t('search_hierarchy')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={cn(
-                    "w-full py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all",
-                    isRtl ? "pr-12 pl-4 text-right" : "pl-12 pr-4 text-left"
-                  )}
-                />
-              </div>
-              <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
-                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+    <StandardProcessPage
+      page={page}
+      ribbon={
+        <Ribbon 
+          groups={ribbonGroups}
+          activeTabId={activeTab}
+          onTabChange={(id) => setActiveTab(id as any)}
+        />
+      }
+    >
+      <div className="space-y-6">
+        {activeTab === 'hierarchy' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-12 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
                   <input 
-                    type="file" 
-                    className="hidden" 
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={(e) => e.target.files?.[0] && handleAiGenerateWbs(e.target.files[0])}
+                    type="text"
+                    placeholder={t('search_hierarchy')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={cn(
+                      "w-full py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all",
+                      isRtl ? "pr-12 pl-4 text-right" : "pl-12 pr-4 text-left"
+                    )}
                   />
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 text-blue-600" />
-                  )}
-                  <span className="text-sm font-semibold text-slate-700">{t('ai_generate_wbs')}</span>
-                </label>
-                <button 
-                  onClick={() => setShowAddWbs(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t('add_level')}
-                </button>
+                </div>
+                <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={(e) => e.target.files?.[0] && handleAiGenerateWbs(e.target.files[0])}
+                    />
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                    )}
+                    <span className="text-sm font-semibold text-slate-700">{t('ai_generate_wbs')}</span>
+                  </label>
+                  <button 
+                    onClick={() => setShowAddWbs(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('add_level')}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl p-8 min-h-[400px]">
+                {loading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : wbsLevels.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
+                      <LayoutGrid className="w-8 h-8 text-slate-200" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_hierarchy_defined')}</h4>
+                    <p className="text-sm text-slate-400 max-w-xs">{t('no_hierarchy_hint')}</p>
+                  </div>
+                ) : renderWbsTree()}
               </div>
             </div>
-            
-            <div className="bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl p-8 min-h-[400px]">
-              {wbsLevels.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
-                    <LayoutGrid className="w-8 h-8 text-slate-200" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_hierarchy_defined')}</h4>
-                  <p className="text-sm text-slate-400 max-w-xs">{t('no_hierarchy_hint')}</p>
-                </div>
-              ) : renderWbsTree()}
-            </div>
           </div>
-        </div>
-      ) : activeTab === 'costaccount' ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900">{t('cost_accounts')}</h3>
-              <p className="text-slate-500">{t('manage_cost_accounts_desc')}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length > 0 && (
-                <button 
-                  onClick={handleBulkDeleteWbs}
-                  className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" /> {t('delete_selected')} ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Cost Account').length})
-                </button>
-              )}
-              <button 
-                onClick={() => {
-                  setShowAddWbs(true);
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-              >
-                <Plus className="w-4 h-4" />
-                {t('add_cost_account')}
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 w-10">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedWbsIds.length === wbsLevels.filter(l => l.type === 'Cost Account').length && wbsLevels.filter(l => l.type === 'Cost Account').length > 0}
-                      onChange={() => toggleSelectAllWbs('Cost Account')}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('code')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('cost_account')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('parent_level')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('status')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {wbsLevels.filter(l => l.type === 'Cost Account').length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Database className="w-8 h-8 text-slate-200" />
-                        <p className="text-slate-400 text-sm">No cost accounts defined for this project.</p>
-                        <button 
-                          onClick={() => setShowAddWbs(true)}
-                          className="text-blue-600 text-xs font-bold hover:underline"
-                        >
-                          Add your first cost account
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  wbsLevels.filter(l => l.type === 'Cost Account').map(ca => {
-                    const parent = wbsLevels.find(l => l.id === ca.parentId);
-                    const isSelected = selectedWbsIds.includes(ca.id);
-                    return (
-                      <tr 
-                        key={ca.id} 
-                        onClick={() => handleEditWbs(ca)}
-                        className={cn(
-                          "hover:bg-slate-50/50 transition-colors group cursor-pointer",
-                          isSelected && "bg-blue-50/50"
-                        )}
-                      >
-                        <td className="px-6 py-4" onClick={(e) => toggleSelectWbs(ca.id, e)}>
-                          <input 
-                            type="checkbox" 
-                            checked={isSelected}
-                            readOnly
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            {ca.divisionCode || ca.code}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-bold text-slate-900">{ca.title}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs text-slate-500 font-medium">
-                            {parent ? `${parent.code} - ${parent.title}` : 'Root'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={cn(
-                            "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                            deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish) === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
-                            deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish) === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                          )}>
-                            {deriveStatus(ca.progress || 0, ca.actualStart, ca.actualFinish)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Master Format Reference (Optional/Helpful) */}
-          <div className="pt-8 border-t border-slate-100">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Master Format Reference (01-16)</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {masterFormatDivisions.slice(0, 8).map(div => (
-                <div key={div.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="text-[10px] font-bold text-blue-600 mb-1">{div.id}</div>
-                  <div className="text-xs font-bold text-slate-900">{div.title}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900">{t('work_packages')}</h3>
-              <p className="text-slate-500">{t('manage_work_packages_desc')}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {(selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length) > 0 && (
-                <button 
-                  onClick={handleBulkDeletePackages}
-                  className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" /> {t('delete_selected')} ({selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length})
-                </button>
-              )}
-              <button 
-                onClick={() => setShowAddPackage(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-              >
-                <Plus className="w-4 h-4" />
-                {t('add_work_package')}
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 w-10">
-                    <input 
-                      type="checkbox" 
-                      checked={
-                         (wbsLevels.filter(l => l.type === 'Work Package').length > 0) &&
-                         (selectedWbsIds.filter(id => wbsLevels.find(l => l.id === id)?.type === 'Work Package').length === 
-                          wbsLevels.filter(l => l.type === 'Work Package').length)
-                      }
-                      onChange={toggleSelectAllPackages}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('code')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('title')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('cost_account')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('wbs_level')}</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('status')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {(wbsLevels.filter(l => l.type === 'Work Package').length === 0) ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Package className="w-8 h-8 text-slate-200" />
-                        <p className="text-slate-400 text-sm">No work packages defined yet.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <>
-                    {/* WBS-based Work Packages */}
-                    {wbsLevels.filter(l => l.type === 'Work Package').map(wp => {
-                      const parent = wbsLevels.find(l => l.id === wp.parentId);
-                      const grandParent = parent ? wbsLevels.find(l => l.id === parent.parentId) : null;
-                      const isSelected = selectedWbsIds.includes(wp.id);
-                      
-                      return (
-                        <tr 
-                          key={wp.id} 
-                          onClick={() => handleEditWbs(wp)}
-                          className={cn(
-                            "hover:bg-slate-50/50 transition-colors group cursor-pointer",
-                            isSelected && "bg-blue-50/50"
-                          )}
-                        >
-                          <td className="px-6 py-4" onClick={(e) => toggleSelectWbs(wp.id, e)}>
-                            <input 
-                              type="checkbox" 
-                              checked={isSelected}
-                              readOnly
-                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{wp.code}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-bold text-slate-900">{wp.title}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs font-medium text-slate-600">
-                              {parent?.type === 'Cost Account' ? parent.title : (masterFormatDivisions.find(d => d.id === wp.divisionCode)?.title || wp.divisionCode || 'N/L')}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs font-medium text-slate-600">
-                              {grandParent ? grandParent.title : (parent?.type !== 'Cost Account' && parent ? parent.title : 'N/L')}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={cn(
-                              "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                              deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish) === 'Completed' ? "bg-emerald-100 text-emerald-600" : 
-                              deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish) === 'In Progress' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                            )}>
-                              {deriveStatus(wp.progress || 0, wp.actualStart, wp.actualFinish)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        ) : activeTab === 'costaccount' ? (
+          <UniversalDataTable 
+            config={costGridConfig}
+            data={wbsLevels.filter(l => l.type === 'Cost Account')}
+            onRowClick={handleEditWbs}
+            onDeleteRecord={handleDeleteWbs}
+            title={stripNumericPrefix(t('cost_accounts'))}
+            favoriteControl={null}
+          />
+        ) : activeTab === 'packages' ? (
+          <UniversalDataTable 
+            config={packagesGridConfig}
+            data={wbsLevels.filter(l => l.type === 'Work Package')}
+            onRowClick={handleEditWbs}
+            onDeleteRecord={handleDeleteWbs}
+            title={stripNumericPrefix(t('work_packages'))}
+            favoriteControl={null}
+            primaryAction={{
+              label: t('add_work_package'),
+              icon: Plus,
+              onClick: () => setShowAddPackage(true)
+            }}
+          />
+        ) : activeTab === 'milestones' ? (
+          <UniversalDataTable 
+            config={{
+              id: 'milestones',
+              label: t('milestones'),
+              icon: Flag,
+              collection: 'activities',
+              columns: [
+                { key: 'description', label: t('milestone_title'), type: 'string' },
+                { key: 'plannedFinish', label: t('date'), type: 'date' },
+                { key: 'status', label: t('status'), type: 'badge' }
+              ]
+            }}
+            data={milestones}
+            onRowClick={(m) => setEditingActivity(m as any)}
+            onDeleteRecord={async (id) => {
+              try {
+                await deleteDoc(doc(db, 'activities', id));
+                toast.success('Milestone deleted');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'activities');
+              }
+            }}
+            title={stripNumericPrefix(t('milestones'))}
+            favoriteControl={null}
+            primaryAction={{
+              label: t('add_milestone'),
+              icon: Plus,
+              onClick: () => setShowAddMilestone(true)
+            }}
+          />
+        ) : null}
 
       {/* Add/Edit Milestone Modal */}
       <AnimatePresence>
@@ -1472,6 +1227,6 @@ export const WBSView: React.FC = () => {
         )}
       </AnimatePresence>
       </div>
-    </div>
+    </StandardProcessPage>
   );
 };

@@ -33,8 +33,10 @@ import {
   MessageSquare,
   HelpCircle
 } from 'lucide-react';
-import { Page, DecisionLogEntry, DecisionLogVersion, Stakeholder } from '../types';
-import { StandardProcessPage } from './StandardProcessPage';
+import { Page, DecisionLogEntry, DecisionLogVersion, Stakeholder, EntityConfig } from '../types';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
+import { useLanguage } from '../context/LanguageContext';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   collection, 
@@ -55,14 +57,14 @@ import { useProject } from '../context/ProjectContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { generateStandardPDF } from '../lib/pdfService';
 
 interface DecisionLogViewProps {
   page: Page;
 }
 
 export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
+  const { t } = useLanguage();
   const { selectedProject } = useProject();
   const [entries, setEntries] = useState<DecisionLogEntry[]>([]);
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -125,7 +127,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     setEditingEntry(null);
     const nextNum = entries.length + 1;
     setFormData({
-      decisionId: `ZRY-DEC-${nextNum.toString().padStart(3, '0')}`,
+      decisionId: `PMIS-DEC-${nextNum.toString().padStart(3, '0')}`,
       category: 'Scope',
       decision: '',
       responsibleParty: '',
@@ -200,44 +202,41 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     }
   };
 
-  const generatePDF = async () => {
+  const generatePDF = () => {
     if (!selectedProject) return;
-    const pdfDoc = new jsPDF('l', 'mm', 'a4');
-    const margin = 20;
-    const pageWidth = pdfDoc.internal.pageSize.width;
+    
+    const columns = [t('id'), t('category'), t('decision'), t('party'), t('date')];
+    const rows = entries.map(e => [
+      e.decisionId,
+      e.category,
+      e.decision,
+      e.responsibleParty,
+      e.date
+    ]);
 
-    pdfDoc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
-    pdfDoc.setFontSize(16);
-    pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.text('DECISION LOG', pageWidth / 2, 35, { align: 'center' });
-    pdfDoc.setFontSize(10);
-    pdfDoc.text(`Project Title: ${selectedProject.name}`, margin, 45);
-    pdfDoc.text(`Date Prepared: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, 45);
-
-    autoTable(pdfDoc, {
-      startY: 50,
-      head: [['ID', 'Category', 'Decision', 'Responsible Party', 'Date', 'Comments']],
-      body: entries.map(e => [
-        e.decisionId,
-        e.category,
-        e.decision,
-        e.responsibleParty,
-        e.date,
-        e.comments
-      ]),
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [48, 48, 48], textColor: [255, 255, 255], fontStyle: 'bold' },
+    generateStandardPDF({
+      page,
+      project: selectedProject,
+      data: entries,
+      columns,
+      rows
     });
-
-    pdfDoc.save(`${selectedProject.code}-DECISION-LOG.pdf`);
   };
 
-  const filteredEntries = entries.filter(e => 
-    e.decisionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (e.decision || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (e.responsibleParty || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const gridConfig: EntityConfig = {
+    id: 'decisions',
+    label: t('decision_log'),
+    icon: Gavel,
+    collection: 'decision_log',
+    columns: [
+      { key: 'decisionId', label: 'ID', type: 'badge' },
+      { key: 'category', label: t('category'), type: 'badge' },
+      { key: 'decision', label: t('decision'), type: 'string' },
+      { key: 'responsibleParty', label: t('party'), type: 'string' },
+      { key: 'date', label: t('date'), type: 'date' },
+      { key: 'updatedAt', label: t('updated_at'), type: 'date' }
+    ]
+  };
 
   return (
     <StandardProcessPage
@@ -257,6 +256,15 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-10 pb-32"
           >
+            <div className="flex justify-end pr-2">
+              <button 
+                onClick={() => setView('list')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
+              >
+                <ChevronRight className="w-3 h-3 rotate-180" />
+                {t('back_to_list')}
+              </button>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
               {/* Left Column: Decision Details */}
               <div className="lg:col-span-2 space-y-10">
@@ -363,8 +371,8 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                           <CheckCircle2 className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-400 font-sans">Strategic Impact</h3>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Decision Domain Analysis</p>
+                           <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-400 font-sans">Strategic Impact</h3>
+                           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Decision Domain Analysis</p>
                         </div>
                       </div>
 
@@ -387,7 +395,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                                <span className="text-[10px] font-black uppercase tracking-widest">Baseline Alert</span>
                              </div>
                              <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase">
-                               Note: This decision involves protected domains. No changes will be made to POs or Gantt Chart without manual confirmation.
+                                Note: This decision involves protected domains. No changes will be made to POs or Gantt Chart without manual confirmation.
                              </p>
                           </div>
                         )}
@@ -432,98 +440,22 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
           </motion.div>
         ) : (
           <motion.div
-            key="list"
+            key="grid"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-8"
+            className="space-y-8 flex-1 flex flex-col"
           >
-            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
-               <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                 <div>
-                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">Decision Governance Log</h2>
-                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic italic">Formalizing project authority: {entries.length} decisions logged</p>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input 
-                        type="text" 
-                        placeholder="ID, Category, Stakeholder..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none w-64"
-                      />
-                    </div>
-                    <button 
-                      onClick={handleAdd}
-                      className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Log Outcome
-                    </button>
-                 </div>
-               </div>
-               
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left">
-                    <thead>
-                       <tr className="bg-slate-50/20 border-b border-slate-50">
-                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Decision ID</th>
-                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Impact Core</th>
-                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Formal Outcome</th>
-                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Authority / Party</th>
-                          <th className="px-10 py-6 text-[10px] font-bold uppercase text-slate-400 tracking-widest">Date</th>
-                          <th className="px-10 py-6"></th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                       {filteredEntries.length === 0 ? (
-                         <tr>
-                            <td colSpan={6} className="px-10 py-32 text-center text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] italic">No decisions recorded for selected criteria.</td>
-                         </tr>
-                       ) : filteredEntries.map((entry) => (
-                        <tr key={entry.id} onClick={() => handleEdit(entry)} className="hover:bg-slate-50 group cursor-pointer transition-colors relative overflow-hidden">
-                           <td className="px-10 py-8">
-                              <span className="text-sm font-black text-slate-900 tracking-tight italic uppercase">{entry.decisionId}</span>
-                           </td>
-                           <td className="px-10 py-8">
-                             <div className={cn(
-                               "inline-flex px-3 py-1 rounded text-[8px] font-black uppercase tracking-[0.1em]",
-                               entry.category === 'Cost/Price' ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                               entry.category === 'Schedule' ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                               "bg-indigo-50 text-indigo-600 border border-indigo-100"
-                             )}>
-                               {entry.category}
-                             </div>
-                           </td>
-                           <td className="px-10 py-8 min-w-[300px]">
-                              <div className="text-xs font-bold text-slate-700 line-clamp-2 max-w-xs uppercase leading-relaxed font-sans">{entry.decision}</div>
-                           </td>
-                           <td className="px-10 py-8">
-                              <div className="flex items-center gap-2">
-                                <User className="w-3 h-3 text-slate-400" />
-                                <span className="text-[10px] font-black text-slate-900 tracking-tight italic uppercase">{entry.responsibleParty}</span>
-                              </div>
-                           </td>
-                           <td className="px-10 py-8">
-                              <div className="text-[10px] font-bold text-slate-400 tracking-widest">{entry.date}</div>
-                           </td>
-                           <td className="px-10 py-8 text-right">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}
-                                className="opacity-0 group-hover:opacity-100 p-3 bg-slate-50 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                           </td>
-                        </tr>
-                       ))}
-                    </tbody>
-                 </table>
-               </div>
-            </div>
+            <UniversalDataTable 
+              config={gridConfig}
+              data={entries}
+              onRowClick={handleEdit}
+              onNewClick={handleAdd}
+              onDeleteRecord={handleDelete}
+              title={useStandardProcessPage()?.pageHeader}
+              favoriteControl={useStandardProcessPage()?.favoriteControl}
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col md:flex-row gap-10 items-center shadow-2xl">
                   <div className="flex-1 space-y-6 relative z-10">
                     <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center ring-1 ring-indigo-500/30 shadow-inner">
@@ -531,7 +463,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
                     </div>
                     <h3 className="text-3xl font-black italic tracking-tighter leading-none uppercase">Governance<br/>Integrity Hub</h3>
                     <p className="text-slate-400 font-bold leading-relaxed max-w-xl text-[10px] uppercase tracking-wide opacity-80 font-sans">
-                      The Decision Log formalizes all verbal agreements. High-impact decisions (Cost/Schedule) trigger a manual baseline review to ensure Zarya's data integrity across domains.
+                      The Decision Log formalizes all verbal agreements. High-impact decisions (Cost/Schedule) trigger a manual baseline review to ensure PMIS's data integrity across domains.
                     </p>
                   </div>
                   <div className="absolute right-[-5%] bottom-[-10%] opacity-5 rotate-12 scale-150 pointer-events-none">

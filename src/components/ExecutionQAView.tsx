@@ -142,7 +142,7 @@ export const ExecutionQAView: React.FC<ExecutionQAViewProps> = ({ page }) => {
     });
 
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-GOV-QA-V${vStr}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-GOV-QA-V${vStr}.pdf`);
   };
 
   const addDecision = () => {

@@ -15,6 +15,8 @@ interface UIContextType {
   favorites: string[];
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+  isRibbonCollapsed: boolean;
+  setIsRibbonCollapsed: (collapsed: boolean) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [selectedDomain, setSelectedDomain] = useState<DomainId | null>(null);
   const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
   const [favorites, setFavorites] = useState<string[]>(['3.6.3', '3.6.4', '2.4.1']);
+  const [isRibbonCollapsed, setIsRibbonCollapsed] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -51,7 +54,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       setSelectedFocusArea,
       favorites,
       toggleFavorite,
-      isFavorite
+      isFavorite,
+      isRibbonCollapsed,
+      setIsRibbonCollapsed
     }}>
       {children}
     </UIContext.Provider>

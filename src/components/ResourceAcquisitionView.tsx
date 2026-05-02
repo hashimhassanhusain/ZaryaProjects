@@ -204,7 +204,7 @@ export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = (
                  </div>
                  <h3 className="text-3xl font-semibold italic tracking-tighter leading-none">Internal vs External<br/>Acquisition</h3>
                  <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                   Project "Zarya" automates the **Make-or-Buy** evaluation. If internal resources are busy, it automatically pulls external pricing from the Sourcing Strategy hub.
+                   Project "PMIS" automates the **Make-or-Buy** evaluation. If internal resources are busy, it automatically pulls external pricing from the Sourcing Strategy hub.
                  </p>
               </div>
 

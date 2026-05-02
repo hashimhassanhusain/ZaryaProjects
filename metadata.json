@@ -1,5 +1,6 @@
 {
-  "name": "Zarya PMIS - PMBOK 8 Framework",
+  "name": "PMIS",
   "description": "A professional Project Management Information System aligned with PMBOK 8th Edition, featuring integrated Procurement & Contracts management with automated Google Drive structure and financial logic gates.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

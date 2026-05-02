@@ -235,7 +235,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
       headStyles: { fillColor: [48, 48, 48] }
     });
 
-    doc.save(`${selectedProject.code}-ZRY-PERF-REPORT-V${data.version}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-PERF-REPORT-V${data.version}.pdf`);
   };
 
   const gridConfig: EntityConfig = {

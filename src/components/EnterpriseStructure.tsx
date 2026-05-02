@@ -224,7 +224,7 @@ export const EnterpriseStructure: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('enterprise_structure')}</h1>
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{t('enterprise_structure')}</h1>
             <p className="text-slate-500 text-sm">Organize and manage your corporate hierarchy using drag and drop.</p>
           </div>
         </div>

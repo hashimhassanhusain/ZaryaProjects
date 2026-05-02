@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
                  <Building className="w-4 h-4" />
               </div>
               <div className="flex flex-col text-left">
-                 <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">ZARYA PMIS</span>
+                 <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">PMIS</span>
                  <div className="flex items-center gap-1.5">
                     <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight truncate max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}

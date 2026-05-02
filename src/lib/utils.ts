@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Zarya File Naming Convention (FNC)
- * [ProjectCode]-ZRY-DIV[XX]-[TYPE]-[SEQ]
- * fallback: [ProjectCode]-ZRY-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version]
+ * PMIS File Naming Convention (FNC)
+ * [ProjectCode]-PMIS-DIV[XX]-[TYPE]-[SEQ]
+ * fallback: [ProjectCode]-PMIS-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version]
  */
-export function generateZaryaFileName(params: {
+export function generatePMISFileName(params: {
   projectCode: string;
   type: string; // FRM, PLN, RPT, LOG, DRW, SPC, MS, INV, CON
   division?: string; // e.g. "03" or "03 - Concrete"
@@ -28,7 +28,7 @@ export function generateZaryaFileName(params: {
   if (params.division) {
     const divNum = params.division.match(/^\d+/) ? params.division.match(/^\d+/)![0].padStart(2, '0') : 'XX';
     const seq = params.seq || '001';
-    return `${params.projectCode}-ZRY-DIV${divNum}-${type}-${seq}`;
+    return `${params.projectCode}-PMIS-DIV${divNum}-${type}-${seq}`;
   }
 
   // Fallback for legacy/management files
@@ -37,7 +37,7 @@ export function generateZaryaFileName(params: {
   const cat = (params.category || 'MGT').toUpperCase();
   const dept = (params.dept || 'EXEC').toUpperCase();
   
-  return `${params.projectCode}-ZRY-${cat}-${dept}-${type}-${desc}-${date}-${ver}`;
+  return `${params.projectCode}-PMIS-${cat}-${dept}-${type}-${desc}-${date}-${ver}`;
 }
 
 /**

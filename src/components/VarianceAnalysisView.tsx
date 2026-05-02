@@ -319,9 +319,9 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
 
   const generatePDFAction = () => {
     const doc = new jsPDF();
-    const projectCode = project?.code || 'ZRY';
+    const projectCode = project?.code || 'PMIS';
     const dateStr = varianceData.date;
-    const fileName = `${projectCode}-ZRY-VARIANCE-ANALYSIS-${dateStr}.pdf`;
+    const fileName = `${projectCode}-PMIS-VARIANCE-ANALYSIS-${dateStr}.pdf`;
     
     // Path as per project structure
     const path = `MONITORING_CONTROLLING_06/06.2_VARIANCE_ANALYSIS_REPORTS`;
@@ -479,7 +479,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold text-slate-900 tracking-tight">VARIANCE ANALYSIS</h1>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">VARIANCE ANALYSIS</h1>
           <p className="text-slate-500 font-medium">Project: {project.name} | {project.code}</p>
         </div>
         <div className="flex gap-4">

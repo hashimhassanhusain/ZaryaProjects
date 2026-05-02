@@ -185,7 +185,7 @@ export const ProjectDashboard: React.FC = () => {
               <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
               {t('executive_summary')}
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-[0.9]">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase leading-[0.9]">
               {stripNumericPrefix(selectedProject.name)}
             </h1>
           </div>

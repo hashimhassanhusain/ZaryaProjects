@@ -17,9 +17,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 var getDriveClient = () => {
-  const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
+  let envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
   if (!envCreds) {
-    return { error: "Secret GOOGLE_DRIVE_CREDENTIALS is missing or empty in the Secrets panel." };
+    const credsPath = path.join(process.cwd(), "service-account.json");
+    if (fs.existsSync(credsPath)) {
+      console.log("Using local service-account.json file...");
+      envCreds = fs.readFileSync(credsPath, "utf8");
+    }
+  }
+  if (!envCreds) {
+    return { error: 'Google Drive Credentials Missing: Please set the GOOGLE_DRIVE_CREDENTIALS environment variable OR upload "service-account.json" to the server root.' };
   }
   try {
     console.log("Attempting to parse GOOGLE_DRIVE_CREDENTIALS...");
@@ -363,7 +370,24 @@ app.post("/api/projects/init-drive", async (req, res) => {
       "PROCUREMENT_AND_SUBCONTRACTORS_03": [
         "03.1_Vendors_and_Suppliers_Database",
         "03.2_Purchase_Orders_PO",
-        "03.3_Subcontractors_Hub"
+        { "03.3_Subcontractors_Hub": [
+          { "Div_01_General_Requirements": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_02_Existing_Conditions": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_03_Concrete": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_04_Masonry": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_05_Metals": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_06_Wood_and_Plastics": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_07_Thermal_and_Moisture": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_08_Openings": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_09_Finishes": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_10_Specialties": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_11_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_12_Furnishings": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_13_Special_Construction": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_14_Conveying_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_22_Plumbing": ["01_RFQ", "02_PO", "03_Contracts"] },
+          { "Div_26_Electrical": ["01_RFQ", "02_PO", "03_Contracts"] }
+        ] }
       ],
       "SITE_OPERATIONS_04": [
         "04.1_Daily_Site_Reports",
@@ -453,7 +477,7 @@ app.post("/api/admin/backup-code", async (req, res) => {
     }
     const zipBuffer = zip.toBuffer();
     const timestamp = (/* @__PURE__ */ new Date()).toLocaleString("en-GB", { timeZone: "UTC" }).replace(/[/, :]/g, "-");
-    const fileName = `Zarya_Source_Backup_${timestamp}.zip`;
+    const fileName = `PMIS_Source_Backup_${timestamp}.zip`;
     console.log(`Uploading ${fileName} to Drive folder: ${backupFolderId}`);
     const tempPath = path.join(process.cwd(), "temp_backup.zip");
     fs.writeFileSync(tempPath, zipBuffer);
@@ -546,22 +570,39 @@ app.get("/api/drive/folders-recursive/:folderId", async (req, res) => {
   if (error || !drive) return res.status(500).json({ error: error || "Drive client not initialized" });
   try {
     const folders = [];
-    async function collectFolders(currentId, currentPath = "") {
+    async function collectFolders(currentId, currentPath = "", parentId = null) {
       const response = await drive.files.list({
+        // Optimization: only get specific fields
         q: `'${currentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: "files(id, name)",
         supportsAllDrives: true,
-        includeItemsFromAllDrives: true
+        includeItemsFromAllDrives: true,
+        // Optimization: larger page size if many folders
+        pageSize: 1e3
       });
       if (response.data.files) {
         for (const f of response.data.files) {
           const folderPath = currentPath ? `${currentPath}/${f.name}` : f.name;
-          folders.push({ id: f.id, name: f.name, path: folderPath });
-          await collectFolders(f.id, folderPath);
+          folders.push({ id: f.id, name: f.name, path: folderPath, parentId: currentId });
+          await collectFolders(f.id, folderPath, currentId);
         }
       }
     }
-    await collectFolders(folderId);
+    const initialResponse = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: "files(id, name)",
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    });
+    if (initialResponse.data.files) {
+      const initialFolders = initialResponse.data.files;
+      const promises = initialFolders.map((f) => {
+        const folderPath = f.name;
+        folders.push({ id: f.id, name: f.name, path: folderPath, parentId: folderId });
+        return collectFolders(f.id, folderPath, folderId);
+      });
+      await Promise.all(promises);
+    }
     res.json({ folders });
   } catch (error2) {
     console.error("Failed to list folders recursively:", error2);
@@ -614,7 +655,7 @@ async function startServer() {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
-  app.listen(PORT, "0.0.0.0", () => {
+  app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server running at http://localhost:${PORT}`);
     (async () => {
       try {

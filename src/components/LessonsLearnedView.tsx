@@ -274,7 +274,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-MGT-REG-LLN-${dateStr}-V${vStr}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-MGT-REG-LLN-${dateStr}-V${vStr}.pdf`);
   };
 
   const gridConfig: EntityConfig = {
@@ -468,7 +468,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                       </div>
                       <div>
                         <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-400">Institutional Wisdom</h3>
-                        <p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest">Zarya Knowledge Base</p>
+                        <p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest">PMIS Knowledge Base</p>
                       </div>
                     </div>
 
@@ -540,7 +540,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
                     <h4 className="text-[11px] font-black uppercase tracking-widest">{t('auto_mining')}</h4>
                   </div>
                   <p className="text-[10px] text-blue-800 font-bold leading-relaxed opacity-70">
-                    Zarya logic monitors project closure activities to automatically flag potential success cases for the company-wide knowledge base.
+                    PMIS logic monitors project closure activities to automatically flag potential success cases for the company-wide knowledge base.
                   </p>
                 </div>
               </div>

@@ -417,7 +417,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = charter.version || '1.0';
-    const fileName = `${selectedProject.code}-ZRY-MGT-FRM-CHA-${dateStr}-V${vStr}.pdf`;
+    const fileName = `${selectedProject.code}-PMIS-MGT-FRM-CHA-${dateStr}-V${vStr}.pdf`;
     docObj.save(fileName);
     toast.success(t('pdf_generated_success'));
   };

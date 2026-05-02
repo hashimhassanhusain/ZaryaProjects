@@ -218,7 +218,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
             >
               <div className="flex items-center gap-2 mb-2 text-blue-400">
                 <Sparkles className="w-3 h-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Zarya AI Suggests</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">PMIS AI Suggests</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
                 "{suggestion}"
@@ -257,7 +257,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-semibold text-slate-900 tracking-tight flex items-center gap-4">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase flex items-center gap-4">
                 Quality Audit <span className="text-slate-300 font-light">|</span> <span className="text-blue-600">تدقيق الجودة</span>
               </h1>
               <p className="text-slate-500 mt-2 max-w-2xl text-sm leading-relaxed">
@@ -562,7 +562,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
             <h3 className="text-xs font-semibold uppercase tracking-widest">AI Intelligence</h3>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Zarya AI analyzes historical data from similar projects to suggest potential risks and best practices for this audit.
+            PMIS AI analyzes historical data from similar projects to suggest potential risks and best practices for this audit.
           </p>
           <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-bold transition-all">
             Run Deep Analysis

@@ -120,7 +120,7 @@ export const SourcingStrategyView: React.FC<SourcingStrategyViewProps> = ({ page
     });
 
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-GOV-SRC-V${vStr}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-GOV-SRC-V${vStr}.pdf`);
   };
 
   return (

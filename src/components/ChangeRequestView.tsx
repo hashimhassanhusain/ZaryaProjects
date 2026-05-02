@@ -467,7 +467,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const vStr = (formData.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-MGT-FRM-CHG-${dateStr}-V${vStr}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-MGT-FRM-CHG-${dateStr}-V${vStr}.pdf`);
   };
 
   const getStatusColor = (status: string) => {

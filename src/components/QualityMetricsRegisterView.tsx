@@ -1,36 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Save, 
-  Download, 
-  History, 
   Plus, 
+  Search, 
+  Edit2, 
   Trash2, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  FileText,
-  Printer,
-  Loader2,
-  X,
-  ArrowLeft,
+  ClipboardCheck, 
+  Download, 
+  History,
   ChevronRight,
-  Search,
-  Filter,
-  MoreVertical,
-  Edit2,
-  ShieldAlert,
-  ClipboardCheck,
-  Layers,
-  Box,
+  Save,
+  X,
+  Loader2,
+  ArrowLeft,
   Activity,
-  DollarSign,
-  Info,
-  CheckCircle,
-  XCircle,
+  Layers,
+  ShieldAlert,
   HelpCircle,
   Calculator
 } from 'lucide-react';
-import { Page, Project, PageVersion, WBSLevel, QualityMetricEntry, QualityMetricVersion, PurchaseOrder } from '../types';
+import { Page, Project, PageVersion, WBSLevel, QualityMetricEntry, QualityMetricVersion, PurchaseOrder, EntityConfig } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
   updateDoc, 
@@ -46,10 +34,14 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface QualityMetricsRegisterViewProps {
   page: Page;
@@ -77,14 +69,14 @@ const MASTERFORMAT_DIVISIONS = [
 
 export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProps> = ({ page, embedded = false }) => {
   const { selectedProject } = useProject();
+  const { t, isRtl } = useLanguage();
   const [metrics, setMetrics] = useState<QualityMetricEntry[]>([]);
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [versions, setVersions] = useState<QualityMetricVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingMetric, setEditingMetric] = useState<Partial<QualityMetricEntry> | null>(null);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
 
@@ -98,36 +90,13 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
     );
 
     const unsubMetrics = onSnapshot(metricsQuery, async (snap) => {
-      if (snap.empty && selectedProject) {
-        // Add default sample data
-        const sampleMetric = {
-          projectId: selectedProject.id,
-          metricId: 'ZRY-QUA-001',
-          item: 'Steel Rebar Grade 60',
-          masterFormatCode: '05',
-          metric: 'Tensile strength as per ASTM A615',
-          measurementMethod: 'Tensile Test Lab Report',
-          acceptanceCriteria: 'Minimum yield strength of 420 MPa',
-          status: 'Active',
-          complianceStatus: 'Pending',
-          version: 1.0,
-          createdAt: new Date().toISOString(),
-          createdBy: 'System',
-          updatedAt: new Date().toISOString(),
-          updatedBy: 'System'
-        };
-        await addDoc(collection(db, 'quality_metrics'), sampleMetric);
-      } else {
-        setMetrics(snap.docs.map(d => ({ id: d.id, ...d.data() } as QualityMetricEntry)));
-      }
+      setMetrics(snap.docs.map(d => ({ id: d.id, ...d.data() } as QualityMetricEntry)));
       setLoading(false);
     });
 
     const wbsQuery = query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id));
     const unsubWbs = onSnapshot(wbsQuery, (snap) => {
-      const list: WBSLevel[] = [];
-      snap.forEach(doc => list.push({ id: doc.id, ...doc.data() } as WBSLevel));
-      setWbsLevels(list);
+      setWbsLevels(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
     });
 
     const poQuery = query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id));
@@ -156,12 +125,6 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
     }
   }, [editingMetric?.id]);
 
-  const filteredMetrics = metrics.filter(m => 
-    m.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.metricId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.metric.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const handleSaveMetric = async (isNewVersion: boolean = false) => {
     if (!selectedProject || !editingMetric) return;
     setIsSaving(true);
@@ -185,7 +148,7 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
       let docRef;
       if (editingMetric.id && !isNewVersion) {
         docRef = doc(db, 'quality_metrics', editingMetric.id);
-        await updateDoc(docRef, metricData);
+        await updateDoc(docRef, metricData as any);
       } else {
         docRef = await addDoc(collection(db, 'quality_metrics'), metricData);
       }
@@ -201,21 +164,9 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
         changeSummary: isNewVersion ? `Created new version ${metricData.version.toFixed(1)}` : (editingMetric.id ? 'Updated existing record' : 'Initial entry')
       });
 
-      setIsFormOpen(false);
+      setViewMode('grid');
       setEditingMetric(null);
-
-      // Prompt on Integration with PO
-      const linkedPO = pos.find(p => p.lineItems.some(li => li.description.toLowerCase().includes(metricData.item!.toLowerCase())));
-      if (linkedPO) {
-        setShowPrompt({
-          type: 'PO Link',
-          message: `Link this quality standard to PO [${linkedPO.id}]?`,
-          onConfirm: () => {
-            console.log('Linked to PO:', linkedPO.id);
-            setShowPrompt(null);
-          }
-        });
-      }
+      toast.success(editingMetric.id ? t('entry_updated') : t('entry_created'));
 
     } catch (err) {
       handleFirestoreError(err, editingMetric.id ? OperationType.UPDATE : OperationType.CREATE, 'quality_metrics');
@@ -225,11 +176,12 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
   };
 
   const handleDeleteMetric = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this metric?')) return;
+    if (!window.confirm(t('confirm_delete'))) return;
     try {
       await deleteDoc(doc(db, 'quality_metrics', id));
+      toast.success(t('entry_deleted'));
     } catch (error) {
-      console.error('Error deleting metric:', error);
+      handleFirestoreError(error, OperationType.DELETE, 'quality_metrics');
     }
   };
 
@@ -239,430 +191,257 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
     const margin = 20;
     const pageWidth = pdfDoc.internal.pageSize.width;
 
-    // Header with Logo
     pdfDoc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
     pdfDoc.setFontSize(16);
     pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.text('QUALITY METRICS', pageWidth / 2, 35, { align: 'center' });
+    pdfDoc.text(t('quality_metrics').toUpperCase(), pageWidth / 2, 35, { align: 'center' });
 
     pdfDoc.setFontSize(10);
-    pdfDoc.setFont('helvetica', 'normal');
-    pdfDoc.text(`Project Title: ${selectedProject.name}`, margin, 45);
-    pdfDoc.text(`Date Prepared: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, 45);
+    pdfDoc.text(`${t('project')}: ${selectedProject.name}`, margin, 45);
+    pdfDoc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, pageWidth - margin, 45, { align: 'right' });
 
     autoTable(pdfDoc, {
       startY: 55,
       head: [['ID', 'Item', 'Metric', 'Measurement Method']],
       body: metrics.map(m => [m.metricId, m.item, m.metric, m.measurementMethod]),
       theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 60 },
-        2: { cellWidth: 45 },
-        3: { cellWidth: 45 }
-      }
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
+      styles: { fontSize: 8 }
     });
 
-    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const fileName = `[${selectedProject.code}]-QUA-MET-${dateStr}.pdf`;
-    pdfDoc.save(fileName);
+    pdfDoc.save(`QualityMetrics_${selectedProject.code}.pdf`);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
+  const gridConfig: EntityConfig = {
+    id: 'quality_metrics' as any,
+    label: page.title,
+    icon: ClipboardCheck,
+    collection: 'quality_metrics',
+    columns: [
+      { key: 'metricId', label: 'ID', type: 'badge' },
+      { key: 'item', label: 'Item', type: 'string' },
+      { key: 'metric', label: 'Metric', type: 'string' },
+      { key: 'measurementMethod', label: 'Method', type: 'string' },
+      { key: 'complianceStatus', label: 'Status', type: 'badge' },
+      { key: 'updatedAt', label: 'Updated At', type: 'date' }
+    ]
+  };
+
+  const handleAddNew = () => {
+    const nextId = `PMIS-QUA-${(metrics.length + 1).toString().padStart(3, '0')}`;
+    setEditingMetric({ 
+      metricId: nextId, 
+      item: '', 
+      metric: '', 
+      measurementMethod: '', 
+      acceptanceCriteria: '',
+      status: 'Active',
+      complianceStatus: 'Pending',
+      version: 1.0
+    });
+    setViewMode('edit');
+  };
+
+  if (loading) return null;
 
   return (
-    <div className={cn("space-y-8", embedded && "mt-12 pt-12 border-t border-slate-100")}>
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search metrics..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
+    <StandardProcessPage
+      page={page}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      onSave={() => handleSaveMetric(false)}
+      onPrint={generatePDF}
+      isSaving={isSaving}
+      inputs={page.details?.inputs?.map(id => ({ id, title: id })) || []}
+    >
+      <AnimatePresence mode="wait">
+        {viewMode === 'grid' ? (
+          <motion.div
+            key="grid"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex-1 flex flex-col"
           >
-            <Printer className="w-4 h-4" />
-            Export Register
-          </button>
-          <button 
-            onClick={() => {
-              const nextId = `ZRY-QUA-${(metrics.length + 1).toString().padStart(3, '0')}`;
-              
-              // Try to pull acceptance criteria logic from QMP
-              let qmpLogic = '';
-              if (selectedProject) {
-                const qmpRef = doc(db, 'projects', selectedProject.id);
-                getDoc(qmpRef).then(snap => {
-                  if (snap.exists()) {
-                    const pData = snap.data() as Project;
-                    if (pData.qmpData && (pData.qmpData as any).acceptanceCriteriaLogic) {
-                      qmpLogic = (pData.qmpData as any).acceptanceCriteriaLogic;
-                    }
-                  }
-                  setEditingMetric({ 
-                    metricId: nextId, 
-                    item: '', 
-                    metric: '', 
-                    measurementMethod: '', 
-                    acceptanceCriteria: qmpLogic,
-                    status: 'Active',
-                    complianceStatus: 'Pending',
-                    version: 1.0
-                  });
-                  setIsFormOpen(true);
-                });
-              } else {
-                setEditingMetric({ 
-                  metricId: nextId, 
-                  item: '', 
-                  metric: '', 
-                  measurementMethod: '', 
-                  acceptanceCriteria: '',
-                  status: 'Active',
-                  complianceStatus: 'Pending',
-                  version: 1.0
-                });
-                setIsFormOpen(true);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+            <UniversalDataTable 
+              config={gridConfig}
+              data={metrics}
+              onRowClick={(record) => {
+                setEditingMetric(record as QualityMetricEntry);
+                setViewMode('edit');
+              }}
+              onNewClick={handleAddNew}
+              onDeleteRecord={handleDeleteMetric}
+              title={useStandardProcessPage()?.pageHeader}
+              favoriteControl={useStandardProcessPage()?.favoriteControl}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="edit"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10 pb-32"
           >
-            <Plus className="w-4 h-4" />
-            Add New Metric
-          </button>
-        </div>
-      </div>
+            <div className="flex justify-end pr-2">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                {t('back_to_list')}
+              </button>
+            </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50">
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-24">ID</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Item</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Metric</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Method</th>
-              <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest w-32 text-center">Status</th>
-              <th className="px-8 py-5 w-20"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filteredMetrics.map((m) => (
-              <tr key={m.id} className="group hover:bg-slate-50/30 transition-all">
-                <td className="px-8 py-6">
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg tracking-tighter">{m.metricId}</span>
-                </td>
-                <td className="px-8 py-6">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{m.item}</p>
-                    {m.masterFormatCode && <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">DIV {m.masterFormatCode}</span>}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+              <div className="lg:col-span-2 space-y-10">
+                <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden p-10 space-y-12">
+                  <div className="flex items-center gap-4 border-b border-slate-100 pb-8">
+                    <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
+                      <ClipboardCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                        {editingMetric?.id ? 'Update Quality Metric' : 'Log New Quality Metric'}
+                      </h2>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Quality Standards Definition</p>
+                    </div>
                   </div>
-                </td>
-                <td className="px-8 py-6">
-                  <p className="text-sm text-slate-600 font-medium">{m.metric}</p>
-                </td>
-                <td className="px-8 py-6">
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">{m.measurementMethod}</p>
-                </td>
-                <td className="px-8 py-6">
-                  <div className="flex justify-center">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest flex items-center gap-1.5",
-                      m.complianceStatus === 'Compliant' ? "bg-green-100 text-green-600" :
-                      m.complianceStatus === 'Non-Compliant' ? "bg-red-100 text-red-600" :
-                      "bg-amber-100 text-amber-600"
-                    )}>
-                      {m.complianceStatus === 'Compliant' ? <CheckCircle className="w-3 h-3" /> : 
-                       m.complianceStatus === 'Non-Compliant' ? <XCircle className="w-3 h-3" /> : 
-                       <Clock className="w-3 h-3" />}
-                      {m.complianceStatus}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-8 py-6 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <button 
-                      onClick={() => {
-                        setEditingMetric(m);
-                        setIsFormOpen(true);
-                      }}
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteMetric(m.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
 
-      {/* Metric Form Modal */}
-      <AnimatePresence>
-        {isFormOpen && editingMetric && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                    <ClipboardCheck className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">Quality Metric Standard</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">{editingMetric.metricId}</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-all">
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="p-8 overflow-y-auto space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Item Description</label>
-                    <input 
-                      type="text"
-                      value={editingMetric.item}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, item: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="e.g. Steel Rebar Grade 60"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">MasterFormat 16 Divisions</label>
-                    <select 
-                      value={editingMetric.masterFormatCode}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, masterFormatCode: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Division...</option>
-                      {MASTERFORMAT_DIVISIONS.map(div => (
-                        <option key={div.code} value={div.code}>{div.code} - {div.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">WBS Link</label>
-                    <select 
-                      value={editingMetric.wbsId}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, wbsId: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Deliverable...</option>
-                      {wbsLevels.map(w => (
-                        <option key={w.id} value={w.id}>{w.code} - {w.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                      Metric Threshold
-                      <Tooltip text="Define the technical threshold for success (e.g., Slump test max 10cm)." />
-                    </label>
-                    <input 
-                      type="text"
-                      value={editingMetric.metric}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, metric: e.target.value })}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="e.g. Tensile strength as per ASTM A615"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                      Measurement Method
-                      <Tooltip text="Specify the tool or standard used for verification." />
-                    </label>
-                    <textarea 
-                      value={editingMetric.measurementMethod}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, measurementMethod: e.target.value })}
-                      rows={3}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
-                      placeholder="e.g. Tensile Test Lab Report"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Acceptance Criteria</label>
-                    <textarea 
-                      value={editingMetric.acceptanceCriteria}
-                      onChange={(e) => setEditingMetric({ ...editingMetric, acceptanceCriteria: e.target.value })}
-                      rows={3}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
-                      placeholder="Pulling from QMP logic..."
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 rounded-3xl p-8 space-y-6 border border-slate-100">
-                  <div className="flex items-center gap-3 text-slate-900 font-bold text-sm uppercase tracking-tight">
-                    <Calculator className="w-5 h-5 text-blue-600" />
-                    Numerical Range Logic (Pass/Fail Placeholder)
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Target Value</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Item Description</label>
+                      <input 
+                        type="text"
+                        value={editingMetric?.item || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, item: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">MasterFormat Code</label>
+                      <select 
+                        value={editingMetric?.masterFormatCode || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, masterFormatCode: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
+                      >
+                        <option value="">Select Division...</option>
+                        {MASTERFORMAT_DIVISIONS.map(div => (
+                          <option key={div.code} value={div.code}>{div.code} - {div.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Metric / Threshold</label>
+                      <input 
+                        type="text"
+                        value={editingMetric?.metric || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, metric: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Measurement Method</label>
+                      <input 
+                        type="text"
+                        value={editingMetric?.measurementMethod || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, measurementMethod: e.target.value })}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Acceptance Criteria</label>
+                      <textarea 
+                        value={editingMetric?.acceptanceCriteria || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, acceptanceCriteria: e.target.value })}
+                        rows={3}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Value</label>
                       <input 
                         type="number"
-                        value={editingMetric.targetValue || ''}
+                        value={editingMetric?.targetValue || ''}
                         onChange={(e) => setEditingMetric({ ...editingMetric, targetValue: parseFloat(e.target.value) })}
-                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Min Limit</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Min Limit</label>
                       <input 
                         type="number"
-                        value={editingMetric.minValue || ''}
+                        value={editingMetric?.minValue || ''}
                         onChange={(e) => setEditingMetric({ ...editingMetric, minValue: parseFloat(e.target.value) })}
-                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Max Limit</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Max Limit</label>
                       <input 
                         type="number"
-                        value={editingMetric.maxValue || ''}
+                        value={editingMetric?.maxValue || ''}
                         onChange={(e) => setEditingMetric({ ...editingMetric, maxValue: parseFloat(e.target.value) })}
-                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm"
                       />
                     </div>
                   </div>
-                </div>
+                </section>
+              </div>
 
-                {/* Version History */}
-                {editingMetric.id && versions.length > 0 && (
-                  <div className="pt-8 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                      <History className="w-4 h-4" />
-                      Revision History
-                    </h3>
-                    <div className="space-y-3">
-                      {versions.map(v => (
-                        <div key={v.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                          <div>
-                            <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest">V{v.version.toFixed(1)}</span>
-                            <p className="text-xs font-bold text-slate-900 mt-1">{v.changeSummary}</p>
-                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{v.userName} • {new Date(v.timestamp).toLocaleString()}</p>
-                          </div>
-                          <button 
-                            onClick={() => setEditingMetric(v.data as QualityMetricEntry)}
-                            className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700"
-                          >
-                            Restore
-                          </button>
-                        </div>
-                      ))}
+              <div className="space-y-10">
+                <section className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-200 space-y-8">
+                  <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                      <ShieldAlert className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Controls</h3>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Compliance Status</label>
+                      <select 
+                        value={editingMetric?.complianceStatus || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, complianceStatus: e.target.value as any })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Compliant">Compliant</option>
+                        <option value="Non-Compliant">Non-Compliant</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lifecycle Status</label>
+                      <select 
+                        value={editingMetric?.status || ''}
+                        onChange={(e) => setEditingMetric({ ...editingMetric, status: e.target.value as any })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Archived">Archived</option>
+                      </select>
                     </div>
                   </div>
-                )}
-              </div>
+                </section>
 
-              <div className="p-8 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-white/40 text-[10px] font-semibold uppercase tracking-widest">
-                  <ShieldAlert className="w-4 h-4" />
-                  Standard Definition Protection Active
-                </div>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setIsFormOpen(false)}
-                    className="px-8 py-4 text-white/60 font-bold text-sm hover:text-white transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={() => handleSaveMetric(true)}
-                    disabled={isSaving}
-                    className="px-8 py-4 bg-white/10 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
-                  >
-                    Save as New Version
-                  </button>
-                  <button 
-                    onClick={() => handleSaveMetric(false)}
-                    disabled={isSaving}
-                    className="px-8 py-4 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
-                  >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Overwrite Current
-                  </button>
+                <div className="p-8 bg-blue-50 rounded-[2.5rem] border border-blue-100">
+                  <div className="flex items-center gap-3 text-blue-600 mb-4">
+                    <Layers className="w-5 h-5" />
+                    <h4 className="text-[11px] font-black uppercase tracking-widest">PMIS Integration</h4>
+                  </div>
+                  <p className="text-[10px] text-blue-800 font-bold leading-relaxed opacity-70">
+                    Quality standards are automatically synced with Procurement and WBS modules for real-time verification.
+                  </p>
                 </div>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Prompt Modal */}
-      <AnimatePresence>
-        {showPrompt && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100 text-center"
-            >
-              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <Layers className="w-10 h-10 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Cross-Module Integration</h3>
-              <p className="text-slate-500 font-medium mb-8 leading-relaxed">
-                {showPrompt.message}
-              </p>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={showPrompt.onConfirm}
-                  className="w-full py-4 bg-blue-600 text-white font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
-                >
-                  Yes, Link Standard
-                </button>
-                <button 
-                  onClick={() => setShowPrompt(null)}
-                  className="w-full py-4 bg-slate-100 text-slate-500 font-semibold text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
-                >
-                  No, Skip Linking
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+    </StandardProcessPage>
   );
 };
-
-const Tooltip = ({ text }: { text: string }) => (
-  <div className="group relative inline-block">
-    <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" />
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-      {text}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-    </div>
-  </div>
-);

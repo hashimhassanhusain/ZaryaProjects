@@ -1,4 +1,4 @@
-# Zarya Project Architecture & Guidelines
+# PMIS Project Architecture & Guidelines
 
 ## Core Principles
 1. **No html2canvas**: Tailwind v4 uses `oklch()` colors which are not supported by html2canvas. Use `jsPDF` + `jspdf-autotable` for all PDF generation.

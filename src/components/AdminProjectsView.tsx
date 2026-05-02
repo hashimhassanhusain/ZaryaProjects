@@ -96,8 +96,8 @@ export const AdminProjectsView: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectName: 'Zarya Oil Field Dev',
-          projectCode: 'ZRY-001',
+          projectName: 'PMIS Demo Project',
+          projectCode: 'PMIS-001',
           userEmail: auth.currentUser?.email ?? undefined
         })
       });
@@ -109,8 +109,8 @@ export const AdminProjectsView: React.FC = () => {
       const { rootFolderId } = await driveRes.json();
 
       const demoProject = {
-        name: 'Zarya Oil Field Dev',
-        code: 'ZRY-001',
+        name: 'PMIS Demo Project',
+        code: 'PMIS-001',
         manager: 'Hashim Hassan',
         status: 'active' as const,
         createdAt: new Date().toISOString(),

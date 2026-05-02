@@ -84,27 +84,27 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
-      <div className="bg-white border-b border-slate-100 px-8 py-6">
+    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
+      <div className="bg-white border-b border-slate-100 px-6 py-3">
         <div className="max-w-7xl mx-auto">
-          <div className={cn("flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1", isRtl && "flex-row-reverse")}>
+          <div className={cn("flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5", isRtl && "flex-row-reverse")}>
              <span>{stripNumericPrefix(t(page.domain || 'stakeholders'))}</span>
-             <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
-             <span className="text-slate-900">{t(page.focusArea)}</span>
+             <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />
+             <span className="text-slate-900">{stripNumericPrefix(t(page.focusArea))}</span>
              {activeTab !== 'overview' && (
                <>
-                 <ChevronRight className={cn("w-3 h-3", isRtl && "rotate-180")} />
+                 <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />
                  <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
                </>
              )}
           </div>
-          <h1 className={cn("text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2", isRtl && "flex-row-reverse")}>
+          <h1 className={cn("text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase italic", isRtl && "flex-row-reverse")}>
             {activeTab === 'overview' ? (
               <>
                 {parentPage && (
                   <>
-                    <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                    <ChevronRight className={cn("w-5 h-5 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
+                    <span className="text-slate-400 font-medium text-lg md:text-xl">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                    <ChevronRight className={cn("w-4 h-4 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
                   </>
                 )}
                 {stripNumericPrefix(t(page.id) || page.title)}

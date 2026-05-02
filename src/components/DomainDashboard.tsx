@@ -64,7 +64,7 @@ import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanVi
 import { TasksView } from './TasksView';
 import { ProjectCharterView } from './ProjectCharterView';
 import { GovernancePoliciesView } from './GovernancePoliciesView';
-import { ZaryaPOTracker } from './ZaryaPOTracker';
+import { POTracker } from './POTracker';
 import { BOQView } from './BOQView';
 import { WBSView } from './WBSView';
 import { WorkPackagesView } from './WorkPackagesView';
@@ -287,7 +287,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   // Favorites state
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('zarya_favorites');
+    const saved = localStorage.getItem('pmis_favorites');
     return saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
   });
 
@@ -297,7 +297,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   useEffect(() => {
     const syncFavorites = () => {
-      const saved = localStorage.getItem('zarya_favorites');
+      const saved = localStorage.getItem('pmis_favorites');
       const favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
       setFavorites(favs);
       setIsFavorite(favs.includes(page.id));
@@ -307,7 +307,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   }, [page.id]);
 
   const toggleFavorite = () => {
-    const saved = localStorage.getItem('zarya_favorites');
+    const saved = localStorage.getItem('pmis_favorites');
     let favs = saved ? JSON.parse(saved) : ['3.6.3', '3.6.4', '2.4.1'];
     
     if (favs.includes(page.id)) {
@@ -318,7 +318,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       toast.success(t('added_to_favorites'));
     }
     
-    localStorage.setItem('zarya_favorites', JSON.stringify(favs));
+    localStorage.setItem('pmis_favorites', JSON.stringify(favs));
     setFavorites(favs);
     setIsFavorite(favs.includes(page.id));
     window.dispatchEvent(new Event('storage'));
@@ -500,7 +500,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   const renderPageContent = (p: Page) => {
     if (!p) return null;
-    const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(p.id);
+    const isPOPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(p.id);
     const isTasksPage = p.id === '3.6.3';
     const isMeetingsPage = p.id === '3.6.4';
     const isBOQPage = p.id === '2.4.1';
@@ -533,7 +533,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
     if (isTasksPage) return <TasksView />;
     if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '3.6.4')!} />;
-    if (isZaryaPage) return <ZaryaPOTracker page={p} />;
+    if (isPOPage) return <POTracker page={p} />;
     if (isBOQPage) return <BOQView />;
     if (isWBSPage) return <WBSView />;
     if (isWorkPackagesPage) return <WorkPackagesView />;
@@ -638,7 +638,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                       </div>
                       <div className="space-y-1">
                          <div className="flex items-center gap-3">
-                           <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                           <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(

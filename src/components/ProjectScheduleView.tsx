@@ -1278,7 +1278,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       pdf.setFontSize(22);
       pdf.setTextColor(15, 23, 42);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('ZARYA', 14, 20);
+      pdf.text('PMIS', 14, 20);
       
       pdf.setFontSize(16);
       pdf.setTextColor(30, 64, 175);
@@ -1298,7 +1298,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
       pdf.setFontSize(8);
       pdf.text(`${t('generated')}: ${new Date().toLocaleString()}`, pdfWidth - 14, 15, { align: 'right' });
       pdf.text(`REV: 01-A`, pdfWidth - 14, 20, { align: 'right' });
-      pdf.text(`AUTHOR: ZARYA AI ENGINE`, pdfWidth - 14, 25, { align: 'right' });
+      pdf.text(`AUTHOR: PMIS AI ENGINE`, pdfWidth - 14, 25, { align: 'right' });
 
       // KPI Cards
       const totalPlanned = activities.reduce((sum, a) => sum + (a.amount || 0), 0);

@@ -100,7 +100,7 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
     units: `${selectedProject?.baseCurrency || 'IQD'} / Man-Hours`,
     controlThresholds: 'Example: 5% Variance (Yellow Alert), 10% Variance (Red Alert - Mandatory CCB Review)',
     thresholdPercentage: 10,
-    performanceRules: 'Earned Value Management (EVM) using Zarya Cost Domain',
+    performanceRules: 'Earned Value Management (EVM) using PMIS Cost Domain',
     reportingFormat: 'Monthly Cost Performance Reports, Variance Analysis Summaries',
     processManagement: {
       estimating: 'Bottom-up estimating based on detailed BOQ and market rates.',

@@ -192,7 +192,7 @@ export const RACIMatrixView: React.FC<RACIMatrixViewProps> = ({ page }) => {
               </div>
               <h3 className="text-2xl font-semibold italic tracking-tighter">Governance Enforcement</h3>
               <p className="text-slate-400 font-medium leading-relaxed">
-                 Zarya's smart matrix ensures project integrity by enforcing the **"Golden Rule"**: Every task MUST have exactly one Accountable (A) role. Any deviation will alert the PMO and block final schedule baseline approval.
+                 PMIS's smart matrix ensures project integrity by enforcing the **"Golden Rule"**: Every task MUST have exactly one Accountable (A) role. Any deviation will alert the PMO and block final schedule baseline approval.
               </p>
            </div>
            

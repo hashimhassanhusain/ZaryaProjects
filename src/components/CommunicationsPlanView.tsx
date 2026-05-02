@@ -1,116 +1,248 @@
-import React from 'react';
-import { Page } from '../types';
-import { StandardProcessPage } from './StandardProcessPage';
-import { MessageSquare, Calendar, Mail, FileText, Send, Share2, ClipboardList } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Page, EntityConfig } from '../types';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { 
+  MessageSquare, 
+  Calendar, 
+  Mail, 
+  FileText, 
+  Send, 
+  Share2, 
+  ClipboardList,
+  Plus,
+  Loader2,
+  Download,
+  Trash2
+} from 'lucide-react';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { useProject } from '../context/ProjectContext';
+import { useLanguage } from '../context/LanguageContext';
+import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface CommunicationsPlanViewProps {
   page: Page;
 }
 
+interface CommConfig {
+  id: string;
+  topic: string;
+  audience: string;
+  frequency: string;
+  method: string;
+  owner: string;
+  status: string;
+  projectId: string;
+}
+
 export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ page }) => {
-  const comms = [
-    { id: 'C1', topic: 'Project Monthly Performance Report', audience: 'Steering Committee', frequency: 'Monthly', method: 'PDF Report / Meeting', owner: 'Project Manager' },
-    { id: 'C2', topic: 'Weekly Technical Sync', audience: 'Engineering Team', frequency: 'Weekly', method: 'Meeting (F2F/Online)', owner: 'Technical Lead' },
-    { id: 'C3', topic: 'Daily Site Log', audience: 'Site Engineers / PM', frequency: 'Daily', method: 'Mobile App Submission', owner: 'Site Supervisor' },
-    { id: 'C4', topic: 'Procurement & PO Status', audience: 'Finance / Supplier', frequency: 'Event-driven', method: 'Email / Portal', owner: 'Procurement Officer' },
-    { id: 'C5', topic: 'Risk & Issue Alerts', audience: 'Key Stakeholders', frequency: 'As needed', method: 'Notification / SMS', owner: 'Project Manager' },
-  ];
+  const { selectedProject } = useProject();
+  const { t } = useLanguage();
+  const context = useStandardProcessPage();
+  const [comms, setComms] = useState<CommConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
+  const [editingComm, setEditingComm] = useState<CommConfig | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState<Partial<CommConfig>>({
+    topic: '',
+    audience: '',
+    frequency: 'Weekly',
+    method: 'Meeting',
+    owner: '',
+    status: 'Active'
+  });
+
+  useEffect(() => {
+    if (!selectedProject?.id) return;
+
+    const q = query(
+      collection(db, 'communications_plan'),
+      where('projectId', '==', selectedProject.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setComms(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CommConfig)));
+      setLoading(false);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'communications_plan');
+    });
+
+    return () => unsubscribe();
+  }, [selectedProject?.id]);
+
+  const handleSave = async () => {
+    if (!selectedProject || !formData.topic) {
+      toast.error("Please provide a topic");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const data = {
+        ...formData,
+        projectId: selectedProject.id,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingComm?.id) {
+        await updateDoc(doc(db, 'communications_plan', editingComm.id), data);
+        toast.success("Plan updated");
+      } else {
+        const id = crypto.randomUUID();
+        await setDoc(doc(db, 'communications_plan', id), {
+          ...data,
+          id,
+          createdAt: serverTimestamp()
+        });
+        toast.success("Communication item added");
+      }
+      setViewMode('grid');
+      setEditingComm(null);
+    } catch (err) {
+      handleFirestoreError(err, editingComm ? OperationType.UPDATE : OperationType.CREATE, 'communications_plan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this communication requirement?")) return;
+    try {
+      await deleteDoc(doc(db, 'communications_plan', id));
+      toast.success("Item removed");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'communications_plan');
+    }
+  };
+
+  const gridConfig: EntityConfig = {
+    id: 'communications_plan' as any,
+    label: page.title,
+    icon: MessageSquare,
+    collection: 'communications_plan',
+    columns: [
+      { key: 'topic', label: 'Topic / Requirement', type: 'string' },
+      { key: 'audience', label: 'Audience', type: 'string' },
+      { key: 'frequency', label: 'Frequency', type: 'badge' },
+      { key: 'method', label: 'Method', type: 'string' },
+      { key: 'owner', label: 'Responsibility', type: 'string' },
+       { key: 'status', label: 'Status', type: 'badge' }
+    ]
+  };
 
   return (
     <StandardProcessPage
       page={page}
-      inputs={[
-        { id: '1.2.1', title: 'Stakeholder Analysis', status: 'Approved' },
-        { id: '2.1.2', title: 'Master Plan Assembly', status: 'Draft' }
-      ]}
-      outputs={[
-        { id: '2.5.2-OUT', title: 'Comm Mgmt Plan', status: 'Final' }
-      ]}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      onSave={handleSave}
+      isSaving={isSaving}
     >
-      <div className="space-y-8 pb-20">
-        <header className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg text-white">
-            <MessageSquare className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Communications Management Plan</h2>
-            <p className="text-sm text-slate-500 font-medium">Establish a structured framework for all project-related communications.</p>
-          </div>
-        </header>
-
-        <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-8">
-           <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900 italic">Communication Matrix</h3>
-              <div className="flex gap-2">
-                 <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-slate-100 transition-all">
-                    <Share2 className="w-3.5 h-3.5" />
-                    Share Portal
-                 </button>
-              </div>
-           </div>
-
-           <div className="space-y-4">
-              {comms.map((c) => (
-                <div key={c.id} className="group p-6 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-blue-50/50 hover:border-blue-100 transition-all cursor-pointer">
-                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                      <div className="flex items-center gap-4 lg:w-1/3">
-                         <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-blue-600 group-hover:shadow-md transition-all">
-                            {c.method.includes('Meeting') ? <Calendar className="w-5 h-5" /> : 
-                             c.method.includes('Email') ? <Mail className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
-                         </div>
-                         <div>
-                            <p className="text-sm font-semibold text-slate-900 italic line-clamp-1">{c.topic}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.id}</p>
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 flex-1">
-                         <div className="space-y-1">
-                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Audience</p>
-                            <p className="text-xs font-bold text-slate-700">{c.audience}</p>
-                         </div>
-                         <div className="space-y-1">
-                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Frequency</p>
-                            <span className="text-[9px] font-semibold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase">
-                               {c.frequency}
-                            </span>
-                         </div>
-                         <div className="space-y-1 hidden lg:block">
-                            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</p>
-                            <p className="text-xs font-bold text-slate-700">{c.owner}</p>
-                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                         <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all">
-                            <Send className="w-4 h-4" />
-                         </button>
-                      </div>
-                   </div>
+      <AnimatePresence mode="wait">
+        {viewMode === 'edit' ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10 pb-32"
+          >
+            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden p-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="col-span-2 space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Communication Topic</label>
+                  <input 
+                    type="text"
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    placeholder="e.g. Weekly Technical Sync"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                  />
                 </div>
-              ))}
-           </div>
-        </section>
-
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-6 shadow-xl shadow-blue-900/10">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                 <ClipboardList className="w-6 h-6 text-blue-400" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Target Audience</label>
+                  <input 
+                    type="text"
+                    value={formData.audience}
+                    onChange={(e) => setFormData({ ...formData, audience: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Frequency</label>
+                  <select 
+                    value={formData.frequency}
+                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none"
+                  >
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Event-driven">Event-driven</option>
+                    <option value="As needed">As needed</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Method / Channel</label>
+                  <input 
+                    type="text"
+                    value={formData.method}
+                    onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                    placeholder="e.g. MS Teams / Email"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Ownership / Responsibility</label>
+                  <input 
+                    type="text"
+                    value={formData.owner}
+                    onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none"
+                  />
+                </div>
               </div>
-              <h4 className="text-xl font-semibold italic tracking-tight">Information Security</h4>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                 All external project reports are marked with **"Restricted - Project Team Only"** as per the Governance and IP protection protocols defined in Project Charter.
-              </p>
-           </div>
-
-           <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-4">
-              <h4 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 italic">Technical Protocol</h4>
-              <p className="text-xs text-slate-600 font-bold leading-relaxed">
-                 Zarya API automatically parses "Meeting Minutes" to create tasks in Domain Execute for any decision marked with "Action Required".
-              </p>
-           </div>
-        </section>
-      </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col pt-4"
+          >
+            <UniversalDataTable 
+              config={gridConfig}
+              data={comms}
+              onRowClick={(record) => {
+                setEditingComm(record as CommConfig);
+                setFormData(record as CommConfig);
+                setViewMode('edit');
+              }}
+              onNewClick={() => {
+                setEditingComm(null);
+                setFormData({
+                  topic: '',
+                  audience: '',
+                  frequency: 'Weekly',
+                  method: 'Meeting',
+                  owner: '',
+                  status: 'Active'
+                });
+                setViewMode('edit');
+              }}
+              onDeleteRecord={handleDelete}
+              title={context?.pageHeader}
+              favoriteControl={context?.favoriteControl}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </StandardProcessPage>
   );
 };

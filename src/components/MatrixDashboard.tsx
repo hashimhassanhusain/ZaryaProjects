@@ -45,7 +45,7 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                 {t(area.id)}
               </span>
             </div>
-            <h1 className="text-4xl font-semibold text-slate-900 tracking-tight mt-1">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-1 italic uppercase">
               {t('process_hub')}
             </h1>
           </div>
@@ -124,7 +124,7 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                 <LucideIcons.Info className="w-4 h-4 text-blue-400" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest">{t('domain_insights')}</span>
               </div>
-              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
+              <h2 className="text-xl font-black tracking-tight leading-tight italic uppercase">
                 {t('governance')} & <br/> {t('compliance_checks')}
               </h2>
               <p className="text-slate-400 text-lg">
@@ -144,7 +144,7 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                 <LucideIcons.BarChart3 className="w-4 h-4 text-white" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest">{t('quick_view')}</span>
               </div>
-              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
+              <h2 className="text-xl font-black tracking-tight leading-tight italic uppercase">
                 {t('total_progress')}
               </h2>
               <div className="flex items-end gap-2">

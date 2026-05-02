@@ -178,7 +178,7 @@ const QuickViewModal: React.FC<{
             </div>
 
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-               <p className="text-[10px] font-semibold text-slate-400 uppercase italic">Archived by Zarya Hub • {id}</p>
+               <p className="text-[10px] font-semibold text-slate-400 uppercase italic">Archived by PMIS Hub • {id}</p>
                <button onClick={onClose} className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest">
                   View Source Process
                   <ChevronRight className="w-3 h-3" />
@@ -247,13 +247,13 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   }, [collectionName, selectedProject, viewMode, controlledViewMode]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('zarya_favorites');
+    const saved = localStorage.getItem('pmis_favorites');
     const favs = saved ? JSON.parse(saved) : [];
     setIsFavorite(favs.includes(page.id));
   }, [page.id]);
 
   const toggleFavorite = () => {
-    const saved = localStorage.getItem('zarya_favorites');
+    const saved = localStorage.getItem('pmis_favorites');
     let favs = saved ? JSON.parse(saved) : [];
     if (favs.includes(page.id)) {
       favs = favs.filter((id: string) => id !== page.id);
@@ -262,33 +262,33 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
       favs.push(page.id);
       toast.success(t('added_to_favorites'));
     }
-    localStorage.setItem('zarya_favorites', JSON.stringify(favs));
+    localStorage.setItem('pmis_favorites', JSON.stringify(favs));
     setIsFavorite(favs.includes(page.id));
     window.dispatchEvent(new Event('storage'));
   };
 
   const pageHeader = (
-    <div className="flex items-center gap-2 shrink-0 overflow-hidden">
+    <div className="flex items-center gap-1.5 shrink-0 overflow-hidden">
       {grandParentPage && (
         <>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[120px]">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]">
              {stripNumericPrefix(grandParentTitle)}
           </span>
-          <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300 opacity-50", isRtl && "rotate-180")} />
+          <ChevronRight className={cn("w-3 h-3 text-slate-300 opacity-50", isRtl && "rotate-180")} />
         </>
       )}
       {parentPage && (
         <>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">
              {stripNumericPrefix(parentTitle)}
           </span>
-          <ChevronRight className={cn("w-3.5 h-3.5 text-slate-300", isRtl && "rotate-180")} />
+          <ChevronRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
         </>
       )}
-      <h2 className={cn("text-[14px] font-black text-slate-900 tracking-tight uppercase whitespace-nowrap", isRtl && "flex-row-reverse")}>
+      <h2 className={cn("text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase whitespace-nowrap", isRtl && "flex-row-reverse")}>
         {stripNumericPrefix(displayTitle)}
       </h2>
-      <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50 block shrink-0">{page.id}</span>
+      <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50 block shrink-0">{page.id}</span>
     </div>
   );
 
@@ -317,8 +317,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
       <div className={cn("flex-1 w-full px-4 md:px-6 py-4 print:block print:p-0", embedded && "p-0")}>
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
           {!embedded && (
-            <aside className="col-span-3 space-y-6 print:hidden">
-              <div className="flex items-center justify-between px-1 mb-6">
+            <aside className="col-span-3 space-y-4 print:hidden">
+              <div className="flex items-center justify-between px-1 mb-4">
                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center">
                       <Box className="w-3.5 h-3.5 text-slate-400" />
@@ -327,7 +327,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                  </h3>
                  <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 pb-8">
+              <div className="grid grid-cols-2 gap-2 pb-6">
                 {inputs.map((input, idx) => {
                   const linkedPage = pages.find(p => p.id === input.id);
                   const inputTranslated = t(input.id);
@@ -356,8 +356,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             </aside>
           )}
 
-          <section className={cn("col-span-12 space-y-6 flex flex-col", !embedded && "md:col-span-9")}>
-            <div className={cn("flex-1 bg-white rounded-[3rem] shadow-sm border border-slate-50 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
+          <section className={cn("col-span-12 space-y-4 flex flex-col", !embedded && "md:col-span-9")}>
+            <div className={cn("flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
                     {viewMode === 'grid' && collectionName ? (
@@ -385,10 +385,10 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                       </motion.div>
                     ) : (
                       <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col min-h-0">
-                        <div className="flex-1 p-6 overflow-y-auto">
+                        <div className="flex-1 p-4 overflow-y-auto">
                           {driveSyncStatus === 'syncing' ? (
-                            <div className="flex flex-col items-center justify-center p-20 animate-in zoom-in-95 duration-700 space-y-12 flex-1">
-                              <div className="w-full max-w-sm aspect-[1/1.414] bg-white rounded-3xl border-8 border-slate-50 shadow-2xl flex flex-col relative overflow-hidden">
+                            <div className="flex flex-col items-center justify-center p-12 animate-in zoom-in-95 duration-700 space-y-8 flex-1">
+                              <div className="w-full max-w-sm aspect-[1/1.414] bg-white rounded-2xl border-4 border-slate-50 shadow-2xl flex flex-col relative overflow-hidden">
                                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center gap-8">
                                   <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Cloud className="w-16 h-16 text-blue-400" /></motion.div>
                                   <p className="text-[12px] font-semibold text-white uppercase tracking-widest">Synchronizing Artifact...</p>
@@ -416,7 +416,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                    <header className={cn("flex items-center justify-between border-b-4 border-slate-900 pb-10 mb-16", isRtl && "flex-row-reverse")}>
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-slate-900 rounded-2xl" />
-                        <div><h1 className="text-4xl font-semibold tracking-tighter uppercase leading-none">Zarya</h1><p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">{t('project_management_pmis')}</p></div>
+                        <div><h1 className="text-4xl font-semibold tracking-tighter uppercase leading-none">PMIS</h1><p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">{t('project_management_pmis')}</p></div>
                       </div>
                       <div className="text-right">
                          <h2 className="text-2xl font-black uppercase tracking-tighter italic">{parentPage && <><span className="opacity-30">{stripNumericPrefix(parentTitle)}</span><span className="mx-2 opacity-20">›</span></>}{stripNumericPrefix(displayTitle)}</h2>

@@ -280,7 +280,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-4 shadow-xl shadow-purple-900/10">
                    <h4 className="text-[10px] font-semibold uppercase tracking-widest text-purple-400">AI Logic Indicator</h4>
                    <p className="text-sm font-medium leading-relaxed italic text-slate-400">
-                     "Zarya uses NLP to detect conflict levels. Stakeholders tagged as 'Critical' will be automatically flagged in the Risk Register."
+                     "PMIS uses NLP to detect conflict levels. Stakeholders tagged as 'Critical' will be automatically flagged in the Risk Register."
                    </p>
                 </div>
              </div>

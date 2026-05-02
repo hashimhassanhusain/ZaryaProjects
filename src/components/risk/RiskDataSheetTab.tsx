@@ -100,7 +100,7 @@ export const RiskDataSheetTab: React.FC<RiskDataSheetTabProps> = ({ risks, stake
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.width;
 
-    // Center Zarya Logo
+    // Center System Logo
     doc.addImage('https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7', 'PNG', (pageWidth - 40) / 2, 10, 40, 15);
     
     doc.setFontSize(16);

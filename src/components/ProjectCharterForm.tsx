@@ -70,7 +70,7 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
             >
               <div className="flex items-center gap-2 mb-2 text-blue-400">
                 <Sparkles className="w-3 h-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Zarya AI Suggests</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest">PMIS AI Suggests</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
                 "{suggestion}"

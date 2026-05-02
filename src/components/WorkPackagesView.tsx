@@ -176,7 +176,7 @@ export const WorkPackagesView: React.FC = () => {
                   <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-200">
                     <Grid3X3 className="w-6 h-6 text-white" />
                   </div>
-                  <h1 className="text-4xl font-semibold text-slate-900 tracking-tight">Work Packages</h1>
+                  <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">Work Packages</h1>
                 </div>
                 <p className="text-slate-500 font-medium max-w-2xl ml-1">
                   Manage project work packages based on CSI MasterFormat Level 2.

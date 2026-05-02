@@ -10,7 +10,7 @@ interface PDFParams {
   rows: any[][];
 }
 
-export const generateZaryaPDF = (params: PDFParams) => {
+export const generateStandardPDF = (params: PDFParams) => {
   const { page, project, data, columns, rows } = params;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -25,11 +25,11 @@ export const generateZaryaPDF = (params: PDFParams) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ZARYA', 20, 25);
+  doc.text('PMIS', 20, 25);
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('CONSTRUCTION MANAGEMENT PMIS', 20, 32);
+  doc.text('PROJECT MANAGEMENT INFORMATION SYSTEM', 20, 32);
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
@@ -121,4 +121,9 @@ export const generateZaryaPDF = (params: PDFParams) => {
   }
 
   doc.save(`${fncCode}.pdf`);
+};
+
+export const loadArabicFont = async (doc: jsPDF) => {
+  // Stub for now to resolve build errors
+  return doc;
 };

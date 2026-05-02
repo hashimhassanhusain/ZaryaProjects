@@ -190,7 +190,7 @@ export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) =>
                     </div>
                     <h3 className="text-2xl font-semibold italic tracking-tighter leading-none">Risk Sensitivity<br/>Trend Analysis</h3>
                     <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                       Zarya AI detects an increasing trend in **Supply Chain** risks. Historical data suggests a 14% chance of cost escalation in Q4 due to regional logistics volatility.
+                       PMIS AI detects an increasing trend in **Supply Chain** risks. Historical data suggests a 14% chance of cost escalation in Q4 due to regional logistics volatility.
                     </p>
                     <button className="flex items-center gap-2 group text-[9px] font-semibold uppercase text-rose-400 tracking-widest pt-4">
                        Deep Scan Analysis

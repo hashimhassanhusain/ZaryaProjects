@@ -62,7 +62,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
               animate={isInteracting ? { scale: 1.2, opacity: 1 } : { scale: [0, 1, 1, 0] }}
               className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-full mb-1 shadow-lg border border-slate-700 whitespace-nowrap"
             >
-              {"Hi Zarya!"}
+              {"Hi there!"}
             </motion.div>
             <span className={compact ? "text-3xl" : "text-4xl"}>{"👋"}</span>
           </motion.div>
@@ -118,14 +118,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
         {/* Text Content */}
         <div className="space-y-1 relative">
           <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10 uppercase text-xs tracking-[0.2em] opacity-40 mb-2", compact ? "" : "")}>
-            Zarya AI Assistant
+            PMIS AI Assistant
           </h2>
           <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10", compact ? "text-lg" : "text-3xl md:text-4xl")}>
             Good morning, Director.
           </h2>
           {!compact && (
             <p className="text-slate-500 text-sm md:text-base font-bold max-w-xl mx-auto">
-              Zarya AI has analyzed 14 active workstreams. Schedule health is at <span className="text-emerald-500 font-semibold tracking-widest text-lg">94%</span>.
+              PMIS AI has analyzed 14 active workstreams. Schedule health is at <span className="text-emerald-500 font-semibold tracking-widest text-lg">94%</span>.
             </p>
           )}
         </div>
@@ -138,7 +138,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
             </div>
             <input 
               type="text" 
-              placeholder={compact ? "Ask Zarya AI..." : "Ask Zarya AI about project risks or financial forecasts..."}
+              placeholder={compact ? "Ask PMIS AI..." : "Ask PMIS AI about project risks or financial forecasts..."}
               className="flex-1 bg-transparent border-none text-slate-900 placeholder:text-slate-300 focus:ring-0 text-sm py-2 font-medium"
             />
             <button className={cn("bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10", compact ? "px-3 py-2 text-[10px]" : "px-6 py-3 text-xs md:text-sm")}>

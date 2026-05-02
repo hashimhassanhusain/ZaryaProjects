@@ -554,7 +554,7 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
 
     const zipBuffer = zip.toBuffer();
     const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'UTC' }).replace(/[/, :]/g, '-');
-    const fileName = `Zarya_Source_Backup_${timestamp}.zip`;
+    const fileName = `PMIS_Source_Backup_${timestamp}.zip`;
 
     console.log(`Uploading ${fileName} to Drive folder: ${backupFolderId}`);
     

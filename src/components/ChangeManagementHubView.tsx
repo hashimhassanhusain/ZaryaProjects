@@ -155,7 +155,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
   const handleAdd = () => {
     const nextNum = requests.length + 1;
     const newRequest: Partial<ChangeRequest> = {
-      requestId: `ZRY-CR-${nextNum.toString().padStart(3, '0')}`,
+      requestId: `PMIS-CR-${nextNum.toString().padStart(3, '0')}`,
       date: new Date().toISOString().split('T')[0],
       preparer: auth.currentUser?.displayName || '',
       contractor: '',
@@ -672,7 +672,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
               <ChevronRight className="w-2.5 h-2.5 opacity-50" />
               <span className="text-blue-600">{view === 'hub' ? t('hub') : view === 'new' ? t('new_request') : selectedRequest?.requestId}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none uppercase">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
               {view === 'hub' ? t('change_management_hub') : view === 'new' ? t('new_request') : selectedRequest?.requestId}
             </h2>
           </div>

@@ -129,7 +129,7 @@ export const MasterPlanAssemblyView: React.FC<MasterPlanAssemblyViewProps> = ({ 
     });
 
     const vStr = (versions[0]?.version || 1.0).toFixed(1);
-    doc.save(`${selectedProject.code}-ZRY-GOV-MPA-V${vStr}.pdf`);
+    doc.save(`${selectedProject.code}-PMIS-GOV-MPA-V${vStr}.pdf`);
   };
 
   return (

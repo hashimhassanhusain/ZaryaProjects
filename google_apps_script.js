@@ -1,5 +1,5 @@
 /**
- * Zarya Project Management - Google Apps Script Automation
+ * PMIS Project Management - Google Apps Script Automation
  * This script handles PDF generation from templates and cross-domain data syncing.
  */
 
@@ -12,7 +12,7 @@ const PROJECT_ROOT_ID = "YOUR_PROJECT_ROOT_FOLDER_ID";
  * @param {string} destinationPath The path in Google Drive to save the PDF.
  * @param {string} fileName The name of the generated PDF file.
  */
-function generateZaryaPDF(data, templateId, destinationPath, fileName) {
+function generatePMISPDF(data, templateId, destinationPath, fileName) {
   const templateFile = DriveApp.getFileById(templateId);
   const tempFile = templateFile.makeCopy("Temp_" + fileName);
   const tempDoc = DocumentApp.openById(tempFile.getId());

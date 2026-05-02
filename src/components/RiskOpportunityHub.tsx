@@ -69,7 +69,7 @@ export const RiskOpportunityHub: React.FC<RiskOpportunityHubProps> = ({ page }) 
               <ChevronRight className="w-2.5 h-2.5 opacity-50" />
               <span className="text-blue-600">{activeTab}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none uppercase">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
               {activeTab === 'Overview' ? 'Risk Opportunity Hub' : activeTab}
             </h2>
           </div>

@@ -4,7 +4,7 @@ import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { DetailView } from './components/DetailView';
 import { FoundationCenterView } from './components/FoundationCenterView';
-import { ZaryaPOTracker } from './components/ZaryaPOTracker';
+import { POTracker } from './components/POTracker';
 import { BOQView } from './components/BOQView';
 import { WBSView } from './components/WBSView';
 import { EVMReportView } from './components/EVMReportView';
@@ -88,7 +88,7 @@ const PageRenderer = () => {
   const { userProfile, isAdmin } = useAuth();
   const { id } = useParams<{ id: string }>();
   const { selectedProject, selectedCompanyId, companies } = useProject();
-  const selectedCompanyName = companies.find(c => c.id === selectedCompanyId)?.name || 'Zarya';
+  const selectedCompanyName = companies.find(c => c.id === selectedCompanyId)?.name || 'PMIS';
   
   const page = id === 'logs' 
     ? { id: 'logs', title: t('project_logs'), type: 'hub' as const, domain: '', parentId: '' } 
@@ -171,7 +171,7 @@ const PageRenderer = () => {
           <p className="text-slate-500 text-sm leading-relaxed mb-10">
             {t('please_select_project_to_continue')}
             <br />
-            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mt-4 block">ZARYA PMIS Command Center</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mt-4 block">PMIS Command Center</span>
           </p>
           
           <div className="space-y-4">
@@ -243,7 +243,7 @@ const PageRenderer = () => {
     );
   }
 
-  const isZaryaPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
+  const isPOTrackerPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
   const isTasksPage = page.id === '3.6.3';
   const isMeetingsPage = page.id === '3.6.4' || page.id === '3.5.2';
   const isFilesPage = page.id === 'files';
@@ -322,8 +322,8 @@ const PageRenderer = () => {
           <ResourcesHubView page={page} />
         ) : isStakeholdersPage ? (
           <StakeholdersHubView page={page} />
-        ) : isZaryaPage ? (
-          <ZaryaPOTracker page={page} />
+        ) : isPOTrackerPage ? (
+          <POTracker page={page} />
         ) : isBOQPage ? (
           <BOQView />
         ) : isWBSPage ? (
@@ -415,17 +415,17 @@ const AppLayout = () => {
     const pageId = location.pathname.split('/').pop();
     if (pageId) {
       if (pageId === 'profile') {
-        document.title = `${t('my_profile')} | ZARYA PMIS`;
+        document.title = `${t('my_profile')} | PMIS`;
         return;
       }
       const page = pages.find(p => p.id === pageId);
       if (page) {
-        document.title = `${stripNumericPrefix(t(pageId) === pageId ? page.title : t(pageId))} | ZARYA PMIS`;
+        document.title = `${stripNumericPrefix(t(pageId) === pageId ? page.title : t(pageId))} | PMIS`;
       } else {
-        document.title = 'ZARYA PMIS';
+        document.title = 'PMIS';
       }
     } else {
-      document.title = 'ZARYA PMIS';
+      document.title = 'PMIS';
     }
   }, [location.pathname, t]);
 
@@ -497,7 +497,7 @@ const AppLayout = () => {
                               className="h-full bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]" 
                             />
                          </div>
-                         <div className="text-4xl font-black text-slate-900 italic tracking-tighter opacity-10">ZARYA PERFORMANCE ENGINE</div>
+                         <div className="text-4xl font-black text-slate-900 italic tracking-tighter opacity-10">PMIS PERFORMANCE ENGINE</div>
                       </div>
                    </div>
 
@@ -687,10 +687,15 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-6">
-        <img src="https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7" alt="Zarya Logo" className="h-32 mb-8 mx-auto" referrerPolicy="no-referrer" />
-        <div className="flex items-center gap-3 text-white/50 font-semibold text-sm uppercase tracking-widest">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Initializing Zarya...
+        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-4 animate-pulse">
+          <LayoutDashboard className="w-12 h-12 text-white" />
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="text-2xl font-black text-white tracking-widest uppercase">PMIS</h1>
+          <div className="flex items-center gap-3 text-white/50 font-semibold text-[10px] uppercase tracking-[0.3em]">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Initializing System...
+          </div>
         </div>
       </div>
     );

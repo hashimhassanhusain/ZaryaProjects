@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Library, Info, ChevronRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
@@ -18,6 +19,8 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+    const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen && selectedProject && !data) {
@@ -45,25 +48,31 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
   return (
     <div className={cn("relative inline-block", className)}>
       <button 
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-all shadow-lg group cursor-pointer active:scale-95"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className={cn(
+          "p-2 rounded-full transition-all shadow-lg group cursor-pointer active:scale-95",
+          isOpen ? "bg-blue-600 text-white" : "bg-slate-900 text-white hover:bg-slate-800"
+        )}
       >
         <Icon className="w-4 h-4" />
       </button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -10 }}
-            className={cn(
-              "absolute top-full mt-4 w-72 md:w-80 bg-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10 z-[100]",
-              isRtl ? "right-0" : "left-0"
-            )}
-          >
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              className={cn(
+                "absolute top-full mt-2 w-72 md:w-80 bg-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10 z-[100]",
+                isRtl ? "right-0" : "left-0"
+              )}
+            >
             <div className={cn("flex items-center justify-between mb-4", isRtl && "flex-row-reverse")}>
                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
@@ -120,15 +129,32 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
                  )}
                  
                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                    <button className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-blue-400 hover:text-white transition-all">
-                       View Center <ExternalLink className="w-3 h-3" />
+                    <button 
+                      onClick={() => {
+                        const path = selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`;
+                        navigate(path, { state: { activeTab: type === 'eef' ? 'eefs' : 'opas' } });
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-blue-400 hover:text-white transition-all cursor-pointer"
+                    >
+                       Manage {label} <ExternalLink className="w-3 h-3" />
                     </button>
                     <span className="text-[8px] font-black text-slate-600">V{data.version}</span>
                  </div>
               </div>
             ) : (
-              <div className="py-4 text-center">
+              <div className="py-4 text-center space-y-4">
                  <p className="text-[10px] font-bold text-white/50 uppercase italic tracking-widest">No foundation data yet</p>
+                 <button 
+                   onClick={() => {
+                     const path = selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`;
+                     navigate(path, { state: { activeTab: type === 'eef' ? 'eefs' : 'opas' } });
+                     setIsOpen(false);
+                   }}
+                   className="w-full py-3 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all cursor-pointer"
+                 >
+                    Setup {label}
+                 </button>
               </div>
             )}
 
@@ -138,8 +164,9 @@ export const SmartCard: React.FC<SmartCardProps> = ({ type, className }) => {
               isRtl ? "right-6" : "left-6"
             )} />
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+        </>
+      )}
+    </AnimatePresence>
+  </div>
+);
 };

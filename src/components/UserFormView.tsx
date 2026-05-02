@@ -586,7 +586,7 @@ export const UserFormView: React.FC = () => {
                   ))}
                 </select>
                 <p className="text-[10px] text-slate-400 font-medium italic">
-                  {userType === 'Employee' ? 'Zarya employees must belong to the main company.' : 
+                  {userType === 'Employee' ? 'PMIS employees must belong to the main company.' : 
                    userType === 'Supplier' ? 'Suppliers must belong to a supplier company.' : ''}
                 </p>
               </div>
@@ -835,7 +835,7 @@ export const UserFormView: React.FC = () => {
               </div>
               <h3 className="font-bold text-lg">Invitation Email</h3>
               <p className="text-sm text-blue-100 leading-relaxed">
-                When you create this user, an invitation email will be sent to <strong>{formData.email || 'the specified address'}</strong> with instructions to join the Zarya Project Management System.
+                When you create this user, an invitation email will be sent to <strong>{formData.email || 'the specified address'}</strong> with instructions to join the PMIS Project Management System.
               </p>
             </div>
           )}

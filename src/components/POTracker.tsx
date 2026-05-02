@@ -5,7 +5,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn, getFullWBSCode, generateZaryaFileName, getRouteForFile } from '../lib/utils';
+import { cn, getFullWBSCode, generatePMISFileName, getRouteForFile } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
@@ -15,11 +15,11 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { DataImportModal } from './DataImportModal';
 
-interface ZaryaPOTrackerProps {
+interface POTrackerProps {
   page: Page;
 }
 
-export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
+export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const { t } = useLanguage();
   const { selectedProject } = useProject();
   const { formatAmount, exchangeRate: globalExchangeRate, currency: baseCurrency, convertToBase } = useCurrency();
@@ -795,7 +795,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       const toastId = toast.loading('Uploading contract to Drive...');
       try {
         const division = newPO.masterFormat?.match(/DIV(\d+)/)?.[1] || '01';
-        const finalName = generateZaryaFileName({
+        const finalName = generatePMISFileName({
           projectCode: selectedProject.code,
           type: 'CON',
           division: division,
@@ -1232,7 +1232,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
                 type="text"
                 value={newPO.contractNumber || ''}
                 onChange={(e) => setNewPO(prev => ({ ...prev, contractNumber: e.target.value }))}
-                placeholder="e.g. ZRY-CONT-2024-042"
+                placeholder="e.g. PMIS-CONT-2024-042"
                 className="w-full bg-white border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
               />
             </div>
@@ -1411,7 +1411,7 @@ export const ZaryaPOTracker: React.FC<ZaryaPOTrackerProps> = ({ page }) => {
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex justify-between items-start mb-8 border-b border-slate-100 pb-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900">Zarya Company for Construction</h3>
+            <h3 className="text-2xl font-bold text-slate-900">Standard Purchase Order Tracking</h3>
             <p className="text-slate-500">Summery of Work Form - Payment Certificate</p>
           </div>
           <div className="text-right">

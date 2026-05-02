@@ -28,6 +28,7 @@ import {
 import { Page, PageVersion } from '../types';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useLocation } from 'react-router-dom';
 import { db, auth, OperationType, handleFirestoreError } from '../firebase';
 import { 
   doc, 
@@ -52,7 +53,18 @@ interface FoundationCenterViewProps {
 export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
-  const [activeTab, setActiveTab] = useState<'business' | 'agreements' | 'eefs' | 'opas' | 'history'>('business');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'business' | 'agreements' | 'eefs' | 'opas' | 'history'>(
+    (location.state as any)?.activeTab || 'business'
+  );
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.activeTab) {
+      setActiveTab(state.activeTab);
+    }
+  }, [location.state]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<any>(null);

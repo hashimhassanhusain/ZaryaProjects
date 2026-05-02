@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { cn, generateZaryaFileName, stripNumericPrefix } from '../lib/utils';
+import { cn, generatePMISFileName, stripNumericPrefix } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc, limit, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -49,7 +49,7 @@ import { MeetingMinutesForm } from './MeetingMinutesForm';
 import { Activity, BOQItem, WBSLevel, Stakeholder, StakeholderVersion, StakeholderAnalysis, StakeholderAnalysisVersion, SystemAuditLog, CCBMember, ChangeManagementPlan, ChangeManagementVersion, ProjectManagementPlan, ProjectManagementVersion, ProjectPhase, TailoringDecision, QualityRole, QualityManagementPlan, QualityManagementVersion, QualityAudit, Meeting } from '../types';
 import { ProjectScheduleView } from './ProjectScheduleView';
 import { VarianceAnalysisView } from './VarianceAnalysisView';
-import { ZaryaPOTracker } from './ZaryaPOTracker';
+import { POTracker } from './POTracker';
 import { BOQView } from './BOQView';
 import { WBSView } from './WBSView';
 import { EVMReportView } from './EVMReportView';
@@ -214,14 +214,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       const drawApprovalBlock = (x: number, y: number) => {
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 82, 136); // Zarya Blue
+        doc.setTextColor(0, 82, 136); // PMIS Blue
         doc.text('APPROVALS & SIGN-OFF', x, y);
         
         const tableY = y + 6;
         const colWidth = contentWidth / 3;
         
         // Header row
-        doc.setFillColor(0, 82, 136); // Zarya Blue
+        doc.setFillColor(0, 82, 136); // PMIS Blue
         doc.rect(x, tableY, contentWidth, 10, 'F');
         doc.setFontSize(9);
         doc.setTextColor(255, 255, 255);
@@ -250,7 +250,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 82, 136); // Zarya Blue
+        doc.setTextColor(0, 82, 136); // PMIS Blue
         doc.text(label.toUpperCase(), x + 5, y + 6.5);
         
         doc.setFont('helvetica', 'normal');
@@ -278,17 +278,17 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 82, 136);
-        doc.text('ZARYA', pageWidth / 2, 25, { align: 'center' });
+        doc.text('PMIS', pageWidth / 2, 25, { align: 'center' });
       }
       
       // Contact Info on Right (Small)
       const rightAlignX = pageWidth - margin;
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text('Sulaymaniyah, Iraq | info@zarya.co | www.zarya.co', pageWidth / 2, 40, { align: 'center' });
+      doc.text('Project Management Information System', pageWidth / 2, 40, { align: 'center' });
 
       // Horizontal Line
-      doc.setDrawColor(0, 82, 136); // Zarya Blue
+      doc.setDrawColor(0, 82, 136); // PMIS Blue
       doc.setLineWidth(0.5);
       doc.line(margin, 45, pageWidth - margin, 45);
       
@@ -298,7 +298,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       // Title Centered (As requested)
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 82, 136); // Zarya Blue
+      doc.setTextColor(0, 82, 136); // PMIS Blue
       const titleText = stripNumericPrefix(page.title).toUpperCase();
       doc.text(titleText, pageWidth / 2, currentY, { align: 'center' });
       
@@ -306,7 +306,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       
       // Metadata (Left and Right as requested)
       doc.setFontSize(10);
-      doc.setTextColor(0, 82, 136); // Zarya Blue
+      doc.setTextColor(0, 82, 136); // PMIS Blue
       doc.setFont('helvetica', 'bold');
       doc.text(selectedProject.name.toUpperCase(), margin, currentY);
       doc.text(`CODE: #${selectedProject.code}`, rightAlignX, currentY, { align: 'right' });
@@ -674,7 +674,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         currentY = (doc as any).lastAutoTable.finalY + 15;
       } else {
         // Fallback to manual drawing for other terminal pages
-        doc.setFillColor(0, 82, 136); // Zarya Blue
+        doc.setFillColor(0, 82, 136); // PMIS Blue
         doc.rect(margin, currentY, contentWidth, 10, 'F');
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
@@ -713,14 +713,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         doc.setPage(i);
         
         // Bottom Line
-        doc.setDrawColor(0, 82, 136); // Zarya Blue
+        doc.setDrawColor(0, 82, 136); // PMIS Blue
         doc.setLineWidth(0.5);
         doc.line(margin, pageHeight - 25, pageWidth - margin, pageHeight - 25);
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 82, 136); // Zarya Blue
-        doc.text('Thank you for your business!', margin, pageHeight - 18);
+        doc.setTextColor(0, 82, 136); // PMIS Blue
+        doc.text('Thank you for using the PMIS!', margin, pageHeight - 18);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
@@ -730,7 +730,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Ref: ${page.id} | Zarya Management System`, margin, pageHeight - 10);
+        doc.text(`Ref: ${page.id} | PMIS Management System`, margin, pageHeight - 10);
         doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
       }
 
@@ -745,15 +745,15 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         fileName = `${selectedProject.code || 'P00000'}_Stakeholder_Analysis_Matrix_v${version}_${dateStr}.pdf`;
       } else if (isChangeManagementPlan) {
         const vStr = changePlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-CHG-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-PMIS-MGT-PLN-CHG-${dateStr}-V${vStr}.pdf`;
       } else if (isProjectManagementPlan) {
         const vStr = pmPlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-PMIS-MGT-PLN-INT-${dateStr}-V${vStr}.pdf`;
       } else if (isQualityManagementPlan) {
         const vStr = qualityPlan?.version.toFixed(1) || '1.0';
-        fileName = `${selectedProject.code || 'PRJ'}-ZRY-MGT-PLN-QUA-${dateStr}-V${vStr}.pdf`;
+        fileName = `${selectedProject.code || 'PRJ'}-PMIS-MGT-PLN-QUA-${dateStr}-V${vStr}.pdf`;
       } else {
-        fileName = `${generateZaryaFileName({
+        fileName = `${generatePMISFileName({
             projectCode: selectedProject.code || 'P00000',
             category: 'management',
             dept: page.id.startsWith('1.') ? 'INIT' : 
@@ -4576,7 +4576,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           ) : page.id === '5.5.1' ? (
             <ScheduleLessonsLearned page={page} />
           ) : ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id) ? (
-            <ZaryaPOTracker page={page} />
+            <POTracker page={page} />
           ) : isVarianceAnalysisPage ? (
             <VarianceAnalysisView project={selectedProject!} />
           ) : isEditing ? (
@@ -4664,7 +4664,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                             type="text" 
                             value={editingStakeholder.position}
                             onChange={e => setEditingStakeholder({...editingStakeholder, position: e.target.value})}
-                            placeholder="e.g. CEO, Zarya"
+                            placeholder="e.g. CEO, PMIS"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                           />
                         </div>
@@ -4778,7 +4778,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                                     type="text" 
                                     value={editingStakeholder.loginCredentials}
                                     onChange={e => setEditingStakeholder({...editingStakeholder, loginCredentials: e.target.value})}
-                                    placeholder="e.g. ZRY-JD-01"
+                                    placeholder="e.g. PMIS-JD-01"
                                     className="w-full px-4 py-3 bg-blue-50/50 border border-blue-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                                   />
                                 </div>
@@ -4924,7 +4924,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Security & Compliance</h3>
                 <p className="text-[11px] text-slate-500 leading-tight mb-2">
-                  Encrypted and stored according to Zarya's security protocols.
+                  Encrypted and stored according to PMIS security protocols.
                 </p>
                 <div className="text-[9px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100 inline-block">
                   ID: {page.details?.documentation || 'ZARYA-DOC-' + page.id}

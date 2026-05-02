@@ -29,7 +29,7 @@ import { CostManagementPlanView } from './CostManagementPlanView';
 import { BOQView } from './BOQView';
 import { ReserveAnalysisView } from './ReserveAnalysisView';
 import { EVMReportView } from './EVMReportView';
-import { ZaryaPOTracker } from './ZaryaPOTracker';
+import { POTracker } from './POTracker';
 import { FinancialCloseOutView } from './FinancialCloseOutView';
 import { UniversalManager } from './common/UniversalManager';
 
@@ -117,9 +117,9 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       case 'budget': return <BOQView />;
       case 'reserves': return <ReserveAnalysisView page={page} />;
       case 'evm': return <EVMReportView page={page} />;
-      case 'pos': return <ZaryaPOTracker page={page} />;
+      case 'pos': return <POTracker page={page} />;
       case 'contracts': return <UniversalManager entityType="contracts" />;
-      case 'new-po': return <ZaryaPOTracker page={{ ...page, details: { ...page.details, initialView: 'form' } }} />;
+      case 'new-po': return <POTracker page={{ ...page, details: { ...page.details, initialView: 'form' } }} />;
       case 'supplier-register': navigate('/page/companies'); return null;
       case 'drive-archive': 
         if (selectedProject?.driveFolderId) {
@@ -132,27 +132,27 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] w-full bg-[#fcfcfc]">
-      <div className="bg-white border-b border-slate-100 px-8 py-6">
+    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
+      <div className="bg-white border-b border-slate-100 px-6 py-3">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
+          <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
              <span>{stripNumericPrefix(t(page.domain || 'finance'))}</span>
-             <ChevronRight className="w-3 h-3" />
-             <span className="text-slate-900">{t(page.focusArea)}</span>
+             <ChevronRight className="w-2.5 h-2.5" />
+             <span className="text-slate-900">{stripNumericPrefix(t(page.focusArea))}</span>
              {activeTab !== 'overview' && (
                <>
-                 <ChevronRight className="w-3 h-3" />
+                 <ChevronRight className="w-2.5 h-2.5" />
                  <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
                </>
              )}
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase italic">
             {activeTab === 'overview' ? (
               <>
                 {parentPage && (
                   <>
-                    <span className="text-slate-400 font-medium">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                    <ChevronRight className="w-5 h-5 text-slate-300 stroke-[3]" />
+                    <span className="text-slate-400 font-medium text-lg md:text-xl">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-300 stroke-[3]" />
                   </>
                 )}
                 {stripNumericPrefix(t(page.id) || page.title)}

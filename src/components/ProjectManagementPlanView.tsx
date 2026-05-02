@@ -154,7 +154,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
         tools: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, tools: '' })),
         baselines: {
           scopeVariance: '±0%',
-          scopeManagement: 'Standard Zarya Scope Management',
+          scopeManagement: 'Standard PMIS Scope Management',
           scheduleVariance: '±5 days',
           scheduleManagement: 'Critical Path Analysis',
           costVariance: '±5%',

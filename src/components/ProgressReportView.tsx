@@ -588,11 +588,11 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   const generatePDF = (reportData: any) => {
     const doc = new jsPDF();
-    const projectCode = selectedProject?.code || 'ZRY';
+    const projectCode = selectedProject?.code || 'PMIS';
     const dateStr = reportData.date;
     const typeLabel = reportData.type.toUpperCase();
     const disciplineLabel = (reportData.discipline || 'GENERAL').toUpperCase();
-    const fileName = `${projectCode}-ZRY-SITE-${disciplineLabel}-${typeLabel}-${dateStr}.pdf`;
+    const fileName = `${projectCode}-PMIS-SITE-${disciplineLabel}-${typeLabel}-${dateStr}.pdf`;
     
     // Determine exact path as per project structure in screenshot
     const reportNum = reportData.type === 'daily' ? '1' : reportData.type === 'weekly' ? '2' : '3';
@@ -787,7 +787,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="text-lg font-bold text-slate-900">
-                              {selectedProject?.code}-ZRY-SITE-{(report.discipline || 'General').toUpperCase()}-{report.type.toUpperCase()}-{report.date}
+                              {selectedProject?.code}-PMIS-SITE-{(report.discipline || 'General').toUpperCase()}-{report.type.toUpperCase()}-{report.date}
                             </h4>
                             <span className={cn(
                               "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",

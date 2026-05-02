@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogIn, ShieldCheck, HardDrive, Layout } from 'lucide-react';
+import { LogIn, ShieldCheck, HardDrive, Layout, LayoutDashboard } from 'lucide-react';
 import { signInWithGoogle } from '../firebase';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -17,10 +17,12 @@ export const Login: React.FC = () => {
         <div className="bg-white rounded-[40px] shadow-2xl shadow-blue-900/50 overflow-hidden">
           <div className="p-12 text-center space-y-8">
             <div className="flex flex-col items-center gap-4">
-              <img src="https://lh3.googleusercontent.com/d/1LewYc-2-cN6k2DtwmaBjqBchrk_eZqc7" alt="Zarya Logo" className="h-20 w-auto mb-2" referrerPolicy="no-referrer" />
+              <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-2">
+                <LayoutDashboard className="w-10 h-10 text-white" />
+              </div>
               <div>
-                <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">ZARYA</h1>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-1">Construction Co.</p>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">PMIS</h1>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Enterprise Edition</p>
               </div>
             </div>
 

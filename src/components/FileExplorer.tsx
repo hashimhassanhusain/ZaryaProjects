@@ -10,7 +10,7 @@ import { storage, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Project } from '../types';
 import { useAuth } from '../context/UserContext';
-import { generateZaryaFileName, cn } from '../lib/utils';
+import { generatePMISFileName, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -220,7 +220,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const existingFiles = resFiles.ok ? (await resFiles.json()).files : [];
       
       let version = 1;
-      const baseName = generateZaryaFileName({
+      const baseName = generatePMISFileName({
         projectCode: project.code,
         category: uploadMetadata.category,
         dept: uploadMetadata.dept,
@@ -236,7 +236,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       const sameFiles = existingFiles?.filter((f: any) => f.name.includes(uploadMetadata.description.toUpperCase().replace(/\s+/g, '_'))) || [];
       if (sameFiles.length > 0) {
         version = sameFiles.length + 1;
-        const newBaseName = generateZaryaFileName({
+        const newBaseName = generatePMISFileName({
           projectCode: project.code,
           category: uploadMetadata.category,
           dept: uploadMetadata.dept,
@@ -301,7 +301,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const depts = ['INIT', 'PLAN', 'EXEC', 'MON', 'CLS'];
   const types = ['FRM', 'PLN', 'RPT', 'LOG', 'DRW', 'SPC', 'MS'];
 
-  const generatedNamePreview = project ? generateZaryaFileName({
+  const generatedNamePreview = project ? generatePMISFileName({
     projectCode: project.code,
     category: uploadMetadata.category,
     dept: uploadMetadata.dept,

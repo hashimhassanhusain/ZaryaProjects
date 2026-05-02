@@ -146,8 +146,8 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                   <Gavel className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">{t('governance_hub')}</h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">PMO Performance Standards</p>
+                  <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{t('governance_hub')}</h2>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">PMO Performance Standards</p>
                 </div>
               </div>
             </header>
@@ -250,18 +250,18 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       />
       <div className="flex-1 overflow-y-auto">
         {activeTab !== 'overview' && (
-          <header className="px-8 py-6 bg-white border-b border-slate-100 flex items-center justify-between">
+          <header className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
-                <Gavel className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                <Gavel className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1.5">
+                <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">
                   <span>{stripNumericPrefix(t(page.id === 'gov' ? 'governance' : page.title))}</span>
-                  <ChevronRight className="w-2.5 h-2.5 opacity-50" />
+                  <ChevronRight className="w-2 h-2 opacity-50" />
                   <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
                   {stripNumericPrefix(t(activeTab))}
                 </h2>
               </div>

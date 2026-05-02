@@ -77,7 +77,7 @@ export const UserProfileView: React.FC = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">User Profile</h1>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">User Profile</h1>
           <p className="text-slate-500 text-sm">Manage your personal information and account settings.</p>
         </div>
       </header>
@@ -112,7 +112,7 @@ export const UserProfileView: React.FC = () => {
               Access Control
             </h3>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
-              Your account is managed by the Zarya Admin. Email changes require administrative approval.
+              Your account is managed by the PMIS Admin. Email changes require administrative approval.
             </p>
             <div className="text-xs font-mono text-slate-500 bg-slate-800 p-4 rounded-xl border border-slate-700">
               UID: {auth.currentUser?.uid.toUpperCase()}

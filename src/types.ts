@@ -177,7 +177,10 @@ export type EntityType =
   | 'closure_reports'
   | 'formal_acceptances'
   | 'performance_reports'
-  | 'assumption_log';
+  | 'assumption_log'
+  | 'decisions'
+  | 'packages'
+  | 'cost_accounts';
 
 export interface EntityConfig {
   id: EntityType;
@@ -187,7 +190,7 @@ export interface EntityConfig {
   columns: {
     key: string;
     label: string;
-    type: 'string' | 'number' | 'date' | 'status' | 'currency' | 'badge';
+    type: 'string' | 'number' | 'date' | 'status' | 'currency' | 'badge' | 'progress';
     visible?: boolean;
     width?: number;
   }[];
@@ -254,7 +257,7 @@ export interface Activity {
   plannedCost?: number; // Rolled up from POs
   actualAmount?: number; // Actual Cost (Rolled up from POs)
   division?: string; // Master Format 2024 Division Code (e.g. "01", "03")
-  status: 'Not Started' | 'In Progress' | 'Completed' | 'Converted to PO';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Converted to PO' | 'Planned';
   activityType?: 'Task' | 'Milestone';
   charterMilestoneId?: string; // Link to milestone defined in Charter
   poId?: string;
@@ -800,7 +803,7 @@ export interface Task {
 }
 
 export interface AssumptionEntry {
-  id: string; // e.g. ZRY-ASL-001
+  id: string; // e.g. PMIS-ASL-001
   projectId: string;
   description: string;
   type: 'Assumption' | 'Constraint';
@@ -1001,7 +1004,7 @@ export interface Project {
 export interface QualityMetricEntry {
   id: string;
   projectId: string;
-  metricId: string; // e.g. ZRY-QUA-001
+  metricId: string; // e.g. PMIS-QUA-001
   item: string;
   masterFormatCode?: string;
   wbsId?: string;
@@ -1035,7 +1038,7 @@ export interface QualityMetricVersion {
 export interface DecisionLogEntry {
   id: string;
   projectId: string;
-  decisionId: string; // e.g. ZRY-DEC-001
+  decisionId: string; // e.g. PMIS-DEC-001
   category: 'Schedule' | 'Cost/Price' | 'Quantity' | 'Quality' | 'Scope';
   decision: string;
   responsibleParty: string;
@@ -1062,7 +1065,7 @@ export interface DecisionLogVersion {
 export interface FormalAcceptanceEntry {
   id: string;
   projectId: string;
-  acceptanceId: string; // e.g. ZRY-ACC-001
+  acceptanceId: string; // e.g. PMIS-ACC-001
   requirement: string;
   acceptanceCriteria: string;
   validationMethod: string;
