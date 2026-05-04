@@ -629,7 +629,7 @@
       "schema": "BOQItem",
       "description": "Bill of Quantities items."
     },
-    "/purchaseOrders/{poId}": {
+    "/purchase_orders/{poId}": {
       "schema": "PurchaseOrder",
       "description": "Purchase orders."
     },

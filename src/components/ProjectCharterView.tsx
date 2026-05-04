@@ -47,7 +47,7 @@ import {
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';

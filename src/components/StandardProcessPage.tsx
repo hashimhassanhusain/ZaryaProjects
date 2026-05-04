@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Page, EntityConfig, Project } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -32,20 +33,24 @@ import {
   Star,
   Loader2,
   Table,
-  Edit2
+  Edit2,
+  History,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
+import { HelpTooltip } from './HelpTooltip';
 
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { PlanningPlanHeader } from './common/PlanningPlanHeader';
 
 interface StandardProcessPageProps {
   page: Page;
   embedded?: boolean;
-  inputs?: { id: string; title: string; status?: string }[];
+  inputs?: { id: string; title: string; status?: string; lastUpdated?: string }[];
   tools?: { id: string; title: string }[];
   outputs?: { id: string; title: string; status?: string }[];
   children: React.ReactNode; 
@@ -56,6 +61,12 @@ interface StandardProcessPageProps {
   gridConfig?: Partial<EntityConfig>;
   viewMode?: 'grid' | 'edit';
   onViewModeChange?: (mode: 'grid' | 'edit') => void;
+  // Versioning Props
+  versions?: { id: string; version: string; timestamp: string; userName: string }[];
+  currentVersion?: string;
+  onVersionChange?: (versionId: string) => void;
+  onNewVersion?: () => void;
+  isArchived?: boolean;
 }
 
 const QuickViewModal: React.FC<{ 
@@ -203,7 +214,12 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   collectionName,
   gridConfig,
   viewMode: controlledViewMode,
-  onViewModeChange
+  onViewModeChange,
+  versions = [],
+  currentVersion = '1.0',
+  onVersionChange,
+  onNewVersion,
+  isArchived = false
 }) => {
   const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
@@ -267,30 +283,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
     window.dispatchEvent(new Event('storage'));
   };
 
-  const pageHeader = (
-    <div className="flex items-center gap-1.5 shrink-0 overflow-hidden">
-      {grandParentPage && (
-        <>
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]">
-             {stripNumericPrefix(grandParentTitle)}
-          </span>
-          <ChevronRight className={cn("w-3 h-3 text-slate-300 opacity-50", isRtl && "rotate-180")} />
-        </>
-      )}
-      {parentPage && (
-        <>
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">
-             {stripNumericPrefix(parentTitle)}
-          </span>
-          <ChevronRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
-        </>
-      )}
-      <h2 className={cn("text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase whitespace-nowrap", isRtl && "flex-row-reverse")}>
-        {stripNumericPrefix(displayTitle)}
-      </h2>
-      <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50 block shrink-0">{page.id}</span>
-    </div>
-  );
+  const pageHeader = <BreadcrumbHeader page={page} />;
+
 
   const favoriteControl = (
     <button 
@@ -337,10 +331,17 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                       key={`${input.id}-${idx}`} 
                       onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} 
                       className={cn(
-                        "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm", 
+                        "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm relative overflow-hidden", 
                         isRtl && "text-right"
                       )}
                     >
+                      {input.lastUpdated && (
+                        <div className="absolute top-0 right-0 p-1">
+                          <HelpTooltip text={t('updated_recently_tooltip') || 'Updated recently'}>
+                            <AlertCircle className="w-3 h-3 text-amber-500 animate-pulse" />
+                          </HelpTooltip>
+                        </div>
+                      )}
                       <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
                          <FileText className="w-4 h-4 text-blue-600" />
                       </div>
@@ -397,14 +398,34 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                             </div>
                           ) : (
                             <div className="space-y-6">
-                              <div className="flex flex-col space-y-2">
-                                {!embedded && (
-                                  <div className={cn("flex items-center justify-between px-4 mt-2", isRtl && "flex-row-reverse")}>
-                                    {pageHeader}
-                                    {favoriteControl}
-                                  </div>
-                                )}
-                              </div>
+                              {page.focusArea === 'Planning' && onVersionChange && onNewVersion ? (
+                                <PlanningPlanHeader 
+                                  currentVersion={currentVersion}
+                                  onVersionChange={onVersionChange}
+                                  onNewVersion={onNewVersion}
+                                  versions={versions}
+                                />
+                              ) : (
+                                <div className="flex flex-col space-y-2">
+                                  {!embedded && (
+                                    <div className={cn("flex items-center justify-between px-4 mt-2", isRtl && "flex-row-reverse")}>
+                                      {pageHeader}
+                                      {favoriteControl}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {isArchived && (
+                                <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3 text-amber-800 animate-in slide-in-from-top-2">
+                                   <History className="w-5 h-5 text-amber-500" />
+                                   <div className="flex-1">
+                                      <p className="text-xs font-bold uppercase tracking-widest leading-none mb-1">Archived Snapshot</p>
+                                      <p className="text-[10px] font-medium opacity-80 italic">You are viewing a historical baseline. Editing is disabled for data integrity.</p>
+                                   </div>
+                                </div>
+                              )}
+
                               <div className="px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">{children}</div>
                             </div>
                           )}
@@ -429,18 +450,28 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             </div>
           </section>
 
-          <div className={cn("fixed bottom-10 right-10 z-50 flex flex-col items-end gap-3 print:hidden", isRtl && "right-auto left-10 items-start")}>
+          <div className={cn("fixed bottom-4 right-4 z-50 flex flex-col items-end gap-1.5 print:hidden", isRtl && "right-auto left-4 items-start")}>
             <AnimatePresence>
-              {viewMode === 'edit' && (
-                <div className="flex flex-col gap-3">
-                  <motion.button initial={{ opacity: 0, scale: 0.8, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} onClick={() => onSave?.()} disabled={isSaving} className="group flex items-center gap-4 px-8 py-5 bg-blue-600 text-white rounded-[2.5rem] shadow-2xl hover:bg-blue-700 active:scale-95 transition-all"><div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">{isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}</div><span className="text-[12px] font-black uppercase tracking-widest">{t('save_new')}</span></motion.button>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => onSave?.()} className="h-16 px-8 bg-white text-slate-600 rounded-[2.5rem] shadow-xl border border-slate-100 flex items-center gap-3 group active:scale-95 transition-all"><div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white"><CheckCircle2 className="w-5 h-5" /></div><span className="text-[11px] font-black uppercase tracking-widest">{t('update')}</span></button>
-                    <button onClick={() => setViewMode('grid')} className="h-16 px-8 bg-white text-slate-600 rounded-[2.5rem] shadow-xl border border-slate-100 flex items-center gap-3 group active:scale-95 transition-all"><div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white"><ArrowRight className={cn("w-5 h-5 rotate-180", isRtl && "rotate-0")} /></div><span className="text-[11px] font-black uppercase tracking-widest">{t('cancel')}</span></button>
+              {viewMode === 'edit' && !isArchived && (
+                <div className="flex flex-col gap-1.5">
+                  <HelpTooltip title={t('save_new')} text={t('save_button_tooltip')} position={isRtl ? "right" : "left"}>
+                    <motion.button initial={{ opacity: 0, scale: 0.8, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} onClick={() => onSave?.()} disabled={isSaving} className="group flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl shadow-2xl hover:bg-blue-700 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}</div><span className="text-[9px] font-black uppercase tracking-widest">{t('save_new')}</span></motion.button>
+                  </HelpTooltip>
+                  <div className="flex items-center gap-1.5">
+                    <HelpTooltip title={t('update')} text={t('update_button_tooltip')} position="top">
+                      <button onClick={() => onSave?.()} className="h-10 px-4 bg-white text-slate-600 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white"><CheckCircle2 className="w-3.5 h-3.5" /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('update')}</span></button>
+                    </HelpTooltip>
+                    <HelpTooltip title={t('cancel')} text={t('cancel_button_tooltip')} position="top">
+                      <button onClick={() => setViewMode('grid')} className="h-10 px-4 bg-white text-slate-600 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white"><ArrowRight className={cn("w-3.5 h-3.5 rotate-180", isRtl && "rotate-0")} /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('cancel')}</span></button>
+                    </HelpTooltip>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button onClick={onPrint} className="group flex items-center gap-4 px-8 py-5 bg-slate-900 text-white rounded-[2.5rem] shadow-2xl hover:bg-black active:scale-95 transition-all"><div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-blue-600"><Printer className="w-5 h-5" /></div><span className="text-[12px] font-black uppercase tracking-widest">{t('print_preview')}</span></button>
-                    <button onClick={async () => { setDriveSyncStatus('syncing'); await new Promise(r => setTimeout(r, 2000)); setDriveSyncStatus('synced'); toast.success(t('synced_to_drive_success')); }} className="group flex items-center gap-4 px-8 py-5 bg-gradient-to-tr from-blue-600 to-indigo-700 text-white rounded-[2.5rem] shadow-2xl hover:scale-105 active:scale-95 transition-all"><div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center"><Cloud className="w-5 h-5" /></div><span className="text-[12px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span></button>
+                  <div className="flex items-center gap-1.5">
+                    <HelpTooltip title={t('print_preview')} text={t('print_button_tooltip')} position="top">
+                      <button onClick={onPrint} className="group flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl shadow-2xl hover:bg-black active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-blue-600"><Printer className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('print_preview')}</span></button>
+                    </HelpTooltip>
+                    <HelpTooltip title={t('sync_to_drive')} text={t('sync_button_tooltip')} position="top">
+                      <button onClick={async () => { setDriveSyncStatus('syncing'); await new Promise(r => setTimeout(r, 2000)); setDriveSyncStatus('synced'); toast.success(t('synced_to_drive_success')); }} className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-blue-600 to-indigo-700 text-white rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center"><Cloud className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span></button>
+                    </HelpTooltip>
                   </div>
                 </div>
               )}

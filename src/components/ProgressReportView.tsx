@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User, Activity } from '../types';
-import { purchaseOrders, users } from '../data';
+import { users } from '../data';
 import { cn } from '../lib/utils';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, setDoc, increment, onSnapshot, query, where, orderBy, deleteDoc, getDocs, Timestamp } from 'firebase/firestore';
@@ -117,7 +117,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
     if (!selectedProject) return;
 
     const q = query(
-      collection(db, 'purchaseOrders'),
+      collection(db, 'purchase_orders'),
       where('projectId', '==', selectedProject.id)
     );
 
@@ -128,7 +128,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
       })) as PurchaseOrder[];
       setDbPurchaseOrders(poData);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'purchaseOrders');
+      handleFirestoreError(error, OperationType.GET, 'purchase_orders');
     });
 
     const activitiesUnsubscribe = onSnapshot(
@@ -515,8 +515,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         if (act.poLineItemId && act.poLineItemId !== 'general') {
           const poLineItem = allPOLineItems.find(li => li.id === act.poLineItemId);
           if (poLineItem && poLineItem.poId) {
-            const poRef = doc(db, 'purchaseOrders', poLineItem.poId);
-            const poSnap = await getDocs(query(collection(db, 'purchaseOrders'), where('id', '==', poLineItem.poId)));
+            const poRef = doc(db, 'purchase_orders', poLineItem.poId);
+            const poSnap = await getDocs(query(collection(db, 'purchase_orders'), where('id', '==', poLineItem.poId)));
             
             if (!poSnap.empty) {
               const poDoc = poSnap.docs[0];
@@ -699,9 +699,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
   const allPOLineItems = useMemo(() => {
     // Combine mock data with firestore data for backward compatibility and flexibility
-    const mockPOItems = purchaseOrders.flatMap(po => 
-      po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
-    );
+    const mockPOItems: any[] = [];
     const dbPOItems = dbPurchaseOrders.flatMap(po => 
       po.lineItems.map(li => ({ ...li, poId: po.id, poSupplier: po.supplier }))
     );

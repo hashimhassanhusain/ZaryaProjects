@@ -279,7 +279,7 @@ const PageRenderer = () => {
   const isChangeRequestPage = page.id === '3.1.1';
   const isChangeManagementHubPage = page.id === '3.4';
   const isStakeholdersPage = page.domain === 'stakeholders' || [
-    '1.5.1', '1.2.5', '2.5.1', '2.5.2', '3.5.1_sh', '4.5.1_sh'
+    '3.5.1_sh', '4.5.1_sh'
   ].includes(page.id);
   const isLogManagementPage = ['1.5.1', '2.7.5', '5.1.1', 'logs'].includes(page.id);
   const isCorrespondenceLogPage = page.id === '3.1.2';
@@ -308,6 +308,8 @@ const PageRenderer = () => {
         </div>
         {isTasksPage ? (
           <TasksView />
+        ) : isPOTrackerPage ? (
+          <POTracker page={page} />
         ) : isMeetingsPage ? (
           <MeetingsArchiveView 
             project={selectedProject} 
@@ -322,8 +324,6 @@ const PageRenderer = () => {
           <ResourcesHubView page={page} />
         ) : isStakeholdersPage ? (
           <StakeholdersHubView page={page} />
-        ) : isPOTrackerPage ? (
-          <POTracker page={page} />
         ) : isBOQPage ? (
           <BOQView />
         ) : isWBSPage ? (
@@ -370,6 +370,10 @@ const PageRenderer = () => {
           <GovernancePoliciesView page={page} />
         ) : isProjectManagementPlanPage ? (
           <ProjectManagementPlanView page={page} />
+        ) : page.id === '2.5.1' ? (
+          <StakeholderManagementPlanView page={page} />
+        ) : page.id === '2.5.2' ? (
+          <CommunicationsManagementPlanView page={page} />
         ) : isPerformanceMonitoringPage ? (
            <PerformanceMonitoringView page={page} />
         ) : isGovernanceHubPage ? (

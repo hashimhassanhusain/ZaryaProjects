@@ -27,7 +27,7 @@ import {
   doc,
   writeBatch
 } from 'firebase/firestore';
-import { cn } from '../../lib/utils';
+import { cn, getISODate, formatDate } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -137,9 +137,12 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       const timestamp = new Date().toISOString();
       
+      const assignedUser = users.find(u => u.uid === formData.responsibleParty);
+
       const issueData = {
         ...formData,
         projectId,
+        responsiblePartyId: assignedUser?.uid || '',
         updatedAt: timestamp,
         updatedBy: user,
         createdAt: editingIssue?.createdAt || timestamp,
@@ -325,7 +328,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
               <input 
                 type="date"
-                value={formData.dueDate}
+                value={getISODate(formData.dueDate)}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
               />
@@ -497,7 +500,7 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-slate-600">{issue.dueDate || (issue as any).dateIdentified || 'N/A'}</span>
+                      <span className="text-sm font-medium text-slate-600">{formatDate(issue.dueDate || (issue as any).dateIdentified)}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { cn } from '../lib/utils';
 
 type Language = 'en' | 'ar';
 
@@ -761,6 +762,7 @@ const translations: Record<Language, Record<string, string>> = {
     'add_milestone_summary': 'Add a zero-duration event to track critical project checkpoints or contractual obligations.',
     'zoom_in_summary': 'Increase chart resolution to view day-by-day details.',
     'zoom_out_summary': 'Decrease resolution to see months or quarters in a single view.',
+    'scroll_to_today_summary': 'Scroll the timeline to focus on the current day.',
     'column_settings_summary': 'Choose which data fields to display in the task table (e.g., Dates, SPI, Cost).',
     'governance_summary': 'Manage policies, charters, and management plans.',
     'scope_summary': 'Define requirements, WBS, and work packages.',
@@ -803,6 +805,12 @@ const translations: Record<Language, Record<string, string>> = {
     '2.7.5_summary': 'Registry of project risks, impacts, and responses.',
     '3.1.3_summary': 'Formal record of project decisions and authorizations.',
     'daily-reports_summary': 'Daily site construction logs and activity tracking.',
+    '2.7.6': 'Risk Report',
+    '2.1.14': 'Risk Management Plan',
+    '2.1.15': 'Sourcing Strategy Plan',
+    '2.2.0': 'Scope Baseline',
+    '2.4.5': 'Project Funding Requirements',
+    '2.6.8': 'Team Charter',
     'foundation_center': 'Foundation Center',
     'foundation_center_desc': 'Project foundational data and master data hub to control all system pages.',
     'save_master_data': 'Save Master Data',
@@ -848,11 +856,11 @@ const translations: Record<Language, Record<string, string>> = {
     'power': 'القوة / النفوذ',
     'interest': 'الاهتمام',
     'task_instructions': 'اضغط ضغطاً مزدوجاً لفتح المهمة وتعديلها، أو اسحبها وأسقطها لتغيير حالتها.',
-    'initiating_summary': 'تحديد رؤية المشروع والبدء الرسمي المصرح به.',
-    'planning_summary': 'بناء خارطة الطريق الكاملة والخطوط الأساسية للمشروع.',
-    'executing_summary': 'قيادة أنشطة العمل وفقاً للخطة الموضوعة.',
-    'monitoring_summary': 'تتبع ومراجعة وتنظيم التقدم والأداء.',
-    'closing_summary': 'إنهاء جميع الأنشطة والتسليم الرسمي للمشروع.',
+    'initiating_summary': 'العمليات التي تتم لبدء مشروع جديد أو مرحلة جديدة من خلال الحصول على التفويض اللازم.',
+    'planning_summary': 'تطوير خطة إدارة المشروع والمستندات اللازمة لتوجيه تنفيذ المشروع ومراقبته.',
+    'executing_summary': 'إنجاز العمل المحدد في خطة إدارة المشروع لتحقيق أهداف المشروع.',
+    'monitoring_summary': 'تتبع ومراجعة وتنظيم سير العمل والأداء في المشروع، وتحديد أي تغييرات لازمة.',
+    'closing_summary': 'إنجاز جميع العمليات رسمياً لإغلاق المشروع أو المرحلة بشكل نهائي.',
     'favorites_summary': 'الوصول السريع إلى الصفحات الأكثر استخداماً.',
     'generate_pdf_summary': 'إصدار تقرير PDF احترافي وحفظه في جوجل درايف.',
     'push_baseline_summary': 'تحديث خط الأساس للمشروع بالبيانات الحالية.',
@@ -862,7 +870,7 @@ const translations: Record<Language, Record<string, string>> = {
     'search_summary': 'البحث السريع عن أي صفحة أو سجل في المشروع.',
     'user_profile_summary': 'إدارة ملفك الشخصي وإعدادات الحساب.',
     'project_selector_summary': 'التنقل بين المشاريع المختلفة في محفظة أعمالك.',
-    'governance_summary': 'إدارة السياسات والمواثيق وخطط الإدارة.',
+    'governance_summary': 'نظام الرقابة والتوجيه الذي يضمن تحقيق أهداف المشروع والالتزام بالمعايير التنظيمية.',
     'scope_summary': 'تحديد المتطلبات، هيكل تقسيم العمل، وحزم العمل.',
     'schedule_summary': 'تتبع الجداول الزمنية والأنشطة ومخططات غانت.',
     'finance_summary': 'التحكم في الميزانيات وجداول الكميات والمدفوعات.',
@@ -1310,9 +1318,20 @@ const translations: Record<Language, Record<string, string>> = {
     '2.1': 'نطاق الحوكمة',
     '1.1.1': 'ميثاق المشروع',
     '1.1.3': 'سجل الافتراضات',
-    '1.1.2': 'سياسات وإجراءات المشروع',
+    '1.1.2': 'دراسة الجدوى الاقتصادية',
     '2.1.2': 'خطة إدارة المشروع',
-    '2.1.1': 'خطة إدارة التغيير',
+    '2.1.1': 'سياسات وإجراءات المشروع',
+    '1.1.2_summary': 'تقرير مفصل يوضح الجدوى الاقتصادية والمالية والفنية للمشروع، بما في ذلك تحليل التكلفة والعائد والعائد على الاستثمار.',
+    '2.1.2_summary': 'الخطة الأم التي تجمع وتكامل جميع الخطط الفرعية وتحدد كيفية تنفيذ المشروع ومراقبته وإغلاقه.',
+    '2.1.1_summary': 'مجموعة القواعد واللوائح التنظيمية التي تحكم العمل في المشروع، بما في ذلك بروتوكولات التواصل والأرشفة.',
+    '1.1.1_summary': 'المستند الرسمي الذي يخول المشروع ويعطي مدير المشروع الصلاحية لاستخدام موارد المؤسسة.',
+    'save_button_tooltip': 'حفظ البيانات الحالية كنسخة جديدة (Baseline).',
+    'update_button_tooltip': 'تحديث السجلات الحالية وحفظ التغييرات.',
+    'cancel_button_tooltip': 'الرجوع إلى عرض الجدول دون حفظ التغييرات.',
+    'print_button_tooltip': 'توليد ملف PDF جاهز للطباعة لهذه الوثيقة.',
+    'sync_button_tooltip': 'مزامنة هذا الملف مع مجلد المشروع على Google Drive.',
+    'pmp_summary': 'خطة لإدارة المشروع بما في ذلك دورة الحياة والأساسيات.',
+    'business_case_summary': 'دراسة الجدوى الاقتصادية والمبررات الاستراتيجية للمشروع.',
     '2.1.3': 'خطة إدارة الجودة',
     '2.1.6': 'خطة إدارة الاتصالات',
     '2.1.7': 'خطة إدارة أصحاب المصلحة',
@@ -1320,9 +1339,20 @@ const translations: Record<Language, Record<string, string>> = {
     '2.1.9': 'خطة إدارة النطاق',
     '2.1.10': 'خطة إدارة الموارد البشرية',
     '2.1.11': 'خطة إدارة الجدول الزمني',
-    '2.1.12': 'خطة إدارة التكاليف',
+    '2.1.12': 'خطة الإدارة المالية',
     '2.1.13': 'خطة إدارة المشتريات',
     '2.1.14': 'خطة إدارة المخاطر',
+    '2.1.15': 'خطة استراتيجية التوريد',
+    '2.2.0': 'الخط المرجعي للنطاق',
+    '2.4.5': 'متطلبات تمويل المشروع',
+    '2.6.8': 'ميثاق الفريق',
+    '2.7.6': 'تقرير المخاطر',
+    '1.2.1_scope': 'بيان نطاق المشروع',
+    '1.2.2_scope': 'وثائق المتطلبات',
+    '2.4.2_fin': 'تقديرات التكاليف وأسس التقديرات',
+    '2.5.1_stak': 'خطة إشراك المعنيين',
+    '2.5.2_stak': 'خطة إدارة الاتصالات',
+    '2.6.1_res': 'متطلبات الموارد وهيكلها (RBS)',
     '2.1.4': 'مقاييس الجودة',
     '2.1.5': 'سجل الافتراضات والقيود',
     '2.5': 'نطاق أصحاب المصلحة',
@@ -1412,7 +1442,7 @@ const translations: Record<Language, Record<string, string>> = {
     'download_statement': 'تحميل كشف الحساب الكامل',
     'no_pos_found': 'لا توجد أوامر شراء لهذا المورد.',
     'vendor_stats': 'إحصائيات المورد',
-    '3.3.3': 'تقارير التقدم',
+    '3.3.3': 'التقارير اليومية',
     '4.0': 'منطقة تركيز المراقبة',
     '4.1': 'نطاق الحوكمة',
     '4.1.2': 'قبول المخرجات',
@@ -1642,7 +1672,7 @@ const translations: Record<Language, Record<string, string>> = {
     '2.3.5_sched': 'تطوير خط الأساس للجدول',
     '3.3.1_sched': 'إدارة تنفيذ الجدول',
     '3.3.2_sched': 'تحديث التقدم (غانت)',
-    '3.3.3_sched': 'تقارير التقدم اليومية',
+    '3.3.3_sched': 'قائمة التقارير اليومية',
     '4.3.1_sched': 'مراقبة أداء الجدول',
     '4.3.2_sched': 'التحكم في تغيير الساعات',
     '5.3.1_sched': 'التحقق النهائي من الجدول',
@@ -1657,6 +1687,12 @@ const translations: Record<Language, Record<string, string>> = {
     '3.3.1_sched_summary': 'تنسيق إجراءات الفريق وتتبع التقدم اليومي.',
     '3.3.2_sched_summary': 'عرض الجدول الزمني التنفيذي مع التقدم الفعلي.',
     '3.3.3_sched_summary': 'سجلات يومية رسمية لأنشطة الموقع.',
+    'new_daily_log': 'سجل يومي جديد',
+    'update_daily_log': 'تحديث السجل اليومي',
+    'incident_log': 'سجل الحوادث والعوائق',
+    'reporting_date': 'تاريخ التقرير',
+    'log_author': 'كاتب السجل / المراقب',
+    'narrative_description': 'وصف سردي للعمل المنجز',
     '4.3.1_sched_summary': 'تحليل انحراف الجدول الزمني واستخدام إدارة القيمة المكتسبة.',
     '4.3.2_sched_summary': 'إدارة التعديلات على خط الأساس للجدول الزمني.',
     '5.3.1_sched_summary': 'الحصول على قبول أصحاب المصلحة للأداء النهائي.',
@@ -1695,6 +1731,13 @@ const translations: Record<Language, Record<string, string>> = {
     'foundation_insights': 'رؤى التأسيس',
     'eefs': 'العوامل البيئية',
     'opas': 'أصول العمليات',
+    'scroll_to_today_summary': 'تمرير الجدول الزمني للتركيز على تاريخ اليوم الحالي.',
+    'search_items_summary': 'تصفية القائمة حسب الوصف أو مركز التكلفة أو الموقع للعثور على حزم عمل محددة بسرعة.',
+    'zoom_in_summary': 'زيادة دقة المخطط لعرض التفاصيل يوماً بيوم.',
+    'zoom_out_summary': 'تقليل الدقة لرؤية الأشهر أو الأرباع في عرض واحد.',
+    'import_data_summary': 'استيراد بنود جدول الكميات من إكسل أو PDF. يمكن للذكاء الاصطناعي استخراج التفاصيل تلقائياً.',
+    'add_activity_summary': 'إنشاء نشاط مشروع جديد. تحديد المدة والميزانية والروابط بهيكل تقسيم العمل.',
+    'column_settings_summary': 'اختر حقول البيانات التي تريد عرضها في جدول المهام (مثل التواريخ، SPI، التكلفة).',
   },
 };
 
@@ -1710,19 +1753,19 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const t = (key: string) => {
-    return translations['en'][key] || key;
+    return translations[language][key] || translations['en'][key] || key;
   };
 
   const th = (key: string) => {
-    return translations['en'][key] || key;
+    return translations[language][key] || null;
   };
 
-  const isRtl = false;
-  const isHelpRtl = false;
+  const isRtl = language === 'ar';
+  const isHelpRtl = language === 'ar';
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: () => {}, t, th, isRtl, isHelpRtl }}>
-      <div className="font-sans">
+    <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>
+      <div className={cn("font-sans", isRtl ? "font-arabic" : "")} dir={isRtl ? 'rtl' : 'ltr'}>
         {children}
       </div>
     </LanguageContext.Provider>

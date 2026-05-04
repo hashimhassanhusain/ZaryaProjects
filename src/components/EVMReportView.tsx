@@ -46,7 +46,7 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
     );
 
     const posUnsubscribe = onSnapshot(
-      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setPos(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
       }

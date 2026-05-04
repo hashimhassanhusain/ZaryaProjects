@@ -158,7 +158,7 @@ export interface ProjectLogEntry {
 
 export type EntityType = 
   | 'contracts' 
-  | 'purchaseOrders' 
+  | 'purchase_orders' 
   | 'projects' 
   | 'suppliers' 
   | 'risks' 
@@ -301,14 +301,6 @@ export interface WeatherData {
   windSpeed: number;
 }
 
-export interface DailyReportActivity {
-  id: string;
-  poLineItemId: string; // Can be empty for general activities
-  activityName?: string; // Name for general activities
-  description: string;
-  progressUpdate: number; // 0-100
-}
-
 export interface SiteIssue {
   id: string;
   title: string;
@@ -395,6 +387,7 @@ export interface ProjectIssue {
   impact: string;
   urgency: 'Low' | 'Medium' | 'High' | 'Urgent' | 'Critical';
   responsibleParty: string;
+  responsiblePartyId?: string;
   actions: string;
   status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
   dueDate: string;
@@ -404,16 +397,78 @@ export interface ProjectIssue {
   closedDate?: string;
 }
 
+export interface DailyReportActivity {
+  id: string;
+  poLineItemId: string; // Can be empty for general activities
+  activityName?: string; // Name for general activities
+  description: string;
+  progressUpdate: number; // 0-100
+}
+
+export interface DailyReportManpower {
+  companyId: string;
+  companyName: string;
+  count: number;
+}
+
+export interface DailyReportEquipment {
+  companyId: string;
+  companyName: string;
+  count: number;
+  equipmentType: string;
+}
+
+export interface DailyReportMaterial {
+  materialName: string;
+  quantity: number;
+  unit: string;
+  supplier: string;
+}
+
+export interface DailyReportPOProgress {
+  poId: string;
+  poNumber: string;
+  lineItemId: string;
+  description: string;
+  quantityDone: number;
+  uom: string;
+  totalQuantity: number;
+}
+
+export interface DailyReportOutput {
+  discipline: string;
+  description: string;
+  quantity: number;
+  unit: string;
+}
+
 export interface DailyReport {
   id: string;
+  projectId: string;
   date: string;
-  weather?: WeatherData;
-  activities: DailyReportActivity[];
-  generalWorks: string;
-  deliverables: string;
-  incidents: string;
-  issues: SiteIssue[];
-  photos: string[];
+  discipline: 'Civil' | 'Mechanical' | 'Technical Office' | 'HSE' | 'General';
+  author: string;
+  weather?: string;
+  temperature?: string;
+  progressSummary: string;
+  incidentSummary: string;
+  status: 'Draft' | 'Submitted' | 'Approved';
+  manpowerTotal: number;
+  equipmentTotal: number;
+  companies?: DailyReportManpower[];
+  equipmentList?: DailyReportEquipment[];
+  materialsReceived?: DailyReportMaterial[];
+  poProgress?: DailyReportPOProgress[];
+  departmentOutputs?: DailyReportOutput[];
+  createdAt: any;
+  updatedAt: any;
+  // Legacy fields
+  activities?: DailyReportActivity[];
+  generalWorks?: string;
+  deliverables?: string;
+  incidents?: string;
+  issues?: SiteIssue[];
+  photos?: string[];
 }
 
 export interface ProjectFinance {
@@ -907,6 +962,18 @@ export interface POItem {
   currentQty: number;
   price: number;
   uom: string;
+}
+
+export interface ArtifactVersion {
+  id: string;
+  artifactId: string;
+  projectId: string;
+  version: string;
+  data: any;
+  updatedAt: string;
+  updatedBy: string;
+  comment?: string;
+  status: 'Draft' | 'Approved' | 'Archived';
 }
 
 export interface PageVersion {

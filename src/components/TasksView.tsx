@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
-import { cn } from '../lib/utils';
+import { cn, getISODate, formatDate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
@@ -45,6 +45,8 @@ export const TasksView: React.FC = () => {
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [editingTaskLocal, setEditingTaskLocal] = useState<Partial<Task> | null>(null);
+  const [isSavingTask, setIsSavingTask] = useState(false);
   const [isAddingStatus, setIsAddingStatus] = useState(false);
   const [isManagingStatuses, setIsManagingStatuses] = useState(false);
   const [editingStatus, setEditingStatus] = useState<{ oldName: string, newName: string } | null>(null);
@@ -78,6 +80,10 @@ export const TasksView: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('filter') === 'my') {
       setShowOnlyMyTasks(true);
+    }
+    const taskIdInUrl = params.get('taskId');
+    if (taskIdInUrl) {
+      setSelectedTaskId(taskIdInUrl);
     }
   }, [window.location.search]);
 
@@ -153,7 +159,7 @@ export const TasksView: React.FC = () => {
                   data.status === 'Closed' ? 'COMPLETED' : 'TO DO',
           assigneeId: data.responsiblePartyId || data.responsibleParty || 'Unassigned',
           workspaceId: workspaces[0].id,
-          startDate: data.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+          startDate: getISODate(data.createdAt),
           endDate: data.dueDate || '',
           priority: data.urgency === 'Critical' || data.urgency === 'Urgent' ? 'High' :
                     data.urgency === 'High' ? 'High' :
@@ -174,6 +180,38 @@ export const TasksView: React.FC = () => {
       unsubscribeIssues();
     };
   }, [selectedProject?.id]);
+
+  const handleSelectTask = (taskId: string | null) => {
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setEditingTaskLocal({ ...task });
+      }
+    } else {
+      setEditingTaskLocal(null);
+    }
+    setSelectedTaskId(taskId);
+  };
+
+  const handleApplyLocalUpdate = (updates: Partial<Task>) => {
+    if (editingTaskLocal) {
+      setEditingTaskLocal(prev => ({ ...prev, ...updates }));
+    }
+  };
+
+  const saveEditingTask = async () => {
+    if (!editingTaskLocal || !selectedTaskId) return;
+    setIsSavingTask(true);
+    try {
+      await handleUpdateTask(selectedTaskId, editingTaskLocal);
+      toast.success(t('task_updated_success') || 'Task updated successfully');
+      handleSelectTask(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingTask(false);
+    }
+  };
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
 
@@ -236,10 +274,17 @@ export const TasksView: React.FC = () => {
         const issueUpdates: any = {};
         if (updates.title) issueUpdates.issue = updates.title;
         if (updates.endDate) issueUpdates.dueDate = updates.endDate;
+        if (updates.description) issueUpdates.actions = updates.description;
+        if (updates.priority) {
+          issueUpdates.urgency = updates.priority; // Map task priority back to issue urgency
+        }
+        if (updates.assigneeId) {
+          issueUpdates.responsibleParty = updates.assigneeId; // Issue log uses responsibleParty for the UID/ID
+          issueUpdates.responsiblePartyId = updates.assigneeId; // Keep both for safety
+        }
         if (updates.status) {
-          issueUpdates.status = updates.status === 'TO DO' ? 'Open' : 
-                                updates.status === 'IN PROGRESS' ? 'In Progress' : 
-                                updates.status === 'COMPLETED' ? 'Resolved' : 'Open';
+          issueUpdates.status = updates.status === 'COMPLETED' ? 'Resolved' : 
+                                updates.status === 'IN PROGRESS' ? 'In Progress' : 'Open';
         }
         
         await updateDoc(doc(db, 'issues', realId), {
@@ -474,7 +519,7 @@ export const TasksView: React.FC = () => {
           style={style}
           {...attributes}
           {...listeners}
-          onDoubleClick={() => setSelectedTaskId(task.id)}
+          onClick={() => handleSelectTask(task.id)}
           className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-grab active:cursor-grabbing relative"
         >
 
@@ -529,7 +574,7 @@ export const TasksView: React.FC = () => {
           </div>
           <div className="flex items-center gap-1 text-slate-400">
             <Calendar className="w-3 h-3" />
-            <span className="text-[10px] font-medium">{task.endDate}</span>
+            <span className="text-[10px] font-medium">{formatDate(task.endDate)}</span>
           </div>
         </div>
       </div>
@@ -789,7 +834,7 @@ export const TasksView: React.FC = () => {
               {filteredTasks.map((task, idx) => (
                 <tr 
                   key={`${task.id}-${idx}`} 
-                  onDoubleClick={() => setSelectedTaskId(task.id)}
+                  onClick={() => handleSelectTask(task.id)}
                   className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
@@ -849,7 +894,7 @@ export const TasksView: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-xs font-medium text-slate-500">{task.endDate}</div>
+                    <div className="text-xs font-medium text-slate-500">{formatDate(task.endDate)}</div>
                   </td>
                 </tr>
               ))}
@@ -890,7 +935,7 @@ export const TasksView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Task Title</label>
                   <input 
                     type="text" 
-                    value={newTask.title}
+                    value={newTask.title || ''}
                     onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                     placeholder="e.g. Site Survey Block A"
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
@@ -899,7 +944,7 @@ export const TasksView: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
                   <textarea 
-                    value={newTask.description}
+                    value={newTask.description || ''}
                     onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                     rows={6}
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
@@ -942,7 +987,7 @@ export const TasksView: React.FC = () => {
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
                     <input 
                       type="date" 
-                      value={newTask.startDate}
+                      value={getISODate(newTask.startDate)}
                       onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
@@ -951,7 +996,7 @@ export const TasksView: React.FC = () => {
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">End Date</label>
                     <input 
                       type="date" 
-                      value={newTask.endDate}
+                      value={getISODate(newTask.endDate)}
                       onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
@@ -994,7 +1039,7 @@ export const TasksView: React.FC = () => {
     );
   }
 
-  if (selectedTask) {
+  if (editingTaskLocal && selectedTaskId) {
     return (
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -1003,38 +1048,47 @@ export const TasksView: React.FC = () => {
         className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px]"
       >
         <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1">
             <div className="flex items-center gap-3">
               <span className={cn(
                 "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest",
-                selectedTask.priority === 'High' ? "bg-red-50 text-red-600" :
-                selectedTask.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                editingTaskLocal.priority === 'High' ? "bg-red-50 text-red-600" :
+                editingTaskLocal.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
               )}>
-                {selectedTask.priority} Priority
+                {editingTaskLocal.priority} Priority
               </span>
               <span className="text-slate-300">|</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {selectedTask.id}</span>
-              {selectedTask.sourceType && (
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {editingTaskLocal.id}</span>
+              {editingTaskLocal.sourceType && (
                 <>
                   <span className="text-slate-300">|</span>
-                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Source: {selectedTask.sourceType}</span>
+                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Source: {editingTaskLocal.sourceType}</span>
                 </>
               )}
             </div>
             <input 
               type="text"
-              value={selectedTask.title}
-              onChange={(e) => handleUpdateTask(selectedTask.id, { title: e.target.value })}
-              className="text-3xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-100/50 transition-all rounded-xl focus:px-2"
+              value={editingTaskLocal.title || ''}
+              onChange={(e) => handleApplyLocalUpdate({ title: e.target.value })}
+              className="text-3xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-100/50 transition-all rounded-xl focus:px-4"
+              placeholder="Task Title"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-4">
             <button 
-              onClick={() => setSelectedTaskId(null)}
+              onClick={saveEditingTask}
+              disabled={isSavingTask}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSavingTask && <Loader2 className="w-4 h-4 animate-spin" />}
+              {t('save_changes')}
+            </button>
+            <button 
+              onClick={() => handleSelectTask(null)}
               className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-2xl shadow-sm transition-all flex items-center gap-2 font-bold text-sm"
             >
               <Plus className="w-5 h-5 rotate-45" />
-              Close
+              {t('close')}
             </button>
           </div>
         </div>
@@ -1045,11 +1099,11 @@ export const TasksView: React.FC = () => {
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</h4>
-                  <div className="text-[10px] text-slate-300 italic">Auto-saves on change</div>
+                  <div className="text-[10px] text-slate-300 italic">Click save to apply updates</div>
                 </div>
                 <textarea 
-                  value={selectedTask.description}
-                  onChange={(e) => handleUpdateTask(selectedTask.id, { description: e.target.value })}
+                  value={editingTaskLocal.description || ''}
+                  onChange={(e) => handleApplyLocalUpdate({ description: e.target.value })}
                   className="w-full text-slate-600 text-lg leading-relaxed bg-slate-50/50 border border-transparent focus:border-blue-100 focus:bg-white focus:ring-4 focus:ring-blue-500/5 p-6 transition-all rounded-2xl resize-none h-48 outline-none"
                   placeholder="No description provided..."
                 />
@@ -1059,7 +1113,7 @@ export const TasksView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Notes & Discussion</h4>
                   <span className="bg-slate-100 text-slate-500 text-[10px] px-3 py-1 rounded-full font-bold">
-                    {selectedTask.notes?.length || 0} Comments
+                    {editingTaskLocal.notes?.length || 0} Comments
                   </span>
                 </div>
                 
@@ -1075,14 +1129,14 @@ export const TasksView: React.FC = () => {
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none min-h-[100px]"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                          handleAddNote(selectedTask.id);
+                          handleAddNote(selectedTaskId);
                         }
                       }}
                     />
                     <div className="flex justify-between items-center">
                       <p className="text-[10px] text-slate-400">Press Cmd+Enter to post</p>
                       <button 
-                        onClick={() => handleAddNote(selectedTask.id)}
+                        onClick={() => handleAddNote(selectedTaskId)}
                         disabled={!newNote.trim()}
                         className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
                       >
@@ -1093,7 +1147,7 @@ export const TasksView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4 max-w-3xl">
-                  {selectedTask.notes?.slice().reverse().map((note, idx) => (
+                  {editingTaskLocal.notes?.slice().reverse().map((note, idx) => (
                     <div key={`${note.id}-${idx}`} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -1123,7 +1177,7 @@ export const TasksView: React.FC = () => {
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Activity Audit Trail</h4>
                 </div>
                 <div className="space-y-4 pl-4 border-l-2 border-slate-100">
-                  {selectedTask.history?.map((item, idx) => (
+                  {editingTaskLocal.history?.map((item, idx) => (
                     <div key={`${item.id}-${idx}`} className="relative py-2 group">
                       <div className="absolute -left-[21px] top-4 w-4 h-4 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-blue-400 transition-colors"></div>
                       <div className="flex items-center justify-between mb-1">
@@ -1144,8 +1198,8 @@ export const TasksView: React.FC = () => {
                 <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Status</label>
                   <select 
-                    value={selectedTask.status}
-                    onChange={(e) => updateTaskStatus(selectedTask.id, e.target.value as TaskStatus)}
+                    value={editingTaskLocal.status}
+                    onChange={(e) => handleApplyLocalUpdate({ status: e.target.value as TaskStatus })}
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                   >
                     {customStatuses.map((c, idx) => (
@@ -1157,14 +1211,27 @@ export const TasksView: React.FC = () => {
                 <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ownership</label>
                   <select 
-                    value={selectedTask.assigneeId}
-                    onChange={(e) => updateTaskAssignee(selectedTask.id, e.target.value)}
+                    value={editingTaskLocal.assigneeId}
+                    onChange={(e) => handleApplyLocalUpdate({ assigneeId: e.target.value })}
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                   >
                     <option value="Unassigned">Unassigned</option>
                     {dbUsers.map((u, idx) => (
                       <option key={`${u.uid}-${idx}`} value={u.uid}>{u.name} ({u.role})</option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority</label>
+                  <select 
+                    value={editingTaskLocal.priority}
+                    onChange={(e) => handleApplyLocalUpdate({ priority: e.target.value as any })}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
                   </select>
                 </div>
 
@@ -1175,8 +1242,8 @@ export const TasksView: React.FC = () => {
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
                         type="date"
-                        value={selectedTask.startDate}
-                        onChange={(e) => handleUpdateTask(selectedTask.id, { startDate: e.target.value })}
+                        value={getISODate(editingTaskLocal.startDate)}
+                        onChange={(e) => handleApplyLocalUpdate({ startDate: e.target.value })}
                         className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
                       />
                     </div>
@@ -1187,8 +1254,8 @@ export const TasksView: React.FC = () => {
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
                         type="date"
-                        value={selectedTask.endDate}
-                        onChange={(e) => handleUpdateTask(selectedTask.id, { endDate: e.target.value })}
+                        value={getISODate(editingTaskLocal.endDate)}
+                        onChange={(e) => handleApplyLocalUpdate({ endDate: e.target.value })}
                         className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
                       />
                     </div>

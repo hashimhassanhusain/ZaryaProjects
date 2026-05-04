@@ -33,7 +33,7 @@ export async function rollupToParent(
     // 1. Fetch children based on level
     if (level === 'lineItem') {
       // Parent is a Purchase Order (PO)
-      const poRef = doc(db, 'purchaseOrders', parentId);
+      const poRef = doc(db, 'purchase_orders', parentId);
       const poDoc = await getDoc(poRef);
       if (!poDoc.exists()) return;
       
@@ -76,7 +76,7 @@ export async function rollupToParent(
       const parentData = parentDoc.data() as Activity;
       
       // Get all POs for this activity
-      const q = query(collection(db, 'purchaseOrders'), where('activityId', '==', parentId));
+      const q = query(collection(db, 'purchase_orders'), where('activityId', '==', parentId));
       const snapshot = await getDocs(q);
       const children = snapshot.docs.map(d => d.data() as PurchaseOrder);
 
@@ -202,7 +202,7 @@ export async function rollupToParent(
       });
 
       // Fetch direct POs for this WBS node (and filter out those belonging to activities in memory)
-      const qDirectPo = query(collection(db, 'purchaseOrders'), where('wbsId', '==', parentId));
+      const qDirectPo = query(collection(db, 'purchase_orders'), where('wbsId', '==', parentId));
       const snapDirectPo = await getDocs(qDirectPo);
       const directPoChildren = snapDirectPo.docs
         .map(d => d.data() as PurchaseOrder)

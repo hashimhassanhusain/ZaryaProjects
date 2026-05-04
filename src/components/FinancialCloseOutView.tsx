@@ -20,7 +20,7 @@ export const FinancialCloseOutView: React.FC<FinancialCloseOutViewProps> = ({ pa
 
   useEffect(() => {
     if (!selectedProject?.id) return;
-    const q = query(collection(db, 'purchase-orders'), where('projectId', '==', selectedProject.id));
+    const q = query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id));
     const unsub = onSnapshot(q, (snapshot) => {
       setPurchaseOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
     });

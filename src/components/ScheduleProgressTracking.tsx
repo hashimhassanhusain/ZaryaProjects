@@ -53,7 +53,7 @@ export const ScheduleProgressTracking: React.FC<ScheduleProgressTrackingProps> =
       setActivities(deDuped);
     });
 
-    const qPo = query(collection(db, 'purchase-orders'), where('projectId', '==', selectedProject.id));
+    const qPo = query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id));
     const unsubPo = onSnapshot(qPo, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder));
       const deDuped: PurchaseOrder[] = [];

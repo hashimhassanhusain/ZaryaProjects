@@ -30,7 +30,7 @@ import {
 import { Meeting, MeetingAgendaItem, MeetingTask, MeetingDecision, Project, User, Stakeholder, WBSLevel, Task } from '../types';
 import { db, OperationType, handleFirestoreError } from '../firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -65,6 +65,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     attendeeIds: [],
     agenda: [],
     decisions: [],
+    issues: [],
     notes: '',
     status: 'Draft'
   });
@@ -122,6 +123,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
   const addDecision = () => {
     const newItem: MeetingDecision = { id: crypto.randomUUID(), decision: '', category: 'Civil', responsibleParty: '', dueDate: '' };
     setFormData(prev => ({ ...prev, decisions: [...(prev.decisions || []), newItem] }));
+  };
+
+  const addIssue = () => {
+    const newItem: any = { id: crypto.randomUUID(), issue: '', urgency: 'Medium', responsibleParty: '', dueDate: '' };
+    setFormData(prev => ({ ...prev, issues: [...(prev.issues || []), newItem] }));
   };
 
   const toggleAttendee = (id: string) => {
@@ -287,7 +293,6 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
             decision.decisionLogId = decRef.id;
 
             // B. Add to Tasks if there's a responsible party and due date
-            // Try to find if responsibleParty is a PMIS User to get UID
             const assignedUser = users.find(u => u.name === decision.responsibleParty);
             if (assignedUser && decision.dueDate) {
               await addDoc(collection(db, 'tasks'), {
@@ -305,6 +310,35 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
             }
           } catch (e) {
             handleFirestoreError(e, OperationType.WRITE, 'decision_log');
+          }
+        }
+      }
+
+      // 2. Sync Issues to Global Issue Log
+      for (const issue of sanitizedData.issues || []) {
+        if (issue.issue && !issue.syncedId) {
+          try {
+            const assignedUser = users.find(u => u.name === issue.responsibleParty);
+            const issueRef = await addDoc(collection(db, 'issues'), {
+              projectId: project.id,
+              issue: issue.issue,
+              urgency: issue.urgency,
+              responsibleParty: assignedUser?.uid || issue.responsibleParty,
+              responsiblePartyId: assignedUser?.uid || '',
+              status: 'Open',
+              category: 'Meeting Observation',
+              dateIdentified: sanitizedData.date,
+              dueDate: issue.dueDate || '',
+              impact: 'Discussed in meeting: ' + sanitizedData.title,
+              actions: 'Follow up as decided in meeting.',
+              source: 'Meeting',
+              sourceId: meeting?.id || 'new',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+            issue.syncedId = issueRef.id;
+          } catch (e) {
+            handleFirestoreError(e, OperationType.WRITE, 'issues');
           }
         }
       }
@@ -376,7 +410,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               <div className="flex gap-2">
                 <input 
                   type="date"
-                  value={formData.date || ''}
+                  value={getISODate(formData.date)}
                   onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                   className="flex-1 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
                 />
@@ -760,7 +794,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                       </label>
                       <input 
                         type="date"
-                        value={dec.dueDate || ''}
+                        value={getISODate(dec.dueDate)}
                         onChange={e => {
                           const newDecs = [...(formData.decisions || [])];
                           newDecs[idx].dueDate = e.target.value;
@@ -775,6 +809,118 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               {(!formData.decisions || formData.decisions.length === 0) && (
                 <div className="py-12 text-center text-slate-400 text-xs font-medium italic border-2 border-dashed border-slate-100 rounded-3xl">
                   No decisions or action items recorded yet.
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Issues Raised Section */}
+          <section className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Issues Raised / المشاكل المثارة
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Direct sync to Global Issue Log & Kanban</p>
+                </div>
+              </div>
+              <button 
+                onClick={addIssue}
+                className="p-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-200"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {(formData.issues as any[])?.map((issue, idx) => (
+                <div key={issue.id} className="p-6 rounded-2xl bg-amber-50/30 border border-amber-100/50 space-y-4 relative group">
+                  <button 
+                    onClick={() => {
+                      const newIssues = (formData.issues as any[])?.filter((_, i) => i !== idx);
+                      setFormData(prev => ({ ...prev, issues: newIssues }));
+                    }}
+                    className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">Issue Description / وصف المشكلة</label>
+                    <textarea 
+                      value={issue.issue || ''}
+                      onChange={e => {
+                        const newIssues = [...(formData.issues as any[])];
+                        newIssues[idx].issue = e.target.value;
+                        setFormData(prev => ({ ...prev, issues: newIssues }));
+                      }}
+                      rows={2}
+                      className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-amber-500/5 outline-none transition-all resize-none"
+                      placeholder="Describe the issue identified during the meeting..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">Urgency</label>
+                      <select 
+                        value={issue.urgency || 'Medium'}
+                        onChange={e => {
+                          const newIssues = [...(formData.issues as any[])];
+                          newIssues[idx].urgency = e.target.value as any;
+                          setFormData(prev => ({ ...prev, issues: newIssues }));
+                        }}
+                        className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">Responsible / المسؤول</label>
+                      <select 
+                        value={issue.responsibleParty || ''}
+                        onChange={e => {
+                          const newIssues = [...(formData.issues as any[])];
+                          newIssues[idx].responsibleParty = e.target.value;
+                          setFormData(prev => ({ ...prev, issues: newIssues }));
+                        }}
+                        className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
+                      >
+                        <option value="">Select Responsible...</option>
+                        <optgroup label="PMIS Employees / موظفي PMIS">
+                          {users.map(u => <option key={u.uid} value={u.name}>{u.name} ({u.role})</option>)}
+                        </optgroup>
+                        <optgroup label="Other Stakeholders / الستيك هولدر">
+                          {stakeholders.map(s => <option key={s.id} value={s.name}>{s.name} ({s.position || s.role})</option>)}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">Due Date</label>
+                      <input 
+                        type="date"
+                        value={getISODate(issue.dueDate)}
+                        onChange={e => {
+                          const newIssues = [...(formData.issues as any[])];
+                          newIssues[idx].dueDate = e.target.value;
+                          setFormData(prev => ({ ...prev, issues: newIssues }));
+                        }}
+                        className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(!formData.issues || (formData.issues as any[]).length === 0) && (
+                <div className="py-12 text-center text-amber-400 text-xs font-medium italic border-2 border-dashed border-amber-50 rounded-3xl">
+                  No issues recorded for this meeting.
                 </div>
               )}
             </div>

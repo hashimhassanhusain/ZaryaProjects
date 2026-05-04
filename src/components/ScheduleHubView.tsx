@@ -46,6 +46,7 @@ import { ScheduleProgressTracking } from './ScheduleProgressTracking';
 import { ScheduleForecasting } from './ScheduleForecasting';
 import { ScheduleLessonsLearned } from './ScheduleLessonsLearned';
 import { ScheduleManagementPlanView } from './ScheduleManagementPlanView';
+import { DailyReportView } from './DailyReportView';
 
 interface ScheduleHubViewProps {
   page: Page;
@@ -323,6 +324,8 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       case '2.3.3':
       case '3.3.2':
         return <ProjectScheduleView page={page} initialTab="gantt" />;
+      case '3.3.3':
+        return <DailyReportView page={page} />;
       case '3.5.1':
         return <ScheduleCadenceDashboard page={page} />;
       case '4.5.1':

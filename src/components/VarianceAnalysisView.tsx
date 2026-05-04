@@ -188,7 +188,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
     });
 
     // 3. Fetch Purchase Orders for actual cost calculation
-    const qPo = query(collection(db, 'purchaseOrders'), where('projectId', '==', project.id));
+    const qPo = query(collection(db, 'purchase_orders'), where('projectId', '==', project.id));
     const unsubPo = onSnapshot(qPo, (snap) => {
       setPurchaseOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
     });

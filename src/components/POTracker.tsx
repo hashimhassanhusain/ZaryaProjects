@@ -3,13 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
-import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download } from 'lucide-react';
+import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download, ArrowLeft, Printer, Briefcase, User, DollarSign, Coins, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn, getFullWBSCode, generatePMISFileName, getRouteForFile } from '../lib/utils';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { rollupToParent } from '../services/rollupService';
-import { DollarSign, Coins, RefreshCw } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
@@ -32,7 +31,8 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pmPlan, setPmPlan] = useState<ProjectManagementPlan | null>(null);
-  const [view, setView] = useState<'list' | 'form' | 'import' | 'preview'>(page.details?.initialView === 'form' ? 'form' : 'list');
+  const [view, setView] = useState<'list' | 'form' | 'import' | 'preview' | 'detail'>(page.details?.initialView === 'form' ? 'form' : 'list');
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
 
   // New PO State
   const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
@@ -84,6 +84,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     status: 'Not Started'
   });
 
+  const { language } = useLanguage();
   const getAmountColor = (amount: number) => {
     // 3,000,000 or less: Green
     // 15,000,000 or more: Red
@@ -110,13 +111,13 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     if (!selectedProject) return;
 
     const posUnsubscribe = onSnapshot(
-      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)), 
+      query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)), 
       (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
         setPos(data);
         setLoading(false);
       }, (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'purchaseOrders');
+        handleFirestoreError(error, OperationType.LIST, 'purchase_orders');
       }
     );
 
@@ -237,11 +238,11 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
 
     try {
       for (const po of samplePOs) {
-        await setDoc(doc(db, 'purchaseOrders', po.id), po);
+        await setDoc(doc(db, 'purchase_orders', po.id), po);
       }
       toast.success('PO Data Seeded Successfully');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'purchaseOrders');
+      handleFirestoreError(error, OperationType.WRITE, 'purchase_orders');
     }
   };
 
@@ -336,7 +337,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
         history
       };
 
-      await setDoc(doc(db, 'purchaseOrders', poData.id), poData);
+      await setDoc(doc(db, 'purchase_orders', poData.id), poData);
 
       // Trigger rollup from PO level
       if (poData.workPackageId) {
@@ -376,7 +377,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
         lineItems: []
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'purchaseOrders');
+      handleFirestoreError(error, OperationType.WRITE, 'purchase_orders');
     }
   };
 
@@ -435,7 +436,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
           completion: parseFloat(item.completion) || 0
         };
 
-        await setDoc(doc(db, 'purchaseOrders', id), poData);
+        await setDoc(doc(db, 'purchase_orders', id), poData);
         successCount++;
       }
       toast.success(`Successfully imported ${successCount} Purchase Orders.`);
@@ -600,7 +601,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       try {
         const affectedActivityIds = new Set<string>();
         for (const po of previewPOs) {
-          await setDoc(doc(db, 'purchaseOrders', po.id), po);
+          await setDoc(doc(db, 'purchase_orders', po.id), po);
           if (po.activityId) affectedActivityIds.add(po.activityId);
         }
         
@@ -654,7 +655,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
                 for (const id of selectedPOIds) {
                   const po = pos.find(p => p.id === id);
                   if (po?.activityId) affectedActivityIds.add(po.activityId);
-                  await deleteDoc(doc(db, 'purchaseOrders', id));
+                  await deleteDoc(doc(db, 'purchase_orders', id));
                 }
                 
                 // Trigger rollups for affected activities
@@ -786,6 +787,181 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     if (!wp) return [];
     return activities.filter(a => a.workPackage === wp.title);
   }, [activities, newPO.workPackageId, wbsLevels]);
+
+  const handleViewPO = (po: PurchaseOrder) => {
+    setSelectedPO(po);
+    setView('detail');
+  };
+
+  const renderPODetail = () => {
+    if (!selectedPO) return null;
+    
+    return (
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col min-h-[800px]"
+      >
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setView('list')}
+              className="p-3 hover:bg-white rounded-2xl border border-transparent hover:border-slate-200 transition-all text-slate-400 hover:text-slate-900 shadow-sm"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase flex items-center gap-3">
+                Purchase Order Detail
+                <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg tracking-widest not-italic font-bold">{selectedPO.id}</span>
+              </h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Official Procurement Record • {selectedPO.date}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => handleEditPO(selectedPO)}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit Order
+            </button>
+            <button 
+              onClick={() => window.print()}
+              className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-xl"
+            >
+              <Printer className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 p-12 space-y-12">
+          {/* Header Info */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+               <div className="flex items-center gap-2 text-blue-600">
+                  <Briefcase className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Supplier Meta</span>
+               </div>
+               <div className="space-y-1">
+                  <div className="text-xl font-black text-slate-900 uppercase tracking-tight">{selectedPO.supplier}</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Vendor Identification</div>
+               </div>
+            </div>
+            
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+               <div className="flex items-center gap-2 text-emerald-600">
+                  <DollarSign className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Financial Scope</span>
+               </div>
+               <div className="space-y-1">
+                  <div className="text-xl font-black text-slate-900 font-mono tracking-tighter">{formatAmount(selectedPO.amount, baseCurrency)}</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Committed Amount</div>
+               </div>
+            </div>
+
+            <div className="p-6 bg-slate-900 rounded-2xl text-white space-y-4 shadow-xl">
+               <div className="flex items-center gap-2 text-blue-400">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Governance Hub</span>
+               </div>
+               <div className="space-y-1">
+                  <div className="text-xl font-black uppercase tracking-tight">{selectedPO.status}</div>
+                  <div className="text-[10px] text-blue-300 font-bold uppercase tracking-widest opacity-60">Approval Status</div>
+               </div>
+            </div>
+          </div>
+
+          {/* Line Items Table */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic">Line Items (BOQ Breakdown)</h4>
+              <div className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                {selectedPO.lineItems?.length || 0} Total Aggregates
+              </div>
+            </div>
+            
+            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+              <table className="w-full text-left text-[11px]">
+                <thead className="bg-slate-50 text-slate-400 font-black uppercase tracking-[0.2em] border-b border-slate-200">
+                  <tr>
+                    <th className="px-8 py-5">Description</th>
+                    <th className="px-8 py-5 text-right">Quantity</th>
+                    <th className="px-8 py-5">Unit</th>
+                    <th className="px-8 py-5 text-right">Rate</th>
+                    <th className="px-8 py-5 text-right">Total ({baseCurrency})</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {selectedPO.lineItems?.map((li: any, lidx: number) => (
+                    <tr key={lidx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-6 font-bold text-slate-800 italic">{li.description}</td>
+                      <td className="px-8 py-6 text-right font-black text-slate-900 tracking-tighter">{li.quantity?.toLocaleString()}</td>
+                      <td className="px-8 py-6 text-slate-400 font-bold uppercase tracking-widest">{li.unit}</td>
+                      <td className="px-8 py-6 text-right font-bold text-slate-600 font-mono">{formatAmount(li.inputRate || 0, baseCurrency)}</td>
+                      <td className="px-8 py-6 text-right font-black text-blue-600 font-mono text-lg tracking-tighter">{formatAmount(li.amount || 0, baseCurrency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-slate-100">
+             <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Compliance & Contracts</h4>
+                <div className="space-y-4">
+                   <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
+                            <FileText className="w-5 h-5" />
+                         </div>
+                         <div className="text-[11px] font-black uppercase text-slate-900 tracking-tight">Official Contract Number</div>
+                      </div>
+                      <div className="text-xs font-black text-blue-600 font-mono tracking-tighter">{selectedPO.contractNumber || 'NOT ASSOCIATED'}</div>
+                   </div>
+                   {selectedPO.contractDriveUrl && (
+                     <a 
+                       href={selectedPO.contractDriveUrl} 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="flex items-center justify-between p-5 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-600/20 hover:scale-[1.02] transition-transform"
+                     >
+                       <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Download className="w-5 h-5" />
+                         </div>
+                         <div className="text-[11px] font-black uppercase tracking-widest">Download Contract PDF</div>
+                       </div>
+                       <ChevronRight className="w-5 h-5 opacity-60" />
+                     </a>
+                   )}
+                </div>
+             </div>
+             
+             <div className="space-y-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Audit Logs</h4>
+                <div className="p-8 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                   <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500">
+                      <Clock className="w-4 h-4" />
+                      <span>Last Updated: {selectedPO.updatedAt || selectedPO.date}</span>
+                   </div>
+                   <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500">
+                      <User className="w-4 h-4" />
+                      <span>Authorizing Officer: System Administrator</span>
+                   </div>
+                   <div className="pt-4 border-t border-slate-200 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em]">Digitally Encrypted & Verified</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   const renderPOForm = () => {
     const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1372,21 +1548,21 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
+      <div className="fixed bottom-4 right-4 flex gap-1.5 items-center z-50">
         <button
           onClick={() => setView('list')}
-          className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
+          className="px-3 py-2 bg-white text-slate-600 text-[10px] font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-xl flex items-center gap-1.5 group"
         >
-          <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+          <X className="w-4 h-4 group-hover:rotate-90 transition-transform" />
           Cancel
         </button>
         <button
           onClick={handleSavePO}
-          disabled={!newPO.id || !newPO.supplier || !newPO.activityId}
-          className="px-8 py-4 bg-blue-600 text-white text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl flex items-center gap-2"
+          disabled={!newPO.id || !newPO.supplier || (!newPO.activityId && !newPO.workPackageId)}
+          className="px-4 py-2 bg-blue-600 text-white text-[10px] font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl flex items-center gap-1.5"
         >
-          <Save className="w-5 h-5" />
-          {editingPOId ? 'Update Purchase Order' : 'Save Purchase Order'}
+          <Save className="w-4 h-4" />
+          {editingPOId ? 'Update PO' : 'Save PO'}
         </button>
       </div>
     </motion.div>
@@ -1957,7 +2133,7 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
                 return (
                   <tr 
                     key={idx} 
-                    onClick={() => handleEditPO(po)}
+                    onClick={() => handleViewPO(po)}
                     className={cn(
                       "hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer",
                       isSelected && "bg-blue-50/50"
@@ -2062,23 +2238,15 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       {page.id === '4.2.3' && renderPaymentCertificate()}
       {page.id === '4.2.4' && renderCumulativeTracking()}
       {page.id === '4.2.5' && renderDashboard()}
-      {page.id === '4.2.6' && (
+      {(page.id === '4.2.6' || page.id === '3.4.3') && (
         view === 'list' ? renderPOLog() : 
         view === 'form' ? renderPOForm() :
         view === 'import' ? renderImportView() :
+        view === 'detail' ? renderPODetail() :
         renderPreviewView()
       )}
 
-      <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
-        <ShieldCheck className="w-5 h-5 text-blue-500 mt-0.5" />
-        <div>
-          <h4 className="text-sm font-bold text-blue-900">Smart Logic Enabled</h4>
-          <p className="text-xs text-blue-700 leading-relaxed">
-            All calculations follow the formula: <code className="bg-blue-100 px-1 rounded">Remaining = Total PO - (Previous + Current)</code>. 
-            Data is automatically migrated to the Cumulative Tracking record upon saving.
-          </p>
-        </div>
-      </div>
+
 
       <AnimatePresence>
         {/* Modals removed for full-page views */}

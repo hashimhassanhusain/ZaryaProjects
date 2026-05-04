@@ -6,6 +6,49 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Robust date formatting for UI display
+ */
+export function formatDate(value: any): string {
+  if (!value) return '-';
+  
+  try {
+    // Handle Firebase Timestamp
+    if (typeof value === 'object' && typeof value.toDate === 'function') {
+      return value.toDate().toLocaleDateString();
+    }
+    
+    // Handle String, Number, or Date object
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return String(value);
+    
+    return date.toLocaleDateString();
+  } catch (err) {
+    return String(value);
+  }
+}
+
+/**
+ * Returns YYYY-MM-DD string safely from various date types
+ */
+export function getISODate(value: any): string {
+  if (!value) return new Date().toISOString().split('T')[0];
+  
+  try {
+    let date: Date;
+    if (typeof value === 'object' && typeof value.toDate === 'function') {
+      date = value.toDate();
+    } else {
+      date = new Date(value);
+    }
+    
+    if (isNaN(date.getTime())) return new Date().toISOString().split('T')[0];
+    return date.toISOString().split('T')[0];
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
+/**
  * PMIS File Naming Convention (FNC)
  * [ProjectCode]-PMIS-DIV[XX]-[TYPE]-[SEQ]
  * fallback: [ProjectCode]-PMIS-[Category]-[Dept]-[Type]-[Description]-[Date]-V[Version]

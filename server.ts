@@ -423,14 +423,12 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
         { "4.0_Monitoring_and_Controlling": ["4.1_Governance_Domain", "4.2_Scope_Domain", "4.3_Schedule_Domain", "4.4_Finance_Domain", "4.5_Stakeholders_Domain", "4.6_Resources_Domain", "4.7_Risk_Domain"] },
         { "5.0_Closing": ["5.1_Governance_Domain", "5.2_Scope_Domain", "5.3_Schedule_Domain", "5.4_Finance_Domain", "5.5_Stakeholders_Domain", "5.6_Resources_Domain", "5.7_Risk_Domain"] }
       ],
-      "TECHNICAL_DIVISIONS_MASTERFORMAT_02": [
-        { "Division_03_Concrete": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_04_Masonry": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_22_Plumbing": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_23_HVAC": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_26_Electrical": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_27_Communications": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "Division_31_Earthwork": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] }
+      "TECHNICAL_DIVISIONS_02": [
+        { "02.1_Architectural": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
+        { "02.2_Structural": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
+        { "02.3_Mechanical": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
+        { "02.4_Electrical": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
+        { "02.5_Infrastructure_and_SiteWork": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] }
       ],
       "PROCUREMENT_AND_SUBCONTRACTORS_03": [
         "03.1_Vendors_and_Suppliers_Database", 
@@ -716,7 +714,7 @@ app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   try {
     const response = await drive.files.list({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, webViewLink, iconLink, modifiedTime, createdTime, version, description, lastModifyingUser(displayName, photoLink))',
+      fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, iconLink, modifiedTime, createdTime, version, description, lastModifyingUser(displayName, photoLink))',
       orderBy: 'folder,name',
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
@@ -725,6 +723,42 @@ app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   } catch (error) {
     console.error('Failed to list files:', error);
     res.status(500).json({ error: 'Failed to list files' });
+  }
+});
+
+app.get('/api/drive/list', async (req: any, res: any) => {
+  const { folderId, recursive } = req.query;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const files: any[] = [];
+    
+    async function collectFiles(currentFolderId: string, currentPath: string = '') {
+      const response = await drive.files.list({
+        q: `'${currentFolderId}' in parents and trashed = false`,
+        fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, createdTime, modifiedTime)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      });
+
+      if (response.data.files) {
+        for (const file of response.data.files) {
+          const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
+          if (file.mimeType === 'application/vnd.google-apps.folder' && recursive === 'true') {
+            await collectFiles(file.id, filePath);
+          } else if (file.mimeType !== 'application/vnd.google-apps.folder') {
+            files.push({ ...file, path: filePath });
+          }
+        }
+      }
+    }
+
+    await collectFiles(folderId as string);
+    res.json({ files });
+  } catch (error: any) {
+    console.error('Drive list failed:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

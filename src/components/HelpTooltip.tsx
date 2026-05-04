@@ -6,7 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 
 interface HelpTooltipProps {
   children: React.ReactNode;
-  text: string;
+  text: string | null;
+  title?: string;
   className?: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
   showArrow?: boolean;
@@ -15,6 +16,7 @@ interface HelpTooltipProps {
 export const HelpTooltip: React.FC<HelpTooltipProps> = ({ 
   children, 
   text, 
+  title,
   className, 
   position = 'bottom',
   showArrow = true
@@ -115,10 +117,20 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({
           )}
         >
           <div className={cn(
-            "leading-relaxed font-medium",
-            isHelpRtl ? "text-right font-arabic text-[17px]" : "text-left text-[15px]"
+            "leading-relaxed",
+            isHelpRtl ? "text-right font-arabic" : "text-left"
           )}>
-            {text}
+            {title && (
+              <div className="text-[12px] font-black uppercase tracking-widest text-blue-400 mb-2 border-b border-white/10 pb-1.5 leading-none">
+                {title}
+              </div>
+            )}
+            <div className={cn(
+              "font-medium",
+              isHelpRtl ? "text-[16px]" : "text-[14px]"
+            )}>
+              {text || "No description available."}
+            </div>
           </div>
           {showArrow && (
             <div className={cn(

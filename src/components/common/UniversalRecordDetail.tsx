@@ -136,33 +136,33 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
       </main>
 
       {/* ACTION FAB (Unified with StandardProcessPage) */}
-      <div className="fixed bottom-10 right-10 flex flex-col gap-3 items-end z-50">
+      <div className="fixed bottom-4 right-4 flex flex-col gap-1.5 items-end z-50">
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-1.5"
           >
             <button 
               onClick={() => onSave(formData)}
-              className="flex items-center gap-4 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-widest shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
             >
-              <Save className="w-5 h-5" />
+              <Save className="w-4 h-4" />
               Commit Updates
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button 
                 onClick={onCancel}
-                className="flex items-center gap-3 px-6 py-4 bg-white text-slate-500 rounded-[2rem] font-black text-[10px] uppercase tracking-widest border border-slate-100 shadow-xl hover:bg-slate-50 transition-all"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-500 rounded-xl font-black text-[8px] uppercase tracking-widest border border-slate-100 shadow-xl hover:bg-slate-50 transition-all"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
                 Disconnect
               </button>
               {onPreviewPDF && (
                 <button 
                   onClick={() => onPreviewPDF(formData)}
-                  className="p-5 bg-slate-900 text-blue-400 rounded-full shadow-2xl hover:scale-110 transition-all border border-slate-800"
+                  className="p-3 bg-slate-900 text-blue-400 rounded-lg shadow-2xl hover:scale-110 transition-all border border-slate-800"
                 >
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4" />
                 </button>
               )}
             </div>

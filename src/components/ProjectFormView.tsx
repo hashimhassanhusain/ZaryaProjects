@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useLanguage } from '../context/LanguageContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 
 export const ProjectFormView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -187,7 +187,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.name}
+                  value={formData.name || ''}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. PMIS Oil Field Development"
@@ -200,7 +200,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.code}
+                  value={formData.code || ''}
                   onChange={(e) => setFormData({...formData, code: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. PMIS-2024-001"
@@ -229,7 +229,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.manager}
+                  value={formData.manager || ''}
                   onChange={(e) => setFormData({...formData, manager: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder={t('name')}
@@ -242,7 +242,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.sponsor}
+                  value={formData.sponsor || ''}
                   onChange={(e) => setFormData({...formData, sponsor: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder={t('name')}
@@ -255,7 +255,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.customer}
+                  value={formData.customer || ''}
                   onChange={(e) => setFormData({...formData, customer: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder={t('name')}
@@ -268,7 +268,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="text" 
-                  value={formData.location}
+                  value={formData.location || ''}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. Basra, Iraq"
@@ -281,7 +281,7 @@ export const ProjectFormView: React.FC = () => {
                 <input 
                   type="text" 
                   maxLength={4}
-                  value={formData.adminPin}
+                  value={formData.adminPin || ''}
                   onChange={(e) => setFormData({...formData, adminPin: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder="e.g. 1234"
@@ -301,7 +301,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="date" 
-                  value={formData.startDate}
+                  value={getISODate(formData.startDate)}
                   onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                 />
@@ -313,7 +313,7 @@ export const ProjectFormView: React.FC = () => {
                 </label>
                 <input 
                   type="date" 
-                  value={formData.endDate}
+                  value={getISODate(formData.endDate)}
                   onChange={(e) => setFormData({...formData, endDate: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                 />
@@ -343,7 +343,7 @@ export const ProjectFormView: React.FC = () => {
                 <FileText className="w-3 h-3" /> {t('overview')}
               </label>
               <textarea 
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 rows={4}
                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium resize-none"

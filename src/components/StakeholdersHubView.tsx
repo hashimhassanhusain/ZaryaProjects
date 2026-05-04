@@ -12,6 +12,7 @@ import {
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { useLanguage } from '../context/LanguageContext';
@@ -20,7 +21,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { StakeholderMatrixView } from './StakeholderMatrixView';
 import { StakeholderRegisterView } from './StakeholderRegisterView';
 import { StakeholderEngagementView } from './StakeholderEngagementView';
-import { CommunicationsPlanView } from './CommunicationsPlanView';
+import { CommunicationsManagementPlanView } from './CommunicationsManagementPlanView';
 
 import { DomainDashboard } from './DomainDashboard';
 
@@ -76,7 +77,7 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
       case 'analysis': return <StakeholderMatrixView page={page} embedded={true} />;
       case 'register': return <StakeholderRegisterView page={page} embedded={true} />;
       case 'engagement': return <StakeholderEngagementView page={page} />;
-      case 'comms': return <CommunicationsPlanView page={page} />;
+      case 'comms': return <CommunicationsManagementPlanView page={page} />;
       case 'sentiment': return <StakeholderEngagementView page={page} defaultTab="sentiment" />;
       case 'nps': return <StakeholderEngagementView page={page} defaultTab="nps" />;
       default: return <StakeholderMatrixView page={page} />;

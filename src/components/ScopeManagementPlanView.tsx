@@ -52,7 +52,7 @@ import {
   orderBy 
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -82,22 +82,22 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [isArchived, setIsArchived] = useState(false);
 
   const [scope, setScope] = useState<ScopePlanData>({
     projectTitle: '',
-    datePrepared: new Date().toISOString().split('T')[0],
+    datePrepared: getISODate(new Date()),
     version: '1.0',
-    scopeStatement: '',
-    wbsStructure: '',
-    wbsDictionary: '',
-    baselineMaintenance: '',
-    scopeChange: '',
-    deliverableAcceptance: '',
-    requirementsIntegration: ''
+    scopeStatement: 'Define technical boundaries and physical constraints of construction site.',
+    wbsStructure: 'CSI MasterFormat 16-Division structure with 4-level decomposition.',
+    wbsDictionary: 'Mandatory fields: WP ID, Description, Responsible Org, Estimated Cost.',
+    baselineMaintenance: 'Monthly audits coinciding with progress report cycles.',
+    scopeChange: 'All scope adjustments require CCB approval if impact > $5,000.',
+    deliverableAcceptance: 'Interim acceptance via site engineer inspection; Final via client PM.',
+    requirementsIntegration: 'Traceability matrix mapping from Project Charter to WBS Work Packages.'
   });
 
   const [scopeRecords, setScopeRecords] = useState<any[]>([]);
-  const [versions, setVersions] = useState<{ id: string; version: string; timestamp: string; userName: string; }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -107,18 +107,12 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
     const q = query(
       collection(db, 'scopeManagementPlans'),
       where('projectId', '==', selectedProject.id),
-      orderBy('updatedAt', 'desc')
+      orderBy('version', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       setScopeRecords(data);
-      setVersions(data.map(d => ({ 
-        id: d.id, 
-        version: d.version, 
-        timestamp: d.updatedAt, 
-        userName: d.updatedBy || 'Unkown' 
-      })));
       setLoading(false);
     });
 
@@ -129,20 +123,22 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
     if (!selectedRecordId && viewMode === 'edit') {
       setScope({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
-        datePrepared: new Date().toISOString().split('T')[0],
+        datePrepared: getISODate(new Date()),
         version: '1.0',
         scopeStatement: '',
-        wbsStructure: '03-Concrete Works > 03.1-Foundations > 03.1.1-Rebar',
+        wbsStructure: '',
         wbsDictionary: '',
-        baselineMaintenance: 'Monthly baseline audits',
-        scopeChange: 'Formal Change Request required for all creep > 0%',
-        deliverableAcceptance: 'Consultant sign-off on site',
+        baselineMaintenance: 'Standard Monthly Maintenance',
+        scopeChange: 'Standard Change Control',
+        deliverableAcceptance: 'QC Inspection Sign-off',
         requirementsIntegration: ''
       });
-    } else if (selectedRecordId && viewMode === 'edit') {
+      setIsArchived(false);
+    } else if (selectedRecordId) {
        const record = scopeRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setScope({ ...scope, ...record });
+         setIsArchived(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, scopeRecords, selectedProject]);
@@ -154,25 +150,34 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
-      const newVersionNum = isNew ? (parseFloat(scope.version) + 0.1).toFixed(1) : scope.version;
+      const currentVersionNumber = scopeRecords.length > 0 ? parseFloat(scopeRecords[0].version || '1.0') : 1.0;
+      const nextVersion = isNew ? (currentVersionNumber + 0.1).toFixed(1) : currentVersionNumber.toFixed(1);
 
       const scopeData = {
         ...scope,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: newVersionNum
+        version: nextVersion,
+        status: isNew ? 'Active' : (scope.status || 'Active')
       };
 
-      if (!selectedRecordId || isNew) {
-        await addDoc(collection(db, 'scopeManagementPlans'), {
+      if (isNew || !selectedRecordId) {
+        if (isNew) {
+          const activeDocs = scopeRecords.filter(r => r.status !== 'Archived');
+          for (const docToArchive of activeDocs) {
+            await updateDoc(doc(db, 'scopeManagementPlans', docToArchive.id), { status: 'Archived' });
+          }
+        }
+        const docRef = await addDoc(collection(db, 'scopeManagementPlans'), {
           ...scopeData,
           createdAt: timestamp
         });
-        toast.success(isNew ? 'New version created' : 'Plan saved successfully');
+        setSelectedRecordId(docRef.id);
+        toast.success(isNew ? 'New Scope Baseline Version Created' : 'Plan Saved');
       } else {
         await updateDoc(doc(db, 'scopeManagementPlans', selectedRecordId), scopeData);
-        toast.success('Plan updated successfully');
+        toast.success('Scope plan updated');
       }
       setViewMode('grid');
     } catch (err) {
@@ -180,6 +185,10 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCreateNewVersion = () => {
+    handleSave(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -247,176 +256,173 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
 
   return (
     <StandardProcessPage
-      page={{
-        ...page,
-        title: viewMode === 'edit' ? t('edit_view') : page.title
-      }}
+      page={page}
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}
       inputs={[
-        { id: '1.1.1', title: 'Project Charter' },
-        { id: 'requirements-docs', title: 'Requirements Documentation' },
-        { id: 'eef', title: 'EEFs' },
-        { id: 'opa', title: 'OPAs' }
+        { id: 'PROJECT_CHARTER', title: t('project_charter') },
+        { id: 'REQUIREMENTS_DOC', title: t('requirements_documentation'), lastUpdated: '2024-03-24' }
       ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      versions={scopeRecords}
+      currentVersion={scope.version}
+      onVersionChange={(v) => {
+        const record = scopeRecords.find(r => r.version === v);
+        if (record) {
+          setSelectedRecordId(record.id);
+          setViewMode('edit');
+        }
+      }}
+      onNewVersion={handleCreateNewVersion}
+      isArchived={isArchived}
     >
-       <div className="space-y-6">
+      <div className="space-y-6">
         <AnimatePresence mode="wait">
           {viewMode === 'grid' ? (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="min-h-[400px] flex flex-col"
-            >
+            <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
                 data={scopeRecords}
-                onRowClick={(record) => {
-                  setSelectedRecordId(record.id);
-                  setViewMode('edit');
-                }}
-                onNewClick={() => {
-                  setSelectedRecordId(null);
-                  setViewMode('edit');
-                }}
+                onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
+                onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
               />
             </motion.div>
           ) : (
-            <motion.div
-              key="edit"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6 pb-20"
-            >
-              <div className="flex justify-between items-center pr-2">
-                 <button 
-                   onClick={() => setViewMode('grid')}
-                   className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
-                 >
-                   <ArrowLeft className="w-3.5 h-3.5" />
-                   {t('back_to_list')}
-                 </button>
-              </div>
+            <motion.div key="edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 pb-20">
+               <div className="bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm space-y-12 relative overflow-hidden">
+                {isArchived && (
+                  <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
+                     <ShieldCheck className="w-4 h-4" /> ARCHIVED SCOPE BASELINE SNAPSHOT V{scope.version}
+                  </div>
+                )}
 
-              <PlanningPlanHeader 
-                currentVersion={scope.version}
-                onVersionChange={(v) => {
-                  const record = scopeRecords.find(r => r.version === v);
-                  if (record) {
-                    setSelectedRecordId(record.id);
-                  }
-                }}
-                onNewVersion={() => handleSave(true)}
-                versions={versions}
-              />
+                <section className="space-y-12 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Baseline Assessment Date</label>
+                        <input 
+                          type="date" 
+                          value={getISODate(scope.datePrepared)} 
+                          onChange={(e) => setScope({ ...scope, datePrepared: e.target.value })} 
+                          disabled={isArchived}
+                          className="w-full px-6 py-5 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-slate-600"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Technical Status</label>
+                        <div className="px-6 py-5 bg-blue-50 border border-blue-100 rounded-2xl text-base font-black text-blue-600 flex items-center justify-between">
+                           <span className="flex items-center gap-2 tracking-tight uppercase"><Box className="w-5 h-5" /> SCOPE BASELINE V{scope.version}</span>
+                        </div>
+                     </div>
+                  </div>
 
-              <section className="space-y-4">
-                 <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8 border-b border-slate-100">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">{t('date_prepared') || 'Date Prepared'}</label>
-                          <input 
-                            type="date"
-                            value={scope.datePrepared}
-                            onChange={(e) => setScope({ ...scope, datePrepared: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  <div className="space-y-8">
+                    <div className="flex items-center gap-5 border-b border-slate-100 pb-8">
+                        <div className="w-14 h-14 rounded-[1.5rem] bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
+                            <Layers className="w-7 h-7" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900 tracking-tight text-sans">Scope Baseline Strategy</h3>
+                          <p className="text-[11px] text-blue-600 uppercase font-black tracking-widest mt-1">Hierarchical Definition of Deliverables & Work Packages</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-8">
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Scope Statement Development Process</label>
+                          <textarea 
+                            value={scope.scopeStatement}
+                            onChange={(e) => setScope({...scope, scopeStatement: e.target.value})}
+                            disabled={isArchived}
+                            className="w-full h-40 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-blue-500/5 transition-all resize-none shadow-inner"
+                            placeholder="Detail the procedural steps to define site boundaries, inclusions, and exclusions..."
                           />
                        </div>
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">{t('current_version') || 'Version Control'}</label>
-                          <div className="px-5 py-4 bg-blue-50/50 border border-blue-100 rounded-2xl text-sm font-black text-blue-600">
-                             V{scope.version} - {selectedRecordId ? 'Archived Snapshot' : 'Drafting Mode'}
-                          </div>
-                       </div>
-                    </div>
 
-                    <div className="space-y-6">
-                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                             <Layers className="w-4 h-4" />
-                          </div>
-                          {t('scope_baseline_strategy') || 'Scope Baseline Strategy'}
-                       </h3>
-                       
-                       <div className="grid grid-cols-1 gap-6">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Scope Statement Development Process</label>
-                             <textarea 
-                               value={scope.scopeStatement}
-                               onChange={(e) => setScope({...scope, scopeStatement: e.target.value})}
-                               className="w-full h-32 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-blue-200 transition-all"
-                               placeholder="Define the process for developing the project scope statement..."
-                             />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                                   <BarChart3 className="w-3 h-3" />
-                                   WBS Structure & Decomposition
-                                </label>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">WBS Structure & Decomposition</label>
+                             <div className="relative">
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-blue-500 opacity-40">
+                                   <GitBranch className="w-5 h-5" />
+                                </div>
                                 <input 
-                                  value={scope.wbsStructure}
-                                  onChange={(e) => setScope({...scope, wbsStructure: e.target.value})}
-                                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                                  placeholder="Example: 03-Concrete Works > 03.1-Foundations"
+                                  type="text" 
+                                  value={scope.wbsStructure} 
+                                  onChange={(e) => setScope({...scope, wbsStructure: e.target.value})} 
+                                  disabled={isArchived}
+                                  placeholder="Example: 03-Concrete > 03.1-Foundations..."
+                                  className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-500/5"
                                 />
                              </div>
-                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">WBS Dictionary Mandatory Fields</label>
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">WBS Dictionary Mandatory Fields</label>
+                             <div className="relative">
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-blue-500 opacity-40">
+                                   <ClipboardList className="w-5 h-5" />
+                                </div>
                                 <input 
-                                  value={scope.wbsDictionary}
-                                  onChange={(e) => setScope({...scope, wbsDictionary: e.target.value})}
-                                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                                  placeholder="Work package detail level, mandatory fields..."
+                                  type="text" 
+                                  value={scope.wbsDictionary} 
+                                  onChange={(e) => setScope({...scope, wbsDictionary: e.target.value})} 
+                                  disabled={isArchived}
+                                  placeholder="WP IDs, Code of Accounts, Acceptance Criteria..."
+                                  className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-500/5"
                                 />
                              </div>
                           </div>
                        </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-6 pt-10 border-t border-slate-50">
-                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
-                             <ShieldCheck className="w-4 h-4" />
-                          </div>
-                          {t('maintenance_control') || 'Maintenance & Control'}
-                       </h3>
-                       
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Baseline Maintenance Protocol</label>
-                             <textarea 
-                               value={scope.baselineMaintenance} 
-                               onChange={(e) => setScope({...scope, baselineMaintenance: e.target.value})} 
-                               className="w-full h-32 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                               placeholder="Audits frequency, role responsible for updates..."
-                             />
-                          </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Scope Change Management</label>
-                             <textarea 
-                               value={scope.scopeChange} 
-                               onChange={(e) => setScope({...scope, scopeChange: e.target.value})} 
-                               className="w-full h-32 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                               placeholder="Process for handling additions to scope (Creep management)..."
-                             />
-                          </div>
-                       </div>
-                    </div>
-                 </div>
-              </section>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 border-t border-slate-100">
+                     <div className="space-y-5">
+                        <div className="flex items-center gap-3 px-2">
+                           <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white">
+                              <ShieldCheck className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h4 className="text-base font-bold text-slate-900 tracking-tight">Maintenance Protocol</h4>
+                             <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Baseline Integrity Hub</p>
+                           </div>
+                        </div>
+                        <textarea 
+                          value={scope.baselineMaintenance} 
+                          onChange={(e) => setScope({...scope, baselineMaintenance: e.target.value})} 
+                          disabled={isArchived}
+                          className="w-full h-48 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-emerald-500/5 transition-all resize-none shadow-inner"
+                          placeholder="Document how technical baselines will be audited/maintained..."
+                        />
+                     </div>
+                     <div className="space-y-5">
+                        <div className="flex items-center gap-3 px-2">
+                           <div className="w-10 h-10 rounded-2xl bg-amber-600 flex items-center justify-center text-white">
+                              <GitBranch className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h4 className="text-base font-bold text-slate-900 tracking-tight">Change Velocity</h4>
+                             <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Creep Management & Control</p>
+                           </div>
+                        </div>
+                        <textarea 
+                          value={scope.scopeChange} 
+                          onChange={(e) => setScope({...scope, scopeChange: e.target.value})} 
+                          disabled={isArchived}
+                          className="w-full h-48 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-amber-500/5 transition-all resize-none shadow-inner"
+                          placeholder="Detail formal CCB triggers and impact threshold thresholds..."
+                        />
+                     </div>
+                  </div>
+                </section>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
-       </div>
+      </div>
     </StandardProcessPage>
   );
 };

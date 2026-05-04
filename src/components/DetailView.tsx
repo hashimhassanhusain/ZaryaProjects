@@ -89,7 +89,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
     '1.2.2': 'projectLogs', // Req Doc
     '2.3.1': 'activities', // Activity List
     '2.4.1': 'boq',
-    '3.4.3': 'purchaseOrders',
     '2.7.5': 'risks',
     '3.3.3': 'projectLogs', // Daily Progress Reports
     '2.1.4': 'projectLogs', // Quality Metrics

@@ -60,9 +60,10 @@ import { PerformanceStatusTab } from './resource/PerformanceStatusTab';
 import { TeamDirectoryTab } from './resource/TeamDirectoryTab';
 import { ContactsView } from './ContactsView';
 import { CompaniesView } from './CompaniesView';
-import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanView';
+import { ResourceManagementPlanView } from './ResourceManagementPlanView';
 import { TasksView } from './TasksView';
 import { ProjectCharterView } from './ProjectCharterView';
+import { BusinessCaseView } from './BusinessCaseView';
 import { GovernancePoliciesView } from './GovernancePoliciesView';
 import { POTracker } from './POTracker';
 import { BOQView } from './BOQView';
@@ -500,7 +501,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   const renderPageContent = (p: Page) => {
     if (!p) return null;
-    const isPOPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6'].includes(p.id);
+    const isPOPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(p.id);
     const isTasksPage = p.id === '3.6.3';
     const isMeetingsPage = p.id === '3.6.4';
     const isBOQPage = p.id === '2.4.1';
@@ -530,7 +531,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isDesignHubPage = p.id === 'design_hub';
 
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
-    if (p.id === '1.1.2') return <GovernancePoliciesView page={p} />;
+    if (p.id === '1.1.2') return <BusinessCaseView page={p} />;
     if (isTasksPage) return <TasksView />;
     if (isMeetingsPage) return <DetailView page={pages.find(p => p.id === '3.6.4')!} />;
     if (isPOPage) return <POTracker page={p} />;
@@ -565,7 +566,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     );
     
     if (p.id === '2.1.2') return <ProjectManagementPlanView page={p} />;
-    if (p.id === '2.1.1') return <ChangeManagementPlanView page={p} />;
+    if (p.id === '2.1.1') return <GovernancePoliciesView page={p} />;
     if (p.id === '2.1.3') return <QualityManagementPlanView page={p} />;
     if (p.id === '2.1.6') return <CommunicationsManagementPlanView page={p} />;
     if (p.id === '2.1.7') return <StakeholderManagementPlanView page={p} />;

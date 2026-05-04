@@ -101,14 +101,14 @@ const KNOWLEDGE_AREAS = [
 export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
-  const context = useStandardProcessPage();
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [isArchived, setIsArchived] = useState(false);
 
   const [pmp, setPmp] = useState<PMPData>({
     projectTitle: '',
-    datePrepared: new Date().toISOString().split('T')[0],
+    datePrepared: getISODate(new Date()),
     lifeCycle: [{ id: '1', phase: '', deliverables: '' }],
     tailoring: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, processes: ka === 'Integration' ? 'Develop PMP' : '', decisions: '' })),
     tools: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, tools: '' })),
@@ -132,12 +132,21 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
 
     const q = query(
       collection(db, 'projectManagementPlans'),
-      where('projectId', '==', selectedProject.id)
+      where('projectId', '==', selectedProject.id),
+      orderBy('version', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setPmpRecords(data);
+      setLoading(false);
+      
+      // Auto-select latest if none selected
+      if (data.length > 0 && !selectedRecordId && viewMode === 'grid') {
+        // We stay in grid but we know what the versions are
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'projectManagementPlans');
       setLoading(false);
     });
 
@@ -148,9 +157,15 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
     if (!selectedRecordId && viewMode === 'edit') {
       setPmp({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
-        datePrepared: new Date().toISOString().split('T')[0],
-        lifeCycle: [{ id: '1', phase: '', deliverables: '' }],
-        tailoring: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, processes: ka === 'Integration' ? 'Develop PMP' : '', decisions: '' })),
+        datePrepared: getISODate(new Date()),
+        lifeCycle: [
+          { id: '1', phase: 'Initiating', deliverables: 'Project Charter, Stakeholder Register' },
+          { id: '2', phase: 'Planning', deliverables: 'PMP, Sub-plans, Baselines' },
+          { id: '3', phase: 'Executing', deliverables: 'Project Deliverables' },
+          { id: '4', phase: 'M&C', deliverables: 'Performance Reports, Change Requests' },
+          { id: '5', phase: 'Closing', deliverables: 'Final Report, Lessons Learned' }
+        ],
+        tailoring: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, processes: '', decisions: '' })),
         tools: KNOWLEDGE_AREAS.map(ka => ({ knowledgeArea: ka, tools: '' })),
         baselines: {
           scopeVariance: '±0%',
@@ -162,13 +177,15 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
         },
         projectReviews: 'Monthly Progress Reviews'
       });
-    } else if (selectedRecordId && viewMode === 'edit') {
+      setIsArchived(false);
+    } else if (selectedRecordId) {
        const record = pmpRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setPmp({
            ...pmp,
            ...record
          });
+         setIsArchived(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, pmpRecords, selectedProject]);
@@ -180,31 +197,47 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
+      const currentVersionNumber = pmpRecords.length > 0 ? parseFloat(pmpRecords[0].version || '1.0') : 1.0;
+      const nextVersion = isNew ? (currentVersionNumber + 0.1).toFixed(1) : currentVersionNumber.toFixed(1);
+
       const pmpData = {
         ...pmp,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: isNew || !selectedRecordId ? (pmpRecords.length + 1).toFixed(1) : pmp.version || '1.0'
+        version: nextVersion,
+        status: isNew ? 'Active' : (pmp.status || 'Active')
       };
 
-      if (!selectedRecordId) {
-        await addDoc(collection(db, 'projectManagementPlans'), {
+      if (isNew || !selectedRecordId) {
+        // Archive old versions if creating new
+        if (isNew) {
+          const activeDocs = pmpRecords.filter(r => r.status !== 'Archived');
+          for (const docToArchive of activeDocs) {
+            await updateDoc(doc(db, 'projectManagementPlans', docToArchive.id), { status: 'Archived' });
+          }
+        }
+
+        const docRef = await addDoc(collection(db, 'projectManagementPlans'), {
           ...pmpData,
           createdAt: timestamp
         });
-        toast.success(t('pmp_created_success') || 'PMP created successfully');
+        setSelectedRecordId(docRef.id);
+        toast.success(t('pmp_created_success') || 'New PMP Version Created');
       } else {
         await updateDoc(doc(db, 'projectManagementPlans', selectedRecordId), pmpData);
         toast.success(t('pmp_updated_success') || 'PMP updated successfully');
       }
       setViewMode('grid');
-      setSelectedRecordId(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projectManagementPlans');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCreateNewVersion = () => {
+    handleSave(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -281,13 +314,21 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       onPrint={generatePDF}
       isSaving={isSaving}
       inputs={[
-        { id: '1.1.1', title: 'Project Charter' },
+        { id: '1.1.1', title: 'Project Charter', lastUpdated: '2026-05-01' },
         { id: 'outputs_other_processes', title: 'Outputs from Other Processes' },
         { id: 'eef', title: 'EEFs' },
         { id: 'opa', title: 'OPAs' }
       ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      versions={pmpRecords}
+      currentVersion={pmpRecords.find(v => v.id === selectedRecordId) || pmpRecords[0]}
+      onVersionChange={(v) => {
+        setSelectedRecordId(v.id);
+        setViewMode('edit');
+      }}
+      onNewVersion={handleCreateNewVersion}
+      isArchived={isArchived}
     >
        <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -311,8 +352,6 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
-                title={context?.pageHeader}
-                favoriteControl={context?.favoriteControl}
               />
             </motion.div>
           ) : (
@@ -333,97 +372,113 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                  </button>
               </div>
 
-              <section className="space-y-4">
-                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
-                        <input 
-                          type="text"
-                          value={pmp.projectTitle}
-                          onChange={(e) => setPmp({ ...pmp, projectTitle: e.target.value })}
-                          className={cn("w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all", isRtl && "text-right")}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
-                        <input 
-                          type="date"
-                          value={pmp.datePrepared}
-                          onChange={(e) => setPmp({ ...pmp, datePrepared: e.target.value })}
-                          className={cn("w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all", isRtl && "text-right")}
-                        />
-                      </div>
-                    </div>
+              {isArchived && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-900 leading-none">Archived Snapshot</h4>
+                    <p className="text-xs text-amber-600 mt-1 font-medium">This is a historical record and cannot be edited. Create a new version to make changes.</p>
+                  </div>
+                </div>
+              )}
 
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Project Life Cycle Phases</h3>
-                         <button onClick={() => setPmp({...pmp, lifeCycle: [...pmp.lifeCycle, { id: Date.now().toString(), phase: '', deliverables: '' }]})} className="p-1.5 bg-slate-900 text-white rounded-lg">
-                           <Plus className="w-3.5 h-3.5" />
-                         </button>
+              <fieldset disabled={isArchived} className="space-y-6">
+                <section className="space-y-4">
+                   <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Project Identification</label>
+                          <input 
+                            type="text"
+                            value={pmp.projectTitle}
+                            onChange={(e) => setPmp({ ...pmp, projectTitle: e.target.value })}
+                            className={cn("w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all", isRtl && "text-right")}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className={cn("text-xs font-bold text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Date Prepared</label>
+                          <input 
+                            type="date"
+                            value={pmp.datePrepared}
+                            onChange={(e) => setPmp({ ...pmp, datePrepared: e.target.value })}
+                            className={cn("w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all", isRtl && "text-right")}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                         {pmp.lifeCycle.map((l, idx) => (
-                           <div key={`${l.id}-${idx}`} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl relative group">
-                              <button 
-                                onClick={() => setPmp({...pmp, lifeCycle: pmp.lifeCycle.filter(item => item.id !== l.id)})}
-                                className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">Phase Name</label>
-                                <input 
-                                  value={l.phase}
-                                  onChange={(e) => {
-                                    const newLife = [...pmp.lifeCycle];
-                                    newLife[idx].phase = e.target.value;
-                                    setPmp({...pmp, lifeCycle: newLife});
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">Key Deliverables</label>
-                                <input 
-                                  value={l.deliverables}
-                                  onChange={(e) => {
-                                    const newLife = [...pmp.lifeCycle];
-                                    newLife[idx].deliverables = e.target.value;
-                                    setPmp({...pmp, lifeCycle: newLife});
-                                  }}
-                                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
-                                />
-                              </div>
-                           </div>
-                         ))}
-                      </div>
-                    </div>
-                 </div>
 
-                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest text-center">Variances & Baseline Management</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                          <h4 className="text-[10px] font-bold text-blue-600 uppercase">Variance Thresholds</h4>
-                          <div className="space-y-2">
-                             <input value={pmp.baselines.scopeVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scopeVariance: e.target.value}})} placeholder="Scope Variance (e.g. ±0%)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                             <input value={pmp.baselines.scheduleVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scheduleVariance: e.target.value}})} placeholder="Schedule Variance (e.g. ±5 days)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                             <input value={pmp.baselines.costVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, costVariance: e.target.value}})} placeholder="Cost Variance (e.g. ±5%)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                          </div>
-                       </div>
-                       <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                          <h4 className="text-[10px] font-bold text-blue-600 uppercase">Management Approach</h4>
-                          <div className="space-y-2">
-                             <input value={pmp.baselines.scopeManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scopeManagement: e.target.value}})} placeholder="Scope Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                             <input value={pmp.baselines.scheduleManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scheduleManagement: e.target.value}})} placeholder="Schedule Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                             <input value={pmp.baselines.costManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, costManagement: e.target.value}})} placeholder="Cost Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                          </div>
-                       </div>
-                    </div>
-                 </div>
-              </section>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Project Life Cycle Phases</h3>
+                           {!isArchived && (
+                             <button onClick={() => setPmp({...pmp, lifeCycle: [...pmp.lifeCycle, { id: Date.now().toString(), phase: '', deliverables: '' }]})} className="p-1.5 bg-slate-900 text-white rounded-lg">
+                               <Plus className="w-3.5 h-3.5" />
+                             </button>
+                           )}
+                        </div>
+                        <div className="space-y-3">
+                           {pmp.lifeCycle.map((l, idx) => (
+                             <div key={`${l.id}-${idx}`} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl relative group">
+                                {!isArchived && (
+                                  <button 
+                                    onClick={() => setPmp({...pmp, lifeCycle: pmp.lifeCycle.filter(item => item.id !== l.id)})}
+                                    className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-slate-400 uppercase">Phase Name</label>
+                                  <input 
+                                    value={l.phase}
+                                    onChange={(e) => {
+                                      const newLife = [...pmp.lifeCycle];
+                                      newLife[idx].phase = e.target.value;
+                                      setPmp({...pmp, lifeCycle: newLife});
+                                    }}
+                                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-slate-400 uppercase">Key Deliverables</label>
+                                  <input 
+                                    value={l.deliverables}
+                                    onChange={(e) => {
+                                      const newLife = [...pmp.lifeCycle];
+                                      newLife[idx].deliverables = e.target.value;
+                                      setPmp({...pmp, lifeCycle: newLife});
+                                    }}
+                                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none"
+                                  />
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest text-center">Variances & Baseline Management</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                            <h4 className="text-[10px] font-bold text-blue-600 uppercase">Variance Thresholds</h4>
+                            <div className="space-y-2">
+                               <input value={pmp.baselines.scopeVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scopeVariance: e.target.value}})} placeholder="Scope Variance (e.g. ±0%)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                               <input value={pmp.baselines.scheduleVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scheduleVariance: e.target.value}})} placeholder="Schedule Variance (e.g. ±5 days)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                               <input value={pmp.baselines.costVariance} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, costVariance: e.target.value}})} placeholder="Cost Variance (e.g. ±5%)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                            </div>
+                         </div>
+                         <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                            <h4 className="text-[10px] font-bold text-blue-600 uppercase">Management Approach</h4>
+                            <div className="space-y-2">
+                               <input value={pmp.baselines.scopeManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scopeManagement: e.target.value}})} placeholder="Scope Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                               <input value={pmp.baselines.scheduleManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, scheduleManagement: e.target.value}})} placeholder="Schedule Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                               <input value={pmp.baselines.costManagement} onChange={(e) => setPmp({...pmp, baselines: {...pmp.baselines, costManagement: e.target.value}})} placeholder="Cost Management Method" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </section>
+              </fieldset>
             </motion.div>
           )}
         </AnimatePresence>

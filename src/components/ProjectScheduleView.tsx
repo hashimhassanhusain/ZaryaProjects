@@ -476,7 +476,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
     );
 
     const poUnsubscribe = onSnapshot(
-      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setPurchaseOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
       }
@@ -1713,7 +1713,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           {/* Toolbar */}
           <div className="bg-white px-4 py-2 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-3">
-              <HelpTooltip text={th('search_items_summary')} position="bottom">
+              <HelpTooltip title={t('search')} text={th('search_items_summary')} position="bottom">
                 <div className="relative group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                   <input 
@@ -1728,7 +1728,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
               
               <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                 {(['day', 'week', 'month', 'quarter'] as ZoomLevel[]).map(level => (
-                  <HelpTooltip key={level} text={th(level === 'day' || level === 'week' ? 'zoom_in_summary' : 'zoom_out_summary')} position="bottom">
+                  <HelpTooltip key={level} title={`${t('zoom_level')}: ${t(level)}`} text={th(level === 'day' || level === 'week' ? 'zoom_in_summary' : 'zoom_out_summary')} position="bottom">
                     <button 
                       onClick={() => setZoomLevel(level)}
                       className={cn("px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all", zoomLevel === level ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
@@ -1739,7 +1739,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 ))}
               </div>
 
-              <HelpTooltip text={th('zoom_in_summary')} position="bottom">
+              <HelpTooltip title={t('today')} text={th('scroll_to_today_summary')} position="bottom">
                 <button 
                   onClick={() => {
                     const today = new Date();
@@ -1760,7 +1760,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             <div className="flex items-center gap-2">
               <div className="h-4 w-px bg-slate-200 mx-1" />
 
-              <HelpTooltip text={th('import_data_summary')} position="bottom">
+              <HelpTooltip title={t('import_data')} text={th('import_data_summary')} position="bottom">
                 <button 
                   onClick={() => setShowImportModal(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-xs hover:bg-blue-100 transition-all border border-blue-100"
@@ -1770,7 +1770,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 </button>
               </HelpTooltip>
 
-              <HelpTooltip text={th('add_activity_summary')} position="bottom">
+              <HelpTooltip title={t('add_activity')} text={th('add_activity_summary')} position="bottom">
                 <button 
                   onClick={() => setEditingActivity({
                     id: crypto.randomUUID(),
@@ -1793,7 +1793,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                 </button>
               </HelpTooltip>
 
-              <HelpTooltip text={th('column_settings_summary')} position="bottom">
+              <HelpTooltip title={t('columns')} text={th('column_settings_summary')} position="bottom">
                 <div className="relative">
                   <button 
                     onClick={() => setShowColumnsMenu(!showColumnsMenu)}

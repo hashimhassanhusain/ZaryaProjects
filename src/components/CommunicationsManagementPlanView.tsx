@@ -7,8 +7,14 @@ import {
   Users,
   Loader2,
   History,
-  Info
+  Info,
+  ShieldCheck,
+  Send,
+  Clock,
+  Globe,
+  Settings
 } from 'lucide-react';
+import { orderBy } from 'firebase/firestore';
 import { Page, CommunicationPlanEntry } from '../types';
 import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { 
@@ -23,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -52,10 +58,11 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [isArchived, setIsArchived] = useState(false);
 
   const [commPlan, setCommPlan] = useState<CommPlanData>({
     projectTitle: '',
-    datePrepared: new Date().toISOString().split('T')[0],
+    datePrepared: getISODate(new Date()),
     matrix: [],
     assumptions: '',
     constraints: '',
@@ -71,11 +78,12 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
 
     const q = query(
       collection(db, 'communicationsManagementPlans'),
-      where('projectId', '==', selectedProject.id)
+      where('projectId', '==', selectedProject.id),
+      orderBy('version', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       setPlanRecords(data);
       setLoading(false);
     });
@@ -87,18 +95,20 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
     if (!selectedRecordId && viewMode === 'edit') {
       setCommPlan({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
-        datePrepared: new Date().toISOString().split('T')[0],
+        datePrepared: getISODate(new Date()),
         matrix: [
-          { id: '1', stakeholderName: 'Client', information: 'Monthly Progress Report', method: 'Email', frequency: 'Monthly', sender: 'Project Manager', status: 'Active', projectId: selectedProject?.id || '', stakeholderId: '' }
+          { id: '1', stakeholderName: 'Internal Team', information: 'Daily Standup', method: 'In-person / Zoom', frequency: 'Daily', sender: 'Project Coordinator', status: 'Active', projectId: selectedProject?.id || '', stakeholderId: '' }
         ],
-        assumptions: '',
-        constraints: '',
-        glossary: ''
+        assumptions: 'Reliable internet for all remote team members',
+        constraints: 'Time zone differences (UTC-5 to UTC+3)',
+        glossary: 'PMIS: Project Management Info System'
       });
-    } else if (selectedRecordId && viewMode === 'edit') {
+      setIsArchived(false);
+    } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setCommPlan({ ...commPlan, ...record });
+         setIsArchived(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -110,31 +120,45 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
+      const currentVersionNumber = planRecords.length > 0 ? parseFloat(planRecords[0].version || '1.0') : 1.0;
+      const nextVersion = isNew ? (currentVersionNumber + 0.1).toFixed(1) : currentVersionNumber.toFixed(1);
+
       const planData = {
         ...commPlan,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: isNew || !selectedRecordId ? (planRecords.length + 1).toFixed(1) : commPlan.version || '1.0'
+        version: nextVersion,
+        status: isNew ? 'Active' : (commPlan.status || 'Active')
       };
 
-      if (!selectedRecordId) {
-        await addDoc(collection(db, 'communicationsManagementPlans'), {
+      if (isNew || !selectedRecordId) {
+        if (isNew) {
+          const activeDocs = planRecords.filter(r => r.status !== 'Archived');
+          for (const docToArchive of activeDocs) {
+            await updateDoc(doc(db, 'communicationsManagementPlans', docToArchive.id), { status: 'Archived' });
+          }
+        }
+        const docRef = await addDoc(collection(db, 'communicationsManagementPlans'), {
           ...planData,
           createdAt: timestamp
         });
-        toast.success('Communications Plan created successfully');
+        setSelectedRecordId(docRef.id);
+        toast.success(isNew ? 'New Comm Plan Version Created' : 'Plan Saved');
       } else {
         await updateDoc(doc(db, 'communicationsManagementPlans', selectedRecordId), planData);
-        toast.success('Communications Plan updated successfully');
+        toast.success('Communications plan updated');
       }
       setViewMode('grid');
-      setSelectedRecordId(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'communicationsManagementPlans');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCreateNewVersion = () => {
+    handleSave(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -210,9 +234,23 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}
-      inputs={[{ id: 'stakeholder-register', title: 'Stakeholder Register' }, { id: 'eefs', title: 'EEFs' }]}
+      inputs={[
+        { id: 'STAKEHOLDER_REGISTER', title: t('stakeholder_register') },
+        { id: 'PROJECT_CHARTER', title: t('project_charter'), lastUpdated: '2024-03-25' }
+      ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      versions={planRecords}
+      currentVersion={commPlan.version}
+      onVersionChange={(v) => {
+        const record = planRecords.find(r => r.version === v);
+        if (record) {
+          setSelectedRecordId(record.id);
+          setViewMode('edit');
+        }
+      }}
+      onNewVersion={handleCreateNewVersion}
+      isArchived={isArchived}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -227,68 +265,152 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
               />
             </motion.div>
           ) : (
-            <motion.div key="edit" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 pb-10">
-              <div className="flex justify-end pr-2">
-                 <button onClick={() => setViewMode('grid')} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider">
-                   <ArrowLeft className="w-3 h-3" /> {t('back_to_list')}
-                 </button>
-              </div>
+            <motion.div key="edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 pb-20">
+              <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm space-y-12 relative overflow-hidden">
+                {isArchived && (
+                  <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
+                     <ShieldCheck className="w-4 h-4" /> ARCHIVED COMMUNICATIONS SNAPSHOT V{commPlan.version}
+                  </div>
+                )}
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 text-slate-900">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
-                      <input type="text" value={commPlan.projectTitle} onChange={(e) => setCommPlan({ ...commPlan, projectTitle: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
-                      <input type="date" value={commPlan.datePrepared} onChange={(e) => setCommPlan({ ...commPlan, datePrepared: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"/>
-                    </div>
-                 </div>
+                <section className="space-y-12 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Creation Timestamp</label>
+                        <input 
+                          type="date" 
+                          value={getISODate(commPlan.datePrepared)} 
+                          onChange={(e) => setCommPlan({ ...commPlan, datePrepared: e.target.value })} 
+                          disabled={isArchived}
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-slate-600"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Transmission Standard</label>
+                        <div className="px-5 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-sm font-black text-white flex items-center justify-between">
+                           <span className="flex items-center gap-2 tracking-tight uppercase"><Send className="w-4 h-4 text-emerald-400" /> SECURE BASELINE V{commPlan.version}</span>
+                        </div>
+                     </div>
+                  </div>
 
-                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Communications Matrix</label>
-                      <button onClick={handleAddMatrixRow} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all">
-                        <Plus className="w-4 h-4" />
-                      </button>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-600/20">
+                             <MessageSquare className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-slate-900 tracking-tight">Communications Matrix</h3>
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Multi-Channel Stakeholder Routing</p>
+                          </div>
+                       </div>
+                       {!isArchived && (
+                          <button 
+                            onClick={handleAddMatrixRow}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all group shadow-lg shadow-indigo-500/5"
+                          >
+                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+                            Add Protocol
+                          </button>
+                       )}
                     </div>
-                    <div className="border border-slate-100 rounded-xl overflow-hidden">
-                      <table className="w-full text-xs">
-                        <thead className="bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                          <tr>
-                            <th className="px-4 py-2 text-left">Stakeholder</th>
-                            <th className="px-4 py-2 text-left">Info</th>
-                            <th className="px-4 py-2 text-left">Method</th>
-                            <th className="px-4 py-2 text-left">Timing</th>
-                            <th className="px-4 py-2 text-left">Sender</th>
-                            <th className="px-4 py-2 w-10"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {commPlan.matrix.map((row, idx) => (
-                            <tr key={`${row.id}-${idx}`}>
-                              <td className="px-4 py-2"><input type="text" value={row.stakeholderName} onChange={(e) => handleMatrixChange(row.id, 'stakeholderName', e.target.value)} className="w-full bg-transparent outline-none"/></td>
-                              <td className="px-4 py-2"><input type="text" value={row.information} onChange={(e) => handleMatrixChange(row.id, 'information', e.target.value)} className="w-full bg-transparent outline-none"/></td>
-                              <td className="px-4 py-2"><input type="text" value={row.method} onChange={(e) => handleMatrixChange(row.id, 'method', e.target.value)} className="w-full bg-transparent outline-none"/></td>
-                              <td className="px-4 py-2"><input type="text" value={row.frequency} onChange={(e) => handleMatrixChange(row.id, 'frequency', e.target.value)} className="w-full bg-transparent outline-none"/></td>
-                              <td className="px-4 py-2"><input type="text" value={row.sender} onChange={(e) => handleMatrixChange(row.id, 'sender', e.target.value)} className="w-full bg-transparent outline-none"/></td>
-                              <td className="px-4 py-2"><button onClick={() => handleRemoveMatrixRow(row.id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3"/></button></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                 </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['assumptions', 'constraints', 'glossary'].map((key) => (
-                      <div key={key} className="space-y-1.5 col-span-1 even:col-span-1 last:md:col-span-2">
-                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key}</label>
-                         <textarea value={(commPlan as any)[key]} onChange={(e) => setCommPlan({...commPlan, [key]: e.target.value})} className="w-full h-24 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" />
-                      </div>
-                    ))}
-                 </div>
+                    <div className="grid grid-cols-1 gap-6">
+                       {commPlan.matrix.map((row) => (
+                         <div key={row.id} className="group relative bg-slate-50 border border-slate-100 p-8 rounded-[2rem] transition-all hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 hover:border-indigo-200">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Stakeholder</label>
+                                  <input 
+                                    type="text" 
+                                    value={row.stakeholderName} 
+                                    onChange={(e) => handleMatrixChange(row.id, 'stakeholderName', e.target.value)} 
+                                    disabled={isArchived}
+                                    placeholder="Target Stakeholder"
+                                    className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all"
+                                  />
+                               </div>
+                               <div className="space-y-2 md:col-span-2">
+                                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Information Payload</label>
+                                  <input 
+                                    type="text" 
+                                    value={row.information} 
+                                    onChange={(e) => handleMatrixChange(row.id, 'information', e.target.value)} 
+                                    disabled={isArchived}
+                                    placeholder="Type of communication content"
+                                    className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all"
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Method & Frequency</label>
+                                  <div className="flex items-center gap-2">
+                                     <input 
+                                       type="text" 
+                                       value={row.method} 
+                                       onChange={(e) => handleMatrixChange(row.id, 'method', e.target.value)} 
+                                       disabled={isArchived}
+                                       placeholder="e.g. Email"
+                                       className="w-full bg-white px-3 py-3 rounded-xl text-xs font-bold border border-slate-100 outline-none"
+                                     />
+                                     <input 
+                                       type="text" 
+                                       value={row.frequency} 
+                                       onChange={(e) => handleMatrixChange(row.id, 'frequency', e.target.value)} 
+                                       disabled={isArchived}
+                                       placeholder="Daily"
+                                       className="w-full bg-white px-3 py-3 rounded-xl text-xs font-bold border border-slate-100 outline-none"
+                                     />
+                                  </div>
+                               </div>
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Point of Origin</label>
+                                  <div className="flex items-center gap-2">
+                                     <input 
+                                       type="text" 
+                                       value={row.sender} 
+                                       onChange={(e) => handleMatrixChange(row.id, 'sender', e.target.value)} 
+                                       disabled={isArchived}
+                                       placeholder="Role/Owner"
+                                       className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none"
+                                     />
+                                     {!isArchived && (
+                                       <button 
+                                         onClick={() => handleRemoveMatrixRow(row.id)}
+                                         className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                       >
+                                         <Trash2 className="w-4 h-4" />
+                                       </button>
+                                     )}
+                                  </div>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6 border-t border-slate-50">
+                     {[
+                       { key: 'assumptions', label: 'Comm Assumptions', icon: Globe },
+                       { key: 'constraints', label: 'Comm Constraints', icon: Clock },
+                       { key: 'glossary', label: 'Technical Glossary', icon: Info }
+                     ].map((field) => (
+                       <div key={field.key} className="space-y-4">
+                          <div className="flex items-center gap-2 px-1">
+                             {React.createElement(field.icon as any, { className: "w-4 h-4 text-slate-300" })}
+                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{field.label}</label>
+                          </div>
+                          <textarea 
+                            value={(commPlan as any)[field.key]} 
+                            onChange={(e) => setCommPlan({...commPlan, [field.key]: e.target.value})} 
+                            disabled={isArchived}
+                            className="w-full h-40 px-6 py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all disabled:opacity-50 resize-none"
+                            placeholder={`Define ${field.label.toLowerCase()}...`}
+                          />
+                       </div>
+                     ))}
+                  </div>
+                </section>
               </div>
             </motion.div>
           )}

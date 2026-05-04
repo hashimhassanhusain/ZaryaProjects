@@ -23,13 +23,17 @@ import {
   Printer,
   ExternalLink,
   Download,
-  Clock
+  Clock,
+  Sparkles,
+  Zap,
+  ArrowLeft,
+  ShieldCheck
 } from 'lucide-react';
 import { Page, PageVersion } from '../types';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useLocation } from 'react-router-dom';
-import { db, auth, OperationType, handleFirestoreError } from '../firebase';
+import { useLocation, Link } from 'react-router-dom';
+import { db, auth, storage, OperationType, handleFirestoreError } from '../firebase';
 import { 
   doc, 
   getDoc, 
@@ -42,21 +46,37 @@ import {
   orderBy, 
   onSnapshot 
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+import { DataImportModal } from './DataImportModal';
+import { GoogleGenAI } from "@google/genai";
 
 interface FoundationCenterViewProps {
   page: Page;
+  embedded?: boolean;
+  initialTab?: 'eefs' | 'opas' | 'business' | 'agreements' | 'history';
 }
 
-export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page }) => {
+export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page, embedded = false, initialTab }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'business' | 'agreements' | 'eefs' | 'opas' | 'history'>(
-    (location.state as any)?.activeTab || 'business'
+  const [activeTab, setActiveTab] = useState<'eefs' | 'opas' | 'business' | 'agreements' | 'history'>(
+    initialTab || (location.state as any)?.activeTab || (embedded ? 'eefs' : 'business')
   );
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+  
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const state = location.state as any;
@@ -95,10 +115,11 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
             },
             agreements: [],
             eefs: {
-              internal: { infrastructure: false, software: false, culture: false, custom: '' },
-              external: { legal: false, government: false, market: false, custom: '' }
+              internal: { infrastructure: false, software: false, culture: false, customItems: [] },
+              external: { legal: false, government: false, market: false, customItems: [] }
             },
             opas: {
+              customPolicies: [],
               importedTemplates: [],
               lessonsLearnedIds: []
             },
@@ -129,6 +150,79 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
     };
     fetchData();
   }, [selectedProject]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string, agreementId?: string) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProject) return;
+
+    setUploadingField(agreementId ? `agreement-${agreementId}` : field);
+    const loadingToast = toast.loading('Uploading document...');
+
+    try {
+      const storageRef = ref(storage, `foundation/${selectedProject.id}/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+
+      if (agreementId) {
+        updateAgreement(agreementId, 'pdfUrl', url);
+        updateAgreement(agreementId, 'fileName', file.name);
+      } else {
+        updateBusinessDocs(field, url);
+        updateBusinessDocs(`${field}Name`, file.name);
+      }
+
+      toast.success('Document uploaded and linked successfully', { id: loadingToast });
+    } catch (err) {
+      console.error('Upload failed:', err);
+      toast.error('Failed to upload document', { id: loadingToast });
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+  const handleSmartImport = async () => {
+    if (!selectedProject) return;
+    setIsAnalyzing(true);
+    const loadingToast = toast.loading('AI is analyzing project context for EEFs...');
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+
+      const prompt = `Based on a typical project in the construction industry, 
+      identify potential Enterprise Environmental Factors (EEFs) that might apply. 
+      The project is often related to infrastructure and engineering.
+      
+      Return a JSON object in this exact format:
+      {
+        "internal": { "infrastructure": boolean, "software": boolean, "culture": boolean, "custom": string },
+        "external": { "legal": boolean, "government": boolean, "market": boolean, "custom": string }
+      }`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+      
+      const text = response.text || '';
+      const extractedEEFs = JSON.parse(text.replace(/```json|```/g, ''));
+
+      setData((prev: any) => ({
+        ...prev,
+        eefs: extractedEEFs
+      }));
+
+      toast.success('AI successfully suggested EEF constraints based on project profile', { id: loadingToast });
+    } catch (err) {
+      console.error('Smart AI analysis failed:', err);
+      toast.error('AI analysis failed. Please enter manually.', { id: loadingToast });
+      
+      // Fallback: Just enable some defaults
+      updateEEF('internal', 'infrastructure', true);
+      updateEEF('external', 'legal', true);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!selectedProject || !data) return;
@@ -215,6 +309,43 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
     }));
   };
 
+  const addEEFItem = (category: 'internal' | 'external') => {
+    const currentItems = data.eefs[category].customItems || [];
+    updateEEF(category, 'customItems', [...currentItems, { id: Date.now().toString(), title: '' }]);
+  };
+
+  const removeEEFItem = (category: 'internal' | 'external', id: string) => {
+    const currentItems = data.eefs[category].customItems || [];
+    updateEEF(category, 'customItems', currentItems.filter((i: any) => i.id !== id));
+  };
+
+  const updateEEFItem = (category: 'internal' | 'external', id: string, value: string) => {
+    const currentItems = data.eefs[category].customItems || [];
+    updateEEF(category, 'customItems', currentItems.map((i: any) => i.id === id ? { ...i, title: value } : i));
+  };
+
+  const updateOPA = (field: string, value: any) => {
+    setData((prev: any) => ({
+      ...prev,
+      opas: { ...prev.opas, [field]: value }
+    }));
+  };
+
+  const addOPAItem = () => {
+    const currentItems = data.opas.customPolicies || [];
+    updateOPA('customPolicies', [...currentItems, { id: Date.now().toString(), title: '', type: 'policy' }]);
+  };
+
+  const removeOPAItem = (id: string) => {
+    const currentItems = data.opas.customPolicies || [];
+    updateOPA('customPolicies', currentItems.filter((i: any) => i.id !== id));
+  };
+
+  const updateOPAItem = (id: string, value: string) => {
+    const currentItems = data.opas.customPolicies || [];
+    updateOPA('customPolicies', currentItems.map((i: any) => i.id === id ? { ...i, title: value } : i));
+  };
+
   const restoreVersion = (versionData: any) => {
     if (window.confirm('Are you sure you want to restore this version? Current changes will be overwritten.')) {
       setData(versionData);
@@ -230,68 +361,68 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
   );
 
   return (
-    <div className={cn("max-w-7xl mx-auto space-y-8 pb-32 px-4", isRtl && "rtl")}>
+    <div className={cn("max-w-7xl mx-auto space-y-8 pb-32 px-4", isRtl && "rtl", embedded && "max-w-full pb-10 px-0")}>
        {/* Header */}
-       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
-          <div className={cn("flex items-center gap-6 relative z-10", isRtl && "flex-row-reverse")}>
-             <div className="w-16 h-16 bg-blue-600 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-blue-200 rotate-3 shrink-0">
-                <Database className="w-8 h-8" />
-             </div>
-             <div className={cn(isRtl && "text-right")}>
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic uppercase">
-                   {t('foundation_center')}
-                   <span className={cn("inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black not-italic align-middle tracking-widest uppercase ml-3", isRtl && "mr-3 ml-0")}>
-                     V{data?.version || '1.0'}
-                   </span>
-                </h1>
-                <p className="text-sm text-slate-500 font-medium mt-1 leading-relaxed max-w-xl">
-                   {t('foundation_center_desc')}
-                </p>
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 relative z-10">
-            <button 
-              onClick={() => window.print()}
-              className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
-            >
-               <Printer className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50"
-            >
-               {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-               {t('save_master_data')}
-            </button>
-          </div>
-       </header>
+        {!embedded && (
+          <BreadcrumbHeader 
+            page={page} 
+            activeTabLabel={activeTab === 'history' ? t('history') : (activeTab === 'business' ? t('business_docs') : (activeTab === 'eefs' ? t('eefs') : t(activeTab)))}
+            className="rounded-[2rem] md:rounded-[3rem] border border-slate-200"
+            actions={
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => window.print()}
+                  className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+                >
+                   <Printer className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50"
+                >
+                   {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                   {t('save_master_data')}
+                </button>
+              </div>
+            }
+          />
+        )}
 
        {/* Tabs Navigation */}
-       <div className={cn("flex items-center gap-2 p-2 bg-slate-100 rounded-[2rem] w-full md:w-fit overflow-x-auto no-scrollbar", isRtl && "flex-row-reverse")}>
-          {[
-            { id: 'business', label: t('business_docs'), icon: FileText },
-            { id: 'agreements', label: t('agreements'), icon: Handshake },
-            { id: 'eefs', label: t('eefs'), icon: Shield },
-            { id: 'opas', label: t('opas'), icon: Library },
-            { id: 'history', label: t('history'), icon: History }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={cn(
-                "flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                activeTab === tab.id 
-                  ? "bg-white text-blue-600 shadow-md shadow-blue-500/10" 
-                  : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
-              )}
-            >
-               <tab.icon className="w-4 h-4" />
-               {tab.label}
-            </button>
-          ))}
+       <div className={cn("flex flex-wrap items-center justify-between gap-4 p-2 bg-slate-100 rounded-[2rem]", isRtl && "flex-row-reverse")}>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'eefs', label: 'EEFs', icon: Shield },
+              { id: 'opas', label: 'OPAs', icon: Library },
+              { id: 'business', label: t('business_docs'), icon: FileText },
+              { id: 'agreements', label: t('agreements'), icon: Handshake },
+              { id: 'history', label: t('history'), icon: History }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={cn(
+                  "flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  activeTab === tab.id 
+                    ? "bg-white text-blue-600 shadow-md shadow-blue-500/10" 
+                    : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
+                )}
+              >
+                 <tab.icon className="w-4 h-4" />
+                 {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest text-[9px] hover:bg-blue-600 transition-all shadow-lg disabled:opacity-50 ml-auto"
+          >
+             {saving ? <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
+             {t('save_master_data')}
+          </button>
        </div>
 
        {/* Tab Content */}
@@ -341,12 +472,34 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                               <div className="space-y-2">
                                  <label className={cn("text-[10px] font-black text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Feasibility Document</label>
                                  <div className="flex gap-2">
-                                   <button className="flex-1 h-14 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-3 hover:border-blue-400 hover:bg-blue-50 transition-all group">
-                                      <Upload className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
-                                      <span className="text-[10px] font-black text-slate-500 group-hover:text-blue-600 tracking-widest uppercase">Upload PDF</span>
-                                   </button>
+                                   <div className="flex-1 relative">
+                                     <input 
+                                       type="file" 
+                                       id="feasibility-upload"
+                                       className="hidden" 
+                                       accept=".pdf"
+                                       onChange={(e) => handleFileUpload(e, 'feasibilityPdfUrl')}
+                                     />
+                                     <button 
+                                       onClick={() => document.getElementById('feasibility-upload')?.click()}
+                                       disabled={uploadingField === 'feasibilityPdfUrl'}
+                                       className="w-full h-14 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-3 hover:border-blue-400 hover:bg-blue-50 transition-all group disabled:opacity-50"
+                                     >
+                                        {uploadingField === 'feasibilityPdfUrl' ? (
+                                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                          <Upload className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                                        )}
+                                        <span className="text-[10px] font-black text-slate-500 group-hover:text-blue-600 tracking-widest uppercase">
+                                          {data?.businessDocuments?.feasibilityPdfUrlName || 'Upload PDF'}
+                                        </span>
+                                     </button>
+                                   </div>
                                    {data?.businessDocuments?.feasibilityPdfUrl && (
-                                     <button className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all">
+                                     <button 
+                                       onClick={() => window.open(data.businessDocuments.feasibilityPdfUrl, '_blank')}
+                                       className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all"
+                                     >
                                         <ExternalLink className="w-5 h-5" />
                                      </button>
                                    )}
@@ -480,15 +633,39 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                             </div>
 
                             <div className="pt-4 border-t border-slate-200/50 flex flex-wrap gap-4">
-                               <div className="p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3 shrink-0 text-left">
-                                  <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                                     <Upload className="w-4 h-4" />
-                                  </div>
-                                  <div className={cn(isRtl && "text-right")}>
-                                     <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legal Document</div>
-                                     <div className="text-[10px] font-black text-slate-900 uppercase">agreement_v1.pdf</div>
-                                  </div>
-                               </div>
+                                <div 
+                                  onClick={() => document.getElementById(`upload-${agreement.id}`)?.click()}
+                                  className="p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3 shrink-0 text-left cursor-pointer hover:border-blue-400 transition-all"
+                                >
+                                   <input 
+                                     type="file" 
+                                     id={`upload-${agreement.id}`} 
+                                     className="hidden" 
+                                     accept=".pdf"
+                                     onChange={(e) => handleFileUpload(e, 'pdfUrl', agreement.id)}
+                                   />
+                                   <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                                      {uploadingField === `agreement-${agreement.id}` ? (
+                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Upload className="w-4 h-4" />
+                                      )}
+                                   </div>
+                                   <div className={cn(isRtl && "text-right")}>
+                                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legal Document</div>
+                                      <div className="text-[10px] font-black text-slate-900 uppercase truncate max-w-[150px]">
+                                        {agreement.fileName || 'Click to Upload PDF'}
+                                      </div>
+                                   </div>
+                                </div>
+                                {agreement.pdfUrl && (
+                                  <button 
+                                    onClick={() => window.open(agreement.pdfUrl, '_blank')}
+                                    className="p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                  </button>
+                                )}
                             </div>
                          </div>
                        ))
@@ -499,9 +676,28 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
 
              {activeTab === 'eefs' && (
                <div className="p-6 md:p-12 space-y-12">
-                  <header className={cn("space-y-2", isRtl && "text-right")}>
-                     <h3 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">EEFs</h3>
-                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-60">Enterprise Environmental Factors</p>
+                  <header className={cn("flex flex-col md:flex-row md:items-center justify-between gap-6", isRtl && "flex-row-reverse")}>
+                     <div className={cn("space-y-2", isRtl && "text-right")}>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">EEFs</h3>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-60">Enterprise Environmental Factors</p>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => setIsImportModalOpen(true)}
+                          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+                        >
+                           <Library className="w-4 h-4" />
+                           Import Catalog
+                        </button>
+                        <button 
+                          onClick={handleSmartImport}
+                          disabled={isAnalyzing}
+                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                        >
+                           {isAnalyzing ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                           Smart Extract
+                        </button>
+                     </div>
                   </header>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -532,14 +728,39 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                                 </div>
                              </label>
                            ))}
-                           <div className="pt-4 space-y-2">
-                              <label className={cn("text-[10px] font-black text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Other Internal Constraints</label>
-                              <textarea 
-                                value={data?.eefs?.internal?.custom}
-                                onChange={(e) => updateEEF('internal', 'custom', e.target.value)}
-                                className={cn("w-full h-24 bg-white border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none resize-none transition-all focus:ring-2 focus:ring-blue-500/10", isRtl && "text-right")}
-                                placeholder="..."
-                              />
+                           <div className="pt-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                 <label className={cn("text-[10px] font-black text-slate-400 uppercase tracking-widest block", isRtl && "text-right")}>Other Internal Factors</label>
+                                 <button 
+                                   onClick={() => addEEFItem('internal')}
+                                   className="text-[9px] font-black text-blue-600 uppercase hover:underline"
+                                 >
+                                   + Add Factor
+                                 </button>
+                              </div>
+                              <div className="space-y-3">
+                                 {(data?.eefs?.internal?.customItems || []).map((item: any) => (
+                                   <div key={item.id} className="flex gap-2 group">
+                                     <input
+                                       value={item.title}
+                                       onChange={(e) => updateEEFItem('internal', item.id, e.target.value)}
+                                       placeholder="e.g. IT Security Policy"
+                                       className={cn("flex-1 h-12 bg-white border border-slate-200 rounded-xl px-4 text-[11px] font-black uppercase tracking-tight focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                                     />
+                                     <button 
+                                       onClick={() => removeEEFItem('internal', item.id)}
+                                       className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm"
+                                     >
+                                       <Trash2 className="w-4 h-4" />
+                                     </button>
+                                   </div>
+                                 ))}
+                                 {(!data?.eefs?.internal?.customItems || data.eefs.internal.customItems.length === 0) && (
+                                   <div className="p-4 bg-white/50 rounded-2xl border border-dashed border-slate-100 text-center">
+                                      <p className="text-[10px] font-bold text-slate-300 uppercase italic">No specific internal factors recorded</p>
+                                   </div>
+                                 )}
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -577,14 +798,39 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                                 </div>
                              </label>
                            ))}
-                           <div className="pt-4 space-y-2">
-                              <label className={cn("text-[10px] font-black text-blue-300/50 uppercase tracking-widest block", isRtl && "text-right")}>Macro & Social Context</label>
-                              <textarea 
-                                value={data?.eefs?.external?.custom}
-                                onChange={(e) => updateEEF('external', 'custom', e.target.value)}
-                                className={cn("w-full h-24 bg-white/10 border border-white/20 rounded-2xl p-4 text-xs font-bold outline-none resize-none text-white focus:bg-white/20 transition-all", isRtl && "text-right")}
-                                placeholder="..."
-                              />
+                           <div className="pt-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                 <label className={cn("text-[10px] font-black text-blue-300/50 uppercase tracking-widest block", isRtl && "text-right")}>Dynamic Market/Legal Constraints</label>
+                                 <button 
+                                   onClick={() => addEEFItem('external')}
+                                   className="text-[9px] font-black text-blue-300 uppercase hover:text-white transition-colors"
+                                 >
+                                   + New Entry
+                                 </button>
+                              </div>
+                              <div className="space-y-3">
+                                 {(data?.eefs?.external?.customItems || []).map((item: any) => (
+                                   <div key={item.id} className="flex gap-2 group">
+                                     <input
+                                       value={item.title}
+                                       onChange={(e) => updateEEFItem('external', item.id, e.target.value)}
+                                       placeholder="e.g. Dollar Rate, Safety Law 2024"
+                                       className={cn("flex-1 h-12 bg-white/10 border border-white/20 rounded-xl px-4 text-[11px] font-black text-white uppercase tracking-tight focus:bg-white/20 outline-none", isRtl && "text-right")}
+                                     />
+                                     <button 
+                                       onClick={() => removeEEFItem('external', item.id)}
+                                       className="w-12 h-12 bg-white/5 text-blue-300 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-500 hover:text-white transition-all shadow-lg"
+                                     >
+                                       <Trash2 className="w-4 h-4" />
+                                     </button>
+                                   </div>
+                                 ))}
+                                 {(!data?.eefs?.external?.customItems || data.eefs.external.customItems.length === 0) && (
+                                   <div className="p-4 bg-white/5 rounded-2xl border border-dashed border-white/10 text-center">
+                                      <p className="text-[10px] font-bold text-blue-300/50 uppercase italic">Add items like exchange rates or new laws</p>
+                                   </div>
+                                 )}
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -628,6 +874,43 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                                 <div className={cn("text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1", isRtl && "text-right")}>{temp.category}</div>
                              </div>
                            ))}
+                        </div>
+
+                        <div className="pt-8 mt-8 border-t border-slate-100 space-y-6">
+                           <div className={cn("flex items-center justify-between", isRtl && "flex-row-reverse")}>
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                  <ShieldCheck className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Custom Protocols & OPAs</h4>
+                              </div>
+                              <button 
+                                onClick={addOPAItem}
+                                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg"
+                              >
+                                + Add Asset
+                              </button>
+                           </div>
+                           <div className="space-y-3 pb-8">
+                              {(data?.opas?.customPolicies || []).map((policy: any) => (
+                                <div key={policy.id} className="flex gap-2 group">
+                                  <input
+                                    value={policy.title}
+                                    onChange={(e) => updateOPAItem(policy.id, e.target.value)}
+                                    placeholder="e.g. Safety Audit, Building Permit SOP..."
+                                    className={cn("flex-1 h-12 bg-white border border-slate-200 rounded-xl px-4 text-[11px] font-black uppercase focus:ring-2 focus:ring-orange-500/20", isRtl && "text-right")}
+                                  />
+                                  <button onClick={() => removeOPAItem(policy.id)} className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                              {(!data?.opas?.customPolicies || data.opas.customPolicies.length === 0) && (
+                                <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-100 text-center">
+                                  <p className="text-[10px] font-bold text-slate-300 uppercase italic">No custom protocols recorded</p>
+                                </div>
+                              )}
+                           </div>
                         </div>
                      </div>
 
@@ -730,6 +1013,34 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
              )}
           </motion.div>
        </AnimatePresence>
+
+       <DataImportModal 
+         isOpen={isImportModalOpen}
+         onClose={() => setIsImportModalOpen(false)}
+         onImport={(items) => {
+           // Process imported items into EEFs
+           if (items.length > 0) {
+             setData((prev: any) => ({
+               ...prev,
+               eefs: {
+                 ...prev.eefs,
+                 internal: {
+                   ...prev.eefs.internal,
+                   custom: items.map(i => i.title || i.name || i.description).filter(Boolean).join(', ')
+                 }
+               }
+             }));
+             toast.success('EEF data imported from file');
+           }
+         }}
+         title="Import Environmental Factors"
+         entityName="EEFs"
+         targetColumns={[
+           { key: 'title', label: 'Title', required: true, description: 'The name of the constraint/factor' },
+           { key: 'description', label: 'Description', description: 'Brief explanation' },
+           { key: 'category', label: 'Category', description: 'Internal or External' }
+         ]}
+       />
     </div>
   );
 };

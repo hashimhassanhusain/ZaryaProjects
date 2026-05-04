@@ -37,6 +37,7 @@ import {
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
+import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { UniversalManager } from './common/UniversalManager';
@@ -51,6 +52,7 @@ import { ProjectManagementPlanView } from './ProjectManagementPlanView';
 import { SourcingStrategyView } from './SourcingStrategyView';
 import { ExecutionQAView } from './ExecutionQAView';
 import { PerformanceMonitoringView } from './PerformanceMonitoringView';
+import { FoundationCenterView } from './FoundationCenterView';
 
 interface GovernanceHubViewProps {
   page: Page;
@@ -77,7 +79,8 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     { id: '2.1.2', title: t('2.1.2'), icon: FileText, desc: 'Assembly of all subsidiary plans into a cohesive blueprint.', focusArea: 'Planning' },
     { id: '2.1.13', title: t('2.1.13'), icon: ShoppingCart, desc: 'Strategic methodology for vendor and resource acquisition.', focusArea: 'Planning' },
     { id: '3.1.3', title: t('3.1.3'), icon: ShieldCheck, desc: 'Formal execution oversight and quality assurance verification.', focusArea: 'Executing' },
-    { id: '4.1.1', title: t('4.1.1'), icon: Activity, desc: 'Real-time tracking of governance KPIs and plan variances.', focusArea: 'Monitoring & Controlling' }
+    { id: '4.1.1', title: t('4.1.1'), icon: Activity, desc: 'Real-time tracking of governance KPIs and plan variances.', focusArea: 'Monitoring & Controlling' },
+    { id: 'foundation', title: t('foundation_center'), icon: Database, desc: 'Enterprise Environmental Factors (EEFs) and Organizational Process Assets (OPAs).', focusArea: 'Initiating' }
   ];
 
   const accessiblePlans = allManagementPlans.filter(p => isAdmin || userProfile?.accessiblePages?.includes(p.id));
@@ -129,6 +132,14 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
         { id: 'changes', label: t('change_log'), icon: Layers },
         { id: 'lessons', label: t('lessons_learned'), icon: GraduationCap },
       ]
+    },
+    {
+      id: 'foundation-group',
+      label: t('foundation_center') || 'Foundation Center',
+      tabs: [
+        { id: 'eefs', label: 'EEFs', icon: ShieldCheck, size: 'large' },
+        { id: 'opas', label: 'OPAs', icon: Database, size: 'large' },
+      ]
     }
   ];
 
@@ -153,9 +164,9 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
             </header>
 
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Master Data / Foundation Center - Primary Entry Point */}
-              <Link 
-                to={selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`}
+              {/* Foundation Hub - Primary Entry Point */}
+              <div 
+                onClick={() => setActiveTab('eefs')}
                 className="group bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl shadow-slate-900/20 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500 rounded-full translate-x-16 -translate-y-16 opacity-10 blur-3xl animate-pulse" />
@@ -166,16 +177,16 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                   <div>
                     <h3 className="text-xl font-bold text-white italic tracking-tight uppercase">{t('foundation_center') || 'Foundation Center'}</h3>
                     <p className="text-[10px] text-blue-200 mt-2 font-black leading-relaxed opacity-60 uppercase tracking-[0.2em]">
-                       Project Master Data • Variables • PMBOK 8
+                       Project Master Data • EEFs & OPAs • PMBOK 8
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400">
                     {t('open_center')} <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-              </Link>
+              </div>
 
-              {accessiblePlans.map((plan) => (
+              {accessiblePlans.filter(p => p.id !== 'foundation').map((plan) => (
                 <div 
                   key={plan.id}
                   onClick={() => setActiveTab(plan.id)}
@@ -224,6 +235,9 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       case '2.1.13': return <SourcingStrategyView page={targetPage} embedded={true} />;
       case '3.1.3': return <ExecutionQAView page={targetPage} embedded={true} />;
       case '4.1.1': return <PerformanceMonitoringView page={targetPage} embedded={true} />;
+      case 'eefs': return <FoundationCenterView page={targetPage} embedded={true} initialTab="eefs" />;
+      case 'opas': return <FoundationCenterView page={targetPage} embedded={true} initialTab="opas" />;
+      case 'foundation': return <FoundationCenterView page={targetPage} embedded={true} />;
       
       // Logs
       case 'risks': return <UniversalManager entityType="risks" />;
@@ -250,23 +264,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       />
       <div className="flex-1 overflow-y-auto">
         {activeTab !== 'overview' && (
-          <header className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
-                <Gavel className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">
-                  <span>{stripNumericPrefix(t(page.id === 'gov' ? 'governance' : page.title))}</span>
-                  <ChevronRight className="w-2 h-2 opacity-50" />
-                  <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
-                </div>
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
-                  {stripNumericPrefix(t(activeTab))}
-                </h2>
-              </div>
-            </div>
-          </header>
+          <BreadcrumbHeader 
+            page={page} 
+            activeTabLabel={stripNumericPrefix(t(activeTab))}
+          />
         )}
         <AnimatePresence mode="wait">
           <motion.div

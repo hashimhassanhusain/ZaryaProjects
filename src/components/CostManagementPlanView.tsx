@@ -56,7 +56,7 @@ import {
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -92,10 +92,11 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [isArchived, setIsArchived] = useState(false);
 
   const [costPlan, setCostPlan] = useState<CostPlanData>({
     projectTitle: '',
-    datePrepared: new Date().toISOString().split('T')[0],
+    datePrepared: getISODate(new Date()),
     accuracy: '+/- 5%',
     units: `${selectedProject?.baseCurrency || 'IQD'} / Man-Hours`,
     controlThresholds: 'Example: 5% Variance (Yellow Alert), 10% Variance (Red Alert - Mandatory CCB Review)',
@@ -118,11 +119,12 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
 
     const q = query(
       collection(db, 'costManagementPlans'),
-      where('projectId', '==', selectedProject.id)
+      where('projectId', '==', selectedProject.id),
+      orderBy('version', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       setPlanRecords(data);
       setLoading(false);
     });
@@ -134,23 +136,25 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
     if (!selectedRecordId && viewMode === 'edit') {
       setCostPlan({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
-        datePrepared: new Date().toISOString().split('T')[0],
+        datePrepared: getISODate(new Date()),
         accuracy: '+/- 5%',
         units: `${selectedProject?.baseCurrency || 'IQD'}`,
         controlThresholds: '5% Variance Alert',
         thresholdPercentage: 10,
-        performanceRules: 'EVM rules',
-        reportingFormat: 'Monthly Finance PDF',
+        performanceRules: 'EVM rules using SPI/CPI indices',
+        reportingFormat: 'Monthly Finance PDF + Dashboard Link',
         processManagement: {
-          estimating: 'Market rates lookup',
-          budgeting: 'BOQ Aggregation',
-          monitoring: 'PO Commitment tracking'
+          estimating: 'Market rates lookup + Expert parametric estimation',
+          budgeting: 'BOQ Aggregation + Management Reserve allocation',
+          monitoring: 'PO Commitment tracking vs Actual Costs (AC)'
         }
       });
-    } else if (selectedRecordId && viewMode === 'edit') {
+      setIsArchived(false);
+    } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setCostPlan({ ...costPlan, ...record });
+         setIsArchived(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -162,31 +166,45 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
+      const currentVersionNumber = planRecords.length > 0 ? parseFloat(planRecords[0].version || '1.0') : 1.0;
+      const nextVersion = isNew ? (currentVersionNumber + 0.1).toFixed(1) : currentVersionNumber.toFixed(1);
+
       const planData = {
         ...costPlan,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: isNew || !selectedRecordId ? (planRecords.length + 1).toFixed(1) : costPlan.version || '1.0'
+        version: nextVersion,
+        status: isNew ? 'Active' : (costPlan.status || 'Active')
       };
 
-      if (!selectedRecordId) {
-        await addDoc(collection(db, 'costManagementPlans'), {
+      if (isNew || !selectedRecordId) {
+        if (isNew) {
+          const activeDocs = planRecords.filter(r => r.status !== 'Archived');
+          for (const docToArchive of activeDocs) {
+            await updateDoc(doc(db, 'costManagementPlans', docToArchive.id), { status: 'Archived' });
+          }
+        }
+        const docRef = await addDoc(collection(db, 'costManagementPlans'), {
           ...planData,
           createdAt: timestamp
         });
-        toast.success(t('cost_plan_created_success') || 'Cost Plan created successfully');
+        setSelectedRecordId(docRef.id);
+        toast.success(isNew ? 'New Cost Baseline Created' : 'Plan Saved');
       } else {
         await updateDoc(doc(db, 'costManagementPlans', selectedRecordId), planData);
-        toast.success(t('cost_plan_updated_success') || 'Cost Plan updated successfully');
+        toast.success('Cost plan updated successfully');
       }
       setViewMode('grid');
-      setSelectedRecordId(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'costManagementPlans');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCreateNewVersion = () => {
+    handleSave(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -260,12 +278,23 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
       onPrint={generatePDF}
       isSaving={isSaving}
       inputs={[
-        { id: 'schedule-plan', title: 'Schedule Management Plan' },
-        { id: 'eef', title: 'EEFs' },
-        { id: 'opa', title: 'OPAs' }
+        { id: 'SCHEDULE_PLAN', title: t('schedule_management_plan') },
+        { id: 'WBS', title: t('wbs') },
+        { id: 'EEFS', title: 'EEFs', lastUpdated: '2024-03-22' },
       ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      versions={planRecords}
+      currentVersion={costPlan.version}
+      onVersionChange={(v) => {
+        const record = planRecords.find(r => r.version === v);
+        if (record) {
+          setSelectedRecordId(record.id);
+          setViewMode('edit');
+        }
+      }}
+      onNewVersion={handleCreateNewVersion}
+      isArchived={isArchived}
     >
        <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -294,76 +323,131 @@ export const CostManagementPlanView: React.FC<CostManagementPlanViewProps> = ({ 
           ) : (
             <motion.div
               key="edit"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6 pb-10"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6 pb-14"
             >
-              <div className="flex justify-end pr-2">
-                 <button 
-                   onClick={() => setViewMode('grid')}
-                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
-                 >
-                   <ArrowLeft className="w-3 h-3" />
-                   {t('back_to_list')}
-                 </button>
-              </div>
+              <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm space-y-10 relative overflow-hidden">
+                {isArchived && (
+                  <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-3 px-6 flex items-center gap-3 z-10">
+                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black uppercase text-amber-600 tracking-[0.2em]">Archived Cost Baseline - V{costPlan.version}</span>
+                  </div>
+                )}
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Project Title</label>
-                      <input 
-                        type="text"
-                        value={costPlan.projectTitle}
-                        onChange={(e) => setCostPlan({ ...costPlan, projectTitle: e.target.value })}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Date Prepared</label>
+                <section className="space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Preparation Date</label>
                       <input 
                         type="date"
                         value={costPlan.datePrepared}
                         onChange={(e) => setCostPlan({ ...costPlan, datePrepared: e.target.value })}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
+                        disabled={isArchived}
+                        className="w-full px-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-50"
                       />
                     </div>
-                 </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Financial Status</label>
+                      <div className="px-5 py-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl text-sm font-black text-emerald-600 flex items-center justify-between">
+                         <span className="flex items-center gap-2 animate-pulse"><DollarSign className="w-4 h-4" /> ACTIVE BASELINE</span>
+                         <span>V{costPlan.version}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Accuracy</label>
-                       <input value={costPlan.accuracy} onChange={(e) => setCostPlan({...costPlan, accuracy: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
-                    </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Units</label>
-                       <input value={costPlan.units} onChange={(e) => setCostPlan({...costPlan, units: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
-                    </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Threshold %</label>
-                       <input type="number" value={costPlan.thresholdPercentage} onChange={(e) => setCostPlan({...costPlan, thresholdPercentage: parseFloat(e.target.value)})} className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none" />
-                    </div>
-                 </div>
+                  <div className="space-y-8">
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+                           <TrendingUp className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">Cost Governance Parameters</h3>
+                          <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1">Accuracy, Units & Thresholds</p>
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                          { key: 'accuracy', label: 'Estimating Accuracy', icon: Activity },
+                          { key: 'units', label: 'Currency Units', icon: DollarSign },
+                          { key: 'controlThresholds', label: 'Variance Controls', icon: ShieldCheck },
+                          { key: 'performanceRules', label: 'EVM Rules', icon: TrendingUp },
+                          { key: 'reportingFormat', label: 'Financial Reporting', icon: FileText }
+                        ].map((field) => (
+                          <div key={field.key} className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100/50 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group">
+                             <div className="flex items-center gap-2 mb-3">
+                               <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm text-slate-300 group-hover:text-emerald-500 transition-colors">
+                                  {React.createElement(field.icon as any, { className: "w-3.5 h-3.5" })}
+                               </div>
+                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{field.label}</label>
+                             </div>
+                             <textarea 
+                               value={(costPlan as any)[field.key]} 
+                               onChange={(e) => setCostPlan({...costPlan, [field.key]: e.target.value})} 
+                               disabled={isArchived}
+                               className="w-full h-24 bg-transparent text-sm font-bold text-slate-700 outline-none resize-none disabled:opacity-50"
+                             />
+                          </div>
+                        ))}
+                        <div className="p-6 bg-emerald-900 rounded-3xl border border-emerald-800 shadow-2xl space-y-4">
+                           <div className="flex items-center gap-3">
+                              <PieChart className="w-5 h-5 text-emerald-400" />
+                              <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Global Threshold</label>
+                           </div>
+                           <div className="space-y-2">
+                             <div className="flex justify-between items-end">
+                                <span className="text-2xl font-black text-white">{costPlan.thresholdPercentage}%</span>
+                                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Variance Limit</span>
+                             </div>
+                             <input 
+                               type="range" 
+                               min="1" 
+                               max="50" 
+                               value={costPlan.thresholdPercentage} 
+                               onChange={(e) => setCostPlan({...costPlan, thresholdPercentage: parseFloat(e.target.value)})} 
+                               disabled={isArchived}
+                               className="w-full accent-emerald-500" 
+                             />
+                           </div>
+                        </div>
+                     </div>
+                  </div>
 
-                 <div className="space-y-4 pt-4 border-t border-slate-50">
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Process Definition</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                       {Object.entries(costPlan.processManagement).map(([key, value]) => (
-                         <div key={key} className="space-y-1.5">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest capitalize">{key}</label>
-                            <textarea 
-                              value={value}
-                              onChange={(e) => setCostPlan({
-                                ...costPlan,
-                                processManagement: { ...costPlan.processManagement, [key]: e.target.value }
-                              })}
-                              className="w-full h-20 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium outline-none"
-                            />
-                         </div>
-                       ))}
-                    </div>
-                 </div>
+                  <div className="space-y-8 pt-10 border-t border-slate-100">
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg">
+                           <Settings className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">Cost Execution Strategy</h3>
+                          <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1">Lifecycle Process Definition</p>
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {Object.entries(costPlan.processManagement).map(([key, value]) => (
+                          <div key={key} className="space-y-4">
+                             <div className="flex items-center gap-2 px-1">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{key} Strategy</label>
+                             </div>
+                             <textarea 
+                               value={value}
+                               onChange={(e) => setCostPlan({
+                                 ...costPlan,
+                                 processManagement: { ...costPlan.processManagement, [key]: e.target.value }
+                               })}
+                               disabled={isArchived}
+                               className="w-full h-40 px-5 py-4 bg-slate-50 border border-slate-100 rounded-3xl text-sm leading-relaxed font-medium outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-200 transition-all disabled:opacity-50 resize-none"
+                               placeholder={`Describe ${key} strategy...`}
+                             />
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+                </section>
               </div>
             </motion.div>
           )}

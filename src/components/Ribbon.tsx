@@ -52,6 +52,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                 return (
                   <HelpTooltip 
                     key={tab.id} 
+                    title={tab.label}
                     text={tab.description || th(tab.id + '_summary')}
                     position="bottom"
                     className="z-[10000]"

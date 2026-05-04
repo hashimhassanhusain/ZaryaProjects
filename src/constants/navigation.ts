@@ -16,11 +16,11 @@ import {
 
 export const PERFORMANCE_DOMAINS = [
   { id: 'governance', title: 'Governance', color: '#1e3a8a', icon: Shield, description: 'Project authorization, policies, and management plans.' },
+  { id: 'delivery', title: 'Delivery', color: '#6366f1', icon: Package, description: 'Producing deliverables and scope fulfillment.' },
   { id: 'stakeholders', title: 'Stakeholders', color: '#a855f7', icon: Users, description: 'Stakeholder identification and engagement.' },
   { id: 'resources', title: 'Resources', color: '#10b981', icon: Users2, description: 'Management of human, physical, and virtual project assets.' },
   { id: 'schedule', title: 'Schedule', color: '#0ea5e9', icon: Clock, description: 'Project pulse, cadence, and time performance tracking.' },
   { id: 'finance', title: 'Finance', color: '#14b8a6', icon: Banknote, description: 'Budgeting, monitoring actual costs, and EVM analysis.' },
-  { id: 'delivery', title: 'Delivery', color: '#6366f1', icon: Package, description: 'Producing deliverables and scope fulfillment.' },
   { id: 'risk', title: 'Risk & Opportunity', color: '#e11d48', icon: AlertTriangle, description: 'The project defense layer. Managing uncertainty through quantification and mitigation.' },
 ] as const;
 

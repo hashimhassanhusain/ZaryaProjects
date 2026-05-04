@@ -104,7 +104,7 @@ export const projects: Project[] = [];
 export const pages: Page[] = [
   // --- HUBS (DOMAINS) ---
   { id: 'gov', title: 'Governance', type: 'hub', domain: 'governance', parentId: '', icon: 'Shield', focusArea: 'Planning' },
-  { id: 'foundation', title: 'Foundation Center', type: 'hub', domain: 'initiating', parentId: '', icon: 'Database', focusArea: 'Initiating' },
+  { id: 'foundation', title: 'Foundation Center', type: 'terminal', domain: 'governance', parentId: 'gov', icon: 'Database', focusArea: 'Initiating' },
   { id: 'scope', title: 'Scope', type: 'hub', domain: 'delivery', parentId: '', icon: 'DraftingCompass', focusArea: 'Planning' },
   { id: 'sched', title: 'Schedule', type: 'hub', domain: 'schedule', parentId: '', icon: 'Calendar', focusArea: 'Planning' },
   { id: 'fin', title: 'Finance', type: 'hub', domain: 'finance', parentId: '', icon: 'Banknote', focusArea: 'Planning' },
@@ -324,17 +324,48 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.4.3', 
-    title: 'Project Cost Baseline', 
+    id: '2.1.12', 
+    title: 'Financial Management Plan', 
     type: 'terminal', 
+    parentId: 'fin',
     domain: 'finance', 
     focusArea: 'Planning', 
     icon: 'Banknote', 
-    summary: 'The approved, time-phased cost baseline and budget aggregating all estimates and reserves.',
+    summary: 'Establishes financial control thresholds, reporting units, and variance levels.',
     details: {
-      inputs: ['cost-estimates', 'funding-strategy-plan', 'schedule-baseline'],
-      tools: ['Cost Aggregation', 'Reserve Analysis', 'Expert Judgment'],
-      outputs: ['project-budget', 'cost-baseline', 'contingency-reserves']
+      inputs: ['project-charter', 'cost-estimates', 'org-fin-policies'],
+      tools: ['Expert Judgment', 'Meetings'],
+      outputs: ['financial-management-plan', 'control-thresholds']
+    }
+  },
+  { 
+    id: '2.4.3', 
+    title: 'Cost Baseline', 
+    type: 'terminal', 
+    parentId: 'fin',
+    domain: 'finance', 
+    focusArea: 'Planning', 
+    icon: 'Target', 
+    summary: 'The approved version of time-phased project budget, excluding management reserves.',
+    details: {
+      inputs: ['cost-estimates', 'basis-of-estimates', 'schedule-baseline'],
+      tools: ['Cost Aggregation', 'Reserve Analysis'],
+      outputs: ['project-cost-baseline']
+    }
+  },
+  { 
+    id: '2.4.5', 
+    title: 'Project Funding Requirements', 
+    type: 'terminal', 
+    parentId: 'fin',
+    domain: 'finance', 
+    focusArea: 'Planning', 
+    icon: 'Landmark', 
+    summary: 'Total funding requirements and periodic requirements derived from the cost baseline.',
+    details: {
+      inputs: ['cost-baseline', 'cash-flow-forecast'],
+      tools: ['Funding Requirement Analysis'],
+      outputs: ['project-funding-requirements']
     }
   },
   { 
@@ -664,17 +695,32 @@ export const pages: Page[] = [
   },
   { 
     id: '1.2.1', 
-    title: 'High-Level Scope Statement', 
+    title: 'Project Scope Statement', 
     type: 'terminal', 
     parentId: 'scope',
     domain: 'delivery', 
     focusArea: 'Planning', 
     icon: 'DraftingCompass', 
-    summary: 'The initial scope statement identifying broad boundaries and high-level deliverables.',
+    summary: 'Detailed description of the project scope, major deliverables, assumptions, and constraints.',
     details: {
       inputs: ['business-case', 'project-charter', 'stakeholder-register', 'governance-framework'],
       tools: ['Expert Judgment', 'Stakeholder Workshops', 'Document Analysis'],
-      outputs: ['high-level-scope-statement', 'initial-deliverables-list', 'scope-boundaries']
+      outputs: ['project-scope-statement', 'deliverables-list', 'exclusions-list']
+    }
+  },
+  { 
+    id: '2.2.0', 
+    title: 'Scope Baseline', 
+    type: 'terminal', 
+    parentId: 'scope',
+    domain: 'delivery', 
+    focusArea: 'Planning', 
+    icon: 'Layers', 
+    summary: 'The approved version of the scope statement, WBS, and its associated WBS dictionary.',
+    details: {
+      inputs: ['project-scope-statement', 'wbs-structure', 'wbs-dictionary'],
+      tools: ['Scope Management Techniques'],
+      outputs: ['scope-baseline']
     }
   },
   { 
@@ -884,6 +930,7 @@ export const pages: Page[] = [
     domain: 'governance', 
     focusArea: 'Initiating', 
     icon: 'Target', 
+    collectionName: 'business_cases',
     summary: 'Justification for the project based on business needs, cost-benefit analysis, and strategic alignment.',
     details: {
       inputs: ['strategic-plan', 'market-analysis', 'customer-needs'],
@@ -892,31 +939,18 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.1.1', 
-    title: 'Governance Management Plan', 
+    id: '2.1.15', 
+    title: 'Sourcing Strategy Plan', 
     type: 'terminal', 
+    parentId: 'gov',
     domain: 'governance', 
     focusArea: 'Planning', 
-    icon: 'FileText', 
-    summary: 'Formalize the plan for project oversight, decision authorities, and escalation paths.',
+    icon: 'ShoppingCart', 
+    summary: 'Defines the methodology for outsourcing and supplier selection criteria.',
     details: {
-      inputs: ['project-charter', 'org-policies', 'stakeholder-register'],
-      tools: ['Governance Framework Modeling', 'Review Cycles', 'Approval Workflows'],
-      outputs: ['governance-plan', 'delegation-of-authority']
-    }
-  },
-  { 
-    id: '2.1.2', 
-    title: 'Project Policies & Procedures', 
-    type: 'terminal', 
-    domain: 'governance', 
-    focusArea: 'Planning', 
-    icon: 'BookOpen', 
-    summary: 'Establish the project-specific rules, quality standards, and operating procedures.',
-    details: {
-      inputs: ['org-standards', 'industry-best-practices', 'governance-plan'],
-      tools: ['Document Control', 'Standardization', 'Audit Planning'],
-      outputs: ['project-manual', 'sop-documents']
+      inputs: ['project-charter', 'market-research', 'budget'],
+      tools: ['Make-or-Buy Analysis', 'Selection Criteria Matrix'],
+      outputs: ['sourcing-strategy-plan', 'vendor-selection-criteria']
     }
   },
   { 
@@ -1054,18 +1088,18 @@ export const pages: Page[] = [
     }
   },
   { 
-    id: '2.6.2', 
-    title: 'Resource Management Plan', 
+    id: '2.6.8', 
+    title: 'Team Charter', 
     type: 'terminal', 
     parentId: 'res',
     domain: 'resources', 
     focusArea: 'Planning', 
-    icon: 'Briefcase', 
-    summary: 'The formal plan defining roles, responsibilities, and resource management methodologies.',
+    icon: 'Handshake', 
+    summary: 'Establishes team values, communication guidelines, and decision-making processes.',
     details: {
-      inputs: ['detailed-resource-requirements', 'schedule-baseline', 'resource-availability'],
-      tools: ['Resource Planning Techniques', 'Resource Calendars', 'Optimization Methods'],
-      outputs: ['resource-management-plan', 'resource-allocation-matrix', 'resource-calendars']
+      inputs: ['resource-management-plan', 'resource-assignment-records'],
+      tools: ['Team Workshops', 'Conflict Management'],
+      outputs: ['team-charter', 'team-norms']
     }
   },
   { 
@@ -1236,18 +1270,48 @@ export const pages: Page[] = [
     }
   },
   { 
+    id: '2.1.14', 
+    title: 'Risk Management Plan', 
+    type: 'terminal', 
+    parentId: 'risk',
+    domain: 'risk', 
+    focusArea: 'Planning', 
+    icon: 'ShieldCheck', 
+    summary: 'The formal plan defining risk management methodologies, roles, and matrices.',
+    details: {
+      inputs: ['project-charter', 'stakeholder-register', 'org-policies'],
+      tools: ['Expert Judgment', 'Meetings', 'Analytical Techniques'],
+      outputs: ['risk-management-plan', 'risk-categories-rbs', 'p-i-matrix']
+    }
+  },
+  { 
     id: '2.7.1', 
-    title: 'Comprehensive Risk Register', 
+    title: 'Risk Register', 
     type: 'terminal', 
     parentId: 'risk',
     domain: 'risk', 
     focusArea: 'Planning', 
     icon: 'Search', 
-    summary: 'The main project repository capturing all identified project risks and descriptions.',
+    summary: 'Central repository capturing individual project risks and potential responses.',
     details: {
-      inputs: ['scope-baseline', 'schedule-baseline', 'cost-baseline', 'stakeholder-analysis-matrix', 'risk-management-strategy'],
-      tools: ['Brainstorming', 'Delphi Technique', 'Checklist Analysis'],
-      outputs: ['updated-risk-register', 'detailed-risk-list', 'risk-descriptions']
+      inputs: ['risk-management-plan', 'scope-baseline', 'schedule-baseline'],
+      tools: ['Brainstorming', 'Checklist Analysis', 'Swot Analysis'],
+      outputs: ['risk-register', 'risk-list', 'identified-potential-responses']
+    }
+  },
+  { 
+    id: '2.7.6', 
+    title: 'Risk Report', 
+    type: 'terminal', 
+    parentId: 'risk',
+    domain: 'risk', 
+    focusArea: 'Planning', 
+    icon: 'BarChart', 
+    summary: 'Summary report providing information on overall project risk sources.',
+    details: {
+      inputs: ['risk-register', 'risk-analysis-results'],
+      tools: ['Data Analysis', 'Reporting Tools'],
+      outputs: ['risk-report', 'overall-risk-summary']
     }
   },
   { 

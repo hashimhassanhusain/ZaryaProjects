@@ -185,35 +185,6 @@ export const Header: React.FC = () => {
            </AnimatePresence>
         </div>
 
-        {/* Foundation Center Button */}
-        <Link 
-          to={selectedProject ? `/project/${selectedProject.id}/page/foundation` : `/page/foundation`}
-          className={cn(
-            "mx-4 flex items-center gap-3 px-6 h-11 rounded-2xl transition-all group shrink-0 relative overflow-hidden",
-            activePageId === 'foundation' 
-              ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" 
-              : "bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700"
-          )}
-        >
-           <div className="absolute top-0 right-0 w-8 h-8 bg-white/10 rounded-full -mr-4 -mt-4 blur-xl group-hover:scale-150 transition-transform" />
-           <Database className={cn("w-4 h-4 transition-transform group-hover:scale-110 relative z-10", activePageId === 'foundation' ? "text-blue-400" : "text-white")} />
-           <div className="flex flex-col -space-y-0.5 relative z-10">
-              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-80">
-                 {t('initiating')}
-              </span>
-              <span className="text-[11px] font-black uppercase tracking-widest leading-none">
-                 {t('foundation_center') || 'Master Data'}
-              </span>
-           </div>
-        </Link>
-
-        {selectedProject && (
-          <div className="flex items-center gap-1 mx-2">
-             <SmartCard type="eef" />
-             <SmartCard type="opa" />
-          </div>
-        )}
-
         {/* Global Hubs Navigation */}
         <nav className="flex items-center h-full gap-0.5 flex-1 px-4 overflow-x-auto no-scrollbar">
            {PERFORMANCE_DOMAINS.map((domain, idx) => {

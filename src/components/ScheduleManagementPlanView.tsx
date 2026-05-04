@@ -41,7 +41,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
-import { cn } from '../lib/utils';
+import { cn, getISODate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -75,10 +75,11 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [isArchived, setIsArchived] = useState(false);
 
   const [schedulePlan, setSchedulePlan] = useState<SchedulePlanData>({
     projectTitle: '',
-    datePrepared: new Date().toISOString().split('T')[0],
+    datePrepared: getISODate(new Date()),
     version: '1.0',
     methodology: 'Critical Path Method (CPM)',
     tools: 'PMIS Integrated Schedule Domain',
@@ -96,7 +97,6 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
   });
 
   const [planRecords, setPlanRecords] = useState<any[]>([]);
-  const [versions, setVersions] = useState<{ id: string; version: string; timestamp: string; userName: string; }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -106,18 +106,12 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
     const q = query(
       collection(db, 'scheduleManagementPlans'),
       where('projectId', '==', selectedProject.id),
-      orderBy('updatedAt', 'desc')
+      orderBy('version', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       setPlanRecords(data);
-      setVersions(data.map(d => ({ 
-        id: d.id, 
-        version: d.version, 
-        timestamp: d.updatedAt, 
-        userName: d.updatedBy || 'Unkown' 
-      })));
       setLoading(false);
     });
 
@@ -128,26 +122,28 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
     if (!selectedRecordId && viewMode === 'edit') {
       setSchedulePlan({
         projectTitle: selectedProject ? `${selectedProject.name} (${selectedProject.code})` : '',
-        datePrepared: new Date().toISOString().split('T')[0],
+        datePrepared: getISODate(new Date()),
         version: '1.0',
-        methodology: 'Critical Path Method (CPM)',
-        tools: 'PMIS Gantt Engine',
+        methodology: 'Critical Path Method (CPM) using Primavera/P6 logic',
+        tools: 'PMIS Gantt Engine & Resource Hub',
         accuracy: '+/- 5%',
-        units: 'Days',
-        varianceThresholds: '5% Alert',
-        reportingFormat: 'Weekly PDF',
+        units: 'Working Days',
+        varianceThresholds: '5% Negative Variance Trigger',
+        reportingFormat: 'Dashboards + Weekly PDF Exports',
         processManagement: {
-          identification: 'WBS Decomposition',
-          sequencing: 'FS Links',
-          estimatingResources: 'Historical Data',
-          estimatingEffort: 'Productivity Rates',
-          monitoring: 'Weekly Snapshot'
+          identification: 'Bottom-up decomposition from WBS packages',
+          sequencing: 'Mandatory and Discretionary dependencies',
+          estimatingResources: 'Expert judgment and published data',
+          estimatingEffort: 'Three-point estimation technique',
+          monitoring: 'Earned Value Management (EVM)'
         }
       });
-    } else if (selectedRecordId && viewMode === 'edit') {
+      setIsArchived(false);
+    } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setSchedulePlan({ ...schedulePlan, ...record });
+         setIsArchived(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -159,22 +155,31 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
       const timestamp = new Date().toISOString();
       const user = auth.currentUser?.displayName || auth.currentUser?.email || 'System';
       
-      const newVersionNum = isNew ? (parseFloat(schedulePlan.version) + 0.1).toFixed(1) : schedulePlan.version;
+      const currentVersionNumber = planRecords.length > 0 ? parseFloat(planRecords[0].version || '1.0') : 1.0;
+      const nextVersion = isNew ? (currentVersionNumber + 0.1).toFixed(1) : currentVersionNumber.toFixed(1);
 
       const planData = {
         ...schedulePlan,
         projectId: selectedProject.id,
         updatedAt: timestamp,
         updatedBy: user,
-        version: newVersionNum
+        version: nextVersion,
+        status: isNew ? 'Active' : (schedulePlan.status || 'Active')
       };
 
-      if (!selectedRecordId || isNew) {
-        await addDoc(collection(db, 'scheduleManagementPlans'), {
+      if (isNew || !selectedRecordId) {
+        if (isNew) {
+          const activeDocs = planRecords.filter(r => r.status !== 'Archived');
+          for (const docToArchive of activeDocs) {
+            await updateDoc(doc(db, 'scheduleManagementPlans', docToArchive.id), { status: 'Archived' });
+          }
+        }
+        const docRef = await addDoc(collection(db, 'scheduleManagementPlans'), {
           ...planData,
           createdAt: timestamp
         });
-        toast.success(isNew ? 'New baseline version created' : 'Schedule plan saved');
+        setSelectedRecordId(docRef.id);
+        toast.success(isNew ? 'New Schedule Version Created' : 'Plan Saved');
       } else {
         await updateDoc(doc(db, 'scheduleManagementPlans', selectedRecordId), planData);
         toast.success('Schedule plan updated');
@@ -185,6 +190,10 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCreateNewVersion = () => {
+    handleSave(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -260,12 +269,23 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
       onPrint={generatePDF}
       isSaving={isSaving}
       inputs={[
-        { id: 'scope-plan', title: 'Scope Management Plan' },
-        { id: 'eef', title: 'EEFs' },
-        { id: 'opa', title: 'OPAs' }
+        { id: 'SCOPE_PLAN', title: t('scope_management_plan') },
+        { id: 'WBS', title: t('wbs') },
+        { id: 'EEFS', title: 'EEFs', lastUpdated: '2024-03-21' },
       ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      versions={planRecords}
+      currentVersion={schedulePlan.version}
+      onVersionChange={(v) => {
+        const record = planRecords.find(r => r.version === v);
+        if (record) {
+          setSelectedRecordId(record.id);
+          setViewMode('edit');
+        }
+      }}
+      onNewVersion={handleCreateNewVersion}
+      isArchived={isArchived}
     >
        <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -294,109 +314,109 @@ export const ScheduleManagementPlanView: React.FC<ScheduleManagementPlanViewProp
           ) : (
             <motion.div
               key="edit"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-6 pb-20"
             >
-              <div className="flex justify-between items-center pr-2">
-                 <button 
-                   onClick={() => setViewMode('grid')}
-                   className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
-                 >
-                   <ArrowLeft className="w-3.5 h-3.5" />
-                   {t('back_to_list') || 'Back to List'}
-                 </button>
+              <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm space-y-10 relative overflow-hidden">
+                {isArchived && (
+                  <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-3 px-6 flex items-center gap-3 z-10">
+                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black uppercase text-amber-600 tracking-[0.2em]">Archived Baseline Snapshot - V{schedulePlan.version}</span>
+                  </div>
+                )}
+
+                <section className="space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Preparation Date</label>
+                      <input 
+                        type="date"
+                        value={schedulePlan.datePrepared}
+                        onChange={(e) => setSchedulePlan({ ...schedulePlan, datePrepared: e.target.value })}
+                        disabled={isArchived}
+                        className="w-full px-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Governance Target</label>
+                      <div className="px-5 py-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-sm font-black text-indigo-600 flex items-center justify-between">
+                         <span>V{schedulePlan.version} BASELINE</span>
+                         <ShieldCheck className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+                           <Settings className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Scheduling Infrastructure</h3>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Methodology & Tool Selection</p>
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {[
+                          { key: 'methodology', label: 'Scheduling Methodology', icon: Network },
+                          { key: 'tools', label: 'Technical Tools', icon: Zap },
+                          { key: 'accuracy', label: 'Level of Accuracy', icon: Activity },
+                          { key: 'units', label: 'Units of Measure', icon: Layers },
+                          { key: 'varianceThresholds', label: 'Variance Control Thresholds', icon: Settings },
+                          { key: 'reportingFormat', label: 'Reporting Standards', icon: FileText }
+                        ].map((field) => (
+                          <div key={field.key} className="space-y-3 group">
+                             <div className="flex items-center gap-2 mb-1 px-1">
+                               {React.createElement(field.icon as any, { className: "w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-500 transition-colors" })}
+                               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{field.label}</label>
+                             </div>
+                             <textarea 
+                               value={(schedulePlan as any)[field.key]} 
+                               onChange={(e) => setSchedulePlan({...schedulePlan, [field.key]: e.target.value})} 
+                               disabled={isArchived}
+                               placeholder={`Define ${field.label.toLowerCase()}...`}
+                               className="w-full h-28 px-5 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all disabled:opacity-50 resize-none"
+                             />
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+
+                  <div className="space-y-8 pt-10 border-t border-slate-50">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
+                           <Activity className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Process Refinement</h3>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Execution & Monitoring Strategies</p>
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {Object.entries(schedulePlan.processManagement).map(([key, value]) => (
+                          <div key={key} className="space-y-3 p-6 bg-slate-50/50 rounded-3xl border border-slate-100/50 group hover:border-orange-200 transition-all">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">
+                               {key.replace(/([A-Z])/g, ' $1')} Strategy
+                             </label>
+                             <textarea 
+                               value={value}
+                               onChange={(e) => setSchedulePlan({
+                                 ...schedulePlan,
+                                 processManagement: { ...schedulePlan.processManagement, [key]: e.target.value }
+                               })}
+                               disabled={isArchived}
+                               className="w-full h-24 px-4 py-3 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-200 transition-all disabled:opacity-50 resize-none"
+                             />
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+                </section>
               </div>
-
-              <PlanningPlanHeader 
-                currentVersion={schedulePlan.version}
-                onVersionChange={(v) => {
-                  const record = planRecords.find(r => r.version === v);
-                  if (record) {
-                    setSelectedRecordId(record.id);
-                  }
-                }}
-                onNewVersion={() => handleSave(true)}
-                versions={versions}
-              />
-
-              <section className="space-y-8">
-                 <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8 border-b border-slate-100">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Date Prepared</label>
-                          <input 
-                            type="date"
-                            value={schedulePlan.datePrepared}
-                            onChange={(e) => setSchedulePlan({ ...schedulePlan, datePrepared: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                          />
-                       </div>
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block">Baseline Version</label>
-                          <div className="px-5 py-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-sm font-black text-emerald-600">
-                             V{schedulePlan.version} - Snapshot
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="space-y-6">
-                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-                             <Settings className="w-4 h-4" />
-                          </div>
-                          Scheduling Infrastructure
-                       </h3>
-                       
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Scheduling Methodology</label>
-                             <textarea 
-                               value={schedulePlan.methodology} 
-                               onChange={(e) => setSchedulePlan({...schedulePlan, methodology: e.target.value})} 
-                               className="w-full h-24 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                             />
-                          </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Technical Tools</label>
-                             <textarea 
-                               value={schedulePlan.tools} 
-                               onChange={(e) => setSchedulePlan({...schedulePlan, tools: e.target.value})} 
-                               className="w-full h-24 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                             />
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="space-y-6 pt-10 border-t border-slate-50">
-                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
-                             <Network className="w-4 h-4" />
-                          </div>
-                          Process Management
-                       </h3>
-                       
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {Object.entries(schedulePlan.processManagement).map(([key, value]) => (
-                            <div key={key} className="space-y-2">
-                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block capitalize">
-                                 {key.replace(/([A-Z])/g, ' $1')}
-                               </label>
-                               <input 
-                                 value={value}
-                                 onChange={(e) => setSchedulePlan({
-                                   ...schedulePlan,
-                                   processManagement: { ...schedulePlan.processManagement, [key]: e.target.value }
-                                 })}
-                                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:border-orange-200 transition-all"
-                               />
-                            </div>
-                          ))}
-                       </div>
-                    </div>
-                 </div>
-              </section>
             </motion.div>
           )}
         </AnimatePresence>

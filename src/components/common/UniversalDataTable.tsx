@@ -14,7 +14,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../../lib/utils';
+import { cn, formatDate } from '../../lib/utils';
 import { EntityConfig } from '../../types';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
@@ -278,7 +278,7 @@ const renderCellValue = (value: any, type: string) => {
     case 'currency':
       return <span className="font-mono font-medium text-slate-700">{new Intl.NumberFormat('en-IQ', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(value)}</span>;
     case 'date':
-      return <span className="text-slate-500">{new Date(value).toLocaleDateString()}</span>;
+      return <span className="text-slate-500">{formatDate(value)}</span>;
     case 'status':
       const colors: any = {
         Active: 'bg-emerald-100 text-emerald-700',

@@ -80,7 +80,7 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
       }
 
       // --- Trigger Rollup ---
-      if (config.collection === 'purchaseOrders' && finalData.activityId) {
+      if (config.collection === 'purchase_orders' && finalData.activityId) {
         await rollupToParent('po', finalData.activityId);
       } else if (config.collection === 'activities' && (finalData.divisionId || finalData.wbsId)) {
         await rollupToParent('workPackage', finalData.divisionId || finalData.wbsId);
@@ -109,7 +109,7 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
 
       // --- Trigger Rollup After Delete ---
       if (recordToDelete) {
-        if (config.collection === 'purchaseOrders' && recordToDelete.activityId) {
+        if (config.collection === 'purchase_orders' && recordToDelete.activityId) {
           await rollupToParent('po', recordToDelete.activityId);
         } else if (config.collection === 'activities' && (recordToDelete.divisionId || recordToDelete.wbsId)) {
           await rollupToParent('workPackage', recordToDelete.divisionId || recordToDelete.wbsId);

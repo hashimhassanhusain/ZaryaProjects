@@ -58,11 +58,11 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
     );
 
     const poUnsubscribe = onSnapshot(
-      query(collection(db, 'purchaseOrders'), where('projectId', '==', selectedProject.id)),
+      query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)),
       (snapshot) => {
         setPurchaseOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseOrder)));
       },
-      (error) => handleFirestoreError(error, OperationType.LIST, 'purchaseOrders')
+      (error) => handleFirestoreError(error, OperationType.LIST, 'purchase_orders')
     );
 
     return () => {

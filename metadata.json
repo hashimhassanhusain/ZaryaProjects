@@ -1,6 +1,6 @@
 {
   "name": "PMIS",
-  "description": "A professional Project Management Information System aligned with PMBOK 8th Edition, featuring integrated Procurement & Contracts management with automated Google Drive structure and financial logic gates.",
+  "description": "A high-performance Project Management Information System (PMIS) aligned with PMBOK standards. Features master Project Management Plan (PMP) tools, automated Business Case generation, integrated governance policies, and strict financial logic gates for professional construction and engineering projects.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

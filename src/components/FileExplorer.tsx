@@ -3,7 +3,7 @@ import {
   Folder, File, Upload, ChevronRight, ChevronDown, 
   Loader2, HardDrive, Search, Filter, MoreVertical, 
   Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, 
-  Plus, Clock, User 
+  Plus, Clock, User, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storage, db } from '../firebase';
@@ -13,6 +13,7 @@ import { useAuth } from '../context/UserContext';
 import { generatePMISFileName, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
+import { FileViewerModal } from './FileViewerModal';
 
 interface FileExplorerProps {
   projectId: string;
@@ -93,6 +94,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFile, setViewerFile] = useState<any>(null);
   
   const [uploadMetadata, setUploadMetadata] = useState({
     category: 'Management',
@@ -212,6 +215,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
 
   const executeUpload = async () => {
     if (!pendingFile || !project || !selectedProjectId) return;
+
+    if (pendingFile.size > 10 * 1024 * 1024) {
+      toast.error("File size exceeds 10MB limit. Please use a compressed version or lower resolution.");
+      return;
+    }
 
     setUploading(true);
     try {
@@ -548,16 +556,38 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                 </div>
 
                 <div className="pt-8 flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setViewerFile(selectedFile);
+                      setViewerOpen(true);
+                    }}
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:bg-slate-800 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Eye className="w-4 h-4 text-blue-400" />
+                    Interactive View
+                  </button>
                   <a 
                     href={selectedFile.webViewLink} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:bg-slate-800 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 active:scale-95"
+                    className="w-full py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95"
                   >
-                    <ExternalLink className="w-4 h-4 text-blue-400" />
-                    Live Preview
+                    <ExternalLink className="w-4 h-4 text-slate-400" />
+                    Open in Drive
                   </a>
-                  <button className="w-full py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95">
+                  <button 
+                    onClick={() => {
+                      if (selectedFile.webContentLink) {
+                        window.open(selectedFile.webContentLink, '_blank');
+                      } else if (selectedFile.webViewLink) {
+                        window.open(selectedFile.webViewLink, '_blank');
+                      } else {
+                        toast.error('Download link not available');
+                      }
+                    }}
+                    className="w-full py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Download className="w-4 h-4 text-slate-400" />
                     Download Local
                   </button>
                 </div>
@@ -576,6 +606,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       </div>
 
       <AnimatePresence>
+        {viewerOpen && viewerFile && (
+          <FileViewerModal 
+            isOpen={viewerOpen}
+            onClose={() => setViewerOpen(false)}
+            fileUrl={viewerFile.webViewLink || ''}
+            fileType={viewerFile.name.split('.').pop() || ''}
+            fileName={viewerFile.name}
+            details={{
+              previewUrl: viewerFile.thumbnailLink?.replace('s220', 's800'),
+              ...viewerFile
+            }}
+          />
+        )}
+
         {showUploadModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
