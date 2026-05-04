@@ -42,7 +42,7 @@ import { SupplierMasterRegister } from './SupplierMasterRegister';
 import { DetailView } from './DetailView';
 import { ContactsView } from './ContactsView';
 import { CompaniesView } from './CompaniesView';
-import { HumanResourceManagementPlanView } from './HumanResourceManagementPlanView';
+import { ResourceManagementPlanView } from './ResourceManagementPlanView';
 import { pages } from '../data';
 
 interface ResourceOptimizationHubProps {
@@ -148,7 +148,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           {activeTab === 'contacts' && <ContactsView />}
           {activeTab === 'companies' && <CompaniesView />}
           {activeTab === 'team-directory' && <TeamDirectoryTab projectId={projectId} />}
-          {activeTab === 'hrmp' && <HumanResourceManagementPlanView page={pages.find(p => p.id === '2.1.10')!} />}
+          {activeTab === 'hrmp' && <ResourceManagementPlanView page={pages.find(p => p.id === '2.1.10')!} />}
           {activeTab === 'resource-plan' && <ResourceRequirementsTab projectId={projectId} />}
           {activeTab === 'resource-structure' && <RBSTab projectId={projectId} />}
           {activeTab === 'responsibility-matrix' && <RAMTab projectId={projectId} />}

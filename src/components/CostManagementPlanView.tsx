@@ -51,7 +51,8 @@ import {
   where,
   collection,
   addDoc,
-  deleteDoc
+  deleteDoc,
+  orderBy
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';

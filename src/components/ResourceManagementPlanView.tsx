@@ -48,7 +48,8 @@ import {
   collection,
   addDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  orderBy
 } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -60,7 +61,7 @@ import toast from 'react-hot-toast';
 import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
 
-interface HumanResourceManagementPlanViewProps {
+interface ResourceManagementPlanViewProps {
   page: Page;
 }
 

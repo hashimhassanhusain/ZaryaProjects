@@ -591,7 +591,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     // Resource specific terminal views
     if (p.id === 'contacts') return <ContactsView />;
     if (p.id === 'companies') return <CompaniesView />;
-    if (p.id === '2.1.10') return <HumanResourceManagementPlanView page={p} />;
+    if (p.id === '2.1.10') return <ResourceManagementPlanView page={p} />;
     if (p.id === '2.6.1') return <ResourceRequirementsTab projectId={projectId} />;
     if (p.id === '2.6.4') return <RBSTab projectId={projectId} />;
     if (p.id === '2.6.5') return <RAMTab projectId={projectId} />;

@@ -18,88 +18,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Google Drive Auth
+// Google Drive Auth (OAuth 2.0 version)
 const getDriveClient = () => {
-  let envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
-  
-  // Fallback: Check for a local service-account.json if env var is missing
-  if (!envCreds) {
-    const credsPath = path.join(process.cwd(), 'service-account.json');
-    if (fs.existsSync(credsPath)) {
-      console.log('Using local service-account.json file...');
-      envCreds = fs.readFileSync(credsPath, 'utf8');
-    }
-  }
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
 
-  if (!envCreds) {
-    return { error: 'Google Drive Credentials Missing: Please set the GOOGLE_DRIVE_CREDENTIALS environment variable OR upload "service-account.json" to the server root.' };
+  if (!clientId || !clientSecret || !refreshToken) {
+    return { error: 'Google Drive OAuth2 Credentials Missing: Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN in your environment variables.' };
   }
 
   try {
-    console.log('Attempting to parse GOOGLE_DRIVE_CREDENTIALS...');
-    let rawInput = envCreds.trim();
-    
-    // Detection for common placeholder mistake
-    if (rawInput.startsWith('{') && rawInput.endsWith('}') && !rawInput.includes('"')) {
-      return { error: `Placeholder Detected! You pasted "${rawInput}" instead of the actual JSON content. Please replace it with the FULL content of your Service Account JSON file.` };
-    }
+    const oauth2Client = new google.auth.OAuth2(
+      clientId,
+      clientSecret
+    );
 
-    // 1. Aggressive cleaning: If the user pasted "KEY=VALUE", extract only VALUE
-    if (rawInput.includes('=')) {
-      const parts = rawInput.split('=');
-      // Take everything after the first '='
-      rawInput = parts.slice(1).join('=').trim();
-    }
-
-    // 2. Extract anything between the first '{' and the last '}'
-    const start = rawInput.indexOf('{');
-    const end = rawInput.lastIndexOf('}');
-    
-    if (start === -1 || end === -1) {
-      const preview = rawInput.substring(0, 30).replace(/\n/g, ' ');
-      return { error: `Invalid Format! Your secret starts with: "${preview}...". It MUST start with "{" and end with "}". Please copy the FULL content of the JSON file you downloaded from Google Cloud.` };
-    }
-    
-    let jsonStr = rawInput.substring(start, end + 1);
-
-    // 3. Parse the JSON
-    let credentials;
-    try {
-      credentials = JSON.parse(jsonStr);
-    } catch (parseError) {
-      // If it fails, it might be double-escaped (common in some environments)
-      try {
-        const unescaped = jsonStr.replace(/\\n/g, '\n').replace(/\\"/g, '"');
-        credentials = JSON.parse(unescaped);
-      } catch (e) {
-        throw new Error('The content is not a valid JSON. Please check for missing braces or extra characters.');
-      }
-    }
-    
-    if (!credentials.private_key || !credentials.client_email) {
-      return { error: 'JSON parsed but missing "private_key" or "client_email".' };
-    }
-
-    // 4. Clean the private_key
-    let pk = credentials.private_key;
-    pk = pk.replace(/\\n/g, '\n').trim().replace(/^['"]+|['"]+$/g, '');
-    
-    if (!pk.includes('-----BEGIN PRIVATE KEY-----')) {
-      const cleanBase64 = pk.replace(/\s+/g, '');
-      const wrapped = cleanBase64.match(/.{1,64}/g)?.join('\n') || cleanBase64;
-      pk = `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----`;
-    }
-    credentials.private_key = pk;
-
-    console.log('Initializing GoogleAuth for:', credentials.client_email);
-    
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/drive'],
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken
     });
-    
-    const drive = google.drive({ version: 'v3', auth });
-    return { drive, clientEmail: credentials.client_email };
+
+    // Handle token refresh events for debugging
+    oauth2Client.on('tokens', (tokens) => {
+      if (tokens.refresh_token) {
+        console.log('New refresh token received');
+      }
+      console.log('Access token refreshed');
+    });
+
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    return { drive, clientEmail: 'OAuth2 Integration' };
   } catch (e: any) {
     console.error('CRITICAL Drive Init Error:', e.message);
     return { error: `Configuration Error: ${e.message}` };
@@ -590,7 +538,7 @@ app.post('/api/admin/backup-code', async (req: any, res: any) => {
 });
 
 app.post('/api/admin/test-drive', async (req: any, res: any) => {
-  const { drive, clientEmail, error } = getDriveClient();
+  const { drive, error } = getDriveClient();
   if (error || !drive) {
     return res.status(500).json({ error: error || 'Google Drive client not initialized.' });
   }
@@ -601,6 +549,21 @@ app.post('/api/admin/test-drive', async (req: any, res: any) => {
       return res.status(400).json({ error: 'GOOGLE_DRIVE_PARENT_FOLDER_ID is missing in environment variables.' });
     }
 
+    // Force a token refresh to catch auth errors early
+    const auth: any = drive.context._options.auth;
+    console.log('Testing Drive connection and refreshing tokens...');
+    
+    try {
+      const tokenResponse = await auth.getAccessToken();
+      console.log('Access token refreshed successfully');
+    } catch (tokenErr: any) {
+      console.error('Token refresh failed:', tokenErr.message);
+      return res.status(401).json({ 
+        error: `Authentication Failed: ${tokenErr.message}`,
+        details: 'This usually indicates that GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_REFRESH_TOKEN are incorrect or have been revoked.'
+      });
+    }
+
     const folder = await drive.files.get(
       { 
         fileId: parentId,
@@ -609,14 +572,10 @@ app.post('/api/admin/test-drive', async (req: any, res: any) => {
       { timeout: 10000 }
     );
     
-    // Get the service account email from the drive client auth
-    const auth: any = drive.context._options.auth;
-    const clientEmail = auth?.credentials?.client_email || 'Unknown';
-
     res.json({ 
       success: true, 
       folderName: folder.data.name,
-      clientEmail: clientEmail
+      clientEmail: 'OAuth2 Integration (Token Verified)'
     });
   } catch (error: any) {
     console.error('Test Drive Connection failed:', error);
@@ -763,11 +722,12 @@ app.get('/api/drive/list', async (req: any, res: any) => {
 });
 
 app.get('/api/admin/drive-status', (req: any, res: any) => {
-  const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
   const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
   
   res.json({
-    isConfigured: !!envCreds && envCreds.length > 50, // Simple check for JSON content
+    isConfigured: !!clientId && !!refreshToken,
     hasParentFolder: !!parentId,
     parentFolderId: parentId
   });
@@ -804,19 +764,31 @@ async function startServer() {
         console.log('Running background connection test...');
         const { drive, error } = getDriveClient();
         if (drive) {
+          const oauth2Client: any = drive.context._options.auth;
           const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
-          if (parentId) {
-            // Add a timeout to the request
-            const folder = await drive.files.get(
-              { 
-                fileId: parentId,
-                supportsAllDrives: true,
-              },
-              { timeout: 10000 }
-            );
-            console.log('✅ Background connection test successful. Parent folder:', folder.data.name);
-          } else {
-            console.warn('⚠️ GOOGLE_DRIVE_PARENT_FOLDER_ID not set.');
+          
+          try {
+            console.log('Attempting to refresh access token...');
+            await oauth2Client.getAccessToken();
+            console.log('✅ Access token refreshed successfully.');
+            
+            if (parentId) {
+              const folder = await drive.files.get(
+                { 
+                  fileId: parentId,
+                  supportsAllDrives: true,
+                },
+                { timeout: 10000 }
+              );
+              console.log('✅ Background connection test successful. Parent folder:', folder.data.name);
+            } else {
+              console.warn('⚠️ GOOGLE_DRIVE_PARENT_FOLDER_ID not set.');
+            }
+          } catch (atErr: any) {
+             console.error('❌ Token refresh failed during startup:', atErr.message);
+             if (atErr.message === 'unauthorized_client') {
+               console.error('   -> Check if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET match the ones used to generate GOOGLE_REFRESH_TOKEN.');
+             }
           }
         } else {
           console.warn('⚠️ Google Drive client not initialized:', error);

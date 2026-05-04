@@ -17,67 +17,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 var getDriveClient = () => {
-  let envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
-  if (!envCreds) {
-    const credsPath = path.join(process.cwd(), "service-account.json");
-    if (fs.existsSync(credsPath)) {
-      console.log("Using local service-account.json file...");
-      envCreds = fs.readFileSync(credsPath, "utf8");
-    }
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    return { error: 'Google Drive OAuth2 Credentials Missing: Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN in your environment variables.' };
   }
-  if (!envCreds) {
-    return { error: 'Google Drive Credentials Missing: Please set the GOOGLE_DRIVE_CREDENTIALS environment variable OR upload "service-account.json" to the server root.' };
-  }
+
   try {
-    console.log("Attempting to parse GOOGLE_DRIVE_CREDENTIALS...");
-    let rawInput = envCreds.trim();
-    if (rawInput.startsWith("{") && rawInput.endsWith("}") && !rawInput.includes('"')) {
-      return { error: `Placeholder Detected! You pasted "${rawInput}" instead of the actual JSON content. Please replace it with the FULL content of your Service Account JSON file.` };
-    }
-    if (rawInput.includes("=")) {
-      const parts = rawInput.split("=");
-      rawInput = parts.slice(1).join("=").trim();
-    }
-    const start = rawInput.indexOf("{");
-    const end = rawInput.lastIndexOf("}");
-    if (start === -1 || end === -1) {
-      const preview = rawInput.substring(0, 30).replace(/\n/g, " ");
-      return { error: `Invalid Format! Your secret starts with: "${preview}...". It MUST start with "{" and end with "}". Please copy the FULL content of the JSON file you downloaded from Google Cloud.` };
-    }
-    let jsonStr = rawInput.substring(start, end + 1);
-    let credentials;
-    try {
-      credentials = JSON.parse(jsonStr);
-    } catch (parseError) {
-      try {
-        const unescaped = jsonStr.replace(/\\n/g, "\n").replace(/\\"/g, '"');
-        credentials = JSON.parse(unescaped);
-      } catch (e) {
-        throw new Error("The content is not a valid JSON. Please check for missing braces or extra characters.");
-      }
-    }
-    if (!credentials.private_key || !credentials.client_email) {
-      return { error: 'JSON parsed but missing "private_key" or "client_email".' };
-    }
-    let pk = credentials.private_key;
-    pk = pk.replace(/\\n/g, "\n").trim().replace(/^['"]+|['"]+$/g, "");
-    if (!pk.includes("-----BEGIN PRIVATE KEY-----")) {
-      const cleanBase64 = pk.replace(/\s+/g, "");
-      const wrapped = cleanBase64.match(/.{1,64}/g)?.join("\n") || cleanBase64;
-      pk = `-----BEGIN PRIVATE KEY-----
-${wrapped}
------END PRIVATE KEY-----`;
-    }
-    credentials.private_key = pk;
-    console.log("Initializing GoogleAuth for:", credentials.client_email);
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ["https://www.googleapis.com/auth/drive"]
+    const oauth2Client = new google.auth.OAuth2(
+      clientId,
+      clientSecret
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken
     });
-    const drive = google.drive({ version: "v3", auth });
-    return { drive, clientEmail: credentials.client_email };
+
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    return { drive, clientEmail: 'OAuth2 Integration' };
   } catch (e) {
-    console.error("CRITICAL Drive Init Error:", e.message);
+    console.error('CRITICAL Drive Init Error:', e.message);
     return { error: `Configuration Error: ${e.message}` };
   }
 };
@@ -526,7 +487,7 @@ app.post("/api/admin/test-drive", async (req, res) => {
       { timeout: 1e4 }
     );
     const auth = drive.context._options.auth;
-    const clientEmail2 = auth?.credentials?.client_email || "Unknown";
+    const clientEmail2 = auth?.credentials?.client_email || "OAuth2 Integration (Refresh Token Active)";
     res.json({
       success: true,
       folderName: folder.data.name,
@@ -628,11 +589,11 @@ app.get("/api/drive/files/:folderId", async (req, res) => {
   }
 });
 app.get("/api/admin/drive-status", (req, res) => {
-  const envCreds = process.env.GOOGLE_DRIVE_CREDENTIALS;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
   const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
   res.json({
-    isConfigured: !!envCreds && envCreds.length > 50,
-    // Simple check for JSON content
+    isConfigured: !!clientId && !!refreshToken,
     hasParentFolder: !!parentId,
     parentFolderId: parentId
   });

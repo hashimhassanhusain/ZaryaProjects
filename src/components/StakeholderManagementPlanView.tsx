@@ -180,7 +180,6 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
   const handleCreateNewVersion = () => {
     handleSave(true);
   };
- kitchen
 
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('confirm_delete'))) return;

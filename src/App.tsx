@@ -32,6 +32,8 @@ import { AssumptionConstraintView } from './components/AssumptionConstraintView'
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { SupplierMasterRegister } from './components/SupplierMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
+import { StakeholderManagementPlanView } from './components/StakeholderManagementPlanView';
+import { CommunicationsManagementPlanView } from './components/CommunicationsManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
 import { FormalAcceptanceView } from './components/FormalAcceptanceView';
 import { CorrespondenceLogView } from './components/CorrespondenceLogView';
@@ -67,7 +69,7 @@ import { RiskOpportunityHub } from './components/RiskOpportunityHub';
 import { PERFORMANCE_DOMAINS } from './constants/navigation';
 import { MatrixDashboard } from './components/MatrixDashboard';
 import { Loader2, ShieldAlert, ChevronRight, LayoutDashboard, TrendingUp } from 'lucide-react';
-import { cn, sortDomainPages, stripNumericPrefix } from './lib/utils';
+import { cn, sortDomainPages, stripNumericPrefix, getISODate } from './lib/utils';
 
 import { DomainDashboard } from './components/DomainDashboard';
 import { DriveFolderView } from './components/DriveFolderView';

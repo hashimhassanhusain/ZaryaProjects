@@ -8,6 +8,7 @@ import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
+import { toast } from 'react-hot-toast';
 import { 
   DndContext, 
   closestCorners, 
