@@ -229,7 +229,6 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   };
 
   const handleSaveUpload = async () => {
-
     if (!pendingFile || !selectedProject) {
       toast.error("No file or project selected");
       return;
@@ -239,35 +238,49 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       return;
     }
 
-    if (pendingFile.size > 10 * 1024 * 1024) {
-      toast.error("File size exceeds 10MB limit for cloud storage. Please use a compressed version.");
+    if (pendingFile.size > 50 * 1024 * 1024) {
+      toast.error("File size exceeds 50MB limit.");
       return;
     }
 
-    const toastId = toast.loading("Uploading and cataloging...");
+    // 1. CAPTURE FORM DATA & CLOSE MODAL IMMEDIATELY
+    const currentFormData = { ...formData };
+    const currentPendingFile = pendingFile;
+    const extension = "." + currentPendingFile.name.split(".").pop()?.toLowerCase();
+    const fullName = generateFileName();
+    const divisionObj = DIVISIONS.find((d) => d.code === currentFormData.division);
+    const typeObj = FILE_TYPES.find((t) => t.code === currentFormData.type);
+    
+    setIsAddOpen(false);
+    setPendingFile(null);
+    setFormData((prev) => ({
+      ...prev,
+      refNo: (parseInt(prev.refNo) + 1).toString().padStart(3, "0"),
+      description: "",
+    }));
+
+    // 2. START BACKGROUND UPLOAD WITH NON-BLOCKING TOAST
+    const backgroundToastId = toast.loading(`Uploading: ${fullName}...`, {
+      style: { minWidth: '300px' }
+    });
 
     try {
-      const extension = "." + pendingFile.name.split(".").pop()?.toLowerCase();
-      const fullName = generateFileName();
-      const divisionObj = DIVISIONS.find((d) => d.code === formData.division);
-      const typeObj = FILE_TYPES.find((t) => t.code === formData.type);
-
-      // 1. Sync to Google Drive (Prioritized for technical divisions)
-      let driveFileId = "";
-      if (selectedProject.driveFolderId) {
+      // Parallelize both uploads for efficiency
+      const driveUploadPromise = (async () => {
+        if (!selectedProject.driveFolderId) return "";
         try {
           const driveData = new FormData();
-          driveData.append("file", pendingFile, `${fullName}${extension}`);
+          driveData.append("file", currentPendingFile);
           driveData.append("projectRootId", selectedProject.driveFolderId);
           
           let subFolder = "01_Drawings";
-          if (formData.type === "SPE") subFolder = "02_Specifications_and_DataSheets";
+          if (currentFormData.type === "SPE") subFolder = "02_Specifications_and_DataSheets";
           
           const drivePath = `TECHNICAL_DIVISIONS_02/${divisionObj?.div || "02.1_Architectural"}/${subFolder}`;
           driveData.append("path", drivePath);
 
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for Drive
+          const timeoutId = setTimeout(() => controller.abort(), 180000); // 3m timeout for slow connections
 
           const driveRes = await fetch("/api/drive/upload-by-path", {
             method: "POST",
@@ -275,76 +288,65 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
             signal: controller.signal
           }).finally(() => clearTimeout(timeoutId));
 
-          if (driveRes.ok) {
+          const contentType = driveRes.headers.get("content-type");
+          if (driveRes.ok && contentType && contentType.includes("application/json")) {
             const driveOutcome = await driveRes.json();
-            driveFileId = driveOutcome.fileId;
+            return driveOutcome.fileId;
           } else {
-            const driveErrorData = await driveRes.json().catch(() => ({}));
-            console.warn("Drive upload failed but continuing:", driveErrorData);
+            const text = await driveRes.text();
+            console.error(`Drive upload failed with status ${driveRes.status}. Body: ${text.substring(0, 200)}`);
+            return "";
           }
-        } catch (driveErr) {
-          console.error("Drive sync failed/timed out:", driveErr);
-          // We don't block the whole process if Drive fails, but we prefer it succeeds
+        } catch (err) {
+          console.error("Drive upload background failed:", err);
+          return "";
         }
+      })();
+
+      const firebaseUploadPromise = (async () => {
+        try {
+          const storageRef = ref(storage, `designs/${selectedProject.id}/${fullName}${extension}`);
+          const uploadResult = await uploadBytes(storageRef, currentPendingFile);
+          return await getDownloadURL(uploadResult.ref);
+        } catch (err) {
+          console.error("Firebase upload background failed:", err);
+          return "";
+        }
+      })();
+
+      const [driveFileId, fileUrl] = await Promise.all([driveUploadPromise, firebaseUploadPromise]);
+
+      if (!driveFileId && !fileUrl) {
+        throw new Error("Both upload paths failed.");
       }
 
-      // 2. Upload to Firebase Storage (For internal PMIS preview)
-      let fileUrl = "";
-      try {
-        const storageRef = ref(
-          storage,
-          `designs/${selectedProject.id}/${fullName}${extension}`,
-        );
-        // Set a reasonable retry limit or timeout for Storage
-        const uploadResult = await uploadBytes(storageRef, pendingFile);
-        fileUrl = await getDownloadURL(uploadResult.ref);
-      } catch (storageErr: any) {
-        console.error("Cloud Storage failed:", storageErr);
-        if (driveFileId) {
-          toast.error("Cloud preview upload failed, but file saved to Drive.", { duration: 5000 });
-        } else {
-          throw storageErr; // If BOTH fail, that's a real failure
-        }
-      }
-
+      // 3. Save to Registry
       const newDesign: Omit<DesignFile, "id"> = {
         projectId: selectedProject.id,
-        originator: formData.originator,
+        originator: currentFormData.originator,
         division: divisionObj?.div || "02.1_Architectural",
         type: (typeObj?.type || "dwg") as any,
-        discipline: formData.type === "DWG" ? formData.discipline : undefined,
-        subType: formData.type === "DWG" ? formData.subType : undefined,
-        refNo: formData.refNo,
-        description: formData.description,
-        version: formData.version,
+        discipline: currentFormData.type === "DWG" ? currentFormData.discipline : undefined,
+        subType: currentFormData.type === "DWG" ? currentFormData.subType : undefined,
+        refNo: currentFormData.refNo,
+        description: currentFormData.description,
+        version: currentFormData.version,
         date: new Date().toISOString().split("T")[0].replace(/-/g, ""),
         fullName,
         status: "Work in Progress",
         uploadedAt: new Date().toISOString(),
-        uploadedBy:
-          auth.currentUser?.displayName || auth.currentUser?.email || "System",
-        size: (pendingFile.size / (1024 * 1024)).toFixed(2) + " MB",
+        uploadedBy: auth.currentUser?.displayName || auth.currentUser?.email || "System",
+        size: (currentPendingFile.size / (1024 * 1024)).toFixed(2) + " MB",
         extension,
         fileUrl,
         driveFileId,
       };
 
       await addDoc(collection(db, "project_designs"), newDesign);
-      toast.success(
-        t("upload_success") || "File uploaded and cataloged successfully",
-        { id: toastId },
-      );
-      setIsAddOpen(false);
-      setPendingFile(null);
-      setFormData((prev) => ({
-        ...prev,
-        refNo: (parseInt(prev.refNo) + 1).toString().padStart(3, "0"),
-        description: "",
-      }));
+      toast.success(`${fullName} uploaded successfully`, { id: backgroundToastId });
     } catch (err) {
-      console.error("Upload error:", err);
-      toast.error("Upload failed. Please check your connection or permissions.", { id: toastId });
-      handleFirestoreError(err, OperationType.WRITE, "project_designs");
+      console.error("Background Upload error:", err);
+      toast.error(`Upload failed for ${fullName}`, { id: backgroundToastId });
     }
   };
 
@@ -414,6 +416,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         }
       }
     });
+
+    // Auto-sync from Drive on mount if project changes
+    if (selectedProject?.driveFolderId) {
+      scanDriveFolders();
+    }
 
     return () => {
       unsubDesigns();
@@ -603,7 +610,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       {/* Smart Upload Modal */}
       <AnimatePresence>
         {isAddOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -615,194 +622,198 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-2xl shadow-2xl overflow-hidden"
+              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
 
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase mb-8 flex items-center gap-4">
-                <Upload className="w-8 h-8 text-blue-600" />
-                {t("smart_asset_cataloging") || "Smart Asset Cataloging"}
-              </h2>
+              <div className="flex-shrink-0 mb-8 relative z-10">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase flex items-center gap-4">
+                  <Upload className="w-8 h-8 text-blue-600" />
+                  {t("smart_asset_cataloging") || "Smart Asset Cataloging"}
+                </h2>
+              </div>
 
-              <div className="grid grid-cols-2 gap-6 relative z-10">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("originator") || "Originator"}
-                  </label>
-                  <select
-                    value={formData.originator}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        originator: e.target.value as any,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    {ORIGINATORS.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("asset_type") || "Asset Type"}
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData({ ...formData, type: val });
-                    }}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    {FILE_TYPES.map((f) => (
-                      <option key={f.code} value={f.code}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-2 gap-6 relative z-10 pb-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("originator") || "Originator"}
+                    </label>
+                    <select
+                      value={formData.originator}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          originator: e.target.value as any,
+                        })
+                      }
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    >
+                      {ORIGINATORS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("asset_type") || "Asset Type"}
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData({ ...formData, type: val });
+                      }}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    >
+                      {FILE_TYPES.map((f) => (
+                        <option key={f.code} value={f.code}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {formData.type === "DWG" && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                        Discipline
-                      </label>
-                      <select
-                        value={formData.discipline}
-                        onChange={(e) => {
-                          const disc = disciplines.find(
-                            (d) => d.label === e.target.value,
-                          );
-                          setFormData({
-                            ...formData,
-                            discipline: e.target.value,
-                            subType: disc?.categories[0] || "",
-                          });
-                        }}
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                      >
-                        {disciplines.map((d) => (
-                          <option key={d.id} value={d.label}>
-                            {isRtl ? d.labelAr : d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                        Drawing Classification
-                      </label>
-                      <select
-                        value={formData.subType}
-                        onChange={(e) =>
-                          setFormData({ ...formData, subType: e.target.value })
-                        }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                      >
-                        {disciplines
-                          .find((d) => d.label === formData.discipline)
-                          ?.categories.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
+                  {formData.type === "DWG" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                          Discipline
+                        </label>
+                        <select
+                          value={formData.discipline}
+                          onChange={(e) => {
+                            const disc = disciplines.find(
+                              (d) => d.label === e.target.value,
+                            );
+                            setFormData({
+                              ...formData,
+                              discipline: e.target.value,
+                              subType: disc?.categories[0] || "",
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                        >
+                          {disciplines.map((d) => (
+                            <option key={d.id} value={d.label}>
+                              {isRtl ? d.labelAr : d.label}
                             </option>
                           ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                <div
-                  className={cn(
-                    "space-y-2",
-                    formData.type !== "DWG" && "col-span-2",
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                          Drawing Classification
+                        </label>
+                        <select
+                          value={formData.subType}
+                          onChange={(e) =>
+                            setFormData({ ...formData, subType: e.target.value })
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                        >
+                          {disciplines
+                            .find((d) => d.label === formData.discipline)
+                            ?.categories.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </>
                   )}
-                >
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("division") || "Division (MasterFormat)"}
-                  </label>
-                  <select
-                    value={formData.division}
-                    onChange={(e) =>
-                      setFormData({ ...formData, division: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    {DIVISIONS.map((d) => (
-                      <option key={d.code} value={d.code}>
-                        {d.div} - {d.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                {formData.type !== "DWG" && <div className="hidden" />}
-
-                <div className="col-span-1 space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("ref_no") || "Reference No."}
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.refNo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        refNo: e.target.value.padStart(3, "0"),
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("description") || "Description"}
-                  </label>
-                  <input
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="e.g. GroundFloor_Layout"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("version") || "Version"}
-                  </label>
-                  <select
-                    value={formData.version}
-                    onChange={(e) =>
-                      setFormData({ ...formData, version: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                  <div
+                    className={cn(
+                      "space-y-2",
+                      formData.type !== "DWG" && "col-span-2",
+                    )}
                   >
-                    {Array.from(
-                      { length: 10 },
-                      (_, i) => `V${(i + 1).toString().padStart(2, "0")}`,
-                    ).map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {t("naming_preview") || "Naming Preview"}
-                  </label>
-                  <div className="w-full bg-blue-50/50 border border-blue-100 rounded-2xl px-5 py-4 text-[10px] font-mono font-bold text-blue-600 break-all leading-relaxed p-4">
-                    {generateFileName()}
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("division") || "Division (MasterFormat)"}
+                    </label>
+                    <select
+                      value={formData.division}
+                      onChange={(e) =>
+                        setFormData({ ...formData, division: e.target.value })
+                      }
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    >
+                      {DIVISIONS.map((d) => (
+                        <option key={d.code} value={d.code}>
+                          {d.div} - {d.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {formData.type !== "DWG" && <div className="hidden" />}
+
+                  <div className="col-span-1 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("ref_no") || "Reference No."}
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.refNo}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          refNo: e.target.value.padStart(3, "0"),
+                        })
+                      }
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("description") || "Description"}
+                    </label>
+                    <input
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({ ...formData, description: e.target.value })
+                      }
+                      placeholder="e.g. GroundFloor_Layout"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("version") || "Version"}
+                    </label>
+                    <select
+                      value={formData.version}
+                      onChange={(e) =>
+                        setFormData({ ...formData, version: e.target.value })
+                      }
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                    >
+                      {Array.from(
+                        { length: 10 },
+                        (_, i) => `V${(i + 1).toString().padStart(2, "0")}`,
+                      ).map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {t("naming_preview") || "Naming Preview"}
+                    </label>
+                    <div className="w-full bg-blue-50/50 border border-blue-100 rounded-2xl px-5 py-4 text-[10px] font-mono font-bold text-blue-600 break-all leading-relaxed p-4">
+                      {generateFileName()}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-10 flex gap-4">
+              <div className="flex-shrink-0 mt-8 flex gap-4 pt-4 border-t border-slate-100">
                 <button
                   onClick={() => setIsAddOpen(false)}
                   className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
@@ -909,6 +920,15 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
           />
         )}
 
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept=".rvt,.dwg,.pdf,.ifc,.jpg,.jpeg,.png"
+        />
+
         <AnimatePresence>
           {activeType === "dwg" && (
             <motion.div
@@ -1002,7 +1022,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       {/* Settings Modal */}
       <AnimatePresence>
         {isSettingsOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
             <div
               onClick={() => setIsSettingsOpen(false)}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
@@ -1011,143 +1031,160 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl"
+              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
             >
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-8">
-                Manage Classifications
-              </h2>
+              <div className="flex-shrink-0 flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                  Manage Classifications
+                </h2>
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-all"
+                >
+                  <Box className="w-6 h-6" />
+                </button>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Add New Discipline
-                  </h3>
-                  <div className="space-y-4">
-                    <input
-                      placeholder="Label (e.g. Interior Design)"
-                      value={newDisc.label}
-                      onChange={(e) =>
-                        setNewDisc((p) => ({ ...p, label: e.target.value }))
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold"
-                    />
-                    <input
-                      placeholder="Label Arabic (e.g. تصميم داخلي)"
-                      value={newDisc.labelAr}
-                      onChange={(e) =>
-                        setNewDisc((p) => ({ ...p, labelAr: e.target.value }))
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold"
-                    />
-                    <button
-                      onClick={handleAddDiscipline}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-all"
-                    >
-                      Add Discipline
-                    </button>
-                  </div>
-
-                  <div className="pt-8 space-y-4">
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pb-4">
+                  <div className="space-y-6">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Active Disciplines
+                      Add New Discipline
                     </h3>
-                    {disciplines.map((d) => (
-                      <div
-                        key={d.id}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100"
+                    <div className="space-y-4">
+                      <input
+                        placeholder="Label (e.g. Interior Design)"
+                        value={newDisc.label}
+                        onChange={(e) =>
+                          setNewDisc((p) => ({ ...p, label: e.target.value }))
+                        }
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                      <input
+                        placeholder="Label Arabic (e.g. تصميم داخلي)"
+                        value={newDisc.labelAr}
+                        onChange={(e) =>
+                          setNewDisc((p) => ({ ...p, labelAr: e.target.value }))
+                        }
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                      <button
+                        onClick={handleAddDiscipline}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95"
                       >
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-slate-900">
-                            {d.label}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400">
-                            {d.labelAr}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteDiscipline(d.id)}
-                          className="text-rose-500 p-2 hover:bg-rose-50 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                        Add Discipline
+                      </button>
+                    </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Add Category to Discipline
-                  </h3>
-                  <div className="space-y-4">
-                    <select
-                      value={newCat.discId}
-                      onChange={(e) =>
-                        setNewCat((p) => ({ ...p, discId: e.target.value }))
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none"
-                    >
-                      <option value="">Select Discipline...</option>
-                      {disciplines.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      placeholder="Category Name (e.g. Moodboards)"
-                      value={newCat.label}
-                      onChange={(e) =>
-                        setNewCat((p) => ({ ...p, label: e.target.value }))
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold"
-                    />
-                    <button
-                      onClick={handleAddCategory}
-                      className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all"
-                    >
-                      Add Category
-                    </button>
-                  </div>
-
-                  <div className="pt-8 space-y-4">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Discipline Categories
-                    </h3>
-                    {disciplines.map((d) => (
-                      <div
-                        key={d.id}
-                        className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3"
-                      >
-                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
-                          {d.label}
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {d.categories.map((cat) => (
-                            <span
-                              key={cat}
-                              className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[9px] font-bold text-slate-600 flex items-center gap-2"
+                    <div className="pt-8 space-y-4">
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                        Active Disciplines
+                      </h3>
+                      <div className="space-y-2">
+                        {disciplines.map((d) => (
+                          <div
+                            key={d.id}
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-slate-900">
+                                {d.label}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {d.labelAr}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteDiscipline(d.id)}
+                              className="text-slate-300 p-2 hover:bg-rose-50 hover:text-rose-500 rounded-xl transition-all"
                             >
-                              {cat}
-                              <button
-                                onClick={async () => {
-                                  const filtered = d.categories.filter(
-                                    (c) => c !== cat,
-                                  );
-                                  await updateDoc(
-                                    doc(db, "design_disciplines", d.id),
-                                    { categories: filtered },
-                                  );
-                                }}
-                                className="text-slate-300 hover:text-rose-500"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                      Add Category to Discipline
+                    </h3>
+                    <div className="space-y-4">
+                      <select
+                        value={newCat.discId}
+                        onChange={(e) =>
+                          setNewCat((p) => ({ ...p, discId: e.target.value }))
+                        }
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm outline-none focus:bg-white transition-all focus:ring-2 focus:ring-blue-500/20"
+                      >
+                        <option value="">Select Discipline...</option>
+                        {disciplines.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        placeholder="Category Name (e.g. Moodboards)"
+                        value={newCat.label}
+                        onChange={(e) =>
+                          setNewCat((p) => ({ ...p, label: e.target.value }))
+                        }
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                      <button
+                        onClick={handleAddCategory}
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                      >
+                        Add Category
+                      </button>
+                    </div>
+
+                    <div className="pt-8 space-y-4">
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                        Discipline Categories
+                      </h3>
+                      <div className="space-y-3">
+                        {disciplines.map((d) => (
+                          <div
+                            key={d.id}
+                            className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 group hover:bg-white transition-all"
+                          >
+                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest opacity-60">
+                              {d.label}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {d.categories.map((cat) => (
+                                <span
+                                  key={cat}
+                                  className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-600 flex items-center gap-2 hover:border-blue-200 transition-all"
+                                >
+                                  {cat}
+                                  <button
+                                    onClick={async () => {
+                                      const filtered = d.categories.filter(
+                                        (c) => c !== cat,
+                                      );
+                                      await updateDoc(
+                                        doc(db, "design_disciplines", d.id),
+                                        { categories: filtered },
+                                      );
+                                    }}
+                                    className="text-slate-300 hover:text-rose-500 transition-colors"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                              {d.categories.length === 0 && (
+                                <span className="text-[9px] font-medium text-slate-400 italic">No categories defined</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

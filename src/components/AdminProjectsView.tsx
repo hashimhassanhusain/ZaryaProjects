@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Trash2, Layout, Calendar, ArrowLeft, MoreVertical, CheckCircle2, Clock, Loader2, ShieldAlert, Download, CloudUpload, Edit2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth, OperationType, handleFirestoreError } from '../firebase';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { Project } from '../types';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
@@ -34,6 +34,48 @@ export const AdminProjectsView: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  const [repairingId, setRepairingId] = useState<string | null>(null);
+
+  const handleRepairDrive = async (project: Project, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (repairingId) return;
+    
+    setRepairingId(project.id);
+    const loadingToast = toast.loading(`${t('repairing_drive_link')}...`);
+    
+    try {
+      const driveRes = await fetch('/api/projects/init-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: project.name,
+          projectCode: project.code,
+          userEmail: auth.currentUser?.email ?? undefined
+        })
+      });
+
+      if (!driveRes.ok) {
+        const errorData = await driveRes.json();
+        throw new Error(errorData.error || 'Failed to initialize Drive');
+      }
+
+      const { rootFolderId } = await driveRes.json();
+      
+      // Update Firestore
+      await updateDoc(doc(db, 'projects', project.id), {
+        driveFolderId: rootFolderId,
+        updatedAt: new Date().toISOString()
+      });
+
+      toast.success(t('drive_link_repaired_success'), { id: loadingToast });
+    } catch (error: any) {
+      console.error('Repair error:', error);
+      toast.error(`${t('repair_failed')}: ${error.message}`, { id: loadingToast });
+    } finally {
+      setRepairingId(null);
+    }
+  };
 
   const isAdmin = user?.email === 'hashim.h.husain@gmail.com';
 
@@ -270,6 +312,17 @@ export const AdminProjectsView: React.FC = () => {
                     {project.name.charAt(0)}
                   </div>
                   <div className="flex gap-1">
+                    {!project.driveFolderId && (
+                      <button 
+                        className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-all flex items-center gap-1 group/repair" 
+                        title="Repair Drive Folders"
+                        onClick={(e) => handleRepairDrive(project, e)}
+                        disabled={repairingId === project.id}
+                      >
+                        {repairingId === project.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
+                        <span className="text-[9px] font-bold uppercase hidden group-hover/repair:inline">Fix Link</span>
+                      </button>
+                    )}
                     <button 
                       className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" 
                       onClick={(e) => {
@@ -323,23 +376,27 @@ export const AdminProjectsView: React.FC = () => {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6"
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 flex flex-col max-h-[90vh] overflow-hidden"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
-                <AlertTriangle className="w-8 h-8" />
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
               </div>
-              <div className="text-center space-y-2">
+              
+              <div className="flex-1 overflow-y-auto text-center space-y-2 custom-scrollbar">
                 <h3 className="text-xl font-bold text-slate-900">{t('confirm_delete_project')}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
                   This action is permanent and will delete all associated data. Are you sure you want to proceed?
                 </p>
               </div>
-              <div className="flex gap-3">
+
+              <div className="flex-shrink-0 flex gap-3">
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
                   className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all"

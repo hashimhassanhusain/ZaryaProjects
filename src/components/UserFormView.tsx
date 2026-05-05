@@ -433,7 +433,7 @@ export const UserFormView: React.FC = () => {
           {/* Contact Selection Modal */}
           <AnimatePresence>
             {isSelectingContact && (
-              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -445,7 +445,7 @@ export const UserFormView: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+                  className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                 >
                   <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>

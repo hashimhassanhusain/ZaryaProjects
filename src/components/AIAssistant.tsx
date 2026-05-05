@@ -32,7 +32,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "relative rounded-3xl bg-transparent transition-all duration-300 z-[9999]",
+        "relative rounded-3xl bg-transparent transition-all duration-300 z-[1000000]",
         compact ? "p-6 w-[32rem] h-64" : "p-8 md:p-12 w-full",
         isMouseNear ? "cursor-grab" : "cursor-default"
       )}

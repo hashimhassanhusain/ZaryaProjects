@@ -406,7 +406,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4"
     >
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -414,7 +414,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="flex-shrink-0 px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h3 className="text-xl font-bold text-slate-900">Activity Attributes & Scheduling</h3>
             <p className="text-xs text-slate-500 mt-1">Configure dependencies, planned vs actual data, and MasterFormat categorization.</p>
@@ -424,7 +424,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           </button>
         </div>
 
-        <div className="p-8 overflow-y-auto space-y-8">
+        <div className="flex-1 p-8 overflow-y-auto space-y-8 custom-scrollbar">
           {/* Basic Info */}
           <section className="space-y-4">
             <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -863,15 +863,15 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
               >
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="flex-shrink-0 px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                   <h3 className="text-lg font-bold text-slate-900">{t('add_new_supplier')}</h3>
                   <button onClick={() => setIsAddingVendor(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
@@ -939,7 +939,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     />
                   </div>
                 </div>
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <div className="flex-shrink-0 px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
                   <button 
                     onClick={() => setIsAddingVendor(false)}
                     className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-xl transition-all"
@@ -958,7 +958,7 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           )}
         </AnimatePresence>
 
-        <div className="p-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div className="flex-shrink-0 p-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
           <button 
             onClick={onClose}
             className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-2xl transition-all"

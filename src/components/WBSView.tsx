@@ -814,15 +814,15 @@ export const WBSView: React.FC = () => {
       {/* Edit WBS Modal (Dictionary Info) */}
       <AnimatePresence>
         {editingWbs && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">WBS Dictionary Details</h3>
-              <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-slate-900 mb-6 flex-shrink-0">WBS Dictionary Details</h3>
+              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
                   <input 
@@ -1038,17 +1038,17 @@ export const WBSView: React.FC = () => {
       {/* Add Work Package Modal */}
       <AnimatePresence>
         {(showAddPackage || editingPackage) && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl"
+              className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">
+              <h3 className="text-2xl font-bold text-slate-900 mb-6 flex-shrink-0">
                 {editingPackage ? 'Edit Work Package' : 'Add Work Package'}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
                   {!isManualTitle ? (
@@ -1186,7 +1186,7 @@ export const WBSView: React.FC = () => {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirmation && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

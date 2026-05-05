@@ -73,7 +73,6 @@ import { cn, sortDomainPages, stripNumericPrefix, getISODate } from './lib/utils
 
 import { DomainDashboard } from './components/DomainDashboard';
 import { DriveFolderView } from './components/DriveFolderView';
-import { Breadcrumbs } from './components/Breadcrumbs';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -303,10 +302,7 @@ const PageRenderer = () => {
         transition={{ duration: 0.2 }}
         className="w-full"
       >
-        <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-4 md:px-8 lg:px-12", "mb-4")}>
-          <div className="mt-8 mb-6 border-b border-slate-100 pb-6">
-            <Breadcrumbs currentPageId={page.id} />
-          </div>
+        <div className={cn(isSchedulePage || isResourcesPage || isRiskPage || isMasterPlanPage ? "px-6 pt-6" : "px-0", "mb-4")}>
         </div>
         {isTasksPage ? (
           <TasksView />

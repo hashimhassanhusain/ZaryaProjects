@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Page, Project, PageVersion } from '../types';
 import { getParent, pages, users } from '../data';
 import { 
@@ -1842,21 +1843,21 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
   const renderStakeholderHistory = () => {
     if (!showStakeholderHistory) return null;
-    return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <h3 className="text-lg font-bold text-slate-900">Stakeholder Version History</h3>
             <button onClick={() => setShowStakeholderHistory(false)} className="text-slate-400 hover:text-slate-600">
               <Plus className="w-6 h-6 rotate-45" />
             </button>
           </div>
-          <div className="p-8 max-h-[60vh] overflow-y-auto space-y-4">
+          <div className="flex-1 p-8 overflow-y-auto space-y-4 custom-scrollbar">
             {stakeholderVersions.map((v, i) => (
               <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
                 <div>
@@ -1887,7 +1888,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             )}
           </div>
         </motion.div>
-      </div>
+      </div>,
+      document.body
     );
   };
   const renderStakeholderMatrix = () => {
@@ -2176,16 +2178,16 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderAnalysisModal = () => {
     if (!isAnalysisModalOpen || !editingAnalysis) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex justify-end bg-slate-900/60 backdrop-blur-sm">
         <motion.div 
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="bg-white w-full max-w-xl h-full shadow-2xl overflow-y-auto"
+          className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col overflow-hidden"
         >
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
+          <div className="flex-shrink-0 p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 tracking-tight">{editingAnalysis.id ? 'Edit Analysis' : 'New Stakeholder Analysis'}</h3>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Matrix Mapping v{editingAnalysis.version}.0</p>
@@ -2195,7 +2197,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
           
-          <div className="p-10 space-y-10">
+          <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
             <div className="space-y-3">
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Select Stakeholder</label>
               <select 
@@ -2312,19 +2314,20 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </div>
           </div>
         </motion.div>
-      </div>
+      </div>,
+      document.body
     );
   };
 
   const renderAnalysisHistory = () => {
     if (!showAnalysisHistory) return null;
 
-    return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
+          className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         >
           <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
@@ -2982,14 +2985,14 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderQualityRoleModal = () => {
     if (!isQualityRoleModalOpen || !editingQualityRole) return null;
 
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
         >
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Quality Role Assignment</h3>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Assign Responsibilities</p>
@@ -2999,7 +3002,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
           
-          <div className="p-10 space-y-8">
+          <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
             <div className="space-y-3">
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Select Team Member</label>
               <select 
@@ -3074,15 +3077,15 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderQualityHistory = () => {
     if (!showQualityHistory) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex justify-end bg-slate-900/60 backdrop-blur-sm">
         <motion.div 
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
-          className="bg-slate-50 w-full max-w-md h-full shadow-2xl overflow-y-auto"
+          className="bg-slate-50 w-full max-w-md h-full shadow-2xl flex flex-col overflow-hidden"
         >
-          <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex-shrink-0 p-8 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-10">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Version History</h3>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Quality Management Plan</p>
@@ -3092,7 +3095,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
           
-          <div className="p-8 space-y-4">
+          <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
             {qualityVersions.map((v, idx) => (
               <div key={`${v.id}-${idx}`} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
@@ -3118,7 +3121,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             ))}
           </div>
         </motion.div>
-      </div>
+      </div>,
+      document.body
     );
   };
 
@@ -3789,8 +3793,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderPhaseModal = () => {
     if (!editingPhase) return null;
 
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -3800,9 +3804,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden"
+          className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
         >
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 text-white rounded-xl">
                 <BarChart3 className="w-5 h-5" />
@@ -3814,7 +3818,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
 
-          <div className="p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
             <div className="space-y-2">
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Phase Name</label>
               <input 
@@ -3852,15 +3856,16 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
         </motion.div>
-      </div>
+      </div>,
+      document.body
     );
   };
 
   const renderTailoringModal = () => {
     if (!editingTailoring) return null;
 
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -3870,9 +3875,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden"
+          className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
         >
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 text-white rounded-xl">
                 <ShieldCheck className="w-5 h-5" />
@@ -3884,7 +3889,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
             </button>
           </div>
 
-          <div className="p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
             <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl">
               <div>
                 <h4 className="font-semibold text-slate-900 tracking-tight">{editingTailoring.knowledgeArea}</h4>
@@ -3936,8 +3941,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderCCBModal = () => {
     if (!editingCCBMember) return null;
 
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -3949,9 +3954,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
         >
-          <div className="p-8 space-y-8">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900 tracking-tight">CCB Member Details</h3>
@@ -4031,8 +4036,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const renderPinModal = () => {
     if (!showPinModal) return null;
 
-    return (
-      <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+    return createPortal(
+      <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -4624,16 +4629,16 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           {renderVersionHistory()}
 
           <AnimatePresence>
-            {isStakeholderModalOpen && editingStakeholder && (
-              <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm">
+            {isStakeholderModalOpen && editingStakeholder && createPortal(
+              <div className="fixed inset-0 z-[1000000] flex justify-end bg-slate-900/60 backdrop-blur-sm">
                 <motion.div 
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="bg-white w-full max-w-xl h-full shadow-2xl overflow-y-auto"
+                  className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col overflow-hidden"
                 >
-                  <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
+                  <div className="flex-shrink-0 p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">{editingStakeholder.id ? 'Edit Stakeholder' : 'Add New Stakeholder'}</h3>
                       <p className="text-xs text-slate-500">Stakeholder Register Entry v{editingStakeholder.version || 1}</p>
@@ -4643,7 +4648,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     </button>
                   </div>
                   
-                  <div className="p-8 space-y-8">
+                  <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                     <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-2">
                         <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Full Name</label>
@@ -4838,8 +4843,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                     </div>
                   </div>
                 </motion.div>
-              </div>
+              </div>,
+              document.body
             )}
+          </AnimatePresence>
 
             {editingMilestone && (
               <ActivityAttributesModal 
@@ -4860,7 +4867,6 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                 }}
               />
             )}
-          </AnimatePresence>
 
           {/* Relocated and Functional Stats Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -4939,60 +4945,62 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         {showPinModal && renderPinModal()}
         {isPhaseModalOpen && renderPhaseModal()}
         {isTailoringModalOpen && renderTailoringModal()}
-        {showChangeHistory && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-end">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowChangeHistory(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col"
-            >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Version History</h3>
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Change Management Plan</p>
-                </div>
-                <button onClick={() => setShowChangeHistory(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                  <Plus className="w-6 h-6 rotate-45 text-slate-400" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-                {changeVersions.map((v, idx) => (
-                  <div key={`${v.id}-${idx}`} className="relative pl-8 pb-8 border-l-2 border-slate-100 last:border-0 last:pb-0">
-                    <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
-                    <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
-                        <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm font-medium text-slate-700 italic">"{v.changeSummary}"</p>
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                        <UserCheck className="w-4 h-4" /> {v.userName}
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setChangePlan(v.data as ChangeManagementPlan);
-                          setShowChangeHistory(false);
-                        }}
-                        className="w-full py-3 bg-white border border-blue-200 text-blue-600 rounded-2xl text-xs font-bold hover:bg-blue-50 transition-all"
-                      >
-                        Restore this Version
-                      </button>
-                    </div>
+          {showChangeHistory && createPortal(
+            <div className="fixed inset-0 z-[1000000] flex items-center justify-end">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowChangeHistory(false)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="flex-shrink-0 p-8 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Version History</h3>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Change Management Plan</p>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
+                  <button onClick={() => setShowChangeHistory(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <Plus className="w-6 h-6 rotate-45 text-slate-400" />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                  {changeVersions.map((v, idx) => (
+                    <div key={`${v.id}-${idx}`} className="relative pl-8 pb-8 border-l-2 border-slate-100 last:border-0 last:pb-0">
+                      <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-600" />
+                      <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-semibold uppercase tracking-widest">v{v.version.toFixed(1)}</span>
+                          <span className="text-[10px] font-bold text-slate-400">{new Date(v.timestamp).toLocaleString()}</span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700 italic">"{v.changeSummary}"</p>
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <UserCheck className="w-4 h-4" /> {v.userName}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setChangePlan(v.data as ChangeManagementPlan);
+                            setShowChangeHistory(false);
+                          }}
+                          className="w-full py-3 bg-white border border-blue-200 text-blue-600 rounded-2xl text-xs font-bold hover:bg-blue-50 transition-all"
+                        >
+                          Restore this Version
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>,
+            document.body
+          )}
       </AnimatePresence>
       </>
       )}

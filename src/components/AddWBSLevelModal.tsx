@@ -196,21 +196,21 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <motion.div 
+        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl border border-slate-100"
+            className="bg-white rounded-[32px] w-full max-w-md shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex-shrink-0 flex items-center justify-between p-8 border-b border-slate-50">
                 <h3 className="text-2xl font-bold text-slate-900">Add WBS Level</h3>
                 <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
                     <X className="w-5 h-5 text-slate-400" />
                 </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
                 <input 
@@ -374,21 +374,21 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                   </p>
                 )}
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-6">
-                <button 
-                  onClick={onClose}
-                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleAddWbs}
-                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
-                >
-                  Create Level
-                </button>
-              </div>
+            <div className="flex-shrink-0 flex gap-3 p-8 border-t border-slate-50 bg-slate-50/50">
+              <button 
+                onClick={onClose}
+                className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAddWbs}
+                className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-sm"
+              >
+                Create Level
+              </button>
             </div>
           </motion.div>
         </div>

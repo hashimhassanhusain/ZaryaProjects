@@ -891,21 +891,25 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
       <AnimatePresence>
         {showPrompt && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100"
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
             >
-              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
-                <AlertTriangle className="w-8 h-8 text-amber-600" />
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">Restricted Data Link</h3>
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Restricted Data Link</h3>
-              <p className="text-slate-500 font-medium mb-8 leading-relaxed">
-                {showPrompt.message}
-              </p>
-              <div className="flex items-center gap-4">
+              <div className="flex-1 overflow-y-auto mb-8 custom-scrollbar">
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  {showPrompt.message}
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-4">
                 <button 
                   onClick={() => { setShowPrompt(null); setView('list'); }}
                   className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"

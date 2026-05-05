@@ -561,7 +561,7 @@ export const TasksView: React.FC = () => {
           <div className="flex items-center gap-2">
             {getAssignee(task.assigneeId)?.photoURL ? (
               <img 
-                src={getAssignee(task.assigneeId)?.photoURL || undefined} 
+                src={getAssignee(task.assigneeId)?.photoURL || null} 
                 alt="" 
                 className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover"
                 referrerPolicy="no-referrer"
@@ -876,7 +876,7 @@ export const TasksView: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {getAssignee(task.assigneeId)?.photoURL ? (
-                        <img src={getAssignee(task.assigneeId)?.photoURL || undefined} className="w-6 h-6 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        <img src={getAssignee(task.assigneeId)?.photoURL || null} className="w-6 h-6 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
                           <User className="w-3 h-3 text-slate-400" />
@@ -1153,7 +1153,7 @@ export const TasksView: React.FC = () => {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           {getAssignee(note.userId)?.photoURL ? (
-                            <img src={getAssignee(note.userId)?.photoURL || undefined} className="w-8 h-8 rounded-xl" alt="" referrerPolicy="no-referrer" />
+                            <img src={getAssignee(note.userId)?.photoURL || null} className="w-8 h-8 rounded-xl" alt="" referrerPolicy="no-referrer" />
                           ) : (
                             <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center">
                               <User className="w-4 h-4 text-slate-400" />
@@ -1295,7 +1295,7 @@ export const TasksView: React.FC = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-red-600 text-white rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-2"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000000] px-6 py-3 bg-red-600 text-white rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-2"
           >
             <AlertTriangle className="w-4 h-4" />
             {statusError}
@@ -1306,23 +1306,25 @@ export const TasksView: React.FC = () => {
       {/* Status Delete Confirmation Modal */}
       <AnimatePresence>
         {statusToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6"
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
-                <AlertTriangle className="w-8 h-8" />
+              <div className="flex-shrink-0 space-y-6">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
               </div>
-              <div className="text-center space-y-2">
+              <div className="flex-1 overflow-y-auto custom-scrollbar my-6 text-center space-y-2">
                 <h3 className="text-xl font-bold text-slate-900">Delete Status?</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
                   Are you sure you want to delete the status "{statusToDelete}"? This action cannot be undone.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex-shrink-0 flex gap-3">
                 <button 
                   onClick={() => setStatusToDelete(null)}
                   className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all"

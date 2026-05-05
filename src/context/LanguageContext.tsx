@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 
 type Language = 'en' | 'ar';
 
@@ -420,8 +420,17 @@ const translations: Record<Language, Record<string, string>> = {
     'unassigned': 'Unassigned',
     'backing_up': 'Backing up...',
     'backup_success': 'Codebase backed up successfully to Google Drive!',
-    'backup_failed': 'Backup failed',
-    'drive_connected_success': 'Success! Connected to Google Drive.',
+    'repairing_drive_link': 'Repairing Drive Link',
+    'drive_link_repaired_success': 'Drive link and folders repaired successfully!',
+    'repair_failed': 'Repair failed',
+    'drive_status': 'Drive Status',
+    'enterprise_structure': 'Enterprise Structure',
+    'drive_diagnostics': 'Drive Diagnostics',
+    'run_connection_test': 'Run Connection Test',
+    'refresh_data': 'Refresh Data',
+    'last_engine_error': 'Last Engine Error',
+    'open_google_cloud_console': 'Open Google Cloud Console',
+    'repairing_drive_link_summary': 'Re-creates the Google Drive folder structure and restores the connection for this project.',
     'connection_failed': 'Connection Failed!',
     'demo_project_added_success': 'Demo project added to database and Google Drive structure initialized!',
     'failed_to_add_demo_project': 'Failed to add demo project',
@@ -1265,6 +1274,17 @@ const translations: Record<Language, Record<string, string>> = {
     'backing_up': 'جاري النسخ الاحتياطي...',
     'backup_success': 'تم نسخ قاعدة الكود احتياطياً بنجاح إلى جوجل درايف!',
     'backup_failed': 'فشل النسخ الاحتياطي',
+    'repairing_drive_link': 'إصلاح رابط Drive',
+    'drive_link_repaired_success': 'تم إصلاح رابط ومجلدات Drive بنجاح!',
+    'repair_failed': 'فشل الإصلاح',
+    'drive_status': 'حالة Drive',
+    'enterprise_structure': 'هيكل المؤسسة',
+    'drive_diagnostics': 'تشخيصات Drive',
+    'run_connection_test': 'تشغيل اختبار الاتصال',
+    'refresh_data': 'تحديث البيانات',
+    'last_engine_error': 'آخر خطأ في المحرك',
+    'open_google_cloud_console': 'افتح وحدة تحكم Google Cloud',
+    'repairing_drive_link_summary': 'يعيد إنشاء هيكل مجلدات Google Drive ويستعيد الاتصال لهذا المشروع.',
     'drive_connected_success': 'نجاح! تم الاتصال بجوجل درايف.',
     'connection_failed': 'فشل الاتصال!',
     'demo_project_added_success': 'تم إضافة المشروع التجريبي إلى قاعدة البيانات وتهيئة هيكل جوجل درايف!',
@@ -1425,7 +1445,6 @@ const translations: Record<Language, Record<string, string>> = {
     'vendor': 'مورد خارجي / شريك',
     'internal_entity': 'كيان داخلي تابع للمجموعة',
     'external_vendor': 'مورد خارجي',
-    'enterprise_structure': 'الهيكل التنظيمي للمؤسسة',
     'no_parent': 'لا يوجد كيان أم (مستوى أعلى)',
     'move_to_parent': 'نقل إلى كيان أم',
     'is_internal_label': 'هل هي شركة داخلية تابعة للمجموعة؟',
@@ -1753,7 +1772,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const t = (key: string) => {
-    return translations[language][key] || translations['en'][key] || key;
+    const text = translations[language][key] || translations['en'][key] || key;
+    return stripNumericPrefix(text);
   };
 
   const th = (key: string) => {

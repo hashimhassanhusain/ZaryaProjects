@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Folder, File, Upload, ChevronRight, ChevronDown, 
   Loader2, HardDrive, Search, Filter, MoreVertical, 
@@ -167,8 +168,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   };
 
   const fetchFiles = async (folderId: string) => {
+    if (!folderId) return;
     setIsLoading(true);
     try {
+      // For the root or specific folders, we fetch files
       const res = await fetch(`/api/drive/files/${folderId}?details=true`);
       if (res.ok) {
         const data = await res.json();
@@ -317,6 +320,110 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     description: uploadMetadata.description || 'DESC',
     version: '1'
   }) : '';
+
+  const uploadModal = (
+    <AnimatePresence>
+      {showUploadModal && (
+        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowUploadModal(false)}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                 <div className="p-4 bg-slate-900 rounded-2xl text-white shadow-2xl">
+                   <CloudUpload className="w-7 h-7 text-blue-400" />
+                 </div>
+                 <div>
+                   <h2 className="text-2xl font-bold text-slate-900 uppercase tracking-tighter">Naming Wizard</h2>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Compliance Check Active</p>
+                 </div>
+              </div>
+            </div>
+
+            <div className="p-10 overflow-y-auto space-y-10 no-scrollbar">
+              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                  <File className="w-6 h-6 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-bold text-slate-700 truncate block text-lg tracking-tight">{pendingFile?.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{formatSize(pendingFile?.size || 0)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Category</label>
+                  <select 
+                    value={uploadMetadata.category}
+                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none outline-none"
+                  >
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Department</label>
+                  <select 
+                    value={uploadMetadata.dept}
+                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, dept: e.target.value }))}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none outline-none"
+                  >
+                    {depts.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Asset Description</label>
+                <input 
+                  type="text"
+                  value={uploadMetadata.description}
+                  onChange={(e) => setUploadMetadata(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="e.g. PERFORMANCE_REPORT"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-300"
+                />
+              </div>
+
+              <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl shadow-slate-900/30 whitespace-pre-wrap break-all font-mono">
+                <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-blue-400 mb-4 opacity-70">Generated Sequence</p>
+                <div className="text-base tracking-tighter font-bold">
+                  {generatedNamePreview}
+                  <span className="text-slate-500 italic opacity-50">.{pendingFile?.name.split('.').pop()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 border-t border-slate-100 flex gap-4 bg-slate-50/50">
+              <button 
+                onClick={() => setShowUploadModal(false)}
+                className="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeUpload}
+                disabled={uploading || !uploadMetadata.description}
+                className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 shadow-2xl transition-all disabled:opacity-50"
+              >
+                {uploading ? 'Syncing...' : 'Commit Upload'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
 
   const getFileTypeColor = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
@@ -610,7 +717,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
           <FileViewerModal 
             isOpen={viewerOpen}
             onClose={() => setViewerOpen(false)}
-            fileUrl={viewerFile.webViewLink || ''}
+            fileUrl={viewerFile.id ? `https://drive.google.com/file/d/${viewerFile.id}/preview` : (viewerFile.webViewLink || '')}
             fileType={viewerFile.name.split('.').pop() || ''}
             fileName={viewerFile.name}
             details={{
@@ -620,105 +727,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
           />
         )}
 
-        {showUploadModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowUploadModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-5">
-                   <div className="p-4 bg-slate-900 rounded-2xl text-white shadow-2xl">
-                     <CloudUpload className="w-7 h-7 text-blue-400" />
-                   </div>
-                   <div>
-                     <h2 className="text-2xl font-bold text-slate-900 uppercase tracking-tighter">Naming Wizard</h2>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Compliance Check Active</p>
-                   </div>
-                </div>
-              </div>
-
-              <div className="p-10 overflow-y-auto space-y-10 no-scrollbar">
-                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center">
-                    <File className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-bold text-slate-700 truncate block text-lg tracking-tight">{pendingFile?.name}</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{formatSize(pendingFile?.size || 0)}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Category</label>
-                    <select 
-                      value={uploadMetadata.category}
-                      onChange={(e) => setUploadMetadata(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none outline-none"
-                    >
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Department</label>
-                    <select 
-                      value={uploadMetadata.dept}
-                      onChange={(e) => setUploadMetadata(prev => ({ ...prev, dept: e.target.value }))}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none outline-none"
-                    >
-                      {depts.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Asset Description</label>
-                  <input 
-                    type="text"
-                    value={uploadMetadata.description}
-                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="e.g. PERFORMANCE_REPORT"
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-300"
-                  />
-                </div>
-
-                <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl shadow-slate-900/30 whitespace-pre-wrap break-all font-mono">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-blue-400 mb-4 opacity-70">Generated Sequence</p>
-                  <div className="text-base tracking-tighter font-bold">
-                    {generatedNamePreview}
-                    <span className="text-slate-500 italic opacity-50">.{pendingFile?.name.split('.').pop()}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-8 border-t border-slate-100 flex gap-4 bg-slate-50/50">
-                <button 
-                  onClick={() => setShowUploadModal(false)}
-                  className="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={executeUpload}
-                  disabled={uploading || !uploadMetadata.description}
-                  className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 shadow-2xl transition-all disabled:opacity-50"
-                >
-                  {uploading ? 'Syncing...' : 'Commit Upload'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {typeof document !== 'undefined' && createPortal(uploadModal, document.body)}
       </AnimatePresence>
     </div>
   );

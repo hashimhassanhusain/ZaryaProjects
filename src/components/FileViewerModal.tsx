@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   ZoomIn, 
@@ -70,8 +71,18 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   };
 
   const isDwg = fileType.toLowerCase().includes('dwg');
-  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => fileType.toLowerCase().includes(ext)) || fileType === 'image';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff'].some(ext => fileType.toLowerCase().includes(ext)) || fileType === 'image';
   const isPdf = fileType.toLowerCase().includes('pdf');
+  const isDoc = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'txt'].some(ext => fileType.toLowerCase().includes(ext));
+
+  // If it's a drive file, we can use the thumbnail endpoint for high-res preview of images
+  const driveId = (fileUrl.includes('drive.google.com') || fileUrl.includes('drive/file/d/')) 
+    ? fileUrl.match(/\/d\/([^/?#]+)/)?.[1] || fileUrl.match(/id=([^&]+)/)?.[1] 
+    : null;
+    
+  const isDriveFile = !!driveId;
+  const imagePreviewUrl = driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600` : fileUrl;
+  const drivePreviewUrl = driveId ? `https://drive.google.com/file/d/${driveId}/preview` : fileUrl;
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (activeTool === 'measure') {
@@ -96,7 +107,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
     return realValue;
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl">
@@ -107,15 +118,15 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
             className="absolute top-0 left-0 right-0 h-20 bg-slate-900/50 border-b border-white/10 z-50 flex items-center justify-between px-8"
           >
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                {isDwg ? <Maximize2 className="w-5 h-5 text-blue-400" /> : <Info className="w-5 h-5 text-slate-400" />}
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400">
+                {isDwg ? <Maximize2 className="w-5 h-5" /> : isPdf ? <FileOutput className="w-5 h-5" /> : <Info className="w-5 h-5" />}
               </div>
               <div>
                 <h3 className="text-white font-black text-sm tracking-tight uppercase truncate max-w-[300px]">
                   {fileName}
                 </h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                  {isDwg ? "AutoCAD Technical Drawing" : isPdf ? "PDF Document" : "Image Asset"}
+                  {isDwg ? "AutoCAD Technical Drawing" : isPdf ? "PDF Document" : isDoc ? "Office Document" : "Asset Preview"}
                 </p>
               </div>
             </div>
@@ -242,10 +253,11 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
               className="flex-1 relative overflow-hidden bg-slate-950 flex items-center justify-center p-12 cursor-crosshair"
               onClick={handleCanvasClick}
             >
-              {isPdf ? (
+              {(isPdf || isDriveFile) ? (
                 <iframe 
-                  src={`${fileUrl}#toolbar=0`} 
-                  className="w-full h-full rounded-2xl shadow-2xl border border-white/10"
+                  src={drivePreviewUrl} 
+                  className="w-full h-full rounded-2xl shadow-2xl border border-white/10 bg-white"
+                  title={fileName}
                   style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s ease' }}
                 />
               ) : isDwg || isImage ? (
@@ -274,7 +286,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
                         </div>
                       ) : (
                         <img 
-                          src={fileUrl} 
+                          src={imagePreviewUrl || undefined} 
                           className="max-w-[4000px] h-auto shadow-2xl"
                           alt={fileName}
                         />
@@ -358,4 +370,6 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

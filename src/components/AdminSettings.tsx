@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { Users, FolderPlus, Shield, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, FolderPlus, Shield, Building2, HardDrive } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { AdminUsersView } from './AdminUsersView';
 import { AdminProjectsView } from './AdminProjectsView';
 import { AdminGroupsView } from './AdminGroupsView';
 import { EnterpriseStructure } from './EnterpriseStructure';
+import { AdminDriveStatus } from './AdminDriveStatus';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 
 export const AdminSettings: React.FC = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'groups' | 'enterprise'>('enterprise');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'groups' | 'enterprise' | 'drive'>(
+    location.hash === '#drive' ? 'drive' : 'enterprise'
+  );
+
+  useEffect(() => {
+    if (location.hash === '#drive') {
+      setActiveTab('drive');
+    }
+  }, [location.hash]);
 
   return (
     <div className="w-full py-6 px-6">
@@ -60,6 +71,16 @@ export const AdminSettings: React.FC = () => {
             <FolderPlus className="w-4 h-4" />
             New Project
           </button>
+          <button
+            onClick={() => setActiveTab('drive')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+              activeTab === 'drive' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <HardDrive className="w-4 h-4" />
+            Drive Status
+          </button>
         </div>
       </div>
 
@@ -67,6 +88,7 @@ export const AdminSettings: React.FC = () => {
         {activeTab === 'enterprise' ? <EnterpriseStructure /> : 
          activeTab === 'users' ? <AdminUsersView /> : 
          activeTab === 'projects' ? <AdminProjectsView /> : 
+         activeTab === 'drive' ? <AdminDriveStatus /> :
          <AdminGroupsView />}
       </div>
     </div>

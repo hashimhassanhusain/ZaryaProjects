@@ -525,11 +525,11 @@ export const BOQView: React.FC = () => {
             />
 
             {view === 'preview' && previewItems && (
-              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-8">
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000000] flex items-center justify-center p-8">
                 <motion.div 
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="bg-white rounded-[3rem] w-full max-w-6xl max-h-[85vh] flex flex-col shadow-2xl"
+                  className="bg-white rounded-[3rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl"
                 >
                   <div className="p-10 border-b border-slate-100 flex items-center justify-between">
                     <div>

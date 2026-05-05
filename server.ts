@@ -14,9 +14,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Simple in-memory cache for folder IDs to speed up path resolution
+const FOLDER_CACHE: Record<string, string> = {};
+
+let lastDriveError: string | null = null;
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors());
+
+// Logger for API requests to help debug background failures
+app.use('/api', (req, res, next) => {
+  console.log(`📡 [API] ${req.method} ${req.path} - Timestamp: ${new Date().toISOString()}`);
+  next();
+});
 
 // Google Drive Auth (OAuth 2.0 version)
 const getDriveClient = () => {
@@ -47,12 +58,56 @@ const getDriveClient = () => {
     });
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    lastDriveError = null; // Clear error on success initialization (though we haven't tested connection yet)
     return { drive, clientEmail: 'OAuth2 Integration' };
   } catch (e: any) {
+    lastDriveError = e.message;
     console.error('CRITICAL Drive Init Error:', e.message);
     return { error: `Configuration Error: ${e.message}` };
   }
 };
+
+// Drive Status/Test Endpoints
+app.get('/api/drive/status', (req: any, res: any) => {
+  const { error } = getDriveClient();
+  res.json({
+    initialized: !error,
+    auth_type: 'OAuth2',
+    parent_folder_id: process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || 'UNSET',
+    last_error: error || lastDriveError,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.post('/api/drive/test-connection', async (req: any, res: any) => {
+  const { drive, error } = getDriveClient();
+  if (error || !drive) {
+    return res.status(500).json({ error: error || 'DRIVE_CLIENT_INIT_FAILED' });
+  }
+
+  try {
+    // List first 3 files in the parent folder to test read access
+    const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
+    const listRes = await drive.files.list({
+      q: parentId ? `'${parentId}' in parents and trashed = false` : 'trashed = false',
+      pageSize: 3,
+      fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Successfully listed files from Drive',
+      count: listRes.data.files?.length || 0,
+      sample_files: listRes.data.files?.slice(0, 3)
+    });
+  } catch (err: any) {
+    lastDriveError = err.message;
+    console.error('Connection test failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Recursive folder creation
 async function createFolder(drive: any, name: string, parentId?: string) {
@@ -150,9 +205,20 @@ function generateProjectCharterPDF(projectName: string, projectCode: string, cha
 
 async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
   let currentParentId = rootFolderId;
+  let fullPathKey = rootFolderId;
+  
   console.log(`Ensuring path: ${pathParts.join('/')} starting from root: ${rootFolderId}`);
   
   for (const part of pathParts) {
+    fullPathKey += `/${part}`;
+    
+    // Check Cache first
+    if (FOLDER_CACHE[fullPathKey]) {
+      currentParentId = FOLDER_CACHE[fullPathKey];
+      console.log(`Cache hit for "${part}": ${currentParentId}`);
+      continue;
+    }
+
     const response = await drive.files.list({
       q: `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
       fields: 'files(id, name)',
@@ -160,6 +226,7 @@ async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathPa
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
     });
+    
     const files = response.data.files;
     if (!files || files.length === 0) {
       console.log(`Folder part not found: "${part}". Creating in parent: ${currentParentId}`);
@@ -174,14 +241,18 @@ async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathPa
         });
         currentParentId = newFolder.data.id || '';
         if (!currentParentId) return null;
-        console.log(`Created folder: "${part}" with ID: ${currentParentId}`);
+        
+        // Save to cache
+        FOLDER_CACHE[fullPathKey] = currentParentId;
+        console.log(`Created & Cached folder: "${part}" with ID: ${currentParentId}`);
       } catch (err: any) {
         console.error(`Error creating folder "${part}":`, err.message);
         return null;
       }
     } else {
       currentParentId = files[0].id;
-      console.log(`Found folder: "${part}" with ID: ${currentParentId}`);
+      FOLDER_CACHE[fullPathKey] = currentParentId;
+      console.log(`Found & Cached folder: "${part}" with ID: ${currentParentId}`);
     }
   }
   return currentParentId;
@@ -241,24 +312,50 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
 app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, res: any) => {
   const { projectRootId, path } = req.body;
   const file = req.file;
+  
+  console.log('--- DRIVE UPLOAD START ---');
+  console.log(`File: ${file?.originalname}, ProjectRoot: ${projectRootId}, Path: ${path}`);
+  
   const { drive, error } = getDriveClient();
   
-  if (error || !drive || !file || !projectRootId || !path) {
-    return res.status(500).json({ error: error || 'Missing required parameters' });
+  if (error || !drive) {
+    console.error('❌ Drive Client Error:', error);
+    return res.status(500).json({ error: error || 'Google Drive client not initialized' });
+  }
+
+  if (!file) {
+    console.error('❌ No file received by Multer');
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  if (!projectRootId || !path) {
+    console.error('❌ Missing projectRootId or path');
+    return res.status(400).json({ error: 'Missing required parameters' });
   }
 
   try {
     const pathParts = path.split('/').filter((p: string) => p.length > 0);
+    console.log(`Resolving path chain: ${pathParts.join(' > ')}`);
+    
     const targetFolderId = await findOrCreateFolderByPath(drive, projectRootId, pathParts);
     
     if (!targetFolderId) {
-      console.error(`Folder path creation failed: ${path} in project: ${projectRootId}`);
-      return res.status(500).json({ error: `Could not navigate or create the folder path "${path}". Please check Google Drive permissions.` });
+      console.error(`❌ Folder path creation failed: ${path}`);
+      return res.status(500).json({ error: `Could not navigate or create the folder path "${path}". Please check parent folder permissions and API quota.` });
     }
 
-    // Archive existing file if it exists
-    await archiveExistingFile(drive, targetFolderId, file.originalname);
+    console.log(`✅ Target folder resolved: ${targetFolderId}. Archiving existing version (if any)...`);
+    // Attempt archive but don't let it block indefinitely
+    try {
+      await Promise.race([
+        archiveExistingFile(drive, targetFolderId, file.originalname),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Archive timeout')), 15000))
+      ]);
+    } catch (archiveErr) {
+      console.warn('⚠️ Archive operation skipped or timed out:', archiveErr instanceof Error ? archiveErr.message : archiveErr);
+    }
 
+    console.log(`🚀 Sending file stream to Google Drive...`);
     const resDrive = await drive.files.create({
       requestBody: {
         name: file.originalname,
@@ -269,28 +366,38 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
         body: fs.createReadStream(file.path),
       },
       supportsAllDrives: true,
-      // @ts-ignore
-      uploadType: 'multipart',
-    } as any);
+      fields: 'id, name, webViewLink',
+    });
     
-    fs.unlinkSync(file.path);
-    res.json({ fileId: resDrive.data.id, folderId: targetFolderId });
-  } catch (error: any) {
-    console.error('Upload by path failed:', error);
-    const errorMessage = error.response?.data?.error?.message || error.message || 'Upload failed';
+    console.log('✨ Drive Upload Successful. File ID:', resDrive.data.id);
     
-    // Check for storage quota error specifically
+    if (fs.existsSync(file.path)) {
+      try { fs.unlinkSync(file.path); } catch (e) {}
+    }
+    
+    res.json({ 
+      success: true, 
+      fileId: resDrive.data.id, 
+      folderId: targetFolderId 
+    });
+  } catch (err: any) {
+    console.error('❌ Upload by path failed:', err);
+    if (file && fs.existsSync(file.path)) {
+      try { fs.unlinkSync(file.path); } catch (e) {}
+    }
+    
+    const errorMessage = err.response?.data?.error?.message || err.message || 'Upload failed';
+    
     if (errorMessage.includes('storage quota')) {
       return res.status(403).json({ 
-        error: "System Storage Permission Error: Please ensure the Service Account is added to the Shared Drive as a Manager.",
-        details: error.response?.data?.error?.errors || null
+        error: "Google Drive Storage Error: Please ensure you have space and the OAuth app has writing permissions to the target folder.",
+        details: err.response?.data?.error?.errors || null
       });
     }
-
-    const errorDetails = error.response?.data?.error?.errors || null;
-    res.status(500).json({ 
+    
+    res.status(err.response?.status || 500).json({ 
       error: errorMessage,
-      details: errorDetails
+      details: err.response?.data?.error?.errors || null
     });
   }
 });
@@ -318,6 +425,59 @@ app.post('/api/drive/create-metadata', async (req: any, res: any) => {
   } catch (error: any) {
     console.error('Create metadata failed:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/drive-upload-test', async (req: any, res: any) => {
+  console.log('--- RUNNING DRIVE UPLOAD TEST ---');
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
+    const testFileName = `Zarya_Upload_Test_${new Date().getTime()}.txt`;
+    const testContent = `This is a test file to verify write permissions.\nTimestamp: ${new Date().toISOString()}`;
+    
+    console.log(`Testing upload to parent: ${parentFolderId || 'ROOT'}`);
+    
+    const resDrive = await drive.files.create({
+      requestBody: {
+        name: testFileName,
+        parents: parentFolderId ? [parentFolderId] : [],
+      },
+      media: {
+        mimeType: 'text/plain',
+        body: Readable.from(testContent),
+      },
+      supportsAllDrives: true,
+      fields: 'id, name, webViewLink',
+      // @ts-ignore
+      uploadType: 'multipart',
+    });
+
+    console.log(`✅ Upload Test Successful! File ID: ${resDrive.data.id}`);
+    
+    // Clean up: delete the test file immediately
+    try {
+      await drive.files.delete({ fileId: resDrive.data.id, supportsAllDrives: true });
+      console.log('✅ Clean-up: Test file deleted.');
+    } catch (cleanErr: any) {
+      console.warn('⚠️ Clean-up failed (delete):', cleanErr.message);
+    }
+
+    res.json({ 
+      success: true, 
+      fileId: resDrive.data.id, 
+      name: resDrive.data.name,
+      link: resDrive.data.webViewLink
+    });
+  } catch (err: any) {
+    console.error('❌ Upload Test Failed:', err);
+    res.status(500).json({ 
+      error: err.message, 
+      details: err.response?.data?.error || null,
+      parentFolder: process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID
+    });
   }
 });
 
@@ -733,6 +893,15 @@ app.get('/api/admin/drive-status', (req: any, res: any) => {
   });
 });
 
+// Global Error Handler for API routes to ensure JSON responses
+app.use('/api', (err: any, req: any, res: any, next: any) => {
+  console.error(`💥 [API ERROR] ${req.method} ${req.path}:`, err);
+  res.status(err.status || err.statusCode || 500).json({
+    error: err.message || 'Internal Server Error',
+    type: 'GlobalErrorHandler'
+  });
+});
+
 // Catch-all for undefined API routes to prevent falling through to SPA fallback
 app.all('/api/*', (req, res) => {
   res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
@@ -785,9 +954,17 @@ async function startServer() {
               console.warn('⚠️ GOOGLE_DRIVE_PARENT_FOLDER_ID not set.');
             }
           } catch (atErr: any) {
-             console.error('❌ Token refresh failed during startup:', atErr.message);
-             if (atErr.message === 'unauthorized_client') {
+             const msg = atErr.message || '';
+             console.error('❌ Token refresh failed during startup:', msg);
+             
+             if (msg.includes('unauthorized_client')) {
                console.error('   -> Check if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET match the ones used to generate GOOGLE_REFRESH_TOKEN.');
+             } else if (msg.includes('access_denied') || msg.includes('invalid_grant')) {
+               console.error('   -> The Refresh Token might be invalid or expired. Please generate a new one.');
+             } else if (msg.includes('has not been used in project') || msg.includes('disabled')) {
+               console.error('   -> CRITICAL: Google Drive API is DISABLED.');
+               console.error('   -> ACTION REQUIRED: Open this link to enable it:');
+               console.error('      https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=1039729742728');
              }
           }
         } else {

@@ -351,6 +351,14 @@ export const Header: React.FC = () => {
                         <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
                            <Shield className="w-3.5 h-3.5" /> {t('admin_portal')}
                         </button>
+                        <button 
+                          onClick={() => {
+                            navigate('/admin/users#drive');
+                          }} 
+                          className="w-full flex items-center gap-3 p-2.5 hover:bg-blue-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-blue-600 transition-all"
+                        >
+                           <Database className="w-3.5 h-3.5" /> {t('drive_status')}
+                        </button>
                         <div className="h-px bg-slate-100 my-1 mx-2" />
                         <button onClick={() => signOut(auth)} className="w-full flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-lg text-[10px] font-black uppercase tracking-widest text-rose-500 transition-all italic">
                            <LogOut className="w-3.5 h-3.5" /> {t('sign_out')}

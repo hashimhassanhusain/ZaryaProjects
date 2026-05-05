@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Page, EntityConfig, Project } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
@@ -99,10 +100,10 @@ const QuickViewModal: React.FC<{
     }
   }, [isOpen, id, selectedProject]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -198,7 +199,8 @@ const QuickViewModal: React.FC<{
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
@@ -325,7 +327,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                 {inputs.map((input, idx) => {
                   const linkedPage = pages.find(p => p.id === input.id);
                   const inputTranslated = t(input.id);
-                  const inputDisplay = inputTranslated === input.id ? input.title : inputTranslated;
+                  const inputDisplay = stripNumericPrefix(inputTranslated === input.id ? input.title : inputTranslated);
                   return (
                     <div 
                       key={`${input.id}-${idx}`} 
