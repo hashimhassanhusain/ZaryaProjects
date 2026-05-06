@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DraftingCompass,
   Box,
@@ -7,7 +7,6 @@ import {
   MoreVertical,
   Trash2,
   ExternalLink,
-  Eye,
   History,
   Download,
   Plus,
@@ -19,6 +18,7 @@ import {
   Image as ImageIcon,
   HardDrive,
   Loader2,
+  X
 } from "lucide-react";
 import { Page } from "../types";
 import { useProject } from "../context/ProjectContext";
@@ -33,6 +33,7 @@ import {
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   collection,
@@ -44,7 +45,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { cn, stripNumericPrefix } from "../lib/utils";
+import { cn } from "../lib/utils";
 import { BreadcrumbHeader } from "./BreadcrumbHeader";
 import { motion, AnimatePresence } from "motion/react";
 import toast from "react-hot-toast";
@@ -100,8 +101,6 @@ const FILE_TYPES = [
   { code: "SPE", label: "Specification", type: "specs" },
 ] as const;
 
-import { FileViewerModal } from "./FileViewerModal";
-
 export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
@@ -119,9 +118,9 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Viewer State
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<DesignFile | null>(null);
+  // Deletion Confirmation State
+  const [fileToDelete, setFileToDelete] = useState<DesignFile | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Settings Management State
   const [newDisc, setNewDisc] = useState({ label: "", labelAr: "" });
@@ -139,7 +138,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
     version: "V01",
   });
 
-  const generateFileName = () => {
+  const generateFileName = useCallback(() => {
     const projectCode = selectedProject?.code || "PROJECT";
     const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "");
     const cleanDesc = formData.description.trim().replace(/\s+/g, "_");
@@ -148,11 +147,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         ? `-${formData.discipline.substring(0, 4).toUpperCase()}`
         : "";
     return `${projectCode}-${formData.originator}${discCode}-D${formData.division}-${formData.type}-${formData.refNo}-${cleanDesc}-${formData.version}-${dateStr}`;
-  };
+  }, [selectedProject?.code, formData]);
 
   const [isScanning, setIsScanning] = useState(false);
 
-  const scanDriveFolders = async () => {
+  const scanDriveFolders = useCallback(async () => {
     if (!selectedProject?.driveFolderId) {
       toast.error("Project Drive Link not found");
       return;
@@ -178,7 +177,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         )
       );
 
-      // Find which ones are NOT in Firestore yet
+    // Find which ones are NOT in Firestore yet
       const existingDriveIds = designs.map(d => d.driveFileId).filter(Boolean);
       const uncataloged = technicalFiles.filter((f: any) => !existingDriveIds.includes(f.id));
 
@@ -189,6 +188,15 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         
         // Auto-catalog identified files
         for (const file of uncataloged) {
+          // Double check Firestore one more time to avoid duplicates if state was stale or raced
+          const q = query(
+            collection(db, "project_designs"),
+            where("projectId", "==", selectedProject.id),
+            where("driveFileId", "==", file.id)
+          );
+          const snap = await getDocs(q);
+          if (!snap.empty) continue; 
+
           const nameParts = file.name.split('-');
           const isDwg = file.name.toLowerCase().includes('.dwg');
           
@@ -216,7 +224,9 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
             uploadedAt: file.createdTime || new Date().toISOString(),
             uploadedBy: "Admin Sync"
           };
-          await addDoc(collection(db, "project_designs"), newDesign);
+          
+          // Use fixed ID based on driveFileId to strictly prevent duplicates
+          await setDoc(doc(db, "project_designs", `drive_${file.id}`), newDesign);
         }
         toast.success(`Registry synchronized with Drive (${uncataloged.length} new files).`);
       }
@@ -226,7 +236,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
     } finally {
       setIsScanning(false);
     }
-  };
+  }, [selectedProject?.id, selectedProject?.driveFolderId, designs]);
 
   const handleSaveUpload = async () => {
     if (!pendingFile || !selectedProject) {
@@ -417,16 +427,24 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       }
     });
 
-    // Auto-sync from Drive on mount if project changes
-    if (selectedProject?.driveFolderId) {
-      scanDriveFolders();
-    }
-
     return () => {
       unsubDesigns();
       unsubDisc();
     };
-  }, [selectedProject]);
+  }, [selectedProject?.id]);
+
+  // Separate useEffect for Auto-sync to ensure designs state is loaded
+  const [hasSynced, setHasSynced] = useState(false);
+  useEffect(() => {
+    setHasSynced(false);
+  }, [selectedProject?.id]);
+
+  useEffect(() => {
+    if (!loading && selectedProject?.driveFolderId && !hasSynced) {
+      scanDriveFolders();
+      setHasSynced(true);
+    }
+  }, [loading, selectedProject?.id, selectedProject?.driveFolderId, hasSynced, scanDriveFolders]);
 
   const handleAddDiscipline = async () => {
     if (!newDisc.label) return;
@@ -470,11 +488,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this design file?"))
-      return;
     try {
       await deleteDoc(doc(db, "project_designs", id));
       toast.success("File deleted successfully");
+      setShowDeleteConfirm(false);
+      setFileToDelete(null);
     } catch (err) {
       toast.error("Failed to delete file");
     }
@@ -550,6 +568,9 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   const handleDownload = (file: DesignFile) => {
     if (file.fileUrl) {
       window.open(file.fileUrl, "_blank");
+    } else if (file.driveFileId) {
+      // Use standard Google Drive View/Download link
+      window.open(`https://drive.google.com/file/d/${file.driveFileId}/view`, "_blank");
     } else {
       toast.error("File source not found");
     }
@@ -622,21 +643,21 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             >
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-24 -mt-24 blur-3xl opacity-50" />
 
-              <div className="flex-shrink-0 mb-8 relative z-10">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase flex items-center gap-4">
-                  <Upload className="w-8 h-8 text-blue-600" />
+              <div className="flex-shrink-0 mb-4 relative z-10">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight italic uppercase flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-blue-600" />
                   {t("smart_asset_cataloging") || "Smart Asset Cataloging"}
                 </h2>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="grid grid-cols-2 gap-6 relative z-10 pb-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <div className="grid grid-cols-2 gap-3 relative z-10 pb-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("originator") || "Originator"}
                     </label>
                     <select
@@ -647,7 +668,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                           originator: e.target.value as any,
                         })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     >
                       {ORIGINATORS.map((o) => (
                         <option key={o} value={o}>
@@ -656,8 +677,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("asset_type") || "Asset Type"}
                     </label>
                     <select
@@ -666,7 +687,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         const val = e.target.value;
                         setFormData({ ...formData, type: val });
                       }}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     >
                       {FILE_TYPES.map((f) => (
                         <option key={f.code} value={f.code}>
@@ -678,8 +699,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
 
                   {formData.type === "DWG" && (
                     <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                           Discipline
                         </label>
                         <select
@@ -694,7 +715,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                               subType: disc?.categories[0] || "",
                             });
                           }}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                         >
                           {disciplines.map((d) => (
                             <option key={d.id} value={d.label}>
@@ -703,8 +724,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                           ))}
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                           Drawing Classification
                         </label>
                         <select
@@ -712,7 +733,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                           onChange={(e) =>
                             setFormData({ ...formData, subType: e.target.value })
                           }
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                         >
                           {disciplines
                             .find((d) => d.label === formData.discipline)
@@ -728,11 +749,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
 
                   <div
                     className={cn(
-                      "space-y-2",
+                      "space-y-1",
                       formData.type !== "DWG" && "col-span-2",
                     )}
                   >
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("division") || "Division (MasterFormat)"}
                     </label>
                     <select
@@ -740,7 +761,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                       onChange={(e) =>
                         setFormData({ ...formData, division: e.target.value })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     >
                       {DIVISIONS.map((d) => (
                         <option key={d.code} value={d.code}>
@@ -752,8 +773,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
 
                   {formData.type !== "DWG" && <div className="hidden" />}
 
-                  <div className="col-span-1 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <div className="col-span-1 space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("ref_no") || "Reference No."}
                     </label>
                     <input
@@ -765,11 +786,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                           refNo: e.target.value.padStart(3, "0"),
                         })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     />
                   </div>
-                  <div className="col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("description") || "Description"}
                     </label>
                     <input
@@ -778,11 +799,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         setFormData({ ...formData, description: e.target.value })
                       }
                       placeholder="e.g. GroundFloor_Layout"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("version") || "Version"}
                     </label>
                     <select
@@ -790,7 +811,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                       onChange={(e) =>
                         setFormData({ ...formData, version: e.target.value })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
                     >
                       {Array.from(
                         { length: 10 },
@@ -802,27 +823,27 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       {t("naming_preview") || "Naming Preview"}
                     </label>
-                    <div className="w-full bg-blue-50/50 border border-blue-100 rounded-2xl px-5 py-4 text-[10px] font-mono font-bold text-blue-600 break-all leading-relaxed p-4">
+                    <div className="w-full bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2 text-[9px] font-mono font-bold text-blue-600 break-all leading-relaxed">
                       {generateFileName()}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex-shrink-0 mt-8 flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex-shrink-0 mt-4 flex gap-2 pt-2 border-t border-slate-100">
                 <button
                   onClick={() => setIsAddOpen(false)}
-                  className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-200 transition-all"
                 >
                   {t("cancel") || "Cancel"}
                 </button>
                 <button
                   onClick={handleSaveUpload}
-                  className="flex-[2] py-5 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all"
+                  className="flex-[2] py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all"
                 >
                   {t("confirm_catalog") || "Confirm & Catalog"}
                 </button>
@@ -906,19 +927,72 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
           </div>
         </div>
 
-        {/* File Viewer Modal */}
-        {selectedFile && (
-          <FileViewerModal
-            isOpen={viewerOpen}
-            onClose={() => setViewerOpen(false)}
-            fileUrl={selectedFile.fileUrl || ""}
-            fileType={
-              selectedFile.extension?.replace(".", "") || selectedFile.type
-            }
-            fileName={selectedFile.fullName}
-            details={selectedFile}
-          />
-        )}
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteConfirm && fileToDelete && (
+            <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowDeleteConfirm(false)}
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl overflow-hidden"
+              >
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
+                    <Trash2 className="w-8 h-8" strokeWidth={2.5} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                      Delete Digital Asset?
+                    </h3>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                      Are you sure you want to permanently delete this file? This action cannot be undone.
+                    </p>
+                  </div>
+
+                  {/* File Stats Card */}
+                  <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <span>File Name</span>
+                      <span className="text-slate-900 truncate max-w-[200px] ml-4">{fileToDelete.fullName}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <span>Reference</span>
+                      <span className="text-slate-900 font-mono italic">{fileToDelete.refNo}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <span>Size</span>
+                      <span className="text-slate-900">{fileToDelete.size}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 w-full pt-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDelete(fileToDelete.id)}
+                      className="px-6 py-4 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 active:scale-95"
+                    >
+                      Delete Asset
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Hidden File Input */}
         <input
@@ -1031,34 +1105,34 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+              className="relative bg-white rounded-3xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
             >
-              <div className="flex-shrink-0 flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+              <div className="flex-shrink-0 flex justify-between items-center mb-4">
+                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
                   Manage Classifications
                 </h2>
                 <button 
                   onClick={() => setIsSettingsOpen(false)}
                   className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-all"
                 >
-                  <Box className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pb-4">
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+                  <div className="space-y-4">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       Add New Discipline
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <input
                         placeholder="Label (e.g. Interior Design)"
                         value={newDisc.label}
                         onChange={(e) =>
                           setNewDisc((p) => ({ ...p, label: e.target.value }))
                         }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
                       />
                       <input
                         placeholder="Label Arabic (e.g. تصميم داخلي)"
@@ -1066,39 +1140,39 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         onChange={(e) =>
                           setNewDisc((p) => ({ ...p, labelAr: e.target.value }))
                         }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
                       />
                       <button
                         onClick={handleAddDiscipline}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95"
+                        className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95"
                       >
                         Add Discipline
                       </button>
                     </div>
 
-                    <div className="pt-8 space-y-4">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    <div className="pt-4 space-y-2">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Active Disciplines
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {disciplines.map((d) => (
                           <div
                             key={d.id}
-                            className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all"
+                            className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all"
                           >
                             <div className="flex flex-col">
-                              <span className="text-sm font-black text-slate-900">
+                              <span className="text-xs font-black text-slate-900">
                                 {d.label}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-400">
+                              <span className="text-[9px] font-bold text-slate-400">
                                 {d.labelAr}
                               </span>
                             </div>
                             <button
                               onClick={() => handleDeleteDiscipline(d.id)}
-                              className="text-slate-300 p-2 hover:bg-rose-50 hover:text-rose-500 rounded-xl transition-all"
+                              className="text-slate-300 p-1.5 hover:bg-rose-50 hover:text-rose-500 rounded-lg transition-all"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ))}
@@ -1106,17 +1180,17 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  <div className="space-y-4">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       Add Category to Discipline
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <select
                         value={newCat.discId}
                         onChange={(e) =>
                           setNewCat((p) => ({ ...p, discId: e.target.value }))
                         }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm outline-none focus:bg-white transition-all focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm outline-none focus:bg-white transition-all focus:ring-2 focus:ring-blue-500/20"
                       >
                         <option value="">Select Discipline...</option>
                         {disciplines.map((d) => (
@@ -1131,18 +1205,18 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         onChange={(e) =>
                           setNewCat((p) => ({ ...p, label: e.target.value }))
                         }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
                       />
                       <button
                         onClick={handleAddCategory}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
                       >
                         Add Category
                       </button>
                     </div>
 
-                    <div className="pt-8 space-y-4">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    <div className="pt-4 space-y-2">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Discipline Categories
                       </h3>
                       <div className="space-y-3">
@@ -1262,10 +1336,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                   >
                     <td
                       className="px-6 py-5"
-                      onClick={() => {
-                        setSelectedFile(design);
-                        setViewerOpen(true);
-                      }}
+                      onClick={() => handleDownload(design)}
                     >
                       <div
                         className={cn(
@@ -1286,10 +1357,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                     </td>
                     <td
                       className="px-6 py-5"
-                      onClick={() => {
-                        setSelectedFile(design);
-                        setViewerOpen(true);
-                      }}
+                      onClick={() => handleDownload(design)}
                     >
                       <div className="flex flex-col gap-1 min-w-[300px]">
                         <span className="text-[11px] font-mono font-black text-slate-900 break-all group-hover:text-blue-600 transition-colors">
@@ -1373,17 +1441,6 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedFile(design);
-                            setViewerOpen(true);
-                          }}
-                          className="p-2.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                          title="View/Inspect"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
                             handleDownload(design);
                           }}
                           className="p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
@@ -1392,9 +1449,13 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                           <Download className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(design.id)}
-                          className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                          title="Delete Permanently"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFileToDelete(design);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="p-2.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                          title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

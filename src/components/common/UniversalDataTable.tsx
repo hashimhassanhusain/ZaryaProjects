@@ -94,15 +94,15 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
+    <div className="flex flex-col h-full bg-white dark:bg-surface rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden min-h-[500px]">
       {/* Table Header / Action Bar */}
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4 bg-white sticky top-0 z-10">
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-4 bg-white dark:bg-surface sticky top-0 z-10">
         {/* Left Side: Title & Info */}
         <div className="flex items-center gap-4 shrink-0">
           {title && (
             <div className="flex items-center gap-3">
               {typeof title === 'string' ? (
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">
                   {title}
                 </h2>
               ) : title}
@@ -114,11 +114,11 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
         {/* Middle: Search bar */}
         <div className="flex-1 max-w-xl group">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand transition-colors" />
             <input 
               type="text" 
               placeholder={`Search registry documents...`}
-              className="w-full pl-11 pr-6 py-2.5 bg-slate-50 border border-transparent rounded-xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-11 pr-6 py-2.5 bg-slate-50 dark:bg-white/5 border border-transparent rounded-xl text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-surface focus:ring-4 focus:ring-brand/5 focus:border-brand/20 outline-none transition-all placeholder:text-slate-400"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -130,19 +130,19 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
           <button 
             onClick={() => setShowColumnControls(!showColumnControls)}
             className={cn(
-              "p-2.5 rounded-xl transition-all shrink-0 border border-slate-100 shadow-sm flex items-center justify-center",
-              showColumnControls ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50"
+              "p-2.5 rounded-xl transition-all shrink-0 border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-center",
+              showColumnControls ? "bg-brand text-white border-brand" : "bg-white dark:bg-surface text-slate-400 hover:text-brand hover:bg-slate-50 dark:hover:bg-white/10"
             )}
             title="Configure Columns"
           >
             <Settings2 className="w-4 h-4" />
           </button>
           
-          <div className="h-6 w-px bg-slate-200 mx-1" />
+          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-1" />
 
           <button 
             onClick={handleExportExcel}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:translate-y-0.5"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 transition-all shadow-sm active:translate-y-0.5"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             Export
@@ -150,7 +150,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
           
           <button 
             onClick={onNewClick}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 active:translate-y-0.5"
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-secondary shadow-lg shadow-brand/20 transition-all active:scale-95 active:translate-y-0.5"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Entry
@@ -165,7 +165,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-slate-50 border-b border-slate-100 p-4"
+            className="bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 p-4"
           >
             <div className="flex flex-wrap gap-2">
               {config.columns.map((col, idx) => (
@@ -177,8 +177,8 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                   className={cn(
                     "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border",
                     visibleColumns.includes(col.key) 
-                      ? "bg-blue-600 border-blue-600 text-white" 
-                      : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
+                      ? "bg-brand border-brand text-white" 
+                      : "bg-white dark:bg-surface border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300 dark:hover:border-white/20"
                   )}
                 >
                   {col.label}
@@ -192,15 +192,15 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       {/* Data Grid */}
       <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 bg-white/80 backdrop-blur-md z-10">
-            <tr className="border-b border-slate-100">
+          <thead className="sticky top-0 bg-white/80 dark:bg-surface/80 backdrop-blur-md z-10">
+            <tr className="border-b border-slate-100 dark:border-white/5">
               <th className="w-12 px-4 py-4">
-                <input type="checkbox" className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <input type="checkbox" className="rounded-md border-slate-300 dark:border-white/20 text-brand focus:ring-brand" />
               </th>
               {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
                 <th 
                   key={`th-${col.key}-${idx}`}
-                  className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest group cursor-pointer hover:text-slate-600 transition-colors"
+                  className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest group cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                   onClick={() => toggleSort(col.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -220,24 +220,24 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.02 }}
                 onClick={() => onRowClick(record)}
-                className="group border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer"
+                className="group border-b border-slate-50 dark:border-white/5 hover:bg-brand/5 transition-all cursor-pointer"
               >
                 <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                  <input type="checkbox" className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" />
+                  <input type="checkbox" className="rounded-md border-slate-300 dark:border-white/20 text-brand focus:ring-brand" />
                 </td>
                 {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
-                  <td key={`td-${col.key}-${idx}`} className="px-4 py-4">
+                  <td key={`td-${col.key}-${idx}`} className="px-4 py-4 text-slate-700 dark:text-slate-300">
                     {renderCellValue(record[col.key], col.type)}
                   </td>
                 ))}
                 <td className="px-4 py-4 text-right" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-all">
+                    <button className="p-1.5 text-slate-400 hover:text-brand hover:bg-brand/10 rounded-lg transition-all">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button 
                       onClick={() => onDeleteRecord(record.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -259,12 +259,12 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       </div>
 
       {/* Pagination / Status Bar */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+      <div className="p-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
         <div>Showing {sortedData.length} records</div>
         <div className="flex items-center gap-4">
-          <button className="hover:text-blue-600">Previous</button>
-          <div className="bg-white border px-2 py-0.5 rounded border-slate-200">Page 1</div>
-          <button className="hover:text-blue-600">Next</button>
+          <button className="hover:text-brand">Previous</button>
+          <div className="bg-white dark:bg-surface border px-2 py-0.5 rounded border-slate-200 dark:border-white/10">Page 1</div>
+          <button className="hover:text-brand">Next</button>
         </div>
       </div>
     </div>
@@ -289,7 +289,7 @@ const renderCellValue = (value: any, type: string) => {
       };
       return <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase", colors[value] || 'bg-slate-100 text-slate-600')}>{value}</span>;
     case 'badge':
-      return <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold">{value}</span>;
+      return <span className="px-2 py-0.5 bg-brand/10 text-brand rounded text-[10px] font-semibold">{value}</span>;
     case 'progress':
       return (
         <div className="flex items-center gap-2">

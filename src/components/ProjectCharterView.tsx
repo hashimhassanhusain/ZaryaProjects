@@ -439,7 +439,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-brand animate-spin" />
       </div>
     );
   }
@@ -484,7 +484,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
           <div className="flex justify-start">
              <button 
                onClick={handleAutoFill}
-               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm"
+               className="flex items-center gap-2 px-4 py-2 bg-brand/10 text-brand rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand/20 transition-all border border-brand/20 shadow-sm"
              >
                 <Database className="w-4 h-4" />
                 Auto-fill from Foundation Center
@@ -525,7 +525,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
               <div className="flex justify-end pr-2">
                  <button 
                    onClick={() => setViewMode('grid')}
-                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider"
+                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-lg text-[9px] font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all uppercase tracking-wider"
                  >
                    <ArrowLeft className="w-3 h-3" />
                    {t('back_to_list')}
@@ -535,16 +535,16 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
               <section className="space-y-4">
                  <div className="flex items-center justify-between px-2">
                     <div className={cn("space-y-0.5", isRtl && "text-right")}>
-                      <h2 className="text-sm font-bold text-slate-900 tracking-tight uppercase">{t('project_canvas_hub')}</h2>
-                      <p className={cn("text-[9px] text-slate-400 font-medium tracking-wide border-l-2 border-blue-500/50 pl-2", isRtl && "border-l-0 border-r-2 pr-2")}>{t('interactive_workspace')}</p>
+                      <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">{t('project_canvas_hub')}</h2>
+                      <p className={cn("text-[9px] text-slate-400 font-medium tracking-wide border-l-2 border-brand/50 pl-2", isRtl && "border-l-0 border-r-2 pr-2")}>{t('interactive_workspace')}</p>
                     </div>
                  </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     {/* Identification Card */}
                     <div className="lg:col-span-1 space-y-4">
-                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
-                         <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/10">
+                      <div className="bg-slate-50 dark:bg-white/5 rounded-2xl p-5 border border-slate-100 dark:border-white/5 space-y-4">
+                         <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white shadow-lg shadow-brand/10">
                             <Briefcase className="w-4.5 h-4.5" />
                          </div>
                          <div className="space-y-1">
@@ -553,7 +553,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectTitle}
                               onChange={(e) => setCharter({ ...charter, projectTitle: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -562,7 +562,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectManager}
                               onChange={(e) => setCharter({ ...charter, projectManager: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -571,7 +571,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.pmAuthorityLevel}
                               onChange={(e) => setCharter({ ...charter, pmAuthorityLevel: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -580,27 +580,27 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectSponsor}
                               onChange={(e) => setCharter({ ...charter, projectSponsor: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                             />
                          </div>
                       </div>
                     </div>
 
                     <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('project_purpose')}</h3>
+                       <div className="bg-white dark:bg-surface rounded-2xl p-5 border border-slate-200 dark:border-white/5 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-wider", isRtl && "text-right")}>{t('project_purpose')}</h3>
                           <textarea 
-                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             className={cn("w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                              rows={2}
                              value={charter.purpose}
                              onChange={(e) => setCharter({ ...charter, purpose: e.target.value })}
                           />
                        </div>
 
-                       <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                          <h3 className={cn("text-[11px] font-bold text-slate-900 uppercase tracking-wider", isRtl && "text-right")}>{t('measurable_project_objectives')}</h3>
+                       <div className="bg-white dark:bg-surface rounded-2xl p-5 border border-slate-200 dark:border-white/5 space-y-3">
+                          <h3 className={cn("text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-wider", isRtl && "text-right")}>{t('measurable_project_objectives')}</h3>
                           <textarea 
-                             className={cn("w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20", isRtl && "text-right")}
+                             className={cn("w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
                              rows={2}
                              value={charter.objectives.scope.objective}
                              placeholder="Summary objectives and success criteria..."

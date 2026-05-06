@@ -381,11 +381,11 @@ export const AdminProjectsView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 flex flex-col max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 flex flex-col max-h-[90vh] overflow-hidden"
             >
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
-                  <AlertTriangle className="w-8 h-8" />
+                <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500 mx-auto">
+                  <AlertTriangle className="w-6 h-6" />
                 </div>
               </div>
               

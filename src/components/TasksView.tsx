@@ -154,10 +154,10 @@ export const TasksView: React.FC = () => {
           id: 'issue-' + doc.id,
           title: data.issue || 'Unnamed Issue',
           description: `${data.impact || ''}\n\nActions: ${data.actions || ''}`,
-          status: data.status === 'Open' ? 'TO DO' : 
+          status: data.kanbanStatus || (data.status === 'Open' ? 'TO DO' : 
                   data.status === 'In Progress' ? 'IN PROGRESS' : 
                   data.status === 'Resolved' ? 'COMPLETED' : 
-                  data.status === 'Closed' ? 'COMPLETED' : 'TO DO',
+                  data.status === 'Closed' ? 'COMPLETED' : 'TO DO'),
           assigneeId: data.responsiblePartyId || data.responsibleParty || 'Unassigned',
           workspaceId: workspaces[0].id,
           startDate: getISODate(data.createdAt),
@@ -284,6 +284,7 @@ export const TasksView: React.FC = () => {
           issueUpdates.responsiblePartyId = updates.assigneeId; // Keep both for safety
         }
         if (updates.status) {
+          issueUpdates.kanbanStatus = updates.status;
           issueUpdates.status = updates.status === 'COMPLETED' ? 'Resolved' : 
                                 updates.status === 'IN PROGRESS' ? 'In Progress' : 'Open';
         }
@@ -460,7 +461,33 @@ export const TasksView: React.FC = () => {
   );
 
   const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
+    const taskId = event.active.id as string;
+    setActiveId(taskId);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTaskId = active.id as string;
+    const overId = over.id as string;
+
+    const activeTask = tasks.find(t => t.id === activeTaskId);
+    if (!activeTask) return;
+
+    // Determine the target status
+    let newStatus = overId;
+    const overTask = tasks.find(t => t.id === overId);
+    if (overTask) {
+      newStatus = overTask.status;
+    }
+
+    // Only update if it's a valid status and different
+    if (activeTask.status !== newStatus && customStatuses.includes(newStatus as TaskStatus)) {
+      setTasks(prev => prev.map(t => 
+        t.id === activeTaskId ? { ...t, status: newStatus as TaskStatus } : t
+      ));
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -479,9 +506,10 @@ export const TasksView: React.FC = () => {
     }
 
     const task = tasks.find(t => t.id === taskId);
-    if (task && task.status !== newStatus) {
+    if (task) {
       // Check if newStatus is a valid status from customStatuses
       if (customStatuses.includes(newStatus as TaskStatus)) {
+        // Force update even if local status was changed optimistically during dragOver
         await updateTaskStatus(taskId, newStatus as TaskStatus);
       }
     }
@@ -747,6 +775,7 @@ export const TasksView: React.FC = () => {
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px] items-start">

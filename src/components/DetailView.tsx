@@ -1849,15 +1849,15 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]"
         >
-          <div className="flex-shrink-0 p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <h3 className="text-lg font-bold text-slate-900">Stakeholder Version History</h3>
             <button onClick={() => setShowStakeholderHistory(false)} className="text-slate-400 hover:text-slate-600">
-              <Plus className="w-6 h-6 rotate-45" />
+              <Plus className="w-5 h-5 rotate-45" />
             </button>
           </div>
-          <div className="flex-1 p-8 overflow-y-auto space-y-4 custom-scrollbar">
+          <div className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
             {stakeholderVersions.map((v, i) => (
               <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
                 <div>
@@ -2327,7 +2327,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+          className="bg-white w-full max-w-xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         >
           <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">

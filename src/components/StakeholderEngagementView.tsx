@@ -153,21 +153,21 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
       <div className="space-y-8 pb-20">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg text-white">
+            <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center shadow-lg text-white">
               <Brain className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight italic uppercase">Relationships & Sentiment</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight italic uppercase">Relationships & Sentiment</h2>
               <p className="text-sm text-slate-500 font-medium">Measuring relationship health through AI-powered sentiment logs.</p>
             </div>
           </div>
-          <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-white/5">
              {['engagement', 'sentiment', 'nps'].map((t) => (
                 <button
                   key={t}
                   onClick={() => setActiveSubTab(t as any)}
                   className={`px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all ${
-                    activeSubTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                    activeSubTab === t ? 'bg-white dark:bg-surface text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
                    {t}
@@ -177,13 +177,13 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
         </header>
 
         {activeSubTab === 'engagement' && (
-          <section className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden">
-             <div className="p-8 border-b border-slate-50 bg-slate-50/30">
-               <h3 className="text-lg font-semibold text-slate-900 italic">Engagement Matrix (C vs D)</h3>
+          <section className="bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm overflow-hidden">
+             <div className="p-8 border-b border-slate-50 dark:border-white/5 bg-slate-50/30">
+               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 italic">Engagement Matrix (C vs D)</h3>
              </div>
              <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-slate-50/50">
+                  <tr className="bg-slate-50/50 dark:bg-white/5">
                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stakeholder</th>
                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Current</th>
                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Desired</th>
@@ -191,27 +191,27 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategy</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {stakeholders.map((sh) => (
-                    <tr key={sh.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={sh.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
+                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
                               {sh.name[0]}
                            </div>
                            <div>
-                              <p className="text-sm font-semibold text-slate-900">{sh.name}</p>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{sh.name}</p>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sh.role}</p>
                            </div>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg uppercase">
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg uppercase">
                            {sh.currentEngagement || 'Unaware'}
                         </span>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-3 py-1 rounded-lg uppercase">
+                        <span className="text-[10px] font-semibold text-brand bg-brand/10 px-3 py-1 rounded-lg uppercase">
                            {sh.desiredEngagement || 'Supportive'}
                         </span>
                       </td>
@@ -228,7 +228,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <button className="text-[10px] font-semibold text-purple-600 uppercase tracking-widest hover:underline transition-all">
+                        <button className="text-[10px] font-semibold text-brand uppercase tracking-widest hover:underline transition-all">
                            View Mitigation Plan
                         </button>
                       </td>
@@ -242,15 +242,15 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
         {activeSubTab === 'sentiment' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
              <div className="space-y-6">
-                <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6">
-                   <h3 className="text-lg font-semibold text-slate-900 italic">Submit Interaction Log</h3>
+                <div className="bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 italic">Submit Interaction Log</h3>
                    <div className="space-y-4">
                       <div className="space-y-1">
                          <label className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Stakeholder</label>
                          <select 
                            value={selectedSh}
                            onChange={(e) => setSelectedSh(e.target.value)}
-                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all cursor-pointer"
+                           className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer dark:text-white"
                          >
                             <option value="">Select Stakeholder...</option>
                             {stakeholders.map(sh => <option key={sh.id} value={sh.id}>{sh.name} ({sh.role})</option>)}
@@ -263,30 +263,30 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                            placeholder="Type observation based on meeting minutes or conversation..."
                            value={newNote}
                            onChange={(e) => setNewNote(e.target.value)}
-                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all resize-none"
+                           className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-brand/10 transition-all resize-none dark:text-white"
                          />
                       </div>
                       <button 
-                        onClick={handleAnalyzeSentiment}
-                        disabled={isAnalyzing}
-                        className="w-full py-4 bg-purple-600 text-white rounded-2xl font-semibold text-[11px] uppercase tracking-widest hover:bg-purple-700 transition-all shadow-xl shadow-purple-600/20 flex items-center justify-center gap-2"
-                      >
-                         {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-                         {isAnalyzing ? 'Analyzing Sentiment...' : 'Analyze & Log Interaction'}
+                         onClick={handleAnalyzeSentiment}
+                         disabled={isAnalyzing}
+                         className="w-full py-4 bg-brand text-white rounded-2xl font-semibold text-[11px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-brand/20 flex items-center justify-center gap-2"
+                       >
+                          {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+                          {isAnalyzing ? 'Analyzing Sentiment...' : 'Analyze & Log Interaction'}
                       </button>
                    </div>
                 </div>
 
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-4 shadow-xl shadow-purple-900/10">
-                   <h4 className="text-[10px] font-semibold uppercase tracking-widest text-purple-400">AI Logic Indicator</h4>
+                <div className="bg-slate-900 dark:bg-[#1a1a1a] rounded-[2.5rem] p-8 text-white space-y-4 shadow-xl shadow-brand/10">
+                   <h4 className="text-[10px] font-semibold uppercase tracking-widest text-brand">AI Logic Indicator</h4>
                    <p className="text-sm font-medium leading-relaxed italic text-slate-400">
                      "PMIS uses NLP to detect conflict levels. Stakeholders tagged as 'Critical' will be automatically flagged in the Risk Register."
                    </p>
                 </div>
              </div>
 
-             <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm space-y-6 flex flex-col h-[700px]">
-                <h3 className="text-lg font-semibold text-slate-900 italic">Sentiment Feed</h3>
+             <div className="bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm space-y-6 flex flex-col h-[700px]">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 italic">Sentiment Feed</h3>
                 <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
                    {logs.map((log) => {
                      const sh = stakeholders.find(s => s.id === log.stakeholderId);
@@ -295,7 +295,7 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                          key={log.id} 
                          initial={{ opacity: 0, x: 20 }}
                          animate={{ opacity: 1, x: 0 }}
-                         className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 relative overflow-hidden"
+                         className="p-6 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3 relative overflow-hidden"
                        >
                           <div className={`absolute top-0 left-0 w-1 h-full ${
                              log.sentiment === 'Positive' ? 'bg-emerald-500' : 
@@ -303,18 +303,18 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                           }`} />
                           <div className="flex items-center justify-between mb-2">
                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold text-slate-900 uppercase">{sh?.name || 'Unknown'}</span>
+                                <span className="text-[10px] font-semibold text-slate-900 dark:text-white uppercase">{sh?.name || 'Unknown'}</span>
                                 <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded uppercase ${
-                                   log.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600' : 
-                                   log.sentiment === 'Negative' || log.sentiment === 'Conflict' ? 'bg-rose-50 text-rose-600' : 'bg-slate-200 text-slate-600'
+                                   log.sentiment === 'Positive' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 
+                                   log.sentiment === 'Negative' || log.sentiment === 'Conflict' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'
                                 }`}>
                                    {log.sentiment}
                                 </span>
                              </div>
                              <span className="text-[9px] font-bold text-slate-400">{log.createdAt?.toDate().toLocaleDateString()}</span>
                           </div>
-                          <p className="text-xs text-slate-600 font-medium leading-relaxed italic">"{log.content}"</p>
-                          <div className="pt-2 flex items-center gap-2 border-t border-slate-200">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic">"{log.content}"</p>
+                          <div className="pt-2 flex items-center gap-2 border-t border-slate-200 dark:border-white/5">
                              <TrendingUp className="w-3 h-3 text-slate-400" />
                              <span className="text-[9px] font-bold text-slate-400">AI Analysis: {log.sentiment} confidence {(log.confidence * 100).toFixed(0)}%</span>
                           </div>

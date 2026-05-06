@@ -17,6 +17,8 @@ interface UIContextType {
   isFavorite: (id: string) => boolean;
   isRibbonCollapsed: boolean;
   setIsRibbonCollapsed: (collapsed: boolean) => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -28,9 +30,21 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
   const [favorites, setFavorites] = useState<string[]>(['3.6.3', '3.6.4', '2.4.1']);
   const [isRibbonCollapsed, setIsRibbonCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('pmo-theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('pmo-theme', next);
+      return next;
+    });
+  };
 
   const toggleFavorite = (id: string) => {
     setFavorites(prev => {
@@ -40,6 +54,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   };
 
   const isFavorite = (id: string) => favorites.includes(id);
+
+  React.useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    
+    // Also update data-theme attribute which some plugins use
+    root.setAttribute('data-theme', theme);
+  }, [theme]);
 
   return (
     <UIContext.Provider value={{ 
@@ -56,9 +79,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       toggleFavorite,
       isFavorite,
       isRibbonCollapsed,
-      setIsRibbonCollapsed
+      setIsRibbonCollapsed,
+      theme,
+      toggleTheme
     }}>
-      {children}
+      <div className={theme}>
+        {children}
+      </div>
     </UIContext.Provider>
   );
 };

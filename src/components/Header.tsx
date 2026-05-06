@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, User as UserIcon, LogOut, Shield, Search, Star, 
   FileText as FileIcon, Info, Building, FolderOpen, ChevronDown,
-  LayoutDashboard, Database
+  LayoutDashboard, Database, Sun, Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
   const currentPage = allPages.find(p => p.id === activePageId);
   const currentDomain = PERFORMANCE_DOMAINS.find(d => activePageId && (activePageId === d.id || activePageId === hubIds[d.id] || currentPage?.domain === d.id));
   
-  const { favorites, toggleFavorite } = useUI();
+  const { favorites, toggleFavorite, theme, toggleTheme } = useUI();
 
   const selectedCompany = companies.find(c => c.id === (selectedProject?.companyId || selectedCompanyId));
 
@@ -102,36 +102,47 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[56px] bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm">
+    <header className="h-[56px] bg-surface dark:bg-ribbon border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
              className={cn(
-               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
-               isProjectMenuOpen && "border-blue-100 bg-blue-50/50 shadow-sm"
+               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800",
+               isProjectMenuOpen && "border-brand-secondary/20 bg-brand/5 shadow-sm"
              )}
            >
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                 <Building className="w-4 h-4" />
+              {/* New Logo Replacement for Blue Icon */}
+              <div className="w-8 h-8 rounded-lg bg-[#505050] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
+                 <span className="text-[#FF5C00] font-black text-[7px] tracking-tighter">PMIS</span>
               </div>
               <div className="flex flex-col text-left">
-                 <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1 opacity-60">PMIS</span>
-                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight truncate max-w-[130px]">
+                 <span className="hidden sm:block text-[8px] font-black text-brand uppercase tracking-widest leading-none mb-0.5 opacity-60">PMIS</span>
+                 <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-[10px] sm:text-[11px] font-black text-text-main uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
                     <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
                  </div>
               </div>
+              {/* Mobile View: Show only code if available */}
+              {!selectedProject && !selectedCompany && (
+                <ChevronDown className="w-3 h-3 text-slate-400 sm:hidden" />
+              )}
+              {selectedProject && (
+                <div className="sm:hidden flex items-center gap-1 ml-1">
+                   <span className="text-[10px] font-black text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
+                   <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
+                </div>
+              )}
            </button>
 
            <AnimatePresence>
              {isProjectMenuOpen && (
                <motion.div
                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                 className="absolute top-full left-0 mt-2 w-80 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
+                 className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                >
                   <div className="max-h-[70vh] overflow-y-auto no-scrollbar space-y-4">
                      {/* Company List */}
@@ -144,8 +155,8 @@ export const Header: React.FC = () => {
                                className={cn(
                                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left",
                                  (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
-                                   ? "bg-blue-50 text-blue-700 font-bold"
-                                   : "text-slate-600 hover:bg-slate-50"
+                                   ? "bg-brand/10 text-brand font-bold"
+                                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                )}
                              >
                                 <Building className="w-3.5 h-3.5 opacity-50" />
@@ -154,7 +165,7 @@ export const Header: React.FC = () => {
                              
                              {/* Projects for this company */}
                              {(selectedProject?.companyId === company.id || selectedCompanyId === company.id) && (
-                               <div className="pl-5 space-y-0.5 mt-0.5 border-l-2 border-blue-100 ml-5">
+                               <div className="pl-5 space-y-0.5 mt-0.5 border-l-2 border-brand/20 ml-5">
                                   {projects.filter(p => p.companyId === company.id).map((proj, pIdx) => (
                                     <button
                                       key={`${proj.id}-${pIdx}`}
@@ -186,7 +197,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Global Hubs Navigation */}
-        <nav className="flex items-center h-full gap-0.5 flex-1 px-4 overflow-x-auto no-scrollbar">
+        <nav className="flex items-center h-full gap-0.5 flex-1 px-1 lg:px-4 overflow-x-auto no-scrollbar min-w-0">
            {PERFORMANCE_DOMAINS.map((domain, idx) => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
@@ -196,18 +207,18 @@ export const Header: React.FC = () => {
                  key={`${domain.id}-${idx}`} 
                  to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
                  className={cn(
-                   "flex items-center gap-2 px-4 h-9 rounded-xl transition-all relative group shrink-0",
+                   "flex items-center gap-1.5 px-2 lg:px-4 h-9 rounded-xl transition-all relative group shrink-0 min-w-[40px] sm:min-w-0",
                    isActive 
-                    ? "bg-slate-900 text-white shadow-lg" 
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                    ? "bg-slate-900 dark:bg-white/10 text-white shadow-lg" 
+                    : "text-slate-500 dark:text-slate-400 hover:text-text-main hover:bg-slate-100 dark:hover:bg-white/5"
                  )}
                >
-                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-600")} strokeWidth={isActive ? 2.5 : 2} />
-                 <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-400 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
+                 <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
                     {stripNumericPrefix(t(domain.id))}
                  </span>
                  {isActive && (
-                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-blue-500/5 rounded-xl -z-10" />
+                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-brand/5 rounded-xl -z-10" />
                  )}
                </Link>
              );
@@ -215,9 +226,22 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Global Actions */}
-        <div className="flex items-center gap-3 shrink-0">
-           {/* Favorites & Search */}
-           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
+        <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
+           {/* Theme Toggle - Hidden on mobile */}
+           <button 
+             onClick={toggleTheme}
+             className="hidden sm:flex p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-text-main shadow-sm hover:scale-110 transition-all cursor-pointer hover:border-brand/30"
+             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+           >
+             {theme === 'light' ? (
+               <Moon className="w-4 h-4" />
+             ) : (
+               <Sun className="w-4 h-4 text-brand" />
+             )}
+           </button>
+
+           {/* Favorites & Search - Hidden on mobile */}
+           <div className="hidden sm:flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               <div className="relative" ref={favoritesRef}>
                  <button 
                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
@@ -232,11 +256,11 @@ export const Header: React.FC = () => {
                    {isFavoritesOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
+                       className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                      >
-                        <div className="px-3 py-3 bg-slate-50 rounded-xl mb-1.5 flex items-center justify-between">
+                        <div className="px-3 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl mb-1.5 flex items-center justify-between">
                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('favorites')}</span>
-                           <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[8px] font-bold">{favorites.length}</div>
+                           <div className="w-4 h-4 rounded-full bg-brand text-white flex items-center justify-center text-[8px] font-bold">{favorites.length}</div>
                         </div>
                         <div className="max-h-80 overflow-y-auto no-scrollbar space-y-0.5">
                            {favorites.map((favId, idx) => {
@@ -272,7 +296,7 @@ export const Header: React.FC = () => {
                    {isSearchOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-2 w-96 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-3"
+                       className="absolute top-full right-0 mt-2 w-96 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-3"
                      >
                         <div className="relative mb-3">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -281,7 +305,7 @@ export const Header: React.FC = () => {
                             placeholder={t('search_pmis')} 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 pl-10 pr-3 text-[11px] font-bold focus:ring-1 focus:ring-blue-500 outline-none" 
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl py-2 pl-10 pr-3 text-[11px] font-bold focus:ring-1 focus:ring-brand outline-none transition-colors" 
                           />
                         </div>
                         
@@ -293,7 +317,7 @@ export const Header: React.FC = () => {
                                  onClick={() => handlePageNavigate(p.id)}
                                  className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-all group"
                                >
-                                  <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                  <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-brand">
                                      <FileIcon className="w-3.5 h-3.5" />
                                   </div>
                                   <div className="flex flex-col text-left">
@@ -335,14 +359,14 @@ export const Header: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 p-1.5"
+                    className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 p-1.5"
                   >
                      <div className="p-4 bg-slate-50 rounded-xl mb-1.5 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1 mx-auto mb-2.5 shadow-sm">
                            <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1rem] object-cover" />
                         </div>
                         <div className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
-                        <div className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{appUser?.role}</div>
+                        <div className="text-[8px] font-black text-brand uppercase tracking-widest">{appUser?.role}</div>
                      </div>
                      <div className="space-y-0.5">
                         <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
@@ -355,7 +379,7 @@ export const Header: React.FC = () => {
                           onClick={() => {
                             navigate('/admin/users#drive');
                           }} 
-                          className="w-full flex items-center gap-3 p-2.5 hover:bg-blue-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-blue-600 transition-all"
+                          className="w-full flex items-center gap-3 p-2.5 hover:bg-brand/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-brand transition-all"
                         >
                            <Database className="w-3.5 h-3.5" /> {t('drive_status')}
                         </button>

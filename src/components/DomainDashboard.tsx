@@ -106,7 +106,7 @@ interface DomainDashboardProps {
   initialTab?: string;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#FF5C00', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const ICON_MAP: Record<string, any> = {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, 
@@ -609,7 +609,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const activeHubId = null;
 
   return (
-    <div className="w-full flex flex-col h-full bg-slate-50">
+    <div className="w-full flex flex-col h-full bg-slate-50 dark:bg-app-bg transition-colors duration-300">
       {/* ── Office-Style Ribbon ── */}
       <Ribbon 
         groups={ribbonGroups}
@@ -631,20 +631,20 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             {activeTab === 'overview' ? (
               <div className="p-8 space-y-12">
                 {/* Domain Header Card */}
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
+                <div className="bg-white dark:bg-surface p-10 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-3xl -mr-20 -mt-20" />
                    <div className="relative z-10 flex items-center gap-8">
-                      <div className="w-20 h-20 rounded-[2.5rem] bg-slate-900 flex items-center justify-center text-white shadow-2xl shadow-slate-200">
-                         <Icon className="w-10 h-10" strokeWidth={1} />
-                      </div>
+                       <div className="w-20 h-20 rounded-[2.5rem] bg-slate-950 dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
+                          <Icon className="w-10 h-10" strokeWidth={1} />
+                       </div>
                       <div className="space-y-1">
                          <div className="flex items-center gap-3">
-                           <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                           <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
                                "p-2 rounded-xl transition-all shadow-sm",
-                               isFavorite ? "bg-amber-50 text-amber-500" : "bg-white border border-slate-200 text-slate-300 hover:text-slate-400"
+                               isFavorite ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-300 hover:text-slate-400"
                              )}
                            >
                              <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
@@ -656,7 +656,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                       </div>
                    </div>
                    <div className="relative z-10 flex items-center gap-3">
-                      <div className="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-200">
+                      <div className="px-5 py-2 bg-brand text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand/20">
                          {t('enterprise_standard')}
                       </div>
                    </div>
@@ -664,27 +664,27 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-slate-400">
+                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
                          <Activity className="w-4 h-4" />
                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('status')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">{t('healthy')}</div>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white">{t('healthy')}</div>
                       <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                          <div className="h-full bg-emerald-500 w-[94%]" />
                       </div>
                    </div>
                    
-                   <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-slate-400">
+                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
                          <CheckCircle2 className="w-4 h-4" />
                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('compliance')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">98.2%</div>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white">98.2%</div>
                       <div className="text-[10px] font-bold text-emerald-600 uppercase">↑ 2.1% {t('this_month')}</div>
                    </div>
 
-                   <div className="col-span-2 bg-slate-900 p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
+                    <div className="col-span-2 bg-slate-950 dark:bg-brand-dark p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
                       <div className="relative z-10 flex items-center justify-between h-full">
                          <div className="space-y-2">
@@ -701,7 +701,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 {/* Focus Areas Visualization */}
                 <div className="space-y-6">
                    <div className="flex items-center justify-between px-2">
-                      <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
+                      <h3 className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
                       <div className="flex gap-4">
                          {areas.map(area => (
                            <div key={area} className="flex items-center gap-2">
@@ -728,10 +728,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                                   <button 
                                     key={child.id}
                                     onClick={() => handleTabChange(child.id)}
-                                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-700 text-left hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between group"
+                                    className="w-full p-4 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-2xl text-[11px] font-bold text-slate-700 dark:text-slate-300 text-left hover:border-brand/30 hover:shadow-md transition-all flex items-center justify-between group"
                                   >
                                      <span className="truncate pr-4 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
-                                     <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                     <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-brand transition-colors" />
                                   </button>
                                 ))}
                                 {areaChildren.length === 0 && (
@@ -791,7 +791,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 </div>
               </div>
             ) : (
-              <div className="bg-white h-full relative z-10">
+              <div className="bg-white dark:bg-app-bg h-full relative z-10">
                 {(() => {
                   const p = filteredChildren.find(c => c.id === activeTab);
                   return p ? renderPageContent(p) : <DetailView page={pages.find(pg => pg.id === activeTab) || page} />;

@@ -82,6 +82,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { UserProvider, useAuth } from './context/UserContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { ProjectSelectorView } from './components/ProjectSelectorView';
 import { Toaster } from 'react-hot-toast';
 
 const PageRenderer = () => {
@@ -150,44 +151,10 @@ const PageRenderer = () => {
   }
 
   // --- PROJECT SELECTION REQUIREMENT ---
-  // Most pages (except global ones like companies or admin - though those are handled by other routes)
-  // require a selected project.
+  // Most pages (except global ones like companies or admin) require a selected project.
   const globalPages = ['companies', 'explorer', 'profile'];
   if (!selectedProject && !globalPages.includes(page.id)) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl border border-slate-100 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-16 -mt-16 blur-2xl" />
-          
-          <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
-             <div className="absolute inset-0 bg-blue-500/10 animate-ping rounded-[2rem] opacity-20" />
-             <LayoutDashboard className="w-10 h-10 text-blue-600 relative z-10" />
-          </div>
-          
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4 uppercase">{t('project_required')}</h2>
-          <p className="text-slate-500 text-sm leading-relaxed mb-10">
-            {t('please_select_project_to_continue')}
-            <br />
-            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mt-4 block">PMIS Command Center</span>
-          </p>
-          
-          <div className="space-y-4">
-             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 text-left">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">1</div>
-                <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('click_select_project_in_header')}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 text-left">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">2</div>
-                <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('choose_company_and_project')}</div>
-             </div>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <ProjectSelectorView />;
   }
 
   // If it's a schedule page, always use ScheduleHubView or the direct view
@@ -411,6 +378,7 @@ import { FoundationInsights } from './components/FoundationInsights';
 
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
+  const { selectedProject } = useProject();
   const location = useLocation();
 
   useEffect(() => {
@@ -432,7 +400,7 @@ const AppLayout = () => {
   }, [location.pathname, t]);
 
   return (
-    <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="flex h-screen bg-app-bg overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Sidebar removed as per user request */}
 
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
@@ -441,7 +409,7 @@ const AppLayout = () => {
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
-            "flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc]",
+            "flex-1 overflow-y-auto no-scrollbar bg-slate-50 dark:bg-app-bg",
             "p-0"
           )}
         >
@@ -459,7 +427,8 @@ const AppLayout = () => {
             <Route path="/admin/projects/:id" element={<ProjectFormView />} />
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={
-              <div className="min-h-full bg-slate-50 p-6 lg:p-10 space-y-10">
+              !selectedProject ? <ProjectSelectorView /> : (
+              <div className="min-h-full bg-slate-50 dark:bg-app-bg p-6 lg:p-10 space-y-10 transition-colors duration-300">
                 {/* AI Assistant Section - Expanded */}
                 <div className="max-w-full mx-auto">
                   <AIAssistant />
@@ -468,45 +437,48 @@ const AppLayout = () => {
                 {/* Dashboard Grid - Real KPIs */}
                 <div className="max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                    {/* Progress Tracker */}
-                   <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm space-y-6">
+                   <div className="lg:col-span-2 bg-white dark:bg-surface p-8 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
                       <div className="flex items-center justify-between">
-                         <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Project Health Index</h3>
+                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Project Health Index</h3>
                          <div className="flex gap-2">
-                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold">On Schedule</span>
-                            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold">In Budget</span>
+                            <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-bold">On Schedule</span>
+                            <span className="px-3 py-1 bg-brand/10 text-brand rounded-full text-[10px] font-bold">In Budget</span>
                          </div>
                       </div>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                          {[
-                           { label: 'Overall Progress', value: '68%', color: 'blue' },
+                           { label: 'Overall Progress', value: '68%', color: 'brand' },
                            { label: 'Schedule Variance', value: '+4 Days', color: 'emerald' },
                            { label: 'Cost Variance', value: '-12%', color: 'emerald' },
                            { label: 'Quality Index', value: '98.5%', color: 'indigo' }
                          ].map(stat => (
-                           <div key={stat.label} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                              <div className={`text-xl font-black text-${stat.color}-600 tracking-tighter`}>{stat.value}</div>
+                           <div key={stat.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                              <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{stat.label}</div>
+                              <div className={cn(
+                                "text-xl font-black tracking-tighter",
+                                stat.color === 'brand' ? 'text-brand' : `text-${stat.color}-600 dark:text-${stat.color}-400`
+                              )}>{stat.value}</div>
                            </div>
                          ))}
                       </div>
 
-                      <div className="h-48 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-center relative overflow-hidden">
-                         <div className="absolute inset-x-8 bottom-12 h-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-48 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5 flex items-center justify-center relative overflow-hidden">
+                         <div className="absolute inset-x-8 bottom-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: '0%' }}
                               animate={{ width: '68%' }}
-                              className="h-full bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]" 
+                              className="h-full bg-brand shadow-[0_0_20px_rgba(255,92,0,0.4)]" 
                             />
                          </div>
-                         <div className="text-4xl font-black text-slate-900 italic tracking-tighter opacity-10">PMIS PERFORMANCE ENGINE</div>
+                         <div className="text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter opacity-10">PMIS PERFORMANCE ENGINE</div>
                       </div>
                    </div>
 
                    {/* Quick Actions / Recent Activity */}
-                   <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl -mr-24 -mt-24" />
-                      <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-blue-400">Critical Alerts</h3>
+                   <div className="bg-slate-900 dark:bg-[#1a1a1a] p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden transition-colors border border-white/5">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-brand/10 rounded-full blur-3xl -mr-24 -mt-24" />
+                      <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-brand">Critical Alerts</h3>
                       <div className="space-y-4">
                          {[
                            { msg: '3 POs awaiting approval', type: 'warning' },
@@ -523,7 +495,7 @@ const AppLayout = () => {
                            </div>
                          ))}
                       </div>
-                      <button className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all">
+                      <button className="w-full mt-8 py-4 bg-brand hover:bg-brand-secondary rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all">
                         View Audit Log
                       </button>
                    </div>
@@ -532,9 +504,9 @@ const AppLayout = () => {
                 {/* Performance Domains Grid */}
                 <div className="max-w-full mx-auto space-y-8">
                   <div className="flex items-center justify-between px-2">
-                    <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
+                    <h3 className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
                     <div className="flex gap-2">
-                      <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold uppercase tracking-widest border border-blue-100">
+                      <div className="px-3 py-1 bg-brand/10 text-brand rounded-full text-[9px] font-bold uppercase tracking-widest border border-brand/20">
                         8 Active Domains
                       </div>
                     </div>
@@ -556,19 +528,19 @@ const AppLayout = () => {
                         <Link 
                           key={d.id} 
                           to={`/page/${hubId}`}
-                          className="group bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left flex flex-col justify-between h-[220px]"
+                          className="group bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all text-left flex flex-col justify-between h-[220px]"
                         >
                            <div className="flex justify-between items-start">
-                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 shadow-inner group-hover:bg-blue-50 transition-colors">
-                               <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-blue-600 text-slate-400" />
+                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-white/5 shadow-inner group-hover:bg-brand/10 transition-colors">
+                               <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-brand text-slate-400 dark:text-slate-500" />
                              </div>
-                             <div className="p-1 bg-emerald-50 text-emerald-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                             <div className="p-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                                <TrendingUp className="w-4 h-4" />
                              </div>
                            </div>
                            <div className="space-y-1">
-                             <h3 className="text-xl font-bold text-slate-900 tracking-tight transition-colors group-hover:text-blue-600">{t(d.id)}</h3>
-                             <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2">
+                             <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors group-hover:text-brand">{t(d.id)}</h3>
+                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed line-clamp-2">
                                {t(d.id + '_desc') || 'Standardized performance management and reporting.'}
                              </p>
                            </div>
@@ -580,7 +552,7 @@ const AppLayout = () => {
 
                 {/* Quick Stats Banner */}
                 <div className="max-w-7xl mx-auto">
-                   <div className="bg-slate-900 rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-slate-900/20 relative overflow-hidden">
+                   <div className="bg-slate-900 dark:bg-ribbon rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-slate-900/20 relative overflow-hidden transition-colors border border-white/5">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
                       
                       <div className="text-center space-y-1 relative z-10">
@@ -588,21 +560,21 @@ const AppLayout = () => {
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('utilization')}</div>
                       </div>
                       
-                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
                         <div className="text-3xl font-bold text-emerald-400 tracking-tighter italic">0.98 <span className="text-xs font-normal text-slate-500 not-italic ml-1">CPI</span></div>
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('efficiency')}</div>
                       </div>
 
-                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
-                        <div className="text-3xl font-bold text-blue-400 tracking-tighter italic">12 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Days</span></div>
+                        <div className="text-3xl font-bold text-brand tracking-tighter italic">12 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Days</span></div>
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('milestones_ahead')}</div>
                       </div>
 
-                      <div className="w-px h-12 bg-slate-800 hidden md:block" />
+                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
                         <div className="text-3xl font-bold text-amber-400 tracking-tighter italic">0 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Issues</span></div>
@@ -611,6 +583,7 @@ const AppLayout = () => {
                    </div>
                 </div>
               </div>
+              )
             } />
             </Routes>
           </div>
@@ -688,13 +661,12 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-6">
-        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-4 animate-pulse">
-          <LayoutDashboard className="w-12 h-12 text-white" />
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6">
+        <div className="w-20 h-20 bg-[#505050] rounded-[2rem] flex items-center justify-center shadow-2xl shadow-black/50 mb-4 animate-pulse">
+          <span className="text-[#FF5C00] font-black text-2xl italic tracking-tighter">PMIS</span>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-2xl font-black text-white tracking-widest uppercase">PMIS</h1>
-          <div className="flex items-center gap-3 text-white/50 font-semibold text-[10px] uppercase tracking-[0.3em]">
+          <div className="flex items-center gap-3 text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             Initializing System...
           </div>

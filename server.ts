@@ -14,8 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
 
-// Simple in-memory cache for folder IDs to speed up path resolution
-const FOLDER_CACHE: Record<string, string> = {};
+// Enhanced Folder Cache with creation promises to prevent race conditions
+const FOLDER_CREATE_PROMISES = new Map<string, Promise<string | null>>();
 
 let lastDriveError: string | null = null;
 
@@ -204,33 +204,29 @@ function generateProjectCharterPDF(projectName: string, projectCode: string, cha
 }
 
 async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
-  let currentParentId = rootFolderId;
-  let fullPathKey = rootFolderId;
+  const fullPathKey = `${rootFolderId}/${pathParts.join('/')}`;
   
-  console.log(`Ensuring path: ${pathParts.join('/')} starting from root: ${rootFolderId}`);
-  
-  for (const part of pathParts) {
-    fullPathKey += `/${part}`;
-    
-    // Check Cache first
-    if (FOLDER_CACHE[fullPathKey]) {
-      currentParentId = FOLDER_CACHE[fullPathKey];
-      console.log(`Cache hit for "${part}": ${currentParentId}`);
-      continue;
-    }
+  if (FOLDER_CREATE_PROMISES.has(fullPathKey)) {
+    return FOLDER_CREATE_PROMISES.get(fullPathKey)!;
+  }
 
-    const response = await drive.files.list({
-      q: `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-      fields: 'files(id, name)',
-      spaces: 'drive',
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true,
-    });
+  const creationPromise = (async () => {
+    let currentParentId = rootFolderId;
     
-    const files = response.data.files;
-    if (!files || files.length === 0) {
-      console.log(`Folder part not found: "${part}". Creating in parent: ${currentParentId}`);
-      try {
+    for (const part of pathParts) {
+      const response = await drive.files.list({
+        // @ts-ignore
+        q: `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        fields: 'files(id, name)',
+        spaces: 'drive',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      });
+
+      const files = response.data.files;
+      if (files && files.length > 0) {
+        currentParentId = files[0].id!;
+      } else {
         const newFolder = await drive.files.create({
           requestBody: {
             name: part,
@@ -239,23 +235,14 @@ async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathPa
           },
           supportsAllDrives: true,
         });
-        currentParentId = newFolder.data.id || '';
-        if (!currentParentId) return null;
-        
-        // Save to cache
-        FOLDER_CACHE[fullPathKey] = currentParentId;
-        console.log(`Created & Cached folder: "${part}" with ID: ${currentParentId}`);
-      } catch (err: any) {
-        console.error(`Error creating folder "${part}":`, err.message);
-        return null;
+        currentParentId = newFolder.data.id!;
       }
-    } else {
-      currentParentId = files[0].id;
-      FOLDER_CACHE[fullPathKey] = currentParentId;
-      console.log(`Found & Cached folder: "${part}" with ID: ${currentParentId}`);
     }
-  }
-  return currentParentId;
+    return currentParentId;
+  })();
+
+  FOLDER_CREATE_PROMISES.set(fullPathKey, creationPromise);
+  return creationPromise;
 }
 
 async function archiveExistingFile(drive: any, folderId: string, fileName: string) {

@@ -525,13 +525,13 @@ export const BOQView: React.FC = () => {
             />
 
             {view === 'preview' && previewItems && (
-              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000000] flex items-center justify-center p-8">
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000] flex items-center justify-center p-6">
                 <motion.div 
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="bg-white rounded-[3rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl"
+                  className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
                 >
-                  <div className="p-10 border-b border-slate-100 flex items-center justify-between">
+                  <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-xl md:text-2xl font-black italic tracking-tighter text-slate-900 uppercase">AI AI Analysis Results</h2>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Review extracted quantities before final commit</p>

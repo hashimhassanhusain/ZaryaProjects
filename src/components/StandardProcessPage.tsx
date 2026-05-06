@@ -36,7 +36,8 @@ import {
   Table,
   Edit2,
   History,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -115,30 +116,30 @@ const QuickViewModal: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
           >
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                     <FileText className="w-6 h-6" />
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+               <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white shadow-lg">
+                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase text-blue-600 tracking-widest leading-none mb-1">{id}</p>
-                    <h2 className="text-xl font-semibold text-slate-900">{stripNumericPrefix(title)}</h2>
+                    <p className="text-[9px] font-bold uppercase text-brand tracking-widest leading-none mb-0.5">{id}</p>
+                    <h2 className="text-lg font-bold text-slate-900 leading-tight">{stripNumericPrefix(title)}</h2>
                   </div>
                </div>
                <button 
                  onClick={onClose}
-                 className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+                 className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-400"
                >
-                 <ArrowRight className="w-5 h-5 rotate-180" />
+                 <X className="w-4 h-4" />
                </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-12 space-y-12">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
                {loading ? (
-                 <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                 <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-8 h-8 text-brand animate-spin" />
                  </div>
                ) : (
                  <>
@@ -173,13 +174,13 @@ const QuickViewModal: React.FC<{
                               </div>
                            </div>
                         </div>
-                        <div className="p-8 bg-blue-50 rounded-[2rem] space-y-4">
-                           <h4 className="text-[9px] font-semibold uppercase text-blue-600">Approval & Integration</h4>
+                        <div className="p-8 bg-brand/10 rounded-[2rem] space-y-4">
+                           <h4 className="text-[9px] font-semibold uppercase text-brand">Approval & Integration</h4>
                            <div className="flex items-center gap-3">
-                              <ShieldCheck className="w-10 h-10 text-blue-500" />
+                              <ShieldCheck className="w-10 h-10 text-brand" />
                               <div>
-                                 <p className="text-sm font-semibold text-blue-900 leading-none italic uppercase">Digitally Verified</p>
-                                 <p className="text-[9px] font-bold text-blue-600/60 uppercase mt-1">Cross-Process Link Active</p>
+                                 <p className="text-sm font-semibold text-brand/90 leading-none italic uppercase">Digitally Verified</p>
+                                 <p className="text-[9px] font-bold text-brand/60 uppercase mt-1">Cross-Process Link Active</p>
                               </div>
                            </div>
                         </div>
@@ -302,7 +303,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
   return (
     <StandardProcessPageContext.Provider value={{ pageHeader, favoriteControl }}>
-      <div className="min-h-screen bg-[#fcfcfc] flex flex-col print:bg-white print:p-0">
+      <div className="min-h-screen bg-app-bg flex flex-col print:bg-white print:p-0">
       <QuickViewModal 
         isOpen={quickView.isOpen} 
         onClose={() => setQuickView({ ...quickView, isOpen: false })}
@@ -316,12 +317,12 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
             <aside className="col-span-3 space-y-4 print:hidden">
               <div className="flex items-center justify-between px-1 mb-4">
                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center">
-                      <Box className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="w-6 h-6 bg-slate-100 dark:bg-white/5 rounded-md flex items-center justify-center">
+                       <Box className="w-3.5 h-3.5 text-slate-400" />
                     </div>
                     {t('input_arsenal')}
                  </h3>
-                 <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
+                 <span className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full shadow-inner">{inputs.length}</span>
               </div>
               <div className="grid grid-cols-2 gap-2 pb-6">
                 {inputs.map((input, idx) => {
@@ -333,7 +334,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                       key={`${input.id}-${idx}`} 
                       onClick={() => setQuickView({ isOpen: true, title: inputDisplay, id: input.id })} 
                       className={cn(
-                        "group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer border-t-4 border-t-blue-500 active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm relative overflow-hidden", 
+                        "group p-3 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-2xl hover:shadow-xl hover:shadow-brand/10 transition-all cursor-pointer border-t-4 border-t-brand active:scale-[0.98] flex flex-col items-center justify-center text-center aspect-square shadow-sm relative overflow-hidden", 
                         isRtl && "text-right"
                       )}
                     >
@@ -344,11 +345,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           </HelpTooltip>
                         </div>
                       )}
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
-                         <FileText className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center transition-all transform group-hover:scale-110 mb-2">
+                         <FileText className="w-4 h-4 text-brand" />
                       </div>
                       <div className="w-full">
-                        <h4 className={cn("text-[10px] font-black text-slate-900 leading-tight tracking-tight uppercase italic line-clamp-2")}>
+                        <h4 className={cn("text-[10px] font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase italic line-clamp-2")}>
                           {stripNumericPrefix(inputDisplay)}
                         </h4>
                       </div>
@@ -360,7 +361,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           )}
 
           <section className={cn("col-span-12 space-y-4 flex flex-col", !embedded && "md:col-span-9")}>
-            <div className={cn("flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
+            <div className={cn("flex-1 bg-white dark:bg-surface rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
                     {viewMode === 'grid' && collectionName ? (
@@ -393,7 +394,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                             <div className="flex flex-col items-center justify-center p-12 animate-in zoom-in-95 duration-700 space-y-8 flex-1">
                               <div className="w-full max-w-sm aspect-[1/1.414] bg-white rounded-2xl border-4 border-slate-50 shadow-2xl flex flex-col relative overflow-hidden">
                                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center gap-8">
-                                  <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Cloud className="w-16 h-16 text-blue-400" /></motion.div>
+                                  <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Cloud className="w-16 h-16 text-brand" /></motion.div>
                                   <p className="text-[12px] font-semibold text-white uppercase tracking-widest">Synchronizing Artifact...</p>
                                 </div>
                               </div>
@@ -457,22 +458,22 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
               {viewMode === 'edit' && !isArchived && (
                 <div className="flex flex-col gap-1.5">
                   <HelpTooltip title={t('save_new')} text={t('save_button_tooltip')} position={isRtl ? "right" : "left"}>
-                    <motion.button initial={{ opacity: 0, scale: 0.8, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} onClick={() => onSave?.()} disabled={isSaving} className="group flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl shadow-2xl hover:bg-blue-700 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}</div><span className="text-[9px] font-black uppercase tracking-widest">{t('save_new')}</span></motion.button>
+                    <motion.button initial={{ opacity: 0, scale: 0.8, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} onClick={() => onSave?.()} disabled={isSaving} className="group flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl shadow-2xl hover:bg-brand-secondary active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}</div><span className="text-[9px] font-black uppercase tracking-widest">{t('save_new')}</span></motion.button>
                   </HelpTooltip>
                   <div className="flex items-center gap-1.5">
                     <HelpTooltip title={t('update')} text={t('update_button_tooltip')} position="top">
-                      <button onClick={() => onSave?.()} className="h-10 px-4 bg-white text-slate-600 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white"><CheckCircle2 className="w-3.5 h-3.5" /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('update')}</span></button>
+                      <button onClick={() => onSave?.()} className="h-10 px-4 bg-white dark:bg-surface text-slate-600 dark:text-slate-300 rounded-xl shadow-xl border border-slate-100 dark:border-white/5 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white"><CheckCircle2 className="w-3.5 h-3.5" /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('update')}</span></button>
                     </HelpTooltip>
                     <HelpTooltip title={t('cancel')} text={t('cancel_button_tooltip')} position="top">
-                      <button onClick={() => setViewMode('grid')} className="h-10 px-4 bg-white text-slate-600 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white"><ArrowRight className={cn("w-3.5 h-3.5 rotate-180", isRtl && "rotate-0")} /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('cancel')}</span></button>
+                      <button onClick={() => setViewMode('grid')} className="h-10 px-4 bg-white dark:bg-surface text-slate-600 dark:text-slate-300 rounded-xl shadow-xl border border-slate-100 dark:border-white/5 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-400 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white"><ArrowRight className={cn("w-3.5 h-3.5 rotate-180", isRtl && "rotate-0")} /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('cancel')}</span></button>
                     </HelpTooltip>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <HelpTooltip title={t('print_preview')} text={t('print_button_tooltip')} position="top">
-                      <button onClick={onPrint} className="group flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl shadow-2xl hover:bg-black active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-blue-600"><Printer className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('print_preview')}</span></button>
+                      <button onClick={onPrint} className="group flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-brand/20 text-white rounded-xl shadow-2xl hover:bg-black dark:hover:bg-brand/30 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-brand"><Printer className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('print_preview')}</span></button>
                     </HelpTooltip>
                     <HelpTooltip title={t('sync_to_drive')} text={t('sync_button_tooltip')} position="top">
-                      <button onClick={async () => { setDriveSyncStatus('syncing'); await new Promise(r => setTimeout(r, 2000)); setDriveSyncStatus('synced'); toast.success(t('synced_to_drive_success')); }} className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-blue-600 to-indigo-700 text-white rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center"><Cloud className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span></button>
+                      <button onClick={async () => { setDriveSyncStatus('syncing'); await new Promise(r => setTimeout(r, 2000)); setDriveSyncStatus('synced'); toast.success(t('synced_to_drive_success')); }} className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-brand to-brand-secondary text-white rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center"><Cloud className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span></button>
                     </HelpTooltip>
                   </div>
                 </div>

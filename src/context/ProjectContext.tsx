@@ -38,8 +38,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [selectedCompanyId, setSelectedCompanyIdState] = useState<string>('');
-  const [selectedInstitutionId, setSelectedInstitutionIdState] = useState<string>('');
+  const [selectedCompanyId, setSelectedCompanyIdState] = useState<string>(localStorage.getItem('lastSelectedCompanyId') || '');
+  const [selectedInstitutionId, setSelectedInstitutionIdState] = useState<string>(localStorage.getItem('lastSelectedInstitutionId') || '');
 
   const [scheduleState, setScheduleState] = useState({
     expandedWbs: {} as Record<string, boolean>,
@@ -64,6 +64,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [selectedProject, setSelectedProjectState] = useState<Project | null>(null);
+  const [hasInitedProject, setHasInitedProject] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -81,17 +82,40 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       setProjects(projectsData);
       
-      // Sync selectedProject with the latest data from Firestore
-      setSelectedProjectState(current => {
-        if (projectsData.length === 0) return null;
-        if (current) {
-          const updated = projectsData.find(p => p.id === current.id);
-          if (updated) {
-            return updated;
+      // Auto-initialization logic
+      if (!hasInitedProject && projectsData.length > 0) {
+        const savedProjectId = localStorage.getItem('lastSelectedProjectId');
+        
+        if (projectsData.length === 1) {
+          // If only one project, select it
+          setSelectedProject(projectsData[0]);
+          setHasInitedProject(true);
+        } else if (savedProjectId) {
+          // Try to restore last project
+          const saved = projectsData.find(p => p.id === savedProjectId);
+          if (saved) {
+            // Note: Use setSelectedProjectState directly to avoid side effects during init
+            setSelectedProjectState(saved);
+            // Sync company/institution if missing
+            if (saved.companyId && !selectedCompanyId) {
+              setSelectedCompanyIdState(saved.companyId);
+            }
           }
+          setHasInitedProject(true);
         }
-        return null;
-      });
+      } else if (hasInitedProject) {
+        // Sync selectedProject with the latest data from Firestore
+        setSelectedProjectState(current => {
+          if (projectsData.length === 0) return null;
+          if (current) {
+            const updated = projectsData.find(p => p.id === current.id);
+            if (updated) {
+              return updated;
+            }
+          }
+          return null;
+        });
+      }
       
       setLoading(false);
     }, (error) => {
@@ -104,28 +128,37 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       unsubscribeComp();
       unsubscribeProj();
     };
-  }, []);
+  }, [hasInitedProject]);
 
   const setSelectedProject = (project: Project | null) => {
     setSelectedProjectState(project);
     if (project) {
-      // Optionally auto-select company/institution
+      localStorage.setItem('lastSelectedProjectId', project.id);
+      // Auto-select company/institution
       if (project.companyId) {
         setSelectedCompanyId(project.companyId);
-        const comp = companies.find(c => c.id === project.companyId);
-        if (comp?.parent_entity_id) {
-          setSelectedInstitutionId(comp.parent_entity_id);
-        }
       }
+    } else {
+      localStorage.removeItem('lastSelectedProjectId');
     }
   };
 
   const setSelectedCompanyId = (id: string) => {
     setSelectedCompanyIdState(id);
+    if (id) {
+      localStorage.setItem('lastSelectedCompanyId', id);
+    } else {
+      localStorage.removeItem('lastSelectedCompanyId');
+    }
   };
 
   const setSelectedInstitutionId = (id: string) => {
     setSelectedInstitutionIdState(id);
+    if (id) {
+      localStorage.setItem('lastSelectedInstitutionId', id);
+    } else {
+      localStorage.removeItem('lastSelectedInstitutionId');
+    }
   };
 
   return (

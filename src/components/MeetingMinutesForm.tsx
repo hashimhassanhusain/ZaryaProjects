@@ -1020,10 +1020,9 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-5xl bg-slate-50 rounded-[32px] shadow-2xl overflow-hidden flex flex-col h-[85vh]"
+              className="relative w-full max-w-4xl bg-slate-50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[85vh]"
             >
-              {/* Refined Header matching reference image */}
-              <div className="p-8 bg-blue-600 text-white relative flex items-center justify-between">
+              <div className="p-6 bg-blue-600 text-white relative flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner">
                     <FileText className="w-6 h-6 text-white" />

@@ -38,7 +38,7 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
-  const { isSidebarOpen, setSelectedFocusArea } = useUI();
+  const { isSidebarOpen, setSelectedFocusArea, theme, toggleTheme } = useUI();
   const { companies, projects, selectedProject, setSelectedProject, setSelectedCompanyId, selectedCompanyId } = useProject();
   
   const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({
@@ -76,19 +76,20 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className={cn(
-      'h-screen bg-[#f8fafc] border-e border-slate-200 flex flex-col shrink-0 transition-all duration-300 relative z-40 shadow-[4px_0_12px_rgba(0,0,0,0.02)]',
+      'h-screen bg-sidebar border-e border-slate-200 dark:border-slate-800 flex flex-col shrink-0 transition-all duration-300 relative z-40 shadow-[4px_0_12px_rgba(0,0,0,0.02)]',
       isSidebarOpen ? 'w-80 overflow-y-auto custom-scrollbar' : 'w-0 overflow-hidden border-none'
     )}>
       <div className="flex flex-col h-full" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* LOGO SECTION */}
-        <div className="p-8 shrink-0 flex items-center gap-4">
-          <div className="w-12 h-12 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-slate-200 group cursor-pointer" onClick={() => navigate('/')}>
-            <span className="text-white font-black text-2xl italic group-hover:scale-110 transition-transform">Z</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-slate-900 font-black text-2xl tracking-tighter leading-none italic uppercase">ZARYA</span>
-            <span className="text-[9px] font-black text-blue-600 tracking-[0.4em] leading-none uppercase mt-2 opacity-80">{t('pmo_system')}</span>
-          </div>
+        <div className="p-8 shrink-0 flex items-center gap-4 cursor-pointer group" onClick={() => navigate('/')}>
+             {/* New Logo */}
+             <div className="w-12 h-12 bg-[#505050] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <span className="text-[#FF5C00] font-black text-[10px] tracking-tighter">PMIS</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-text-main font-black text-2xl tracking-tighter leading-none italic uppercase">ZARYA</span>
+               <span className="text-[9px] font-black text-brand tracking-[0.4em] leading-none uppercase mt-2 opacity-80">{t('pmo_system')}</span>
+             </div>
         </div>
 
         {/* NAVIGATION */}
@@ -107,8 +108,8 @@ export const Sidebar: React.FC = () => {
                    <button
                      onClick={() => setExpandedCompanies(prev => ({ ...prev, _all: !prev._all }))}
                      className={cn(
-                       "w-full flex items-center gap-3 px-4 py-3.5 rounded-[1.5rem] transition-all group bg-white shadow-sm border border-slate-100",
-                       expandedCompanies._all ? "border-blue-200 ring-4 ring-blue-50" : "hover:border-blue-100"
+                       "w-full flex items-center gap-3 px-4 py-3.5 rounded-[1.5rem] transition-all group bg-surface shadow-sm border border-slate-100 dark:border-slate-800",
+                       expandedCompanies._all ? "border-brand-secondary ring-4 ring-brand/10" : "hover:border-brand/20"
                      )}
                    >
                      <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform">
@@ -186,19 +187,19 @@ export const Sidebar: React.FC = () => {
                                   className={cn(
                                     "flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
                                     selectedProject?.id === project.id 
-                                      ? "bg-white shadow-md border border-slate-200 ring-4 ring-blue-50/50" 
-                                      : "text-slate-500 hover:bg-white hover:text-slate-900"
+                                      ? "bg-surface shadow-md border border-slate-200 dark:border-slate-700 ring-4 ring-brand/10" 
+                                      : "text-slate-500 hover:bg-surface hover:text-text-main"
                                   )}
                                 >
                                   <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center transition-colors",
-                                    selectedProject?.id === project.id ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600"
+                                    selectedProject?.id === project.id ? "bg-brand text-white shadow-lg shadow-brand/20" : "bg-slate-100 dark:bg-slate-800 group-hover:bg-brand/10 group-hover:text-brand"
                                   )}>
                                      <FolderOpen className="w-3 h-3" />
                                   </div>
                                   <div className="flex flex-col text-left flex-1 min-w-0">
-                                     <span className={cn("text-[10px] font-black tracking-tight truncate leading-none mb-1 uppercase", selectedProject?.id === project.id ? "text-slate-900" : "text-slate-600")}>{project.name}</span>
-                                     <span className={cn("text-[7px] font-black uppercase tracking-[0.2em]", selectedProject?.id === project.id ? "text-blue-600" : "text-slate-400")}>{project.code}</span>
+                                     <span className={cn("text-[10px] font-black tracking-tight truncate leading-none mb-1 uppercase", selectedProject?.id === project.id ? "text-text-main" : "text-slate-600")}>{project.name}</span>
+                                     <span className={cn("text-[7px] font-black uppercase tracking-[0.2em]", selectedProject?.id === project.id ? "text-brand" : "text-slate-400")}>{project.code}</span>
                                   </div>
                                 </button>
                               </div>
@@ -223,18 +224,18 @@ export const Sidebar: React.FC = () => {
                     <button
                       onClick={() => toggleArea(area.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group hover:bg-white",
-                        isExpanded ? "text-slate-900" : "text-slate-500"
+                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group hover:bg-surface",
+                        isExpanded ? "text-text-main" : "text-slate-500 font-bold"
                       )}
                     >
                       <div className={cn(
                         "w-8 h-8 rounded-xl flex items-center justify-center transition-colors",
-                        isExpanded ? "bg-slate-900 text-white shadow-lg shadow-slate-200" : "bg-slate-100 text-slate-400 group-hover:text-blue-500"
+                        isExpanded ? "bg-slate-900 text-white shadow-lg shadow-slate-200 dark:shadow-none" : "bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-brand"
                       )}>
                         <AreaIcon className="w-4 h-4" />
                       </div>
                       <span className="flex-1 text-left text-xs font-black uppercase tracking-wider">{stripNumericPrefix(t(area.id))}</span>
-                      <div className="p-1 rounded-md bg-slate-50 border border-slate-100">
+                      <div className="p-1 rounded-md bg-surface border border-slate-100 dark:border-slate-800">
                         {isExpanded ? <ChevronDown className="w-3 h-3 text-slate-400" /> : <ChevronRight className={cn("w-3 h-3 text-slate-400", isRtl && "rotate-180")} />}
                       </div>
                     </button>
@@ -282,12 +283,12 @@ export const Sidebar: React.FC = () => {
                                     onClick={() => setSelectedFocusArea(area.id)}
                                     className={cn(
                                       "flex-1 flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all",
-                                      isHubActive ? "bg-white text-blue-600 shadow-sm border border-slate-200" : "text-slate-400 font-bold hover:text-slate-800"
+                                      isHubActive ? "bg-surface text-brand shadow-sm border border-slate-200 dark:border-slate-700 font-black" : "text-slate-400 font-bold hover:text-text-main"
                                     )}
                                   >
                                     <div className={cn(
                                       "w-4 h-4 rounded-md flex items-center justify-center transition-colors shrink-0",
-                                      isHubActive ? "bg-blue-600 text-white" : "bg-slate-100 group-hover/domain:bg-blue-50"
+                                      isHubActive ? "bg-brand text-white shadow-sm shadow-brand/20" : "bg-slate-100 dark:bg-slate-800 group-hover/domain:bg-brand/10"
                                     )}>
                                       <DomainIcon className="w-2.5 h-2.5" />
                                     </div>
@@ -319,7 +320,7 @@ export const Sidebar: React.FC = () => {
                                             to={terminalPath}
                                             className={cn(
                                               "flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black transition-all uppercase tracking-tighter relative group/link",
-                                              isTerminalActive ? "bg-white text-blue-600 shadow-sm border border-slate-100" : "text-slate-400 hover:text-slate-700 hover:bg-slate-50/50"
+                                              isTerminalActive ? "bg-surface text-brand shadow-sm border border-slate-100 dark:border-slate-800 font-black" : "text-slate-400 hover:text-brand hover:bg-brand/5"
                                             )}
                                           >
                                             <span className="truncate group-hover/link:translate-x-1 transition-transform">{stripNumericPrefix(terminalPage.title)}</span>
@@ -343,14 +344,14 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* PROFILE SECTION */}
-        <div className="p-6 border-t border-slate-200 bg-white/50 space-y-3">
-           <Link to="/profile" className="flex items-center gap-3 p-2 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-slate-100">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-surface/50 space-y-3">
+           <Link to="/profile" className="flex items-center gap-3 p-2 bg-surface rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand transition-all group">
+              <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center border-2 border-white dark:border-slate-700 shadow-sm ring-1 ring-slate-100 dark:ring-slate-800">
                  {userProfile?.photoURL ? <img src={userProfile.photoURL} alt={userProfile.name} className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-slate-400" />}
               </div>
               <div className="flex-1 min-w-0">
-                 <div className="text-[10px] font-black text-slate-900 truncate tracking-tight uppercase leading-none">{userProfile?.name}</div>
-                 <div className="text-[8px] font-black text-blue-600 uppercase tracking-widest mt-1 opacity-80">{userProfile?.role}</div>
+                 <div className="text-[10px] font-black text-text-main truncate tracking-tight uppercase leading-none">{userProfile?.name}</div>
+                 <div className="text-[8px] font-black text-brand uppercase tracking-widest mt-1 opacity-80">{userProfile?.role}</div>
               </div>
            </Link>
            

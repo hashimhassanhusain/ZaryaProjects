@@ -190,45 +190,45 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     <div className="pb-20 space-y-12 px-6 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl shadow-indigo-200">
+          <div className="w-14 h-14 bg-brand rounded-[1.5rem] flex items-center justify-center text-white shadow-xl shadow-brand/20">
             <Calendar className="w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">Master Schedule Hub</h2>
-            <p className="text-xs font-bold text-indigo-600 uppercase tracking-[0.2em] mt-1">PMBOK Phase Alignment Dashboard</p>
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">Master Schedule Hub</h2>
+            <p className="text-xs font-bold text-brand uppercase tracking-[0.2em] mt-1">PMBOK Phase Alignment Dashboard</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand transition-colors" />
             <input 
               type="text" 
               placeholder="Search schedule artifacts..." 
-              className="pl-11 pr-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+              className="pl-11 pr-6 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xs font-bold w-64 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all shadow-sm text-slate-900 dark:text-white"
             />
           </div>
-          <button className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+          <button className="px-6 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm">
             <Archive className="w-4 h-4" />
             Archive Ready
           </button>
         </div>
       </div>
 
-      <div className="bg-slate-900 rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
-         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -mr-[200px] -mt-[200px]" />
+      <div className="bg-slate-900 dark:bg-surface rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
+         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/10 rounded-full blur-[100px] -mr-[200px] -mt-[200px]" />
          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
             {/* Input Arsenal */}
             <div className="space-y-6">
                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center">
-                     <Database className="w-5 h-5 text-indigo-400" />
+                  <div className="w-10 h-10 bg-brand/20 rounded-xl flex items-center justify-center">
+                     <Database className="w-5 h-5 text-brand" />
                   </div>
-                  <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-300">Input Arsenal</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-brand/80">Input Arsenal</h4>
                </div>
                <div className="space-y-4">
                   {['Activity List', 'Activity Attributes', 'Project Network Diagram', 'Resource Calendars'].map(item => (
-                     <div key={item} className="group p-5 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 rounded-2xl transition-all cursor-pointer flex items-center justify-between">
+                     <div key={item} className="group p-5 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 rounded-2xl transition-all cursor-pointer flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-300">{item}</span>
                         <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white transition-all" />
                      </div>
@@ -283,24 +283,24 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
           <div 
             key={p.id}
             onClick={() => handleTabChange(p.id)}
-            className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white dark:bg-surface rounded-[2.5rem] p-10 border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-2xl hover:shadow-brand/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-indigo-50 transition-colors" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-white/5 rounded-full translate-x-16 -translate-y-16 group-hover:bg-brand/10 transition-colors" />
             <div className="relative z-10 space-y-6">
               <div className={cn(
-                "w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-white transition-all duration-500",
-                p.size === 'large' ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:shadow-indigo-600/30" : "group-hover:bg-slate-900 group-hover:shadow-slate-900/30"
+                "w-14 h-14 rounded-2xl bg-slate-50 dark:bg-white/10 flex items-center justify-center text-slate-400 group-hover:text-white transition-all duration-500",
+                p.size === 'large' ? "bg-brand/10 text-brand group-hover:bg-brand group-hover:shadow-brand/30" : "group-hover:bg-slate-900 dark:group-hover:bg-brand group-hover:shadow-slate-900/30 dark:group-hover:shadow-brand/30"
               )}>
                 <p.icon className={cn("w-7 h-7", p.size === 'large' && "w-8 h-8")} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-brand transition-colors">
                   {stripNumericPrefix(p.title)}
                 </h3>
-                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+                <p className="text-[11px] text-brand font-bold uppercase tracking-widest">
                   {p.group}
                 </p>
-                <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2 mt-2">
+                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed line-clamp-2 mt-2">
                   {th(p.id + '_sched_summary')}
                 </p>
               </div>
@@ -345,7 +345,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#fcfcfc]">
+    <div className="flex flex-col min-h-screen w-full bg-slate-50 dark:bg-background transition-colors">
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}
@@ -353,18 +353,18 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       />
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {activeTab !== 'overview' && (
-          <header className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
+          <header className="px-6 py-3 bg-white dark:bg-surface border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+              <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/10">
                 <Calendar className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">
                   <span>{stripNumericPrefix(t(page.id === 'sched' ? 'schedule' : page.title))}</span>
                   <ChevronRight className="w-2 h-2 opacity-50" />
-                  <span className="text-blue-600">{stripNumericPrefix(t(activeTab))}</span>
+                  <span className="text-brand">{stripNumericPrefix(t(activeTab))}</span>
                 </div>
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none uppercase italic">
                   {stripNumericPrefix(t(activeTab))}
                 </h2>
               </div>

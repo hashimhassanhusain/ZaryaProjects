@@ -819,26 +819,26 @@ export const WBSView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6 flex-shrink-0">WBS Dictionary Details</h3>
-              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex-shrink-0">WBS Dictionary Details</h3>
+              <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
                   <input 
                     type="text" 
                     value={editingWbs.title}
                     onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Type</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
                     <select 
                       value={editingWbs.type}
                       onChange={e => setEditingWbs({...editingWbs, type: e.target.value as any})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
                     >
                       <option value="Zone">Zone</option>
                       <option value="Area">Area</option>
@@ -1043,14 +1043,14 @@ export const WBSView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             >
-              <h3 className="text-2xl font-bold text-slate-900 mb-6 flex-shrink-0">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex-shrink-0">
                 {editingPackage ? 'Edit Work Package' : 'Add Work Package'}
               </h3>
-              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
+              <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
                   {!isManualTitle ? (
                     <select 
                       value={editingPackage ? editingPackage.title : newPackage.title}
@@ -1065,7 +1065,7 @@ export const WBSView: React.FC = () => {
                           setNewPackage({...newPackage, title: e.target.value});
                         }
                       }}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="">Select from Cost Accounts...</option>
                       {masterFormatSections
@@ -1191,13 +1191,13 @@ export const WBSView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <Trash2 className="w-8 h-8 text-red-500" />
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Trash2 className="w-6 h-6 text-red-500" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
-              <p className="text-slate-500 text-center mb-8">
+              <h3 className="text-xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
+              <p className="text-xs text-slate-500 text-center mb-6">
                 Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
                 {deleteConfirmation.type === 'wbs' && " This will also delete all its sub-levels, work packages, and activities."}
                 {deleteConfirmation.type === 'package' && " This action cannot be undone."}

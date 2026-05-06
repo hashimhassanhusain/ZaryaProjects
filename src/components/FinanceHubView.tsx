@@ -133,7 +133,7 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#fcfcfc]">
+    <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-app-bg">
       <BreadcrumbHeader 
         page={page} 
         activeTabLabel={activeTab !== 'overview' ? stripNumericPrefix(t(activeTab)) : undefined}

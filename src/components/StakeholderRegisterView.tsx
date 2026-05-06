@@ -271,13 +271,13 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
              {/* Left Column: Core Identity */}
              <div className="lg:col-span-2 space-y-8">
-                <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden p-8 space-y-8">
-                   <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                      <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                <section className="bg-white dark:bg-surface rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden p-8 space-y-8">
+                   <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-6">
+                      <div className="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
                          <Fingerprint className="w-6 h-6" />
                       </div>
                       <div>
-                         <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('identification_info')}</h3>
+                         <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{t('identification_info')}</h3>
                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('core_identity_details')}</p>
                       </div>
                    </div>
@@ -332,13 +332,13 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                    </div>
                 </section>
 
-                <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 space-y-8">
-                   <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                      <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-600/20">
+                <section className="bg-white dark:bg-surface rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm p-8 space-y-8">
+                   <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-6">
+                      <div className="w-12 h-12 bg-purple-600 dark:bg-purple-500/80 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-600/20">
                          <Target className="w-6 h-6" />
                       </div>
                       <div>
-                         <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('assessment_info')}</h3>
+                         <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{t('assessment_info')}</h3>
                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('requirements_expectations_impact')}</p>
                       </div>
                    </div>
@@ -527,8 +527,8 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
             />
           ) : (
             /* Power/Interest Matrix View */
-            <div className="relative aspect-square md:aspect-video w-full bg-slate-900 rounded-[3.5rem] p-12 overflow-hidden shadow-2xl border-4 border-slate-800">
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #4f46e5 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+            <div className="relative aspect-square md:aspect-video w-full bg-slate-900 rounded-[3.5rem] p-12 overflow-hidden shadow-2xl border-4 border-slate-800 dark:border-white/5">
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #FF5C00 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
               
               {/* Axes Labels */}
               <div className="absolute left-6 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em]">{t('power')}</div>
@@ -553,15 +553,15 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
                 </div>
 
                 {/* Manage Closely (High Power, High Interest) */}
-                <div className="bg-blue-600/10 rounded-3xl border-2 border-blue-500/40 p-8 flex flex-col items-center justify-center relative shadow-[0_0_80px_rgba(37,99,235,0.15)] group/quad">
-                  <span className="absolute top-6 right-6 text-[10px] font-black text-blue-400 uppercase tracking-widest">{t('manage_closely')}</span>
+                <div className="bg-brand/10 rounded-3xl border-2 border-brand/40 p-8 flex flex-col items-center justify-center relative shadow-[0_0_80px_rgba(255,92,0,0.15)] group/quad">
+                  <span className="absolute top-6 right-6 text-[10px] font-black text-brand tracking-widest">{t('manage_closely')}</span>
                   <div className="flex flex-wrap gap-2 justify-center max-w-[80%]">
                     {stakeholders.filter(s => s.powerScore >= 6 && s.interestScore >= 6).map(s => (
                       <motion.div 
                         key={s.id}
                         layoutId={s.id}
                         onClick={() => handleEdit(s)}
-                        className="px-5 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black cursor-pointer hover:bg-blue-500 active:scale-95 transition-all shadow-xl shadow-blue-600/30"
+                        className="px-5 py-3 bg-brand text-white rounded-2xl text-[10px] font-black cursor-pointer hover:bg-brand-secondary active:scale-95 transition-all shadow-xl shadow-brand/30"
                       >
                         {s.name}
                       </motion.div>

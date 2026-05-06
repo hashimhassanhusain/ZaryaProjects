@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 export const Login: React.FC = () => {
   const { t } = useLanguage();
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
@@ -17,8 +17,8 @@ export const Login: React.FC = () => {
         <div className="bg-white rounded-[40px] shadow-2xl shadow-blue-900/50 overflow-hidden">
           <div className="p-12 text-center space-y-8">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-2">
-                <LayoutDashboard className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 bg-[#505050] rounded-[2rem] flex items-center justify-center shadow-2xl shadow-black/20 mb-2">
+                <span className="text-[#FF5C00] font-black text-2xl tracking-tighter">PMIS</span>
               </div>
               <div>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">PMIS</h1>

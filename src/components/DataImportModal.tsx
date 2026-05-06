@@ -225,26 +225,26 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-              <Upload className="w-5 h-5" />
+        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+              <Upload className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-              <p className="text-xs text-slate-500">Intelligent column mapping powered by AI</p>
+              <h3 className="text-base font-bold text-slate-900 leading-tight">{title}</h3>
+              <p className="text-[10px] text-slate-500">Mapping powered by AI</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-            <X className="w-5 h-5 text-slate-400" />
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-50 rounded-full transition-all">
+            <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50">
           {step === 'upload' ? (
             <div 
               onDragOver={(e) => e.preventDefault()}

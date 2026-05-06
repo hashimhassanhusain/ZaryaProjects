@@ -154,7 +154,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                       <div className={cn(
                         "p-2 rounded-xl text-xs font-semibold",
                         loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
-                        loc.type === 'Building' ? "bg-blue-50 text-blue-600" :
+                        loc.type === 'Building' ? "bg-brand/10 text-brand" :
                         "bg-amber-50 text-amber-600"
                       )}>
                         {t(loc.type.toLowerCase())}
@@ -173,13 +173,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                  <div className="p-1.5 bg-brand/10 text-brand rounded-lg">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
                 </div>
                 {(isAdmin || userProfile?.accessiblePages?.includes('2.3')) && (
-                  <Link to="/page/2.3" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  <Link to="/page/2.3" className="text-xs font-semibold text-brand hover:opacity-80 flex items-center gap-1">
                     {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}
@@ -202,7 +202,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                             <div className="text-[10px] text-slate-400 font-mono">{act.startDate} — {act.finishDate}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-semibold text-blue-600">{Math.round(progress)}%</div>
+                            <div className="text-xs font-semibold text-brand">{Math.round(progress)}%</div>
                             <div className="text-[10px] text-slate-400 uppercase tracking-widest">{act.status}</div>
                           </div>
                         </div>
@@ -213,7 +213,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                             transition={{ duration: 1, delay: idx * 0.1 }}
                             className={cn(
                               "h-full rounded-full",
-                              progress === 100 ? "bg-emerald-500" : "bg-blue-500"
+                              progress === 100 ? "bg-emerald-500" : "bg-brand"
                             )}
                           />
                         </div>
@@ -240,37 +240,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.1 }}
                 >
-                  <Link
-                    to={`/page/${child.id}`}
-                    className="group h-full flex flex-col p-6 bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-300 transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors shadow-inner">
-                        <Icon className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:scale-110" />
+                    <Link
+                      to={`/page/${child.id}`}
+                      className="group h-full flex flex-col p-6 bg-white dark:bg-surface border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-brand/5 hover:border-brand/30 transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-2xl group-hover:bg-brand/10 transition-colors shadow-inner">
+                          <Icon className="w-6 h-6 text-slate-400 group-hover:text-brand transition-transform group-hover:scale-110" />
+                        </div>
+                        <StatusIcon status={child.status} />
                       </div>
-                      <StatusIcon status={child.status} />
-                    </div>
-                    
-                    <div className="flex-1 space-y-2">
-                      <div className="text-[10px] text-blue-600 font-bold uppercase tracking-widest opacity-60">
-                        {child.focusArea || ''}
+                      
+                      <div className="flex-1 space-y-2">
+                        <div className="text-[10px] text-brand font-bold uppercase tracking-widest opacity-60">
+                          {child.focusArea || ''}
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors">
+                          {displayTitle}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
+                          {child.summary || child.content || 'Standard project artifact and management documentation.'}
+                        </p>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
-                        {displayTitle}
-                      </h3>
-                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-3">
-                        {child.summary || child.content || 'Standard project artifact and management documentation.'}
-                      </p>
-                    </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
-                      <div className="flex items-center text-[10px] font-bold text-blue-600 uppercase tracking-widest">
-                        {t('view_artifact')}
-                        <ArrowRight className="w-3.5 h-3.5 ms-1.5 group-hover:translate-x-1 transition-transform" />
+                      <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex items-center justify-between">
+                        <div className="flex items-center text-[10px] font-bold text-brand uppercase tracking-widest">
+                          {t('view_artifact')}
+                          <ArrowRight className="w-3.5 h-3.5 ms-1.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover:bg-brand transition-colors" />
                       </div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
-                    </div>
-                  </Link>
+                    </Link>
                 </motion.div>
               );
             })}

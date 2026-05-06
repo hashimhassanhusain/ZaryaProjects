@@ -60,7 +60,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
             <motion.div 
               initial={{ scale: 0 }}
               animate={isInteracting ? { scale: 1.2, opacity: 1 } : { scale: [0, 1, 1, 0] }}
-              className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-full mb-1 shadow-lg border border-slate-700 whitespace-nowrap"
+              className="bg-brand-dark text-white text-[10px] font-bold px-2 py-1 rounded-full mb-1 shadow-lg border border-slate-700 whitespace-nowrap"
             >
               {"Hi there!"}
             </motion.div>
@@ -101,7 +101,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
                   <motion.path
                     d="M5,2 Q20,12 35,2"
                     fill="none"
-                    stroke="#0f172a"
+                    stroke="currentColor"
+                    className="text-slate-900 dark:text-slate-700"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
@@ -117,10 +118,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
 
         {/* Text Content */}
         <div className="space-y-1 relative">
-          <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10 uppercase text-xs tracking-[0.2em] opacity-40 mb-2", compact ? "" : "")}>
+          <h2 className={cn("font-semibold text-slate-900 dark:text-slate-100 tracking-tight relative z-10 uppercase text-xs tracking-[0.2em] opacity-40 mb-2", compact ? "" : "")}>
             PMIS AI Assistant
           </h2>
-          <h2 className={cn("font-semibold text-slate-900 tracking-tight relative z-10", compact ? "text-lg" : "text-3xl md:text-4xl")}>
+          <h2 className={cn("font-semibold text-slate-900 dark:text-slate-100 tracking-tight relative z-10", compact ? "text-lg" : "text-3xl md:text-4xl")}>
             Good morning, Director.
           </h2>
           {!compact && (
@@ -132,16 +133,16 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ compact }) => {
 
         {/* Search Bar */}
         <div className={cn("w-full relative group", compact ? "max-w-sm" : "max-w-2xl")}>
-          <div className={cn("relative flex items-center bg-white border border-slate-200 rounded-2xl shadow-sm", compact ? "p-1" : "p-1.5")}>
+          <div className={cn("relative flex items-center bg-white dark:bg-slate-950/20 border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm", compact ? "p-1" : "p-1.5")}>
             <div className={cn("pr-2", compact ? "pl-3" : "pl-4")}>
-              <Search className={cn("text-slate-400", compact ? "w-4 h-4" : "w-5 h-5")} />
+              <Search className={cn("text-slate-400 font-bold", compact ? "w-4 h-4" : "w-5 h-5")} />
             </div>
             <input 
               type="text" 
               placeholder={compact ? "Ask PMIS AI..." : "Ask PMIS AI about project risks or financial forecasts..."}
-              className="flex-1 bg-transparent border-none text-slate-900 placeholder:text-slate-300 focus:ring-0 text-sm py-2 font-medium"
+              className="flex-1 bg-transparent border-none text-slate-900 dark:text-white placeholder:text-slate-400/50 focus:ring-0 text-sm py-2 font-medium"
             />
-            <button className={cn("bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10", compact ? "px-3 py-2 text-[10px]" : "px-6 py-3 text-xs md:text-sm")}>
+            <button className={cn("bg-brand-dark hover:opacity-90 text-white rounded-xl font-bold uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-brand-dark/20", compact ? "px-3 py-2 text-[10px]" : "px-6 py-3 text-xs md:text-sm")}>
               <Sparkles className={cn(compact ? "w-3 h-3" : "w-4 h-4")} />
               {compact ? "Ask" : "Consult AI"}
             </button>

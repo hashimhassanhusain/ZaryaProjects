@@ -4,7 +4,7 @@ import {
   Folder, File, Upload, ChevronRight, ChevronDown, 
   Loader2, HardDrive, Search, Filter, MoreVertical, 
   Download, Trash2, ExternalLink, ShieldAlert, CloudUpload, 
-  Plus, Clock, User, Eye
+  Plus, Clock, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storage, db } from '../firebase';
@@ -14,7 +14,6 @@ import { useAuth } from '../context/UserContext';
 import { generatePMISFileName, cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
-import { FileViewerModal } from './FileViewerModal';
 
 interface FileExplorerProps {
   projectId: string;
@@ -95,8 +94,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState<any>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<any>(null);
+  
+  // Deletion Confirmation State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [uploadMetadata, setUploadMetadata] = useState({
     category: 'Management',
@@ -285,6 +287,30 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     }
   };
 
+  const executeDelete = async () => {
+    if (!selectedFile) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/drive/files/${selectedFile.id}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        toast.success(`'${selectedFile.name}' deleted successfully`);
+        setSelectedFile(null);
+        setShowDeleteConfirm(false);
+        if (currentFolderId) fetchFiles(currentFolderId);
+      } else {
+        const err = await res.json();
+        throw new Error(err.error || 'Delete failed');
+      }
+    } catch (error: any) {
+      toast.error(`Delete failed: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const formatSize = (bytes: string | number) => {
     const b = typeof bytes === 'string' ? parseInt(bytes) : bytes;
     if (!b) return '---';
@@ -555,7 +581,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                       <tr 
                         key={`${file.id}-${idx}`} 
                         onClick={() => setSelectedFile(file)}
-                        onDoubleClick={() => isFolder && navigateToFolder(file.id, file.name)}
+                        onDoubleClick={() => {
+                          if (isFolder) {
+                            navigateToFolder(file.id, file.name);
+                          } else {
+                            window.open(file.webViewLink, '_blank');
+                          }
+                        }}
                         className={cn(
                           "group transition-colors cursor-default select-none h-8",
                           isSelected ? "bg-[#e5f3ff] text-blue-700 font-medium" : "hover:bg-[#f5f9ff]"
@@ -663,16 +695,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                 </div>
 
                 <div className="pt-8 flex flex-col gap-3">
-                  <button
-                    onClick={() => {
-                      setViewerFile(selectedFile);
-                      setViewerOpen(true);
-                    }}
-                    className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:bg-slate-800 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 active:scale-95"
-                  >
-                    <Eye className="w-4 h-4 text-blue-400" />
-                    Interactive View
-                  </button>
                   <a 
                     href={selectedFile.webViewLink} 
                     target="_blank" 
@@ -697,6 +719,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                     <Download className="w-4 h-4 text-slate-400" />
                     Download Local
                   </button>
+
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-4 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-rose-100 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Asset
+                  </button>
                 </div>
               </div>
             </div>
@@ -713,18 +743,69 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       </div>
 
       <AnimatePresence>
-        {viewerOpen && viewerFile && (
-          <FileViewerModal 
-            isOpen={viewerOpen}
-            onClose={() => setViewerOpen(false)}
-            fileUrl={viewerFile.id ? `https://drive.google.com/file/d/${viewerFile.id}/preview` : (viewerFile.webViewLink || '')}
-            fileType={viewerFile.name.split('.').pop() || ''}
-            fileName={viewerFile.name}
-            details={{
-              previewUrl: viewerFile.thumbnailLink?.replace('s220', 's800'),
-              ...viewerFile
-            }}
-          />
+        {showDeleteConfirm && selectedFile && (
+          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl overflow-hidden"
+            >
+              <div className="flex flex-col items-center text-center space-y-6">
+                <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 shadow-inner">
+                  <Trash2 className="w-10 h-10" strokeWidth={2.5} />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
+                    {t('confirm_deletion') || 'Confirm Deletion'}
+                  </h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
+                    {t('delete_confirmation_msg') || 'Are you sure you want to permanently remove this asset from the project sequence?'}
+                  </p>
+                </div>
+
+                {/* File Identity Card */}
+                <div className="w-full bg-slate-50 rounded-3xl p-6 border border-slate-100 flex flex-col gap-4">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400 pb-2 border-b border-slate-200/50">
+                    <span>Identity</span>
+                    <span className="text-slate-900 truncate max-w-[180px] ml-4">{selectedFile.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span>Volume</span>
+                    <span className="text-slate-900">{formatSize(selectedFile.size || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span>Authorized</span>
+                    <span className="text-slate-900">{selectedFile.lastModifyingUser?.displayName || 'System'}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 w-full pt-4">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="px-6 py-5 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all active:scale-95"
+                  >
+                    Hold / Return
+                  </button>
+                  <button
+                    onClick={executeDelete}
+                    disabled={isDeleting}
+                    className="px-6 py-5 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-700 transition-all shadow-2xl shadow-rose-500/20 active:scale-95 disabled:opacity-50"
+                  >
+                    {isDeleting ? 'Erasing...' : 'Commit Delete'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {typeof document !== 'undefined' && createPortal(uploadModal, document.body)}

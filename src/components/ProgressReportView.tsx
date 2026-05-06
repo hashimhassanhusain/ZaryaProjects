@@ -717,7 +717,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
   return (
     <div className="space-y-6 pb-20">
       <div className="flex justify-end items-center gap-4 mb-8">
-        <div className="flex bg-slate-100 p-1 rounded-xl">
+        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
           {(['daily', 'weekly', 'monthly'] as const).map((tab) => (
             <button
               key={tab}
@@ -726,7 +726,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 setView('list');
               }}
               className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
-                activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                activeTab === tab ? 'bg-white dark:bg-white/10 text-brand shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               {tab}
@@ -736,7 +736,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         {view === 'list' && activeTab === 'daily' && canCreateReport && (
           <button 
             onClick={handleNewReport}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+            className="flex items-center gap-2 px-6 py-2.5 bg-brand text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-brand/20"
           >
             <Plus className="w-4 h-4" /> New Report
           </button>
@@ -744,7 +744,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
         {view === 'form' && (
           <button 
             onClick={() => setView('list')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-white/20 transition-all"
           >
             Back to List
           </button>
@@ -762,8 +762,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
           >
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                <p className="text-slate-500 font-medium">Loading reports...</p>
+                <RefreshCw className="w-8 h-8 text-brand animate-spin" />
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Loading reports...</p>
               </div>
             ) : filteredReports.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
@@ -771,50 +771,50 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   <div 
                     key={report.id}
                     onClick={() => handleEditReport(report)}
-                    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 hover:shadow-md transition-all group cursor-pointer"
+                    className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm hover:border-brand/30 hover:shadow-md transition-all group cursor-pointer"
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${
-                          report.type === 'daily' ? 'bg-blue-50 text-blue-600' :
-                          report.type === 'weekly' ? 'bg-amber-50 text-amber-600' :
-                          'bg-purple-50 text-purple-600'
+                          report.type === 'daily' ? 'bg-brand/10 text-brand' :
+                          report.type === 'weekly' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' :
+                          'bg-purple-50 dark:bg-purple-500/10 text-purple-600'
                         }`}>
                           <FileText className="w-6 h-6" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-lg font-bold text-slate-900">
+                            <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                               {selectedProject?.code}-PMIS-SITE-{(report.discipline || 'General').toUpperCase()}-{report.type.toUpperCase()}-{report.date}
                             </h4>
                             <span className={cn(
                               "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                              report.discipline === 'Civil' ? "bg-blue-50 text-blue-600" :
-                              report.discipline === 'Mechanical' ? "bg-orange-50 text-orange-600" :
-                              report.discipline === 'Electrical' ? "bg-yellow-50 text-yellow-600" :
-                              report.discipline === 'TO' ? "bg-purple-50 text-purple-600" : "bg-green-50 text-green-600"
+                              report.discipline === 'Civil' ? "bg-brand/10 text-brand" :
+                              report.discipline === 'Mechanical' ? "bg-orange-50 dark:bg-orange-500/10 text-orange-600" :
+                              report.discipline === 'Electrical' ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600" :
+                              report.discipline === 'TO' ? "bg-purple-50 dark:bg-purple-500/10 text-purple-600" : "bg-green-50 dark:bg-green-500/10 text-green-600"
                             )}>
                               {report.discipline || 'N/A'}
                             </span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm text-slate-500 flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400" /> {report.date}
+                            <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {report.date}
                             </span>
-                            <span className="text-sm text-slate-500 flex items-center gap-1.5">
-                              <UserIcon className="w-3.5 h-3.5 text-slate-400" /> 
+                            <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                              <UserIcon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> 
                               {dbUsers[report.submittedBy]?.name || 'Unknown User'}
                             </span>
-                            <span className="text-sm text-slate-500 flex items-center gap-1.5">
-                              <LayoutGrid className="w-3.5 h-3.5 text-slate-400" /> {report.activities.length} Activities
+                            <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                              <LayoutGrid className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {report.activities.length} Activities
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-slate-400 dark:text-slate-500">
                         <button 
                           onClick={() => handleEditReport(report)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          className="p-2 hover:text-brand hover:bg-brand/10 rounded-lg transition-all"
                           title={canCreateReport ? "Edit Report" : "View Report"}
                         >
                           {canCreateReport ? <Edit2 className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
@@ -825,31 +825,31 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                               e.stopPropagation();
                               handleDeleteReport(report.id);
                             }}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            className="p-2 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                             title="Delete Report"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                         <button 
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                          className="p-2 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-all"
                           title="Download PDF"
                         >
                           <Download className="w-4 h-4" />
                         </button>
-                        <ChevronRight className="w-5 h-5 text-slate-300 ml-2" />
+                        <ChevronRight className="w-5 h-5 ml-2" />
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-slate-300" />
+              <div className="text-center py-20 bg-white dark:bg-surface rounded-3xl border-2 border-dashed border-slate-100 dark:border-white/5">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">No {activeTab} reports found</h3>
-                <p className="text-slate-500 mt-1 max-w-xs mx-auto">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">No {activeTab} reports found</h3>
+                <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto text-sm">
                   {activeTab === 'daily' 
                     ? 'Start by creating your first daily site report using the button above.' 
                     : `Automated ${activeTab} reports will appear here once generated.`}
@@ -857,7 +857,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 {activeTab === 'daily' && (
                   <button 
                     onClick={handleNewReport}
-                    className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all"
+                    className="mt-6 px-6 py-2 bg-brand text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-brand/20"
                   >
                     Create New Report
                   </button>
@@ -880,9 +880,9 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 <p className="text-sm font-medium">You are viewing this report in read-only mode.</p>
               </div>
             )}
-            <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Report Discipline</label>
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Report Discipline</label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {(['Civil', 'Mechanical', 'Electrical', 'TO', 'HSE'] as const).map((d) => (
                     <button
@@ -891,8 +891,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                       onClick={() => setDiscipline(d)}
                       className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
                         discipline === d 
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' 
-                          : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'
+                          ? 'bg-brand border-brand text-white shadow-lg shadow-brand/20' 
+                          : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-brand/30'
                       } ${!canCreateReport && 'opacity-50 cursor-not-allowed'}`}
                     >
                       {d}
@@ -901,9 +901,9 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Report Date</label>
-                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 font-medium">
-                  <Calendar className="w-4 h-4 text-slate-400" />
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Report Date</label>
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-600 dark:text-slate-300 font-medium">
+                  <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                   {editingReport?.date || new Date().toLocaleDateString('en-US')}
                 </div>
               </div>
@@ -911,35 +911,35 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
             {/* Weather Section (Daily Only) */}
             {activeTab === 'daily' && (
-              <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <section className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-6">
-                  <div className="p-4 bg-amber-50 rounded-2xl">
+                  <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl">
                     <CloudSun className="w-8 h-8 text-amber-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">Site Weather</h3>
-                    <p className="text-sm text-slate-500">Automatically recorded for {editingReport?.date || new Date().toLocaleDateString('en-US')}</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Site Weather</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Automatically recorded for {editingReport?.date || new Date().toLocaleDateString('en-US')}</p>
                   </div>
                 </div>
                 {weather && (
                   <div className="flex gap-8">
                     <div className="text-center">
-                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase mb-1">
                         <Thermometer className="w-3 h-3" /> Temp
                       </div>
-                      <div className="text-xl font-bold text-slate-900">{weather.temp}°C</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white">{weather.temp}°C</div>
                     </div>
                     <div className="text-center">
-                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase mb-1">
                         <Droplets className="w-3 h-3" /> Humidity
                       </div>
-                      <div className="text-xl font-bold text-slate-900">{weather.humidity}%</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white">{weather.humidity}%</div>
                     </div>
                     <div className="text-center">
-                      <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase mb-1">
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase mb-1">
                         <Wind className="w-3 h-3" /> Wind
                       </div>
-                      <div className="text-xl font-bold text-slate-900">{weather.windSpeed} km/h</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white">{weather.windSpeed} km/h</div>
                     </div>
                   </div>
                 )}
@@ -947,16 +947,16 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
             )}
 
             {/* Key Activities Section */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <section className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
+              <div className="p-6 bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <LayoutGrid className="w-5 h-5 text-blue-500" />
-                  <h3 className="text-lg font-bold text-slate-900">Key Activities (BOQ & PO Linked)</h3>
+                  <LayoutGrid className="w-5 h-5 text-brand" />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Key Activities (BOQ & PO Linked)</h3>
                 </div>
                 {canCreateReport && (
                   <button 
                     onClick={handleAddActivity}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-brand text-white text-xs font-bold rounded-lg hover:opacity-90 transition-all shadow-lg shadow-brand/20"
                   >
                     <Plus className="w-3 h-3" /> Add Activity
                   </button>
@@ -964,12 +964,12 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
               </div>
               <div className="p-6 space-y-4">
                 {activities.map((activity, index) => (
-                  <div key={activity.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
+                  <div key={activity.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 relative group transition-colors">
                     <div className="md:col-span-5 space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Activity Link</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Activity Link</label>
                       <div className="flex flex-col gap-2">
                         <select 
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          className="w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none"
                           value={activity.poLineItemId}
                           onChange={(e) => {
                             const newActivities = [...activities];
@@ -981,7 +981,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                           }}
                         >
                           <option value="">Select an item...</option>
-                          <option value="general" className="font-bold text-blue-600">★ General Activity (Non-PO)</option>
+                          <option value="general" className="font-bold text-brand">★ General Activity (Non-PO)</option>
                           {allPOLineItems.map(item => (
                             <option key={item.id} value={item.id}>
                               {item.poId} - {item.description} ({item.poSupplier})
@@ -993,7 +993,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                           <input 
                             type="text"
                             placeholder="Enter general activity name..."
-                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none animate-in fade-in slide-in-from-top-1"
+                            className="w-full px-3 py-2 bg-white dark:bg-surface border border-brand/30 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none animate-in fade-in slide-in-from-top-1"
                             value={activity.activityName || ''}
                             onChange={(e) => {
                               const newActivities = [...activities];
@@ -1005,11 +1005,11 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                       </div>
                     </div>
                     <div className="md:col-span-4 space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Work Description</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Work Description</label>
                       <input 
                         type="text"
                         placeholder="What was done today?"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                        className="w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none"
                         value={activity.description}
                         onChange={(e) => {
                           const newActivities = [...activities];
@@ -1019,12 +1019,12 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                       />
                     </div>
                     <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Progress (%)</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Progress (%)</label>
                       <input 
                         type="number"
                         min="0"
                         max="100"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-bold text-blue-600"
+                        className="w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none font-bold text-brand"
                         value={activity.progressUpdate}
                         onChange={(e) => {
                           const newActivities = [...activities];
@@ -1043,12 +1043,12 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
                         return (
                           <div className="flex flex-col gap-0.5 mt-1">
-                            <div className="flex justify-between text-[8px] font-semibold uppercase text-slate-400 px-1">
+                            <div className="flex justify-between text-[8px] font-semibold uppercase text-slate-400 dark:text-slate-500 px-1">
                               <span>Time: {timePct}%</span>
                               <span className={cn(spi >= 1 ? 'text-emerald-500' : 'text-rose-500')}>SPI {spi.toFixed(2)}</span>
                             </div>
                             {isSevere && (
-                              <div className="text-[8px] font-semibold text-rose-600 animate-pulse bg-rose-50 px-1 rounded flex items-center gap-0.5">
+                              <div className="text-[8px] font-semibold text-rose-600 animate-pulse bg-rose-50 dark:bg-rose-500/10 px-1 rounded flex items-center gap-0.5">
                                 <AlertTriangle className="w-2.5 h-2.5" />
                                 IMPACT
                               </div>
@@ -1060,7 +1060,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                     <div className="md:col-span-1 flex items-end justify-center pb-1">
                       <button 
                         onClick={() => handleRemoveActivity(activity.id)}
-                        className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                        className="p-2 text-slate-300 dark:text-slate-600 hover:text-rose-500 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1068,8 +1068,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   </div>
                 ))}
                 {activities.length === 0 && (
-                  <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
-                    <p className="text-sm text-slate-400">No activities added yet. Use the button above to log site work.</p>
+                  <div className="text-center py-8 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl">
+                    <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">No activities added yet. Use the button above to log site work.</p>
                   </div>
                 )}
               </div>
@@ -1077,26 +1077,26 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
             {/* General Works & Deliverables */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <List className="w-5 h-5 text-slate-400" />
+              <section className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <List className="w-5 h-5 text-brand" />
                   General Works & Safety
                 </h3>
                 <textarea 
                   placeholder="Site cleaning, safety briefings, general maintenance..."
-                  className="w-full h-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                  className="w-full h-32 px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none resize-none transition-colors"
                   value={generalWorks}
                   onChange={(e) => setGeneralWorks(e.target.value)}
                 />
               </section>
-              <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-slate-400" />
+              <section className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-brand" />
                   Deliverables & Measurements
                 </h3>
                 <textarea 
                   placeholder="Drawings completed, square meters measured, inspections done..."
-                  className="w-full h-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                  className="w-full h-32 px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none resize-none transition-colors"
                   value={deliverables}
                   onChange={(e) => setDeliverables(e.target.value)}
                 />
@@ -1104,39 +1104,39 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
             </div>
 
             {/* Incidents & Issues */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <section className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+              <div className="p-6 bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-rose-500" />
-                  <h3 className="text-lg font-bold text-slate-900">Incidents & Issues</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Incidents & Issues</h3>
                 </div>
                 <button 
                   onClick={handleAddIssue}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20"
                 >
                   <Plus className="w-3 h-3" /> Log Issue
                 </button>
               </div>
               <div className="p-6 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Major Incidents / Accidents</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Major Incidents / Accidents</label>
                   <textarea 
                     placeholder="Describe any accidents or major incidents..."
-                    className="w-full h-20 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                    className="w-full h-20 px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand/20 outline-none resize-none transition-colors"
                     value={incidents}
                     onChange={(e) => setIncidents(e.target.value)}
                   />
                 </div>
                 
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Technical Issues & Assignments</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Technical Issues & Assignments</label>
                   {issues.map((issue, index) => (
-                    <div key={issue.id} className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 space-y-4">
+                    <div key={issue.id} className="p-4 bg-rose-50/50 dark:bg-rose-500/10 rounded-xl border border-rose-100 dark:border-rose-500/20 space-y-4 transition-colors">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input 
                           type="text"
                           placeholder="Issue Title"
-                          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none"
+                          className="px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand/20 transition-all"
                           value={issue.title}
                           onChange={(e) => {
                             const newIssues = [...issues];
@@ -1145,7 +1145,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                           }}
                         />
                         <select 
-                          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none"
+                          className="px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand/20 transition-all"
                           value={issue.assignedToId}
                           onChange={(e) => {
                             const newIssues = [...issues];
@@ -1161,7 +1161,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                       </div>
                       <textarea 
                         placeholder="Describe the problem..."
-                        className="w-full h-16 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none resize-none"
+                        className="w-full h-16 px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand/20 resize-none transition-all"
                         value={issue.description}
                         onChange={(e) => {
                           const newIssues = [...issues];
@@ -1176,15 +1176,15 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
             </section>
 
             {/* Photos Section */}
-            <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Camera className="w-5 h-5 text-slate-400" />
+            <section className="bg-white dark:bg-surface p-6 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4 transition-colors">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Camera className="w-5 h-5 text-brand" />
                 Site Photos
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {photos.map((photoId, idx) => (
-                  <div key={idx} className="aspect-square bg-slate-100 rounded-2xl flex items-center justify-center relative group overflow-hidden border border-slate-200">
-                    <FileText className="w-8 h-8 text-slate-300" />
+                  <div key={idx} className="aspect-square bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center relative group overflow-hidden border border-slate-200 dark:border-white/10">
+                    <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                     <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
                       <button 
                         onClick={() => setPhotos(photos.filter((_, i) => i !== idx))}
@@ -1193,18 +1193,18 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="absolute bottom-2 left-2 right-2 text-[8px] font-mono text-slate-400 truncate bg-white/80 px-1 rounded">
+                    <div className="absolute bottom-2 left-2 right-2 text-[8px] font-mono text-slate-400 dark:text-slate-600 truncate bg-white/80 dark:bg-white/5 px-1 rounded">
                       ID: {photoId}
                     </div>
                   </div>
                 ))}
-                <label className="aspect-square border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:bg-slate-50 transition-all cursor-pointer">
+                <label className="aspect-square border-2 border-dashed border-slate-100 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer">
                   {isUploadingPhoto ? (
-                    <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+                    <RefreshCw className="w-6 h-6 animate-spin text-brand" />
                   ) : (
                     <Plus className="w-6 h-6" />
                   )}
-                  <span className="text-xs font-bold">{isUploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
+                  <span className="text-xs font-bold uppercase tracking-widest">{isUploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -1214,7 +1214,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   />
                 </label>
               </div>
-              <p className="text-[10px] text-slate-400 italic mt-2">
+              <p className="text-[10px] text-slate-400 dark:text-slate-600 italic mt-2">
                 Note: Ensure the Google Drive Service Account has "Editor" access to your project folder to save photos.
               </p>
             </section>
@@ -1224,7 +1224,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
               <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
                 <button 
                   onClick={() => setView('list')}
-                  className="px-6 py-4 bg-white text-slate-600 text-sm font-bold shadow-2xl hover:bg-slate-50 border border-slate-200 transition-all rounded-2xl flex items-center gap-2 group"
+                  className="px-6 py-4 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 text-sm font-bold shadow-2xl hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-all rounded-2xl flex items-center gap-2 group"
                 >
                   <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                   Discard
@@ -1234,7 +1234,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   <button 
                     onClick={() => handleSave(true)}
                     disabled={isSaving}
-                    className="px-6 py-4 bg-emerald-50 text-emerald-600 rounded-2xl text-sm font-bold shadow-2xl hover:bg-emerald-100 border border-emerald-100 transition-all flex items-center gap-2 disabled:opacity-50"
+                    className="px-6 py-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 rounded-2xl text-sm font-bold shadow-2xl hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-100 dark:border-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                   >
                     <Plus className="w-5 h-5" />
                     Save as New
@@ -1244,7 +1244,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 <button 
                   onClick={() => handleSave(false)}
                   disabled={isSaving}
-                  className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-8 py-4 bg-brand text-white rounded-2xl text-sm font-bold shadow-2xl hover:opacity-90 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? (
                     <RefreshCw className="w-5 h-5 animate-spin" />
@@ -1274,16 +1274,16 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative bg-white dark:bg-surface w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-white/10"
             >
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-blue-600">
+              <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-brand">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-lg">
                     <FileCheck className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Report Saved Successfully</h3>
-                    <p className="text-xs text-blue-100 italic">Database updated. Next: Document Archiving.</p>
+                    <p className="text-xs text-brand-foreground/80 italic">Database updated. Next: Document Archiving.</p>
                   </div>
                 </div>
                 <button 
@@ -1296,21 +1296,21 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
               <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                 {/* Preview Panel */}
-                <div className="flex-1 bg-slate-100 p-4 flex flex-col min-h-[400px]">
+                <div className="flex-1 bg-slate-50 dark:bg-background p-4 flex flex-col min-h-[400px]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <LayoutGrid className="w-3.5 h-3.5" /> PDF Preview
                     </span>
                     <a 
                       href={pdfPreviewUrl || '#'} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                      className="text-[10px] font-bold text-brand hover:underline flex items-center gap-1 bg-brand/10 px-2 py-1 rounded"
                     >
                       <ExternalLink className="w-3 h-3" /> Open in New Tab
                     </a>
                   </div>
-                  <div className="flex-1 bg-white rounded-xl shadow-inner border border-slate-200 overflow-hidden relative">
+                  <div className="flex-1 bg-white dark:bg-surface rounded-xl shadow-inner border border-slate-200 dark:border-white/10 overflow-hidden relative">
                     {pdfPreviewUrl ? (
                       <iframe 
                         src={pdfPreviewUrl} 
@@ -1327,12 +1327,12 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                 </div>
 
                 {/* Actions Panel */}
-                <div className="w-full md:w-80 p-8 flex flex-col gap-6 justify-center bg-slate-50 border-l border-slate-200">
+                <div className="w-full md:w-80 p-8 flex flex-col gap-6 justify-center bg-slate-50 dark:bg-white/5 border-l border-slate-200 dark:border-white/10">
                   <div className="space-y-2">
-                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <HardDrive className="w-4 h-4 text-blue-500" /> Save to Cloud
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-brand" /> Save to Cloud
                     </h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       Upload this PDF report directly to the project's site operations folder in Google Drive.
                     </p>
                   </div>
@@ -1340,7 +1340,7 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                   <button 
                     onClick={uploadToDrive}
                     disabled={isUploadingToDrive || !pdfPreviewBlob}
-                    className="w-full px-6 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    className="w-full px-6 py-4 bg-brand text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand/20 hover:opacity-90 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {isUploadingToDrive ? (
                       <RefreshCw className="w-5 h-5 animate-spin" />
@@ -1352,10 +1352,10 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200"></div>
+                      <div className="w-full border-t border-slate-200 dark:border-white/10"></div>
                     </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-slate-50 px-2 text-slate-400 font-bold">Or</span>
+                    <div className="relative flex justify-center text-[10px] uppercase">
+                      <span className="bg-slate-50 dark:bg-surface px-2 text-slate-400 dark:text-slate-500 font-black tracking-widest">Or</span>
                     </div>
                   </div>
 
@@ -1363,15 +1363,15 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
                     <a 
                       href={pdfPreviewUrl || '#'} 
                       download={pdfFileName}
-                      className="w-full px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                      className="w-full px-6 py-3 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                     >
                       <Download className="w-4 h-4" /> Download Locally
                     </a>
                     <button 
                       onClick={handleClosePreview}
-                      className="w-full px-6 py-3 bg-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-300 transition-all"
+                      className="w-full px-6 py-3 bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-300 dark:hover:bg-white/20 transition-all"
                     >
-                      Close & Return to List
+                      Close & Return
                     </button>
                   </div>
                 </div>

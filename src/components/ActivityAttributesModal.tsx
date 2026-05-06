@@ -406,34 +406,34 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4"
     >
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="flex-shrink-0 px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="flex-shrink-0 px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Activity Attributes & Scheduling</h3>
-            <p className="text-xs text-slate-500 mt-1">Configure dependencies, planned vs actual data, and MasterFormat categorization.</p>
+            <h3 className="text-lg font-bold text-slate-900">Activity Attributes & Scheduling</h3>
+            <p className="text-[10px] text-slate-500">Configure dependencies, planned vs actual data, and categorization.</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors">
+            <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
 
-        <div className="flex-1 p-8 overflow-y-auto space-y-8 custom-scrollbar">
+        <div className="flex-1 p-5 overflow-y-auto space-y-4 custom-scrollbar">
           {/* Basic Info */}
-          <section className="space-y-4">
-            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+          <section className="space-y-3">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Database className="w-3 h-3" /> Basic Information
             </h4>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest">Activity Name / Description</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activity Name / Description</label>
                   <span className={cn(
                     "text-[10px] font-bold tracking-widest uppercase",
                     (formData.description?.length || 0) >= 100 ? "text-rose-500" : "text-slate-400"
@@ -863,15 +863,15 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
               >
-                <div className="flex-shrink-0 px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <h3 className="text-lg font-bold text-slate-900">{t('add_new_supplier')}</h3>
-                  <button onClick={() => setIsAddingVendor(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                    <X className="w-5 h-5 text-slate-500" />
+                <div className="flex-shrink-0 px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                  <h3 className="text-md font-bold text-slate-900">{t('add_new_supplier')}</h3>
+                  <button onClick={() => setIsAddingVendor(false)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors">
+                    <X className="w-4 h-4 text-slate-500" />
                   </button>
                 </div>
-                <div className="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 p-5 space-y-3 overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
@@ -958,18 +958,18 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           )}
         </AnimatePresence>
 
-        <div className="flex-shrink-0 p-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div className="flex-shrink-0 p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
           <button 
             onClick={onClose}
-            className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-2xl transition-all"
+            className="px-5 py-2 text-slate-600 font-bold text-xs hover:bg-slate-200 rounded-xl transition-all"
           >
             Cancel
           </button>
           <button 
             onClick={() => onSave(formData)}
-            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
             Save Attributes
           </button>
         </div>

@@ -471,13 +471,13 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white shadow-2xl w-full max-w-xl overflow-hidden flex flex-col rounded-[2.5rem]"
+              className="bg-white shadow-2xl w-full max-w-lg overflow-hidden flex flex-col rounded-3xl"
             >
-              <div className="px-8 py-8 border-b border-slate-100 bg-white">
-                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <div className="px-6 py-6 border-b border-slate-100 bg-white">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">
                   {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
                 </h3>
-                <p className="text-slate-500 text-sm mt-1">{t('company_details_desc')}</p>
+                <p className="text-slate-400 text-xs mt-1">{t('company_details_desc')}</p>
               </div>
 
               <form 
@@ -496,25 +496,25 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     }
                   });
                 }}
-                className="p-8 space-y-6"
+                className="p-6 space-y-4"
               >
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('supplier_code')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
                     <input 
                       name="vendorCode"
                       defaultValue={editingSupplier?.vendorCode}
                       required
                       placeholder="e.g. S-001"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('operational_status')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('operational_status')}</label>
                     <select 
                       name="status"
                       defaultValue={editingSupplier?.status || 'Active'}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     >
                       <option value="Active">{t('active')}</option>
                       <option value="Suspended">{t('suspended')}</option>
@@ -522,21 +522,21 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('legal_supplier_name')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('legal_supplier_name')}</label>
                     <input 
                       name="name"
                       defaultValue={editingSupplier?.name}
                       required
                       placeholder={t('company_name_placeholder')}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('discipline_masterformat')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking_widest mb-1">{t('discipline_masterformat')}</label>
                     <select 
                       name="discipline"
                       defaultValue={editingSupplier?.discipline || '01'}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     >
                       {masterFormatDivisions.map(div => (
                         <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
@@ -544,46 +544,46 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('address')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('address')}</label>
                     <input 
                       name="address"
                       defaultValue={editingSupplier?.contactDetails.address}
                       placeholder={t('address_placeholder')}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('phone')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('phone')}</label>
                     <input 
                       name="phone"
                       defaultValue={editingSupplier?.contactDetails.phone}
                       placeholder="+964..."
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t('email')}</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('email')}</label>
                     <input 
                       name="email"
                       type="email"
                       defaultValue={editingSupplier?.contactDetails.email}
                       placeholder="contact@company.com"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
                     />
                   </div>
                 </div>
 
-                <div className="pt-6 flex justify-end gap-3">
+                <div className="pt-4 flex justify-end gap-2">
                   <button 
                     type="button"
                     onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
-                    className="px-6 py-3 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-2xl transition-all"
+                    className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-xl transition-all"
                   >
                     {t('cancel')}
                   </button>
                   <button 
                     type="submit"
-                    className="px-10 py-3 bg-blue-600 text-white font-bold text-sm rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
+                    className="px-8 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
                   >
                     {editingSupplier ? t('update_supplier') : t('register_supplier')}
                   </button>

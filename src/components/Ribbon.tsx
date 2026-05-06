@@ -39,7 +39,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
 
   return (
     <div className={cn(
-      "bg-white border-b border-slate-200 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
+      "bg-ribbon border-b border-slate-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
       isRibbonCollapsed ? "h-[32px]" : "h-[95px]",
       className
     )}>
@@ -62,14 +62,14 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                       className={cn(
                         "flex flex-col items-center justify-center min-w-[72px] h-[72px] mt-0.5 px-2 rounded-md transition-all relative",
                         isActive 
-                          ? "bg-blue-50 text-blue-700 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.1)]" 
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-brand/10 text-brand shadow-[inset_0_0_0_1px_rgba(var(--color-brand),0.1)] dark:bg-white/10 dark:text-brand" 
+                          : "text-slate-600 dark:text-white/60 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
                       {tab.focusArea && (
                         <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm", getFocusColor(tab.focusArea))} />
                       )}
-                      <tab.icon className={cn("w-7 h-7 mb-1", isActive ? "text-blue-600" : "text-slate-400 opacity-80")} strokeWidth={1.5} />
+                      <tab.icon className={cn("w-7 h-7 mb-1", isActive ? "text-brand" : "text-slate-400 opacity-80")} strokeWidth={1.5} />
                       <span className={cn(
                         "text-[10px] font-medium leading-tight text-center max-w-[64px] line-clamp-2",
                         isActive ? "font-bold" : ""
@@ -82,7 +82,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
               })}
             </div>
             {group.label && (
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-0.5 mt-auto">
+              <div className="text-[9px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest text-center py-0.5 mt-auto">
                 {group.label}
               </div>
             )}
@@ -93,7 +93,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
       {isRibbonCollapsed && (
          <div className="flex items-center gap-4 h-full">
             {groups.flatMap(g => g.tabs).filter(t => t.id === activeTabId).map(tab => (
-              <div key={tab.id} className="flex items-center gap-2 text-blue-600 font-bold text-[10px] uppercase tracking-widest">
+              <div key={tab.id} className="flex items-center gap-2 text-brand font-bold text-[10px] uppercase tracking-widest">
                  <tab.icon className="w-4 h-4" />
                  {tab.label}
               </div>

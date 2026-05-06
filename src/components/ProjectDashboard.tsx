@@ -119,10 +119,10 @@ export const ProjectDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <div className="text-slate-400 font-black uppercase tracking-widest text-[10px]">{t('loading_project')}</div>
-      </div>
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+          <div className="text-slate-400 font-black uppercase tracking-widest text-[10px]">{t('loading_project')}</div>
+        </div>
     );
   }
 
@@ -180,19 +180,19 @@ export const ProjectDashboard: React.FC = () => {
       {/* Header Section */}
       <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
         <div className="space-y-6 flex-1">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-              {t('executive_summary')}
-            </div>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase leading-[0.9]">
-              {stripNumericPrefix(selectedProject.name)}
-            </h1>
-          </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-brand font-black text-[10px] uppercase tracking-[0.2em]">
+          <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+          {t('executive_summary')}
+        </div>
+        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight italic uppercase leading-[0.9]">
+          {stripNumericPrefix(selectedProject.name)}
+        </h1>
+      </div>
           
           <div className="flex flex-wrap items-center gap-3">
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
-                <Target className="w-3 h-3 text-blue-400" />
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 dark:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand/10">
+                <Target className="w-3 h-3 text-brand" />
                 {selectedProject.code}
              </div>
              {selectedProject.customer && (

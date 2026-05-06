@@ -6,14 +6,41 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-arabic: "IBM Plex Sans Arabic", "Inter", sans-serif;
   
-  --color-sidebar: #f8fafc;
-  --color-sidebar-hover: #f1f5f9;
-  --color-sidebar-active: #e2e8f0;
+  --color-brand: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-sidebar: var(--sidebar-bg);
+  --color-app-bg: var(--app-bg);
+  --color-surface: var(--surface-bg);
+  --color-text-main: var(--text-primary);
+  --color-ribbon: var(--ribbon-bg);
+  --color-brand-dark: var(--brand-dark);
+}
+
+:root {
+  --brand-primary: #2563eb;
+  --brand-secondary: #3b82f6;
+  --brand-dark: #0f172a;
+  --sidebar-bg: #f8fafc;
+  --app-bg: #fcfcfc;
+  --surface-bg: #ffffff;
+  --text-primary: #0f172a;
+  --ribbon-bg: #ffffff;
+}
+
+.dark {
+  --brand-primary: #FF5C00;
+  --brand-secondary: #fb923c;
+  --brand-dark: #333333;
+  --sidebar-bg: #222222;
+  --app-bg: #1a1a1a;
+  --surface-bg: #2a2a2a;
+  --text-primary: #f8fafc;
+  --ribbon-bg: #505050;
 }
 
 @layer base {
   body {
-    @apply font-sans text-slate-900 bg-[#fcfcfc] antialiased;
+    @apply font-sans text-text-main bg-app-bg antialiased transition-colors duration-300;
   }
 }
 
@@ -23,11 +50,11 @@
   }
   
   .sidebar-item-active {
-    @apply bg-blue-600/5 text-blue-600 font-semibold;
+    @apply bg-brand/5 text-brand font-semibold;
   }
   
   .sidebar-item-inactive {
-    @apply text-slate-500 hover:bg-slate-100 hover:text-slate-900;
+    @apply text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white;
   }
 
   /* Custom Sidebar Scrollbar */
