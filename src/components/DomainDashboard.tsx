@@ -609,7 +609,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const activeHubId = null;
 
   return (
-    <div className="w-full flex flex-col h-full bg-slate-50 dark:bg-app-bg transition-colors duration-300">
+    <div className="w-full flex flex-col h-full bg-neutral-50 dark:bg-app-bg transition-colors duration-300">
       {/* ── Office-Style Ribbon ── */}
       <Ribbon 
         groups={ribbonGroups}
@@ -631,26 +631,26 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             {activeTab === 'overview' ? (
               <div className="p-8 space-y-12">
                 {/* Domain Header Card */}
-                <div className="bg-white dark:bg-surface p-10 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between">
+                <div className="bg-white dark:bg-surface p-10 rounded-[3rem] border border-neutral-200 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between">
                    <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-3xl -mr-20 -mt-20" />
                    <div className="relative z-10 flex items-center gap-8">
-                       <div className="w-20 h-20 rounded-[2.5rem] bg-slate-950 dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
-                          <Icon className="w-10 h-10" strokeWidth={1} />
+                       <div className="w-20 h-20 rounded-[2.5rem] bg-neutral-900 dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
+                           <Icon className="w-10 h-10" strokeWidth={1} />
                        </div>
                       <div className="space-y-1">
                          <div className="flex items-center gap-3">
-                           <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                           <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
                                "p-2 rounded-xl transition-all shadow-sm",
-                               isFavorite ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-300 hover:text-slate-400"
+                               isFavorite ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-300 hover:text-neutral-400"
                              )}
                            >
                              <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
                            </button>
                          </div>
-                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
+                         <p className="text-sm font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-widest leading-none">
                            {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
                          </p>
                       </div>
@@ -664,27 +664,27 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
+                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-neutral-200 dark:border-white/5 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-neutral-400 dark:text-neutral-500">
                          <Activity className="w-4 h-4" />
                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('status')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">{t('healthy')}</div>
-                      <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">{t('healthy')}</div>
+                      <div className="h-1 w-full bg-neutral-100 rounded-full overflow-hidden">
                          <div className="h-full bg-emerald-500 w-[94%]" />
                       </div>
                    </div>
                    
-                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
+                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-neutral-200 dark:border-white/5 shadow-sm space-y-4">
+                      <div className="flex items-center gap-3 text-neutral-400 dark:text-neutral-500">
                          <CheckCircle2 className="w-4 h-4" />
                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('compliance')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">98.2%</div>
+                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">98.2%</div>
                       <div className="text-[10px] font-bold text-emerald-600 uppercase">↑ 2.1% {t('this_month')}</div>
                    </div>
 
-                    <div className="col-span-2 bg-slate-950 dark:bg-brand-dark p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
+                    <div className="col-span-2 bg-neutral-900 dark:bg-brand-dark p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
                       <div className="relative z-10 flex items-center justify-between h-full">
                          <div className="space-y-2">
@@ -701,12 +701,12 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 {/* Focus Areas Visualization */}
                 <div className="space-y-6">
                    <div className="flex items-center justify-between px-2">
-                      <h3 className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
+                      <h3 className="text-[11px] font-bold text-neutral-900 dark:text-white uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
                       <div className="flex gap-4">
                          {areas.map(area => (
                            <div key={area} className="flex items-center gap-2">
                               <div className={cn("w-2 h-2 rounded-full", focusAreaColors[area])} />
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">{t(area)}</span>
+                              <span className="text-[8px] font-bold text-neutral-400 uppercase">{t(area)}</span>
                            </div>
                          ))}
                       </div>
@@ -716,9 +716,9 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                       {areas.map(area => {
                         const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
                         return (
-                          <div key={area} className="bg-slate-100/50 rounded-[2.5rem] p-6 space-y-4 border border-slate-200/50">
+                          <div key={area} className="bg-neutral-100/50 rounded-[2.5rem] p-6 space-y-4 border border-neutral-200/50">
                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t(area)}</span>
+                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{t(area)}</span>
                                 <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold text-white", focusAreaColors[area])}>
                                    {areaChildren.length}
                                 </span>
@@ -728,14 +728,14 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                                   <button 
                                     key={child.id}
                                     onClick={() => handleTabChange(child.id)}
-                                    className="w-full p-4 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-2xl text-[11px] font-bold text-slate-700 dark:text-slate-300 text-left hover:border-brand/30 hover:shadow-md transition-all flex items-center justify-between group"
+                                    className="w-full p-4 bg-white dark:bg-surface border border-neutral-100 dark:border-white/5 rounded-2xl text-[11px] font-bold text-neutral-700 dark:text-neutral-300 text-left hover:border-brand/30 hover:shadow-md transition-all flex items-center justify-between group"
                                   >
                                      <span className="truncate pr-4 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
-                                     <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-brand transition-colors" />
+                                     <ChevronRight className="w-3 h-3 text-neutral-300 group-hover:text-brand transition-colors" />
                                   </button>
                                 ))}
                                 {areaChildren.length === 0 && (
-                                  <div className="p-4 border border-dashed border-slate-200 rounded-2xl text-[9px] font-bold text-slate-300 text-center uppercase">
+                                  <div className="p-4 border border-dashed border-neutral-200 rounded-2xl text-[9px] font-bold text-neutral-300 text-center uppercase">
                                      {t('no_processes')}
                                   </div>
                                 )}
@@ -747,16 +747,16 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 </div>
               </div>
             ) : activeTab === 'favorites' ? (
-              <div className="p-8 space-y-8 h-full bg-slate-50">
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
+              <div className="p-8 space-y-8 h-full bg-neutral-50">
+                <div className="bg-white p-10 rounded-[3rem] border border-neutral-200 shadow-sm relative overflow-hidden flex items-center justify-between">
                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50/50 rounded-full blur-3xl -mr-20 -mt-20" />
                    <div className="relative z-10 flex items-center gap-8">
                       <div className="w-20 h-20 rounded-[2.5rem] bg-amber-500 flex items-center justify-center text-white shadow-2xl shadow-amber-200">
                          <Star className="w-10 h-10" />
                       </div>
                       <div className="space-y-1">
-                         <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">{t('favorites')}</h1>
-                         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest leading-loose">
+                         <h1 className="text-4xl font-bold text-neutral-900 tracking-tighter uppercase">{t('favorites')}</h1>
+                         <p className="text-sm font-semibold text-neutral-400 uppercase tracking-widest leading-loose">
                            {t('quick_access_favorites')}
                          </p>
                       </div>
@@ -771,21 +771,21 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                        animate={{ opacity: 1, y: 0 }}
                        transition={{ delay: idx * 0.1 }}
                        onClick={() => handleTabChange(p.id)}
-                       className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-left space-y-4 group h-[180px] flex flex-col justify-between"
+                       className="bg-white p-8 rounded-[2.5rem] border border-neutral-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-left space-y-4 group h-[180px] flex flex-col justify-between"
                      >
-                        <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                           {React.createElement(ICON_MAP[p.icon || 'FileText'] || FileText, { className: "w-7 h-7 text-slate-400 group-hover:text-blue-500" })}
+                        <div className="w-14 h-14 rounded-2xl bg-neutral-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                           {React.createElement(ICON_MAP[p.icon || 'FileText'] || FileText, { className: "w-7 h-7 text-neutral-400 group-hover:text-blue-500" })}
                         </div>
                         <div className="space-y-1">
-                           <h3 className="font-bold text-slate-900 text-lg tracking-tight">{stripNumericPrefix(th(p.id)) || p.title}</h3>
-                           <p className="text-xs text-slate-400 line-clamp-2">{th(p.id + '_summary') || p.summary}</p>
+                           <h3 className="font-bold text-neutral-900 text-lg tracking-tight">{stripNumericPrefix(th(p.id)) || p.title}</h3>
+                           <p className="text-xs text-neutral-400 line-clamp-2">{th(p.id + '_summary') || p.summary}</p>
                         </div>
                      </motion.button>
                    ))}
                    {favorites.length === 0 && (
                      <div className="col-span-full py-20 text-center space-y-4">
-                        <Star className="w-12 h-12 text-slate-200 mx-auto" />
-                        <p className="text-slate-400 font-medium">{t('no_favorites')}</p>
+                        <Star className="w-12 h-12 text-neutral-200 mx-auto" />
+                        <p className="text-neutral-400 font-medium">{t('no_favorites')}</p>
                      </div>
                    )}
                 </div>

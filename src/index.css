@@ -16,26 +16,31 @@
   --color-brand-dark: var(--brand-dark);
 }
 
+html {
+  color-scheme: light !important;
+}
+
 :root {
-  --brand-primary: #2563eb;
-  --brand-secondary: #3b82f6;
-  --brand-dark: #0f172a;
-  --sidebar-bg: #f8fafc;
-  --app-bg: #fcfcfc;
+  --brand-primary: #FF5C00;
+  --brand-secondary: #FF8533;
+  --brand-dark: #1f2937;
+  --sidebar-bg: #ffffff;
+  --app-bg: #f9fafb;
   --surface-bg: #ffffff;
-  --text-primary: #0f172a;
+  --text-primary: #111827;
   --ribbon-bg: #ffffff;
 }
 
 .dark {
+  /* Forcing dark mode to look like light mode but maybe with darker grays if it's accidentally triggered */
   --brand-primary: #FF5C00;
-  --brand-secondary: #fb923c;
-  --brand-dark: #333333;
-  --sidebar-bg: #222222;
-  --app-bg: #1a1a1a;
-  --surface-bg: #2a2a2a;
-  --text-primary: #f8fafc;
-  --ribbon-bg: #505050;
+  --brand-secondary: #FF8533;
+  --brand-dark: #1f2937;
+  --sidebar-bg: #ffffff;
+  --app-bg: #f9fafb;
+  --surface-bg: #ffffff;
+  --text-primary: #111827;
+  --ribbon-bg: #ffffff;
 }
 
 @layer base {
@@ -54,7 +59,7 @@
   }
   
   .sidebar-item-inactive {
-    @apply text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white;
+    @apply text-slate-500 hover:bg-slate-50 hover:text-slate-900;
   }
 
   /* Custom Sidebar Scrollbar */

@@ -32,7 +32,7 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group"
+      className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all group"
     >
       <div className="flex justify-between items-start mb-4">
         <div className={cn("p-2.5 rounded-xl", color)}>
@@ -49,10 +49,10 @@ const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color 
         )}
       </div>
       <div className="space-y-1">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
+        <h3 className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black text-slate-900 tracking-tight">{value}</span>
-          {subValue && <span className="text-[11px] font-bold text-slate-400 uppercase">{subValue}</span>}
+          <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{value}</span>
+          {subValue && <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">{subValue}</span>}
         </div>
       </div>
     </motion.div>
@@ -121,7 +121,7 @@ export const ProjectDashboard: React.FC = () => {
     return (
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-          <div className="text-slate-400 font-black uppercase tracking-widest text-[10px]">{t('loading_project')}</div>
+          <div className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-[10px]">{t('loading_project')}</div>
         </div>
     );
   }
@@ -129,12 +129,12 @@ export const ProjectDashboard: React.FC = () => {
   if (!selectedProject) {
     return (
       <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-        <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center border-4 border-white shadow-xl">
-           <Building className="w-10 h-10 text-slate-300" />
+        <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center border-4 border-white dark:border-white/5 shadow-xl">
+           <Building className="w-10 h-10 text-slate-400 dark:text-slate-700" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{t('no_project_selected')}</h2>
-          <p className="text-slate-500 font-bold max-w-sm mx-auto">{t('select_project_hint')}</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{t('no_project_selected')}</h2>
+          <p className="text-slate-600 dark:text-slate-400 font-bold max-w-sm mx-auto">{t('select_project_hint')}</p>
         </div>
       </div>
     );
@@ -196,20 +196,20 @@ export const ProjectDashboard: React.FC = () => {
                 {selectedProject.code}
              </div>
              {selectedProject.customer && (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-[10px] font-bold text-slate-500 uppercase tracking-widest shadow-sm">
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
                   <Building className="w-3 h-3" />
                   {selectedProject.customer}
                </div>
              )}
              {selectedProject.location && (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-[10px] font-bold text-slate-500 uppercase tracking-widest shadow-sm">
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
                   <MapPin className="w-3 h-3" />
                   {selectedProject.location}
                </div>
              )}
           </div>
 
-          <p className="text-slate-500 max-w-3xl font-bold leading-relaxed text-sm">
+          <p className="text-slate-700 dark:text-slate-300 max-w-3xl font-bold leading-relaxed text-sm">
             {selectedProject.description || `Comprehensive PMIS visibility for ${selectedProject.name}. Tracking all governance outputs, financial performance, and resource utilization in real-time.`}
           </p>
         </div>
@@ -237,11 +237,11 @@ export const ProjectDashboard: React.FC = () => {
             </h2>
           </div>
           
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-50 dark:border-white/5 flex items-center justify-between bg-slate-50/30 dark:bg-white/5">
               <div className="flex items-baseline gap-4">
-                <div className="text-4xl font-black text-slate-900 tracking-tighter">92.4%</div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Progress</div>
+                <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">92.4%</div>
+                <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total Progress</div>
               </div>
               <div className="flex gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-lg shadow-blue-600/30"></div>
@@ -259,8 +259,8 @@ export const ProjectDashboard: React.FC = () => {
               ].map((item, idx) => (
                 <div key={idx} className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">{item.label}</span>
-                    <span className="text-sm font-black text-slate-900 tracking-tight">{item.progress}%</span>
+                    <span className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-widest">{item.label}</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{item.progress}%</span>
                   </div>
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                     <motion.div 

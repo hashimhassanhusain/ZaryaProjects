@@ -65,19 +65,19 @@ export const CompaniesView: React.FC = () => {
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} selected companies?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 const deletePromises = selectedIds.map(id => deleteDoc(doc(db, 'companies', id)));
                 await Promise.all(deletePromises);
@@ -314,13 +314,13 @@ export const CompaniesView: React.FC = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        toast((t) => (
+                        toast((toastRef) => (
                           <div className="flex flex-col gap-4">
                             <p className="text-sm font-bold text-slate-900">Delete company "{company.name}"?</p>
                             <div className="flex justify-end gap-2">
-                              <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">Cancel</button>
+                              <button onClick={() => toast.dismiss(toastRef.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">Cancel</button>
                               <button onClick={async () => {
-                                toast.dismiss(t.id);
+                                toast.dismiss(toastRef.id);
                                 await deleteDoc(doc(db, 'companies', company.id));
                                 toast.success('Company deleted');
                               }} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold">Delete</button>

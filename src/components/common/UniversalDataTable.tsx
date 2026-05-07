@@ -23,10 +23,16 @@ interface UniversalDataTableProps {
   config: EntityConfig;
   data: any[];
   onRowClick: (record: any) => void;
-  onNewClick: () => void;
+  onNewClick?: () => void;
   onDeleteRecord: (id: string) => void;
   title?: React.ReactNode;
   favoriteControl?: React.ReactNode;
+  showAddButton?: boolean;
+  primaryAction?: {
+    label: string;
+    icon: any;
+    onClick: () => void;
+  };
 }
 
 export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
@@ -36,7 +42,9 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   onNewClick,
   onDeleteRecord,
   title,
-  favoriteControl
+  favoriteControl,
+  showAddButton = true,
+  primaryAction
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -148,13 +156,15 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
             Export
           </button>
           
-          <button 
-            onClick={onNewClick}
-            className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-secondary shadow-lg shadow-brand/20 transition-all active:scale-95 active:translate-y-0.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Entry
-          </button>
+          {showAddButton && (onNewClick || primaryAction) && (
+            <button 
+              onClick={primaryAction?.onClick || onNewClick}
+              className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-secondary shadow-lg shadow-brand/20 transition-all active:scale-95 active:translate-y-0.5"
+            >
+              {primaryAction?.icon ? <primaryAction.icon className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {primaryAction?.label || 'Add Entry'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -192,15 +202,15 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       {/* Data Grid */}
       <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 bg-white/80 dark:bg-surface/80 backdrop-blur-md z-10">
-            <tr className="border-b border-slate-100 dark:border-white/5">
+          <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10">
+            <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="w-12 px-4 py-4">
                 <input type="checkbox" className="rounded-md border-slate-300 dark:border-white/20 text-brand focus:ring-brand" />
               </th>
               {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
                 <th 
                   key={`th-${col.key}-${idx}`}
-                  className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest group cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="px-4 py-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest group cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
                   onClick={() => toggleSort(col.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -220,24 +230,27 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.02 }}
                 onClick={() => onRowClick(record)}
-                className="group border-b border-slate-50 dark:border-white/5 hover:bg-brand/5 transition-all cursor-pointer"
+                className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer"
               >
                 <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                   <input type="checkbox" className="rounded-md border-slate-300 dark:border-white/20 text-brand focus:ring-brand" />
                 </td>
                 {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
-                  <td key={`td-${col.key}-${idx}`} className="px-4 py-4 text-slate-700 dark:text-slate-300">
+                  <td key={`td-${col.key}-${idx}`} className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold whitespace-nowrap leading-none">
                     {renderCellValue(record[col.key], col.type)}
                   </td>
                 ))}
                 <td className="px-4 py-4 text-right" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-slate-400 hover:text-brand hover:bg-brand/10 rounded-lg transition-all">
+                  <div className="flex items-center justify-end gap-2 opacity-50 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-brand hover:bg-brand/10 rounded-lg transition-all">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button 
-                      onClick={() => onDeleteRecord(record.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteRecord(record.id);
+                      }}
+                      className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -276,33 +289,33 @@ const renderCellValue = (value: any, type: string) => {
 
   switch (type) {
     case 'currency':
-      return <span className="font-mono font-medium text-slate-700">{new Intl.NumberFormat('en-IQ', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(value)}</span>;
+      return <span className="font-mono font-black text-slate-900 dark:text-slate-100">{new Intl.NumberFormat('en-IQ', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(value)}</span>;
     case 'date':
-      return <span className="text-slate-500">{formatDate(value)}</span>;
+      return <span className="text-slate-700 dark:text-slate-400 font-bold">{formatDate(value)}</span>;
     case 'status':
       const colors: any = {
-        Active: 'bg-emerald-100 text-emerald-700',
-        Draft: 'bg-slate-100 text-slate-600',
-        Closed: 'bg-rose-100 text-rose-700',
-        Pending: 'bg-amber-100 text-amber-700',
-        Approved: 'bg-blue-100 text-blue-700',
+        Active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
+        Draft: 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400',
+        Closed: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400',
+        Pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+        Approved: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
       };
-      return <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase", colors[value] || 'bg-slate-100 text-slate-600')}>{value}</span>;
+      return <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase", colors[value] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400')}>{value}</span>;
     case 'badge':
-      return <span className="px-2 py-0.5 bg-brand/10 text-brand rounded text-[10px] font-semibold">{value}</span>;
+      return <span className="px-2 py-0.5 bg-brand/10 text-brand rounded text-[10px] font-semibold dark:bg-brand/20">{value}</span>;
     case 'progress':
       return (
         <div className="flex items-center gap-2">
-          <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden min-w-[60px]">
+          <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden min-w-[60px]">
             <div 
               className="bg-emerald-500 h-full transition-all duration-1000" 
               style={{ width: `${Math.min(100, Math.max(0, Number(value)))}%` }}
             />
           </div>
-          <span className="text-[10px] font-bold text-slate-500 w-8">{Number(value).toFixed(0)}%</span>
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-8">{Number(value).toFixed(0)}%</span>
         </div>
       );
     default:
-      return <span className="text-slate-700 text-sm">{String(value)}</span>;
+      return <span className="text-slate-700 dark:text-slate-300 text-sm">{String(value)}</span>;
   }
 };

@@ -56,6 +56,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface FormalAcceptanceViewProps {
   page: Page;
@@ -271,6 +272,12 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
   return (
     <StandardProcessPage
       page={page}
+      actions={
+        <DriveUploadButton
+          drivePath="8_Deliverables_and_Project_Closure/8.1_Verified_and_Accepted_Deliverables"
+          label="Upload Acceptance"
+        />
+      }
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}

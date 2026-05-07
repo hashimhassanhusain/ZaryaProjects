@@ -26,7 +26,7 @@ export const BreadcrumbHeader: React.FC<BreadcrumbHeaderProps> = ({
   const parentPage = page.parentId ? pages.find(p => p.id === page.parentId) : null;
   const grandParentPage = parentPage?.parentId ? pages.find(p => p.id === parentPage.parentId) : null;
 
-  const displayTitle = t(page.id) === page.id ? page.title : t(page.id);
+  const displayTitle = (page.title && !t(page.id).includes(page.title)) ? page.title : (t(page.id) === page.id ? page.title : t(page.id));
   const parentTitle = parentPage ? (t(parentPage.id) === parentPage.id ? parentPage.title : t(parentPage.id)) : '';
   const grandParentTitle = grandParentPage ? (t(grandParentPage.id) === grandParentPage.id ? grandParentPage.title : t(grandParentPage.id)) : '';
   const focusArea = page.focusArea ? stripNumericPrefix(t(page.focusArea)) : null;
@@ -73,8 +73,8 @@ export const BreadcrumbHeader: React.FC<BreadcrumbHeaderProps> = ({
 
         <div className="flex items-center justify-between">
           <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase drop-shadow-sm flex items-center gap-2">
-              {parentPage && page.type === 'terminal' && (
+            <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tighter italic uppercase drop-shadow-sm flex items-center gap-2">
+              {parentPage && (
                 <span className="text-slate-400 font-medium inline-flex items-center gap-2">
                    {stripNumericPrefix(parentTitle)}
                    <ChevronRight className="w-4 h-4 opacity-50" />
@@ -88,7 +88,7 @@ export const BreadcrumbHeader: React.FC<BreadcrumbHeaderProps> = ({
               )}
             </h1>
             {page.focusArea && (
-              <div className="px-3 py-1 bg-slate-900 text-white text-[8px] font-black rounded-lg uppercase tracking-widest shadow-xl shadow-slate-200">
+              <div className="px-3 py-1 bg-neutral-900 text-white text-[8px] font-black rounded-lg uppercase tracking-widest shadow-xl shadow-neutral-200">
                 {stripNumericPrefix(t(page.focusArea))}
               </div>
             )}

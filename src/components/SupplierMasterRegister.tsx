@@ -222,15 +222,15 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
       <div className="flex flex-col md:flex-row justify-end items-start md:items-end gap-3">
         <button 
           onClick={() => setShowImportModal(true)}
-          className="bg-slate-100 text-slate-700 px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-slate-200 transition-all"
+          className="bg-neutral-100 text-neutral-700 px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-neutral-200 transition-all"
           style={{ borderRadius: '0px' }}
         >
-          {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 text-slate-400" />}
+          {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 text-neutral-400" />}
           {isImporting ? 'Importing...' : 'Import Data'}
         </button>
         <button 
           onClick={() => setIsAddingSupplier(true)}
-          className="bg-slate-900 text-white px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
+          className="bg-neutral-900 text-white px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-900/10"
           style={{ borderRadius: '0px' }}
         >
           <Plus className="w-4 h-4" />
@@ -239,41 +239,41 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white border border-slate-200 flex flex-wrap items-center gap-4 p-4" style={{ borderRadius: '0px' }}>
+      <div className="bg-white border border-neutral-200 flex flex-wrap items-center gap-4 p-4" style={{ borderRadius: '0px' }}>
         <div className="relative flex-1 min-w-[300px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input 
             type="text" 
             placeholder={t('search_suppliers')} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none text-sm font-medium focus:ring-0 transition-all text-slate-900"
+            className="w-full pl-12 pr-4 py-3 bg-neutral-50 border-none text-sm font-medium focus:ring-0 transition-all text-neutral-900"
             style={{ borderRadius: '0px' }}
           />
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-3 text-slate-500 hover:bg-slate-100 transition-all" style={{ borderRadius: '0px' }}><Filter className="w-4 h-4" /></button>
-          <button className="p-3 text-slate-500 hover:bg-slate-100 transition-all" style={{ borderRadius: '0px' }}><ExternalLink className="w-4 h-4" /></button>
+          <button className="p-3 text-neutral-500 hover:bg-neutral-100 transition-all" style={{ borderRadius: '0px' }}><Filter className="w-4 h-4" /></button>
+          <button className="p-3 text-neutral-500 hover:bg-neutral-100 transition-all" style={{ borderRadius: '0px' }}><ExternalLink className="w-4 h-4" /></button>
         </div>
       </div>
 
       {/* Supplier Table */}
-      <div className="bg-white border border-slate-200 overflow-hidden shadow-sm" style={{ borderRadius: '0px' }}>
+      <div className="bg-white border border-neutral-200 overflow-hidden shadow-sm" style={{ borderRadius: '0px' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier_code')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('supplier_name')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{t('discipline')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('po_total')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('paid')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">{t('balance')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">{t('status')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">{t('actions')}</th>
+              <tr className="bg-neutral-50 border-b border-neutral-200">
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('supplier_code')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('supplier_name')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('discipline')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('po_total')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('paid')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('balance')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-center">{t('status')}</th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-center">{t('actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-neutral-100">
               {filteredSuppliers.map(supplier => {
                 const stats = supplierStats.find(s => s.supplierId === supplier.id);
                 const isEnded = supplier.status === 'Contract Ended';
@@ -282,27 +282,27 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                   <tr 
                     key={supplier.id} 
                     className={cn(
-                      "group hover:bg-slate-50/80 transition-colors cursor-pointer relative",
-                      isEnded && "bg-slate-50/50 grayscale-[0.5]"
+                      "group hover:bg-neutral-50/80 transition-colors cursor-pointer relative",
+                      isEnded && "bg-neutral-50/50 grayscale-[0.5]"
                     )}
                     onClick={() => setSelectedSupplier(supplier)}
                   >
                     <td className="px-6 py-5">
-                      <span className="text-xs font-mono font-bold text-slate-500">{supplier.vendorCode}</span>
+                      <span className="text-xs font-mono font-bold text-neutral-500">{supplier.vendorCode}</span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{supplier.name}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">{supplier.contactDetails.email}</span>
+                        <span className="text-sm font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors">{supplier.name}</span>
+                        <span className="text-[10px] text-neutral-400 font-medium">{supplier.contactDetails.email}</span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold bg-neutral-100 text-neutral-600 px-2 py-1 uppercase tracking-wider">
                         {supplier.discipline}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <span className="text-xs font-bold text-slate-900">{formatCurrency(stats?.totalPOAmount || 0)}</span>
+                      <span className="text-xs font-bold text-neutral-900">{formatCurrency(stats?.totalPOAmount || 0)}</span>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <span className="text-xs font-bold text-emerald-600">{formatCurrency(stats?.totalPayments || 0)}</span>
@@ -315,7 +315,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                         "text-[9px] font-semibold px-2 py-1 uppercase tracking-tighter",
                         supplier.status === 'Active' ? "bg-emerald-100 text-emerald-700" :
                         supplier.status === 'Suspended' ? "bg-amber-100 text-amber-700" :
-                        "bg-slate-200 text-slate-600"
+                        "bg-neutral-200 text-neutral-600"
                       )}>
                         {supplier.status === 'Active' ? t('active') :
                          supplier.status === 'Suspended' ? t('suspended') : 
@@ -325,13 +325,13 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
                         <button 
-                          className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                          className="p-2 text-neutral-400 hover:text-blue-600 transition-colors"
                           onClick={(e) => { e.stopPropagation(); /* Link to PDF */ }}
                         >
                           <FileText className="w-4 h-4" />
                         </button>
                         <button 
-                          className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                          className="p-2 text-neutral-400 hover:text-blue-600 transition-colors"
                           onClick={(e) => { e.stopPropagation(); setEditingSupplier(supplier); setIsAddingSupplier(true); }}
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -355,51 +355,51 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedSupplier(null)}
-              className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-40"
+              className="fixed inset-0 bg-neutral-950/20 backdrop-blur-[2px] z-40"
             />
             <motion.div 
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200"
+              className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-neutral-200"
               style={{ borderRadius: '0px' }}
             >
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 className="text-lg font-semibold text-slate-900 uppercase tracking-tighter">{t('supplier_profile')}</h3>
-                <button onClick={() => setSelectedSupplier(null)} className="p-2 hover:bg-slate-200 transition-all">
-                  <X className="w-5 h-5 text-slate-500" />
+              <div className="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50">
+                <h3 className="text-lg font-semibold text-neutral-900 uppercase tracking-tighter">{t('supplier_profile')}</h3>
+                <button onClick={() => setSelectedSupplier(null)} className="p-2 hover:bg-neutral-200 transition-all">
+                  <X className="w-5 h-5 text-neutral-500" />
                 </button>
               </div>
               
               <div className="flex-1 overflow-y-auto p-8 space-y-8">
                 <div className="space-y-2">
                   <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-[0.2em]">{t('supplier_details')}</div>
-                  <h4 className="text-2xl font-semibold text-slate-900 uppercase leading-tight">{selectedSupplier.name}</h4>
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-400">
+                  <h4 className="text-2xl font-semibold text-neutral-900 uppercase leading-tight">{selectedSupplier.name}</h4>
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-neutral-400">
                     <Briefcase className="w-3 h-3" /> {selectedSupplier.vendorCode}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 bg-slate-50 border border-slate-100 space-y-3">
+                  <div className="p-4 bg-neutral-50 border border-neutral-100 space-y-3">
                     <div className="flex items-start gap-3">
-                      <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
-                      <span className="text-xs font-medium text-slate-600">{selectedSupplier.contactDetails.address}</span>
+                      <MapPin className="w-4 h-4 text-neutral-400 mt-0.5" />
+                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.address}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs font-medium text-slate-600">{selectedSupplier.contactDetails.phone}</span>
+                      <Phone className="w-4 h-4 text-neutral-400" />
+                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.phone}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs font-medium text-slate-600">{selectedSupplier.contactDetails.email}</span>
+                      <Mail className="w-4 h-4 text-neutral-400" />
+                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.email}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Financial Summary</div>
+                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Financial Summary</div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-blue-50 border border-blue-100">
                       <div className="text-[9px] font-semibold text-blue-400 uppercase mb-1">{t('po_total')}</div>
@@ -417,22 +417,22 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                 </div>
 
                 <div className="space-y-4">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Linked Purchase Orders</div>
+                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Linked Purchase Orders</div>
                   <div className="space-y-3">
                     {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.pos.map(po => (
-                      <div key={po.id} className="p-4 border border-slate-100 hover:border-blue-200 transition-all group">
+                      <div key={po.id} className="p-4 border border-neutral-100 hover:border-blue-200 transition-all group">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="text-xs font-semibold text-slate-900 group-hover:text-blue-600 transition-colors uppercase">{po.id}</div>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-500 uppercase">{po.status}</span>
+                          <div className="text-xs font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors uppercase">{po.id}</div>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-neutral-100 text-neutral-500 uppercase">{po.status}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                          <div className="text-[10px] font-bold text-slate-400">{po.date}</div>
-                          <div className="text-xs font-semibold text-slate-900">{formatCurrency(po.amount)}</div>
+                          <div className="text-[10px] font-bold text-neutral-400">{po.date}</div>
+                          <div className="text-xs font-semibold text-neutral-900">{formatCurrency(po.amount)}</div>
                         </div>
                       </div>
                     ))}
                     {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.pos.length === 0 && (
-                      <div className="text-center py-8 border-2 border-dashed border-slate-100 text-slate-400 text-xs font-bold">
+                      <div className="text-center py-8 border-2 border-dashed border-neutral-100 text-neutral-400 text-xs font-bold">
                         {t('no_pos_found')}
                       </div>
                     )}
@@ -440,9 +440,9 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-100 bg-slate-50">
+              <div className="p-6 border-t border-neutral-100 bg-neutral-50">
                 <button 
-                  className="w-full py-4 bg-slate-900 text-white font-semibold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all"
+                  className="w-full py-4 bg-neutral-900 text-white font-semibold text-xs uppercase tracking-widest hover:bg-neutral-800 transition-all"
                   style={{ borderRadius: '0px' }}
                 >
                   {t('download_statement')}
@@ -466,18 +466,18 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
           />
         )}
         {isAddingSupplier && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white shadow-2xl w-full max-w-lg overflow-hidden flex flex-col rounded-3xl"
             >
-              <div className="px-6 py-6 border-b border-slate-100 bg-white">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+              <div className="px-6 py-6 border-b border-neutral-100 bg-white">
+                <h3 className="text-xl font-bold text-neutral-900 tracking-tight">
                   {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
                 </h3>
-                <p className="text-slate-400 text-xs mt-1">{t('company_details_desc')}</p>
+                <p className="text-neutral-400 text-xs mt-1">{t('company_details_desc')}</p>
               </div>
 
               <form 
@@ -500,21 +500,21 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
                     <input 
                       name="vendorCode"
                       defaultValue={editingSupplier?.vendorCode}
                       required
                       placeholder="e.g. S-001"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('operational_status')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('operational_status')}</label>
                     <select 
                       name="status"
                       defaultValue={editingSupplier?.status || 'Active'}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     >
                       <option value="Active">{t('active')}</option>
                       <option value="Suspended">{t('suspended')}</option>
@@ -522,21 +522,21 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('legal_supplier_name')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('legal_supplier_name')}</label>
                     <input 
                       name="name"
                       defaultValue={editingSupplier?.name}
                       required
                       placeholder={t('company_name_placeholder')}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking_widest mb-1">{t('discipline_masterformat')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking_widest mb-1">{t('discipline_masterformat')}</label>
                     <select 
                       name="discipline"
                       defaultValue={editingSupplier?.discipline || '01'}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     >
                       {masterFormatDivisions.map(div => (
                         <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
@@ -544,31 +544,31 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('address')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('address')}</label>
                     <input 
                       name="address"
                       defaultValue={editingSupplier?.contactDetails.address}
                       placeholder={t('address_placeholder')}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('phone')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('phone')}</label>
                     <input 
                       name="phone"
                       defaultValue={editingSupplier?.contactDetails.phone}
                       placeholder="+964..."
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('email')}</label>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('email')}</label>
                     <input 
                       name="email"
                       type="email"
                       defaultValue={editingSupplier?.contactDetails.email}
                       placeholder="contact@company.com"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-slate-900"
+                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
                     />
                   </div>
                 </div>
@@ -577,7 +577,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                   <button 
                     type="button"
                     onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
-                    className="px-4 py-2 text-slate-600 font-bold text-sm hover:bg-slate-100 rounded-xl transition-all"
+                    className="px-4 py-2 text-neutral-600 font-bold text-sm hover:bg-neutral-100 rounded-xl transition-all"
                   >
                     {t('cancel')}
                   </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Page } from '../types';
 import { StandardProcessPage } from './StandardProcessPage';
+import { DriveUploadButton } from './common/DriveUploadButton';
 import { ShieldCheck, AlertTriangle, PieChart, Info } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { formatCurrency } from '../lib/utils';
@@ -20,6 +21,12 @@ export const ReserveAnalysisView: React.FC<ReserveAnalysisViewProps> = ({ page }
   return (
     <StandardProcessPage
       page={page}
+      actions={
+        <DriveUploadButton
+          drivePath="6_Financials_and_Procurements/6.18_Cost_Estimates_and_Basis"
+          label="Upload Analysis"
+        />
+      }
       inputs={[
         { id: '2.4.2', title: 'BOQ Estimates', status: 'Draft' },
         { id: '2.7.5', title: 'Risk Register', status: 'Active' }

@@ -14,6 +14,36 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
+    'boq_versions': 'BOQ Versions',
+    'version_number': 'Version No.',
+    'boq_revisions': 'BOQ Revisions',
+    'issued_at': 'Issued At',
+    'issued_by': 'Issued By',
+    'create_new_version': 'Create New Version',
+    'edit_version': 'Edit Version',
+    'select_version': 'Select Version',
+    'no_versions_found': 'No BOQ versions found',
+    'import_excel': 'Import Excel',
+    'import_pdf': 'Import PDF',
+    'import_boq': 'Import BOQ',
+    'confirm_import': 'Confirm Import',
+    'back_to_versions': 'Back to Versions',
+    'm3': 'Cubic Meter (m3)',
+    'm2': 'Square Meter (m2)',
+    'm': 'Linear Meter (m)',
+    'ton': 'Ton',
+    'kg': 'Kilogram (kg)',
+    'LS': 'Lump Sum (LS)',
+    'sum': 'Sum',
+    'set': 'Set',
+    'pcs': 'Pieces (pcs)',
+    'trip': 'Trip',
+    'hour': 'Hour',
+    'day': 'Day',
+    'month': 'Month',
+    'job': 'Job',
+    'global': 'Global',
+    'lot': 'Lot',
     'list': 'List',
     'matrix': 'Matrix',
     'manage_closely': 'Manage Closely',
@@ -86,6 +116,8 @@ const translations: Record<Language, Record<string, string>> = {
     'no_notes_provided': 'No summary notes provided for this meeting.',
     'no_favorites': 'No favorites yet',
     'star_pages_to_add': 'Star pages to add them here',
+    'invalid_session_or_no_version': 'Invalid import session or no version selected',
+    'select_version_first': 'Please select or create a BOQ version before importing.',
     'no_results_found': 'No results found',
     'search_pmis': 'Search PMIS...',
     'welcome_back_zarya': 'Welcome to Zarya PMIS',
@@ -262,9 +294,6 @@ const translations: Record<Language, Record<string, string>> = {
     'print_name': 'Print Name',
     'generate_final_charter': 'Generate Final Charter',
     'auto_populate_desc': 'Auto-populates data to PMBOK Standard PDF',
-    'day': 'Day',
-    'week': 'Week',
-    'month': 'Month',
     'quarter': 'Quarter',
     'save': 'Save',
     'cancel': 'Cancel',
@@ -483,6 +512,24 @@ const translations: Record<Language, Record<string, string>> = {
     'risk': 'Risk',
     'drive': 'Drive Explorer',
     'admin': 'Admin Settings',
+    '1.0': 'Initiating Focus Area',
+    '2.0': 'Planning Focus Area',
+    '3.0': 'Executing Focus Area',
+    '4.0': 'Monitoring & Controlling Focus Area',
+    '5.0': 'Closing Focus Area',
+    '1.1.1': 'Project Charter',
+    '1.1.1_summary': 'The official document that formally authorizes the project and gives the project manager the authority to use organizational resources.',
+    '1.1.2': 'Business Case',
+    '1.1.2_summary': 'A detailed report that outlines the economic, financial, and technical feasibility of the project, including ROI analysis.',
+    '1.1.3': 'Assumption Log',
+    '1.1.3_summary': 'A document that captures all assumptions and constraints identified throughout the project lifecycle.',
+    '2.1.2': 'Project Management Plan',
+    '2.1.2_summary': 'The primary document that defines how the project is executed, monitored, and controlled.',
+    '2.1.1': 'Governance Policies',
+    '2.1.1_summary': 'Official rules and procedures that govern project execution and communication protocols.',
+    '2.1.13': 'Sourcing Strategy',
+    '3.1.3': 'Execution QA',
+    '4.1.1': 'Performance Monitoring',
     'Initiating': 'Initiating Focus Area',
     'initiating': 'Initiating',
     'Planning': 'Planning Focus Area',
@@ -863,6 +910,36 @@ const translations: Record<Language, Record<string, string>> = {
     'opas': 'OPAs',
   },
   ar: {
+    'boq_versions': 'إصدارات جدول الكميات',
+    'version_number': 'رقم الإصدار',
+    'boq_revisions': 'مراجعات جدول الكميات',
+    'issued_at': 'تاريخ الإصدار',
+    'issued_by': 'صدر بواسطة',
+    'create_new_version': 'إنشاء إصدار جديد',
+    'edit_version': 'تعديل الإصدار',
+    'select_version': 'اختر الإصدار',
+    'no_versions_found': 'لا توجد إصدارات لجدول الكميات',
+    'import_excel': 'استيراد Excel',
+    'import_pdf': 'استيراد PDF',
+    'import_boq': 'استيراد جدول الكميات',
+    'confirm_import': 'تأكيد الاستيراد',
+    'back_to_versions': 'العودة للإصدارات',
+    'm3': 'متر مكعب (م3)',
+    'm2': 'متر مربع (م2)',
+    'm': 'متر طولي (م)',
+    'ton': 'طن',
+    'kg': 'كيلوغرام (كغم)',
+    'LS': 'مبلغ مقطوع (LS)',
+    'sum': 'مجموع',
+    'set': 'طقم',
+    'pcs': 'قطعة',
+    'trip': 'نقلة',
+    'hour': 'ساعة',
+    'day': 'يوم',
+    'month': 'شهر',
+    'job': 'عملية',
+    'global': 'إجمالي',
+    'lot': 'مجموعة',
     'list': 'قائمة',
     'matrix': 'مصفوفة',
     'manage_closely': 'المتابعة اللصيقة',
@@ -944,6 +1021,8 @@ const translations: Record<Language, Record<string, string>> = {
     'no_notes_provided': 'لم يتم تقديم ملاحظات ملخصة لهذا الاجتماع.',
     'no_favorites': 'لا توجد صفحات مفضلة بعد',
     'star_pages_to_add': 'اضف نجمة للصفحات لتظهر هنا',
+    'invalid_session_or_no_version': 'جلسة استيراد غير صالحة أو لم يتم اختيار نسخة',
+    'select_version_first': 'يرجى اختيار أو إنشاء نسخة جدول كميات قبل الاستيراد.',
     'no_results_found': 'لم يتم العثور على نتائج',
     'search_pmis': 'البحث في النظام...',
     'welcome_back_zarya': 'مرحباً بكم في زاريا PMIS',
@@ -1121,9 +1200,6 @@ const translations: Record<Language, Record<string, string>> = {
     'print_name': 'الاسم المطبوع',
     'generate_final_charter': 'إنشاء الميثاق النهائي',
     'auto_populate_desc': 'تعبئة البيانات تلقائياً في ملف PDF بمعايير PMBOK',
-    'day': 'يوم',
-    'week': 'أسبوع',
-    'month': 'شهر',
     'quarter': 'ربع سنة',
     'save': 'حفظ',
     'cancel': 'إلغاء',
@@ -1771,6 +1847,7 @@ const translations: Record<Language, Record<string, string>> = {
     'import_data_summary': 'استيراد بنود جدول الكميات من إكسل أو PDF. يمكن للذكاء الاصطناعي استخراج التفاصيل تلقائياً.',
     'add_activity_summary': 'إنشاء نشاط مشروع جديد. تحديد المدة والميزانية والروابط بهيكل تقسيم العمل.',
     'column_settings_summary': 'اختر حقول البيانات التي تريد عرضها في جدول المهام (مثل التواريخ، SPI، التكلفة).',
+    'overview_summary': 'العودة إلى لوحة تحكم النطاق للحصول على نظرة عامة عالية المستوى على الأداء.',
   },
 };
 
@@ -1786,20 +1863,21 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const t = (key: string) => {
-    const text = translations[language][key] || translations['en'][key] || key;
+    const text = translations['en'][key] || key;
     return stripNumericPrefix(text);
   };
 
   const th = (key: string) => {
-    return translations[language][key] || null;
+    const text = translations['en'][key] || key;
+    return stripNumericPrefix(text);
   };
 
-  const isRtl = language === 'ar';
-  const isHelpRtl = language === 'ar';
+  const isRtl = false;
+  const isHelpRtl = false;
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>
-      <div className={cn("font-sans", isRtl ? "font-arabic" : "")} dir={isRtl ? 'rtl' : 'ltr'}>
+    <LanguageContext.Provider value={{ language: 'en', setLanguage: () => {}, t, th, isRtl, isHelpRtl }}>
+      <div className="font-sans" dir="ltr">
         {children}
       </div>
     </LanguageContext.Provider>

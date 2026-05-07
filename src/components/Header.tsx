@@ -102,19 +102,19 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[56px] bg-surface dark:bg-ribbon border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
+    <header className="h-[56px] bg-surface border-b border-neutral-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
              className={cn(
-               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800",
+               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-neutral-200 hover:bg-neutral-50",
                isProjectMenuOpen && "border-brand-secondary/20 bg-brand/5 shadow-sm"
              )}
            >
               {/* New Logo Replacement for Blue Icon */}
-              <div className="w-8 h-8 rounded-lg bg-[#505050] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
                  <span className="text-[#FF5C00] font-black text-[7px] tracking-tighter">PMIS</span>
               </div>
               <div className="flex flex-col text-left">
@@ -123,17 +123,17 @@ export const Header: React.FC = () => {
                     <span className="text-[10px] sm:text-[11px] font-black text-text-main uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
-                    <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
+                    <ChevronDown className={cn("w-3 h-3 text-neutral-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
                  </div>
               </div>
               {/* Mobile View: Show only code if available */}
               {!selectedProject && !selectedCompany && (
-                <ChevronDown className="w-3 h-3 text-slate-400 sm:hidden" />
+                <ChevronDown className="w-3 h-3 text-neutral-400 sm:hidden" />
               )}
               {selectedProject && (
                 <div className="sm:hidden flex items-center gap-1 ml-1">
-                   <span className="text-[10px] font-black text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
-                   <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
+                   <span className="text-[10px] font-black text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
+                   <ChevronDown className="w-2.5 h-2.5 text-neutral-400" />
                 </div>
               )}
            </button>
@@ -142,12 +142,12 @@ export const Header: React.FC = () => {
              {isProjectMenuOpen && (
                <motion.div
                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                 className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
+                 className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-surface border border-neutral-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                >
                   <div className="max-h-[70vh] overflow-y-auto no-scrollbar space-y-4">
                      {/* Company List */}
                      <div className="space-y-1">
-                        <div className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('companies')}</div>
+                        <div className="px-3 py-2 text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">{t('companies')}</div>
                         {companies.map((company, idx) => (
                           <div key={`${company.id}-${idx}`} className="space-y-1">
                              <button
@@ -156,7 +156,7 @@ export const Header: React.FC = () => {
                                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left",
                                  (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
                                    ? "bg-brand/10 text-brand font-bold"
-                                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                   : "text-neutral-600 hover:bg-neutral-50"
                                )}
                              >
                                 <Building className="w-3.5 h-3.5 opacity-50" />
@@ -177,8 +177,8 @@ export const Header: React.FC = () => {
                                       className={cn(
                                         "w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-left",
                                         selectedProject?.id === proj.id
-                                          ? "bg-slate-900 text-white font-bold shadow-lg"
-                                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                          ? "bg-neutral-900 text-white font-bold shadow-lg"
+                                          : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                                       )}
                                     >
                                        <FolderOpen className="w-3 h-3 opacity-50" />
@@ -209,12 +209,12 @@ export const Header: React.FC = () => {
                  className={cn(
                    "flex items-center gap-1.5 px-2 lg:px-4 h-9 rounded-xl transition-all relative group shrink-0 min-w-[40px] sm:min-w-0",
                    isActive 
-                    ? "bg-slate-900 dark:bg-white/10 text-white shadow-lg" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-text-main hover:bg-slate-100 dark:hover:bg-white/5"
+                    ? "bg-neutral-900 dark:bg-brand text-white shadow-lg shadow-brand/20" 
+                    : "text-neutral-900/80 dark:text-neutral-100/90 hover:text-brand hover:bg-neutral-100 dark:hover:bg-white/10"
                  )}
                >
-                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-400 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
-                 <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
+                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-neutral-500 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
+                 <span className="text-[10px] lg:text-[12px] font-black uppercase tracking-widest leading-none whitespace-nowrap transition-colors">
                     {stripNumericPrefix(t(domain.id))}
                  </span>
                  {isActive && (
@@ -227,27 +227,14 @@ export const Header: React.FC = () => {
 
         {/* Global Actions */}
         <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
-           {/* Theme Toggle - Hidden on mobile */}
-           <button 
-             onClick={toggleTheme}
-             className="hidden sm:flex p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-text-main shadow-sm hover:scale-110 transition-all cursor-pointer hover:border-brand/30"
-             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-           >
-             {theme === 'light' ? (
-               <Moon className="w-4 h-4" />
-             ) : (
-               <Sun className="w-4 h-4 text-brand" />
-             )}
-           </button>
-
            {/* Favorites & Search - Hidden on mobile */}
-           <div className="hidden sm:flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-              <div className="relative" ref={favoritesRef}>
+           <div className="hidden sm:flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700">
+               <div className="relative" ref={favoritesRef}>
                  <button 
                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
                    className={cn(
                      "p-2 rounded-lg transition-all",
-                     isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-slate-400 hover:text-slate-600"
+                     isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-neutral-400 hover:text-neutral-600"
                    )}
                  >
                     <Star className={cn("w-3.5 h-3.5", favorites.length > 0 && "fill-amber-400 text-amber-400")} />
@@ -256,10 +243,10 @@ export const Header: React.FC = () => {
                    {isFavoritesOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
+                       className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface border border-neutral-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-2"
                      >
-                        <div className="px-3 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl mb-1.5 flex items-center justify-between">
-                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('favorites')}</span>
+                        <div className="px-3 py-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl mb-1.5 flex items-center justify-between">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-neutral-400">{t('favorites')}</span>
                            <div className="w-4 h-4 rounded-full bg-brand text-white flex items-center justify-center text-[8px] font-bold">{favorites.length}</div>
                         </div>
                         <div className="max-h-80 overflow-y-auto no-scrollbar space-y-0.5">
@@ -270,14 +257,14 @@ export const Header: React.FC = () => {
                                 <button 
                                   key={`${favId}-${idx}`}
                                   onClick={() => { navigate(`/page/${favId}`); setIsFavoritesOpen(false); }}
-                                  className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-all group"
+                                  className="w-full flex items-center gap-3 p-2 hover:bg-neutral-50 rounded-lg transition-all group"
                                 >
-                                   <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500">
+                                   <div className="w-7 h-7 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 group-hover:text-blue-500">
                                       <FileIcon className="w-3.5 h-3.5" />
                                    </div>
                                    <div className="flex flex-col text-left">
-                                      <span className="text-[10px] font-bold text-slate-700 tracking-tight truncate max-w-[200px]">{stripNumericPrefix(p.title)}</span>
-                                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">{p.domain}</span>
+                                      <span className="text-[10px] font-bold text-neutral-700 tracking-tight truncate max-w-[200px]">{stripNumericPrefix(p.title)}</span>
+                                      <span className="text-[7px] font-bold text-neutral-400 uppercase tracking-tighter">{p.domain}</span>
                                    </div>
                                 </button>
                               );
@@ -289,24 +276,24 @@ export const Header: React.FC = () => {
               </div>
 
               <div className="relative" ref={searchRef}>
-                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg transition-all">
+                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-neutral-400 hover:text-neutral-600 rounded-lg transition-all">
                     <Search className="w-3.5 h-3.5" />
                  </button>
                  <AnimatePresence>
                    {isSearchOpen && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                       className="absolute top-full right-0 mt-2 w-96 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-3"
+                       className="absolute top-full right-0 mt-2 w-96 bg-white dark:bg-surface border border-neutral-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-[100] p-3"
                      >
                         <div className="relative mb-3">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                          <input 
-                            autoFocus 
-                            placeholder={t('search_pmis')} 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl py-2 pl-10 pr-3 text-[11px] font-bold focus:ring-1 focus:ring-brand outline-none transition-colors" 
-                          />
+                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                           <input 
+                             autoFocus 
+                             placeholder={t('search_pmis')} 
+                             value={searchQuery}
+                             onChange={(e) => setSearchQuery(e.target.value)}
+                             className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-xl py-2 pl-10 pr-3 text-[11px] font-bold focus:ring-1 focus:ring-brand outline-none transition-colors" 
+                           />
                         </div>
                         
                         <div className="max-h-80 overflow-y-auto no-scrollbar space-y-0.5">
@@ -315,23 +302,23 @@ export const Header: React.FC = () => {
                                <button 
                                  key={`${p.id}-${idx}`}
                                  onClick={() => handlePageNavigate(p.id)}
-                                 className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-all group"
+                                 className="w-full flex items-center gap-3 p-2 hover:bg-neutral-50 rounded-lg transition-all group"
                                >
-                                  <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-brand">
+                                  <div className="w-7 h-7 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-brand">
                                      <FileIcon className="w-3.5 h-3.5" />
                                   </div>
                                   <div className="flex flex-col text-left">
-                                     <span className="text-[10px] font-bold text-slate-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
-                                     <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">{p.domain} ({p.id})</span>
+                                     <span className="text-[10px] font-bold text-neutral-700 tracking-tight">{stripNumericPrefix(p.title)}</span>
+                                     <span className="text-[7px] font-bold text-neutral-400 uppercase tracking-tighter">{p.domain} ({p.id})</span>
                                   </div>
                                </button>
                              ))
                            ) : searchQuery.length > 0 ? (
-                             <div className="p-6 text-center text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
+                             <div className="p-6 text-center text-neutral-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
                                {t('no_results_found')}
                              </div>
                            ) : (
-                             <div className="p-6 text-center text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
+                             <div className="p-6 text-center text-neutral-400 text-[9px] font-bold uppercase tracking-widest leading-loose">
                                {t('type_to_search')}
                              </div>
                            )}
@@ -346,9 +333,9 @@ export const Header: React.FC = () => {
            <div className="relative" ref={userMenuRef}>
               <button 
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 pl-3 border-l border-slate-200 group active:scale-95 transition-all"
+                className="flex items-center gap-2 pl-3 border-l border-neutral-200 group active:scale-95 transition-all"
               >
-                 <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 p-0.5 shadow-sm group-hover:border-blue-400 transition-all">
+                 <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200 p-0.5 shadow-sm group-hover:border-brand transition-all">
                     <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[0.7rem] object-cover" />
                  </div>
               </button>
@@ -359,20 +346,20 @@ export const Header: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 p-1.5"
+                    className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-surface border border-neutral-200 dark:border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 p-1.5"
                   >
-                     <div className="p-4 bg-slate-50 rounded-xl mb-1.5 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1 mx-auto mb-2.5 shadow-sm">
+                     <div className="p-4 bg-neutral-50 rounded-xl mb-1.5 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 p-1 mx-auto mb-2.5 shadow-sm">
                            <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1rem] object-cover" />
                         </div>
-                        <div className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
+                        <div className="text-[13px] font-black text-neutral-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
                         <div className="text-[8px] font-black text-brand uppercase tracking-widest">{appUser?.role}</div>
                      </div>
                      <div className="space-y-0.5">
-                        <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                        <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-2.5 hover:bg-neutral-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-all">
                            <UserIcon className="w-3.5 h-3.5" /> {t('my_profile')}
                         </button>
-                        <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">
+                        <button onClick={() => navigate('/admin/users')} className="w-full flex items-center gap-3 p-2.5 hover:bg-neutral-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-all">
                            <Shield className="w-3.5 h-3.5" /> {t('admin_portal')}
                         </button>
                         <button 
@@ -383,7 +370,7 @@ export const Header: React.FC = () => {
                         >
                            <Database className="w-3.5 h-3.5" /> {t('drive_status')}
                         </button>
-                        <div className="h-px bg-slate-100 my-1 mx-2" />
+                        <div className="h-px bg-neutral-100 my-1 mx-2" />
                         <button onClick={() => signOut(auth)} className="w-full flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-lg text-[10px] font-black uppercase tracking-widest text-rose-500 transition-all italic">
                            <LogOut className="w-3.5 h-3.5" /> {t('sign_out')}
                         </button>

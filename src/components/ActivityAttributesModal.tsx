@@ -412,30 +412,30 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="flex-shrink-0 px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="flex-shrink-0 px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Activity Attributes & Scheduling</h3>
-            <p className="text-[10px] text-slate-500">Configure dependencies, planned vs actual data, and categorization.</p>
+            <h3 className="text-base font-bold text-slate-900">Activity Attributes</h3>
+            <p className="text-[9px] text-slate-500">Configure dependencies and tracking.</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
             <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
 
-        <div className="flex-1 p-5 overflow-y-auto space-y-4 custom-scrollbar">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
           {/* Basic Info */}
-          <section className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+          <section className="space-y-2.5">
+            <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
               <Database className="w-3 h-3" /> Basic Information
             </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activity Name / Description</label>
+                <div className="flex justify-between items-center mb-0.5">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">Activity Name</label>
                   <span className={cn(
-                    "text-[10px] font-bold tracking-widest uppercase",
+                    "text-[8px] font-bold tracking-widest uppercase",
                     (formData.description?.length || 0) >= 100 ? "text-rose-500" : "text-slate-400"
                   )}>
                     {formData.description?.length || 0}/100
@@ -447,20 +447,20 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                   value={formData.description || ''}
                   onChange={handleInputChange}
                   maxLength={100}
-                  className="w-full max-w-2xl px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all shadow-sm"
-                  placeholder="e.g., Concrete Pouring for Ground Floor"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all shadow-sm"
+                  placeholder="e.g., Concrete Pouring"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Database className="w-3 h-3" /> Cost Account (Division)
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                  <Database className="w-3 h-3" /> Division
                 </label>
                 <select 
                   name="division"
                   value={formData.division || '01'}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   {masterFormatDivisions.map(div => (
                     <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
@@ -469,8 +469,8 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Box className="w-3 h-3" /> Level 3: Work Package
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                  <Box className="w-3 h-3" /> Work Package
                 </label>
                 <select 
                   name="workPackage"
@@ -482,9 +482,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
-                  <option value="">Select Work Package...</option>
+                  <option value="">Select WP...</option>
                   {workPackages.filter(wp => 
                     (!formData.wbsId || wp.parentId === formData.wbsId) && 
                     (!formData.division || wp.divisionCode === formData.division)
@@ -493,29 +493,29 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       {getFullWBSCode(wp.id, wbsLevels) || wp.code ? `${getFullWBSCode(wp.id, wbsLevels) || wp.code} - ` : ''}{wp.title}
                     </option>
                   ))}
-                  <option value="new" className="text-blue-600 font-bold">+ Add New Work Package...</option>
+                  <option value="new" className="text-blue-600 font-bold">+ New...</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Link2 className="w-3 h-3" /> Linked BOQ Item
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                  <Link2 className="w-3 h-3" /> Linked BOQ
                 </label>
                 <select 
                   name="boqItemId"
                   value={formData.boqItemId || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Not Linked</option>
                   {boqItems.map(item => (
-                    <option key={item.id} value={item.id}>{item.description} ({item.workPackage})</option>
+                    <option key={item.id} value={item.id}>{item.description}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Assignee (Resource)</label>
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1">Assignee</label>
                 <select 
                   name="assigneeId"
                   value={formData.assigneeId || ''}
@@ -526,30 +526,24 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     }
                     handleInputChange(e);
                   }}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="">Unassigned</option>
                   <optgroup label="System Users">
                     {users.map(u => (
-                      <option key={u.uid} value={u.uid}>{u.name} ({u.role})</option>
+                      <option key={u.uid} value={u.uid}>{u.name}</option>
                     ))}
                   </optgroup>
-                  <optgroup label="Stakeholders">
-                    {stakeholders.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
-                    ))}
-                  </optgroup>
-                  <option value="new" className="text-blue-600 font-medium">+ Add New User/Stakeholder...</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1">Status</label>
                 <select 
                   name="status"
                   value={formData.status || 'Planned'}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="Planned">Planned</option>
                   <option value="In Progress">In Progress</option>
@@ -558,9 +552,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Supplier</label>
+                <label className="block text-[9px] font-medium text-slate-400 uppercase tracking-widest mb-1">Supplier</label>
                 <div className="relative">
-                  <ShoppingCart className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <ShoppingCart className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                   <select 
                     name="supplierId"
                     value={formData.supplierId || ''}
@@ -571,18 +565,18 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       }
                       handleInputChange(e);
                     }}
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                   >
-                    <option value="">Select Supplier...</option>
+                    <option value="">Select...</option>
                     {vendors.map(v => (
-                      <option key={v.id} value={v.id}>{v.name} ({v.vendorCode})</option>
+                      <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
-                    <option value="new" className="text-blue-600 font-medium">+ Add New Supplier...</option>
+                    <option value="new" className="text-blue-600 font-medium">+ New...</option>
                   </select>
                 </div>
               </div>
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 pt-2">
+                <div className="flex items-center gap-2">
                   <input 
                     type="checkbox"
                     id="isMilestone"
@@ -595,22 +589,22 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                         duration: isMilestone ? 0 : (prev.duration || 1)
                       }));
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="isMilestone" className="text-sm font-medium text-slate-700 cursor-pointer">
+                  <label htmlFor="isMilestone" className="text-[11px] font-medium text-slate-700 cursor-pointer">
                     Milestone
                   </label>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <input 
                     type="checkbox"
                     id="isCritical"
                     checked={formData.isCritical || false}
                     onChange={(e) => setFormData(prev => ({ ...prev, isCritical: e.target.checked }))}
-                    className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                    className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
                   />
-                  <label htmlFor="isCritical" className="text-sm font-medium text-slate-700 cursor-pointer">
-                    Critical Path
+                  <label htmlFor="isCritical" className="text-[11px] font-medium text-slate-700 cursor-pointer">
+                    Critical
                   </label>
                 </div>
               </div>
@@ -618,87 +612,87 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           </section>
 
           {/* Planned Schedule */}
-          <section className="space-y-4">
-            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-              <Calendar className="w-3 h-3" /> Planned Schedule (Baseline)
+          <section className="space-y-2">
+            <h4 className="text-[9px] font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" /> Planned Schedule
             </h4>
-            <div className="grid grid-cols-3 gap-6 bg-blue-50/30 p-6 rounded-2xl border border-blue-100">
+            <div className="grid grid-cols-3 gap-3 bg-blue-50/30 p-4 rounded-xl border border-blue-100">
               <div>
-                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Start</label>
+                <label className="block text-[8px] font-medium text-blue-400 uppercase tracking-widest mb-1">Start</label>
                 <input 
                   type="date"
                   name="startDate"
                   value={formData.startDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-2 py-1.5 bg-white border border-blue-100 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Duration (Days)</label>
+                <label className="block text-[8px] font-medium text-blue-400 uppercase tracking-widest mb-1">Dur (Days)</label>
                 <input 
                   type="number"
                   name="duration"
                   value={formData.duration || ''}
                   onChange={handleInputChange}
                   disabled={formData.activityType === 'Milestone'}
-                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
+                  className="w-full px-2 py-1.5 bg-white border border-blue-100 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-blue-400 uppercase tracking-widest mb-2">Planned Finish</label>
+                <label className="block text-[8px] font-medium text-blue-400 uppercase tracking-widest mb-1">Finish</label>
                 <input 
                   type="date"
                   name="finishDate"
                   value={formData.finishDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-2 py-1.5 bg-white border border-blue-100 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
             </div>
           </section>
 
           {/* Dependencies */}
-          <section className="space-y-4">
+          <section className="space-y-2">
             <div className="flex justify-between items-center">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Link2 className="w-3 h-3" /> Dependencies (Predecessors)
+              <h4 className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <Link2 className="w-3 h-3" /> Dependencies
               </h4>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button 
                   onClick={calculateDatesFromPredecessors}
-                  className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition-all flex items-center gap-1"
+                  className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[8px] font-bold hover:bg-blue-100 transition-all flex items-center gap-1"
                 >
-                  <TrendingUp className="w-3 h-3" /> Recalculate Dates
+                  <TrendingUp className="w-2.5 h-2.5" /> Recalculate
                 </button>
                 <button 
                   onClick={addPredecessor}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-200 transition-all flex items-center gap-1"
+                  className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-[8px] font-bold hover:bg-slate-200 transition-all flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Add Dependency
+                  <Plus className="w-2.5 h-2.5" /> Add
                 </button>
               </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {formData.predecessors?.map((dep, index) => (
-                <div key={index} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div key={index} className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <div className="flex-1">
                     <select 
                       value={dep.id || ''}
                       onChange={(e) => updatePredecessor(index, 'id', e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded text-[10px] outline-none"
                     >
-                      <option value="">Select Predecessor...</option>
+                      <option value="">Predecessor...</option>
                       {allActivities.filter(a => a.id !== formData.id).map(a => (
                         <option key={a.id} value={a.id}>{a.description}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="w-24">
+                  <div className="w-16">
                     <select 
                       value={dep.type || 'FS'}
                       onChange={(e) => updatePredecessor(index, 'type', e.target.value as DependencyType)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded text-[10px] outline-none"
                     >
                       <option value="FS">FS</option>
                       <option value="SS">SS</option>
@@ -706,55 +700,55 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                       <option value="SF">SF</option>
                     </select>
                   </div>
-                  <div className="w-24">
+                  <div className="w-16">
                     <input 
                       type="number"
                       value={dep.lag || 0}
                       onChange={(e) => updatePredecessor(index, 'lag', parseInt(e.target.value))}
                       placeholder="Lag"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded text-[10px] outline-none"
                     />
                   </div>
                   <button 
                     onClick={() => removePredecessor(index)}
-                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
               {(!formData.predecessors || formData.predecessors.length === 0) && (
-                <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-medium">
-                  No dependencies defined.
+                <div className="text-center py-4 border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-[10px] font-medium">
+                  No dependencies.
                 </div>
               )}
             </div>
           </section>
 
-          {/* Actual Data */}
-          <section className="space-y-4">
-            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-              <CheckCircle2 className="w-3 h-3" /> Financial Information & Progress
+          {/* Financials & Progress */}
+          <section className="space-y-2">
+            <h4 className="text-[9px] font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+              <CheckCircle2 className="w-3 h-3" /> Financials & Progress
             </h4>
-            <div className="grid grid-cols-3 gap-6 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100">
+            <div className="grid grid-cols-3 gap-3 bg-emerald-50/30 p-3 rounded-xl border border-emerald-100">
               <div>
-                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Planned Cost</label>
+                <label className="block text-[8px] font-medium text-emerald-600 uppercase tracking-widest mb-1">Planned Cost</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
                     <input 
                       type="number"
                       name="amount"
                       value={displayAmount || ''}
                       onChange={(e) => handleAmountChange(e, 'amount')}
                       placeholder="0.00"
-                      className="w-full pl-11 pr-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      className="w-full pl-9 pr-3 py-1.5 bg-white border border-emerald-100 rounded-lg text-xs outline-none"
                     />
                   </div>
                   <select
                     value={formData.inputCurrency || 'IQD'}
                     onChange={handleCurrencyChange}
-                    className="w-24 px-2 py-2.5 bg-white border border-emerald-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-20 px-2 py-1.5 bg-white border border-emerald-100 rounded-lg text-[10px] font-medium"
                   >
                     <option value="IQD">IQD</option>
                     <option value="USD">USD</option>
@@ -777,20 +771,19 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Cost</label>
+                <label className="block text-[8px] font-medium text-emerald-600 uppercase tracking-widest mb-1">Actual Cost</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
                     <input 
                       type="number"
                       name="actualAmount"
                       value={displayActualAmount || ''}
                       onChange={(e) => handleAmountChange(e, 'actualAmount')}
                       placeholder="0.00"
-                      className="w-full pl-11 pr-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      className="w-full pl-9 pr-3 py-1.5 bg-white border border-emerald-100 rounded-lg text-xs outline-none"
                     />
                   </div>
-                  {/* Currency select is shared, so we only need it once or keep it for both if we want different currencies (but user said one currency per item) */}
                 </div>
                 {formData.inputCurrency !== baseCurrency && (
                   <div className="mt-2 flex items-center gap-2">
@@ -802,30 +795,30 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Start</label>
+                <label className="block text-[8px] font-medium text-emerald-600 uppercase tracking-widest mb-1">Actual Start</label>
                 <input 
                   type="date"
                   name="actualStartDate"
                   value={formData.actualStartDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  className="w-full px-2 py-1.5 bg-white border border-emerald-100 rounded-lg text-xs outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Actual Finish</label>
+                <label className="block text-[8px] font-medium text-emerald-600 uppercase tracking-widest mb-1">Actual Finish</label>
                 <input 
                   type="date"
                   name="actualFinishDate"
                   value={formData.actualFinishDate || ''}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-emerald-100 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  className="w-full px-2 py-1.5 bg-white border border-emerald-100 rounded-lg text-xs outline-none"
                 />
               </div>
 
-              <div className="col-span-2">
-                <label className="block text-[10px] font-medium text-emerald-600 uppercase tracking-widest mb-2">Manual Progress Update (%)</label>
-                <div className="flex items-center gap-4">
+              <div className="col-span-3">
+                <label className="block text-[8px] font-medium text-emerald-600 uppercase tracking-widest mb-1">Progress (%)</label>
+                <div className="flex items-center gap-3">
                   <input 
                     type="range"
                     name="percentComplete"
@@ -833,9 +826,9 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
                     max="100"
                     value={formData.percentComplete || 0}
                     onChange={(e) => setFormData(prev => ({ ...prev, percentComplete: parseInt(e.target.value) }))}
-                    className="flex-1 h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                    className="flex-1 h-1.5 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
-                  <span className="text-sm font-medium text-emerald-600 w-12 text-right">{formData.percentComplete || 0}%</span>
+                  <span className="text-xs font-bold text-emerald-600 w-10 text-right">{formData.percentComplete || 0}%</span>
                 </div>
               </div>
             </div>
@@ -958,19 +951,19 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
           )}
         </AnimatePresence>
 
-        <div className="flex-shrink-0 p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div className="flex-shrink-0 p-3 border-t border-slate-100 flex justify-end gap-2 bg-slate-50/50">
           <button 
             onClick={onClose}
-            className="px-5 py-2 text-slate-600 font-bold text-xs hover:bg-slate-200 rounded-xl transition-all"
+            className="px-4 py-1.5 text-slate-600 font-bold text-xs hover:bg-slate-200 rounded-lg transition-all"
           >
             Cancel
           </button>
           <button 
             onClick={() => onSave(formData)}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 px-5 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
             <Save className="w-3.5 h-3.5" />
-            Save Attributes
+            Update Attributes
           </button>
         </div>
       </motion.div>

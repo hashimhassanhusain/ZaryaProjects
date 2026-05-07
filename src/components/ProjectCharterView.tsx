@@ -55,6 +55,7 @@ import autoTable from 'jspdf-autotable';
 
 import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface ProjectCharterViewProps {
   page: Page;
@@ -478,6 +479,12 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
       ]}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      actions={
+        <DriveUploadButton 
+          drivePath="1_Business_Initiation_and_Governance/1.2_Project_Charter" 
+          label="Project Charter" 
+        />
+      }
     >
       <div className="space-y-6">
         {viewMode === 'edit' && (

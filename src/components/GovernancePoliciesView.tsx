@@ -45,6 +45,7 @@ import autoTable from 'jspdf-autotable';
 
 import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface GovernancePoliciesViewProps {
   page: Page;
@@ -286,6 +287,12 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
         ...page,
         title: viewMode === 'edit' ? t('edit_view') : page.title
       }}
+      actions={
+        <DriveUploadButton 
+          drivePath="1_Business_Initiation_and_Governance/1.6_Policies_and_Procedures" 
+          label="Upload Manual" 
+        />
+      }
       embedded={embedded}
       onSave={() => handleSave(false)}
       onPrint={generatePDF}

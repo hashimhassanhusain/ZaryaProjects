@@ -503,59 +503,92 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     }
 
     const folderTree = {
-      "ADMIN_AND_CORRESPONDENCE_00": [
-        { "00.1_Incoming_Correspondence": ["Emails", "Letters"] },
-        { "00.2_Outgoing_Correspondence": ["Transmittals", "RFIs", "Letters_Sent"] },
-        { "00.3_Legal_and_Contracts": ["Client_Main_Contract"] }
+      "0_Transmittals_and_Audit_Trail": [
+        { "0.1_Incoming_Transmittals": ["0.1.1_Emails", "0.1.2_Letters"] },
+        { "0.2_Outgoing_Transmittals": ["0.2.1_RFIs", "0.2.2_Submittals", "0.2.3_Proposals"] },
+        "0.3_Internal_Memos",
+        "0.4_Email_Archive",
+        "0.5_Archive_Transmittals_Log"
       ],
-      "01_PROJECT_MANAGEMENT_FORMS": [
-        { "1.0_Initiating": ["1.1_Governance_Domain", "1.2_Scope_Domain", "1.3_Schedule_Domain", "1.4_Finance_Domain", "1.5_Stakeholders_Domain", "1.6_Resources_Domain", "1.7_Risk_Domain"] },
-        { "2.0_Planning": [
-          { "2.1_Governance_Domain": ["2.1.1_CHANGE_MANAGEMENT_PLAN", "2.1.2_PROJECT_MANAGEMENT_PLAN", "2.1.3_QUALITY_MANAGEMENT_PLAN"] },
-          "2.2_Scope_Domain", "2.3_Schedule_Domain", "2.4_Finance_Domain", "2.5_Stakeholders_Domain", "2.6_Resources_Domain", "2.7_Risk_Domain"
-        ] },
-        { "3.0_Executing": ["3.1_Governance_Domain", "3.2_Scope_Domain", "3.3_Schedule_Domain", "3.4_Finance_Domain", "3.5_Stakeholders_Domain", "3.6_Resources_Domain", "3.7_Risk_Domain"] },
-        { "4.0_Monitoring_and_Controlling": ["4.1_Governance_Domain", "4.2_Scope_Domain", "4.3_Schedule_Domain", "4.4_Finance_Domain", "4.5_Stakeholders_Domain", "4.6_Resources_Domain", "4.7_Risk_Domain"] },
-        { "5.0_Closing": ["5.1_Governance_Domain", "5.2_Scope_Domain", "5.3_Schedule_Domain", "5.4_Finance_Domain", "5.5_Stakeholders_Domain", "5.6_Resources_Domain", "5.7_Risk_Domain"] }
+      "1_Business_Initiation_and_Governance": [
+        "1.1_Business_Case_and_Feasibility",
+        "1.2_Project_Charter",
+        "1.3_Benefits_Management_Plan",
+        "1.4_Legal_Agreements_and_MoUs",
+        "1.5_Team_Charter",
+        "1.6_Policies_and_Procedures",
+        "1.7_Archive_Governance_Versions"
       ],
-      "TECHNICAL_DIVISIONS_02": [
-        { "02.1_Architectural": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "02.2_Structural": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "02.3_Mechanical": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "02.4_Electrical": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] },
-        { "02.5_Infrastructure_and_SiteWork": ["01_Drawings", "02_Specifications_and_DataSheets", "03_Material_Submittals", "04_Inspection_Requests_IR"] }
+      "2_Project_Management_Plan_and_Baselines": [
+        "2.1_Integrated_Project_Management_Plan",
+        { "2.2_Scope_Management": ["2.2.1_Scope_Statement", "2.2.2_WBS_and_Dictionary", "2.2.3_Requirements_Documentation"] },
+        { "2.3_Project_Baselines": ["2.3.1_Scope_Baseline", "2.3.2_Schedule_Baseline", "2.3.3_Cost_Baseline"] },
+        { "2.4_Subsidiary_Management_Plans": ["2.4.1_Quality_Management_Plan", "2.4.2_Resource_Management_Plan", "2.4.3_Communications_Management_Plan", "2.4.4_Risk_Management_Plan", "2.4.5_Procurement_Management_Plan", "2.4.6_Stakeholder_Engagement_Plan"] },
+        "2.5_Archive_Management_Plans"
       ],
-      "PROCUREMENT_AND_SUBCONTRACTORS_03": [
-        "03.1_Vendors_and_Suppliers_Database", 
-        "03.2_Purchase_Orders_PO", 
-        { "03.3_Subcontractors_Hub": [
-          { "Div_01_General_Requirements": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_02_Existing_Conditions": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_03_Concrete": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_04_Masonry": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_05_Metals": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_06_Wood_and_Plastics": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_07_Thermal_and_Moisture": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_08_Openings": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_09_Finishes": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_10_Specialties": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_11_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_12_Furnishings": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_13_Special_Construction": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_14_Conveying_Equipment": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_22_Plumbing": ["01_RFQ", "02_PO", "03_Contracts"] },
-          { "Div_26_Electrical": ["01_RFQ", "02_PO", "03_Contracts"] }
-        ]}
+      "3_Dynamic_Project_Registers_and_Logs": [
+        "3.1_Assumption_Log",
+        "3.2_Stakeholder_Register",
+        "3.3_Risk_Register",
+        "3.4_Issue_Log",
+        "3.5_Change_Log",
+        "3.6_Lessons_Learned_Register",
+        "3.7_Requirements_Traceability_Matrix",
+        "3.8_Archive_Registers_Versions"
       ],
-      "SITE_OPERATIONS_04": [
-        "04.1_Daily_Site_Reports", 
-        "04.2_Progress_Photos_and_Videos", 
-        { "04.3_HSE_and_Safety": ["Safety_Reports", "Incident_Logs"] }
+      "4_Technical_Engineering_and_Drawings": [
+        { "4.1_Architectural": ["4.1.1_Site_Plans", "4.1.2_Floor_Plans", "4.1.3_Sections", "4.1.4_Elevations", "4.1.5_RCP", "4.1.6_Floor_Patterns", "4.1.7_Schedules", "4.1.8_Architectural_Details", "4.1.9_Landscape_Plans", "4.1.10_3D_Renders"] },
+        { "4.2_Structural": ["4.2.1_General_Notes", "4.2.2_Foundations_and_Slabs", "4.2.3_Vertical_Elements", "4.2.4_Beams_Reinforcement", "4.2.5_Staircase_Details", "4.2.6_Misc_Structures"] },
+        { "4.3_Mechanical": ["4.3.1_HVAC", "4.3.2_Plumbing_and_Drainage", "4.3.3_Fire_Fighting", "4.3.4_Vertical_Transportation", "4.3.5_Kitchen_and_Cold_Storage", "4.3.6_Specialized_Machinery_Bowling", "4.3.7_Pool_and_Water_Features", "4.3.8_Gas_Systems"] },
+        { "4.4_Electrical": ["4.4.1_Lighting", "4.4.2_Power", "4.4.3_Low_Current"] },
+        "4.5_Archive_Superseded_Drawings"
       ],
-      "MEETINGS_LOG_05": [
-        "05.1_Client_Meetings", 
-        "05.2_Internal_Technical_Meetings", 
-        "05.3_Subcontractor_Meetings"
+      "5_Schedule_and_Resources": [
+        "5.1_Project_Schedule_Native",
+        "5.2_Milestone_List",
+        "5.3_Project_Network_Diagrams",
+        "5.4_Resource_Breakdown_Structure",
+        "5.5_Resource_Requirements",
+        "5.6_Project_Calendars",
+        "5.7_Archive_Schedule_Versions"
+      ],
+      "6_Financials_and_Procurements": [
+        { "6.1_General_Requirements": ["6.1.1_RFQ_Quotations", "6.1.2_PO", "6.1.3_Business_Partners_Contracts"] },
+        { "6.2_Site_Work": ["6.2.1_RFQ_Quotations", "6.2.2_PO", "6.2.3_Business_Partners_Contracts"] },
+        { "6.3_Concrete": ["6.3.1_RFQ_Quotations", "6.3.2_PO", "6.3.3_Business_Partners_Contracts"] },
+        { "6.4_Masonry": ["6.4.1_RFQ_Quotations", "6.4.2_PO", "6.4.3_Business_Partners_Contracts"] },
+        "6.5_Metals",
+        "6.6_Wood_and_Plastics",
+        "6.7_Thermal_Moisture_Protection",
+        "6.8_Doors_and_Windows",
+        "6.9_Finishes",
+        "6.10_Specialties",
+        "6.11_Equipment",
+        "6.12_Furnishings",
+        "6.13_Special_Construction",
+        "6.14_Conveying_Systems",
+        "6.15_Mechanical",
+        "6.16_Electrical",
+        { "6.17_BOQ_Baselines_and_Versions": ["6.17.1_Original_BOQ", "6.17.2_Revised_BOQ_Versions", "6.17.3_Comparison_Sheets"] },
+        "6.18_Cost_Estimates_and_Basis",
+        "6.19_Project_Funding_Requirements",
+        "6.20_Cost_Control_Reports",
+        "6.21_Archive_Financial_Records"
+      ],
+      "7_Performance_Reports_Quality_and_Communications": [
+        { "7.1_Work_Performance_Reports": ["7.1.1_Daily_Reports", "7.1.2_Weekly_Reports", "7.1.3_Monthly_Reports", "7.1.4_Dashboards_and_KPIs"] },
+        { "7.2_Quality_Control_and_Reports": ["7.2.1_Quality_Metrics", "7.2.2_Quality_Control_Measurements"] },
+        "7.3_Risk_Reports",
+        "7.4_HSE_Safety_Reports",
+        { "7.5_Meeting_Minutes": ["7.5.1_Periodic_Meetings", "7.5.2_Contractors_Meetings"] },
+        "7.6_Archive_Old_Reports_and_Minutes"
+      ],
+      "8_Deliverables_and_Project_Closure": [
+        "8.1_Verified_and_Accepted_Deliverables",
+        "8.2_As_Built_Drawings",
+        "8.3_Final_Product_Transition",
+        "8.4_Final_Project_Report",
+        "8.5_Archive_Closure_Drafts"
       ]
     };
 
@@ -564,9 +597,9 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     console.log('Folder Map Keys:', Object.keys(folderMap));
 
     // Generate and upload Project Charter PDF
-    const adminFolderId = folderMap["ADMIN_AND_CORRESPONDENCE_00"];
+    const adminFolderId = folderMap["1_Business_Initiation_and_Governance"];
     if (adminFolderId) {
-      console.log('Admin folder found:', adminFolderId);
+      console.log('Governance folder found:', adminFolderId);
       try {
         console.log('Generating Project Charter PDF...');
         const pdfBuffer = generateProjectCharterPDF(projectName, projectCode, charterData);
@@ -593,7 +626,7 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
         // We don't fail the whole process if PDF fails, but we log it
       }
     } else {
-      console.warn('ADMIN_AND_CORRESPONDENCE_00 folder not found in folderMap');
+      console.warn('1_Business_Initiation_and_Governance folder not found in folderMap');
     }
 
     res.json({ rootFolderId });

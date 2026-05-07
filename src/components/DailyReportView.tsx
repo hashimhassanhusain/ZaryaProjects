@@ -38,6 +38,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface DailyReportViewProps {
   page: Page;
@@ -208,6 +209,12 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
       onSave={handleSave}
       isSaving={isSaving}
       inputs={[{ id: '4.1.2', title: 'Work Performance Data' }]}
+      actions={
+        <DriveUploadButton 
+          drivePath="7_Performance_Reports_Quality_and_Communications/7.1_Work_Performance_Reports/7.1.1_Daily_Reports" 
+          label="Daily Report Upload" 
+        />
+      }
     >
       <AnimatePresence mode="wait">
         {viewMode === 'edit' ? (

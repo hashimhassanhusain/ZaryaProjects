@@ -88,11 +88,10 @@ interface DesignHubViewProps {
 const ORIGINATORS = ["ARCH", "STR", "MECH", "ELEC", "SUB", "CLT"] as const;
 
 const DIVISIONS = [
-  { code: "02.1", label: "Architectural", div: "02.1_Architectural" },
-  { code: "02.2", label: "Structural", div: "02.2_Structural" },
-  { code: "02.3", label: "Mechanical", div: "02.3_Mechanical" },
-  { code: "02.4", label: "Electrical", div: "02.4_Electrical" },
-  { code: "02.5", label: "Infra & Site", div: "02.5_Infrastructure_and_SiteWork" },
+  { code: "4.1", label: "Architectural", div: "4.1_Architectural" },
+  { code: "4.2", label: "Structural", div: "4.2_Structural" },
+  { code: "4.3", label: "Mechanical", div: "4.3_Mechanical" },
+  { code: "4.4", label: "Electrical", div: "4.4_Electrical" },
 ] as const;
 
 const FILE_TYPES = [
@@ -171,7 +170,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       const technicalFiles = driveFiles.filter((f: any) => 
         f.mimeType !== 'application/vnd.google-apps.folder' && 
         (
-          f.path?.includes('TECHNICAL_DIVISIONS_02') || 
+          f.path?.includes('4_Technical_Engineering_and_Drawings') || 
           f.name.toLowerCase().includes('.dwg') ||
           f.name.toLowerCase().includes('.pdf')
         )
@@ -201,11 +200,10 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
           const isDwg = file.name.toLowerCase().includes('.dwg');
           
           // Improved division detection from path
-          let detectedDivision = "02.1_Architectural";
-          if (file.path?.includes('Structural')) detectedDivision = "02.2_Structural";
-          if (file.path?.includes('Mechanical')) detectedDivision = "02.3_Mechanical";
-          if (file.path?.includes('Electrical')) detectedDivision = "02.4_Electrical";
-          if (file.path?.includes('Infrastructure')) detectedDivision = "02.5_Infrastructure_and_SiteWork";
+          let detectedDivision = "4.1_Architectural";
+          if (file.path?.includes('Structural')) detectedDivision = "4.2_Structural";
+          if (file.path?.includes('Mechanical')) detectedDivision = "4.3_Mechanical";
+          if (file.path?.includes('Electrical')) detectedDivision = "4.4_Electrical";
 
           const newDesign: Omit<DesignFile, "id"> = {
             projectId: selectedProject.id,
@@ -283,10 +281,40 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
           driveData.append("file", currentPendingFile);
           driveData.append("projectRootId", selectedProject.driveFolderId);
           
-          let subFolder = "01_Drawings";
-          if (currentFormData.type === "SPE") subFolder = "02_Specifications_and_DataSheets";
+          const subTypeMap: Record<string, string> = {
+            "Site Plans": "4.1.1_Site_Plans",
+            "Floor Plans": "4.1.2_Floor_Plans",
+            "Sections": "4.1.3_Sections",
+            "Elevations": "4.1.4_Elevations",
+            "RCP": "4.1.5_RCP",
+            "Floor Patterns": "4.1.6_Floor_Patterns",
+            "Schedules": "4.1.7_Schedules",
+            "Architectural Details": "4.1.8_Architectural_Details",
+            "Landscape Plans": "4.1.9_Landscape_Plans",
+            "3D Renders": "4.1.10_3D_Renders",
+            "General Notes": "4.2.1_General_Notes",
+            "Foundations and Slabs": "4.2.2_Foundations_and_Slabs",
+            "Vertical Elements": "4.2.3_Vertical_Elements",
+            "Beams Reinforcement": "4.2.4_Beams_Reinforcement",
+            "Staircase Details": "4.2.5_Staircase_Details",
+            "Misc Structures": "4.2.6_Misc_Structures",
+            "HVAC": "4.3.1_HVAC",
+            "Plumbing and Drainage": "4.3.2_Plumbing_and_Drainage",
+            "Fire Fighting": "4.3.3_Fire_Fighting",
+            "Vertical Transportation": "4.3.4_Vertical_Transportation",
+            "Kitchen and Cold Storage": "4.3.5_Kitchen_and_Cold_Storage",
+            "Specialized Machinery": "4.3.6_Specialized_Machinery_Bowling",
+            "Pool and Water Features": "4.3.7_Pool_and_Water_Features",
+            "Gas Systems": "4.3.8_Gas_Systems",
+            "Lighting": "4.4.1_Lighting",
+            "Power": "4.4.2_Power",
+            "Low Current": "4.4.3_Low_Current"
+          };
+
+          const subFolder = subTypeMap[currentFormData.subType] || 
+                             (currentFormData.type === "SPE" ? "4.5_Archive_Superseded_Drawings" : currentFormData.discipline);
           
-          const drivePath = `TECHNICAL_DIVISIONS_02/${divisionObj?.div || "02.1_Architectural"}/${subFolder}`;
+          const drivePath = `4_Technical_Engineering_and_Drawings/${divisionObj?.div || "4.1_Architectural"}/${subFolder}`;
           driveData.append("path", drivePath);
 
           const controller = new AbortController();

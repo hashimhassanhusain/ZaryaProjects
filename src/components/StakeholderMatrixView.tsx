@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
 import { StandardProcessPage } from './StandardProcessPage';
-import { LayoutGrid, Users, Target, Info, ShieldAlert, Crosshair } from 'lucide-react';
+import { LayoutGrid, Users, Target, Info, ShieldAlert, Crosshair, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
+import { DriveUploadButton } from './common/DriveUploadButton';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, where, updateDoc, doc } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
@@ -62,6 +63,12 @@ export const StakeholderMatrixView: React.FC<StakeholderMatrixViewProps> = ({ pa
       outputs={[
         { id: '1.2.1-OUT', title: 'Stakeholder Classification', status: 'Draft' }
       ]}
+      actions={
+        <DriveUploadButton 
+          drivePath="3_Dynamic_Project_Registers_and_Logs/3.2_Stakeholder_Register" 
+          label="Stakeholder Register" 
+        />
+      }
     >
         <div className="space-y-8 pb-20">
         {!embedded && (

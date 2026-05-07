@@ -1385,19 +1385,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   };
 
   const handleDeleteAnalysis = async (id: string) => {
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this analysis record?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 await deleteDoc(doc(db, 'stakeholder_analysis', id));
                 // Refresh list
@@ -1661,19 +1661,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => {
-                        toast((t) => (
+                        toast((toastRef) => (
                           <div className="flex flex-col gap-4">
                             <p className="text-sm font-bold text-slate-900">Restore this version? Current unsaved changes will be lost.</p>
                             <div className="flex justify-end gap-2">
                               <button
-                                onClick={() => toast.dismiss(t.id)}
+                                onClick={() => toast.dismiss(toastRef.id)}
                                 className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
                               >
                                 Cancel
                               </button>
                               <button
                                 onClick={() => {
-                                  toast.dismiss(t.id);
+                                  toast.dismiss(toastRef.id);
                                   setFormData(v.data);
                                   setIsEditing(true);
                                   toast.success('Version restored');
@@ -2612,19 +2612,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   const handleDeletePhase = (id: string) => {
     if (!pmPlan) return;
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this phase?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={() => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               const updatedPhases = pmPlan.phases.filter(p => p.id !== id);
               setPmPlan({ ...pmPlan, phases: updatedPhases });
               toast.success('Phase removed');
@@ -2690,19 +2690,19 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
 
   const handleDeleteCCBMember = async (id: string) => {
     if (!changePlan) return;
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Are you sure you want to remove this CCB member?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 const updatedMembers = changePlan.ccbMembers.filter(m => m.id !== id);
                 await updateDoc(doc(db, 'changeManagementPlans', changePlan.id), { ccbMembers: updatedMembers });

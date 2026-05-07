@@ -55,6 +55,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface ClosureReportViewProps {
   page: Page;
@@ -264,6 +265,12 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
   return (
     <StandardProcessPage
       page={page}
+      actions={
+        <DriveUploadButton
+          drivePath="8_Deliverables_and_Project_Closure/8.4_Final_Project_Report"
+          label="Upload Closure Report"
+        />
+      }
       onSave={() => handleSave(false)}
       onPrint={generatePDF}
       isSaving={isSaving}

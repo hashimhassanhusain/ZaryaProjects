@@ -1,117 +1,78 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { ChevronRight, Home } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { useUI } from '../context/UIContext';
-import { 
-  ChevronRight, Home, LayoutGrid, Database, Package, Target, List, Clock, 
-  DollarSign, Shield, FileText, Flag, Compass, Users, TrendingUp, 
-  CheckCircle2, ShieldAlert, Info, Settings, Users2, Zap, CheckSquare, 
-  Calendar, Layers, Briefcase, Activity, ShieldCheck, User, Building2, 
-  LayoutDashboard, ShoppingCart, BarChart3, Lightbulb, BookOpen, 
-  ClipboardList, MessageSquare, ListChecks, RefreshCw, Star
-} from 'lucide-react';
-import { getBreadcrumbs, pages } from '../data';
-import { stripNumericPrefix, cn } from '../lib/utils';
-import { useProject } from '../context/ProjectContext';
+import { pages } from '../data';
+import { PERFORMANCE_DOMAINS, FOCUS_AREAS } from '../constants/navigation';
+import { cn, stripNumericPrefix } from '../lib/utils';
 
-interface BreadcrumbsProps {
-  currentPageId: string;
-}
+export const Breadcrumbs: React.FC = () => {
+  const { t, th } = useLanguage();
+  const location = useLocation();
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  
+  // Find current page
+  const pageId = pathParts.pop();
+  if (!pageId || pageId === 'profile' || pageId === 'admin') return null;
+  
+  const currentPage = pages.find(p => p.id === pageId);
+  if (!currentPage) return null;
 
-const iconMap: Record<string, any> = {
-  LayoutGrid,
-  Database,
-  Package,
-  Target,
-  List,
-  Clock,
-  DollarSign,
-  Shield,
-  FileText,
-  Flag,
-  Compass,
-  Users,
-  TrendingUp,
-  CheckCircle2,
-  ShieldAlert,
-  Info,
-  Settings,
-  Users2,
-  Zap,
-  CheckSquare,
-  Calendar,
-  Layers,
-  Briefcase,
-  Activity,
-  ShieldCheck,
-  User,
-  Building2,
-  LayoutDashboard,
-  ShoppingCart,
-  BarChart3,
-  Lightbulb,
-  BookOpen,
-  ClipboardList,
-  MessageSquare,
-  ListChecks,
-  RefreshCw
-};
+  const crumbs = [];
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ currentPageId }) => {
-  const { t, th, isRtl } = useLanguage();
-  const { toggleFavorite, isFavorite } = useUI();
-  const { selectedProject } = useProject();
-  const crumbs = getBreadcrumbs(currentPageId);
-  const currentPage = pages.find(p => p.id === currentPageId);
-  const IconComponent = currentPage?.icon ? iconMap[currentPage.icon] : null;
+  // 1. Home
+  crumbs.push({ label: 'Home', path: '/' });
 
-  const isFav = isFavorite(currentPageId);
+  // 2. Parent Focus Area
+  const focusArea = FOCUS_AREAS.find(a => a.id === currentPage.focusArea);
+  if (focusArea) {
+    crumbs.push({ label: stripNumericPrefix(t(focusArea.id)), path: '#' });
+  }
+
+  // 3. Domain Hub
+  const domain = PERFORMANCE_DOMAINS.find(d => d.id === currentPage.domain);
+  if (domain) {
+    const hubId = {
+      'governance': 'gov',
+      'delivery': 'scope',
+      'schedule': 'sched',
+      'finance': 'fin',
+      'stakeholders': 'stak',
+      'resources': 'res',
+      'risk': 'risk'
+    }[domain.id] || 'gov';
+    crumbs.push({ label: stripNumericPrefix(t(domain.id)), path: `/page/${hubId}` });
+  }
+
+  // 4. Intermediate Parents
+  if (currentPage.parentId) {
+    const parent = pages.find(p => p.id === currentPage.parentId);
+    if (parent) {
+      crumbs.push({ label: stripNumericPrefix(th(parent.id)), path: `/page/${parent.id}` });
+    }
+  }
+
+  // 5. Current Page
+  crumbs.push({ label: stripNumericPrefix(th(currentPage.id)), path: location.pathname, current: true });
 
   return (
-    <div className="mb-4">
-      <nav className={cn("flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em]", isRtl ? "text-right" : "text-left")}>
-        <Link to="/" className="text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1.5 group shrink-0">
-           <Home className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-           <span>{t('hq')}</span>
-        </Link>
-        
-        {crumbs.map((crumb, index) => {
-          const isLast = index === crumbs.length - 1;
-          const label = stripNumericPrefix(t(crumb.id) === crumb.id ? crumb.title : t(crumb.id));
-          
-          return (
-            <React.Fragment key={crumb.id}>
-              <span className="text-slate-300 flex items-center shrink-0">
-                 <ChevronRight className={cn("w-3 h-3 mx-1", isRtl && "rotate-180")} />
-              </span>
-              {isLast ? (
-                <span className="text-blue-600 font-black truncate max-w-[250px]">
-                  {label}
-                </span>
-              ) : (
-                <Link
-                  to={`/project/${selectedProject?.id}/page/${crumb.id}`}
-                  className="text-slate-400 hover:text-blue-500 transition-colors shrink-0"
-                >
-                  {label}
-                </Link>
+    <nav className="flex items-center px-6 py-3 bg-white border-b border-neutral-100 overflow-x-auto no-scrollbar shrink-0">
+      <div className="flex items-center gap-2">
+        {crumbs.map((crumb, idx) => (
+          <React.Fragment key={idx}>
+            {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-300 mx-1 shrink-0" />}
+            <Link 
+              to={crumb.path}
+              className={cn(
+                "text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors",
+                crumb.current ? "text-brand" : "text-neutral-400 hover:text-neutral-900"
               )}
-            </React.Fragment>
-          );
-        })}
-        
-        <div className="flex-1" />
-        
-        <button 
-          onClick={() => toggleFavorite(currentPageId)}
-          className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
-            isFav ? "bg-amber-50 text-amber-500" : "text-slate-300 hover:text-slate-500"
-          )}
-        >
-          <Star className={cn("w-3.5 h-3.5", isFav && "fill-current")} />
-        </button>
-      </nav>
-    </div>
+            >
+              {crumb.label}
+            </Link>
+          </React.Fragment>
+        ))}
+      </div>
+    </nav>
   );
 };

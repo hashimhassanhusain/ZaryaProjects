@@ -33,13 +33,13 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
   const { isRibbonCollapsed, setIsRibbonCollapsed } = useUI();
 
   const getFocusColor = (area?: string) => {
-    if (!area) return 'bg-slate-200';
-    return focusAreaColors[area] || 'bg-slate-300';
+    if (!area) return 'bg-neutral-200';
+    return focusAreaColors[area] || 'bg-neutral-300';
   };
 
   return (
     <div className={cn(
-      "bg-ribbon border-b border-slate-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
+      "bg-ribbon border-b border-neutral-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
       isRibbonCollapsed ? "h-[32px]" : "h-[95px]",
       className
     )}>
@@ -53,7 +53,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                   <HelpTooltip 
                     key={tab.id} 
                     title={tab.label}
-                    text={tab.description || th(tab.id + '_summary')}
+                    text={tab.description || (t(tab.id + '_summary') !== tab.id + '_summary' && t(tab.id + '_summary') !== 'summary' ? t(tab.id + '_summary') : null)}
                     position="bottom"
                     className="z-[10000]"
                   >
@@ -63,16 +63,16 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                         "flex flex-col items-center justify-center min-w-[72px] h-[72px] mt-0.5 px-2 rounded-md transition-all relative",
                         isActive 
                           ? "bg-brand/10 text-brand shadow-[inset_0_0_0_1px_rgba(var(--color-brand),0.1)] dark:bg-white/10 dark:text-brand" 
-                          : "text-slate-600 dark:text-white/60 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                          : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white"
                       )}
                     >
                       {tab.focusArea && (
                         <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm", getFocusColor(tab.focusArea))} />
                       )}
-                      <tab.icon className={cn("w-7 h-7 mb-1", isActive ? "text-brand" : "text-slate-400 opacity-80")} strokeWidth={1.5} />
+                      <tab.icon className={cn("w-7 h-7 mb-1", isActive ? "text-brand" : "text-neutral-600 dark:text-neutral-400")} strokeWidth={1.5} />
                       <span className={cn(
-                        "text-[10px] font-medium leading-tight text-center max-w-[64px] line-clamp-2",
-                        isActive ? "font-bold" : ""
+                        "text-[10px] font-black leading-tight text-center max-w-[100px] uppercase tracking-tighter transition-colors break-words",
+                        isActive ? "text-brand" : "text-neutral-900 group-hover:text-brand"
                       )}>
                         {tab.label}
                       </span>
@@ -82,7 +82,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
               })}
             </div>
             {group.label && (
-              <div className="text-[9px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest text-center py-0.5 mt-auto">
+              <div className="text-[10px] font-black text-neutral-900 dark:text-white uppercase tracking-[0.2em] text-center py-0.5 mt-auto bg-neutral-50/50 dark:bg-white/5 rounded-sm">
                 {group.label}
               </div>
             )}
@@ -105,7 +105,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
       <button 
         onClick={() => setIsRibbonCollapsed(!isRibbonCollapsed)}
         className={cn(
-          "absolute right-2 flex items-center justify-center hover:bg-slate-100 rounded transition-colors z-50 text-slate-400",
+          "absolute right-2 flex items-center justify-center hover:bg-neutral-100 rounded transition-colors z-50 text-neutral-400",
           isRibbonCollapsed ? "bottom-1/2 translate-y-1/2 p-0.5" : "bottom-1 p-1"
         )}
         title={isRibbonCollapsed ? "Expand Ribbon" : "Collapse Ribbon"}

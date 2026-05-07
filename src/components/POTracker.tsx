@@ -637,19 +637,19 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const handleBulkDelete = async () => {
     if (selectedPOIds.length === 0) return;
     
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Delete {selectedPOIds.length} purchase orders?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 const affectedActivityIds = new Set<string>();
                 for (const id of selectedPOIds) {

@@ -81,7 +81,11 @@ import { UIProvider, useUI } from './context/UIContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { UserProvider, useAuth } from './context/UserContext';
+import { ToolsProvider } from './context/ToolsContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { RightRibbonBar } from './components/RightRibbonBar';
+import { LeftRibbonBar } from './components/LeftRibbonBar';
+import { ToolWorkspace } from './components/ToolWorkspace';
 import { ProjectSelectorView } from './components/ProjectSelectorView';
 import { Toaster } from 'react-hot-toast';
 
@@ -134,14 +138,14 @@ const PageRenderer = () => {
           <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-6">
             <ShieldAlert className="w-10 h-10 text-rose-500" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('access_denied')}</h2>
-          <p className="text-slate-500 max-w-md">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-2">{t('access_denied')}</h2>
+          <p className="text-neutral-500 max-w-md">
             {t('no_permission_access')} <strong>{t(page.id) || page.title}</strong> {t('page')} 
             {t('contact_admin_access')}
           </p>
           <button 
             onClick={() => window.history.back()}
-            className="mt-8 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+            className="mt-8 px-6 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:bg-neutral-800 transition-all"
           >
             {t('go_back')}
           </button>
@@ -376,6 +380,8 @@ const PageRenderer = () => {
 import { AIAssistant } from './components/AIAssistant';
 import { FoundationInsights } from './components/FoundationInsights';
 
+import { Breadcrumbs } from './components/Breadcrumbs';
+
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
@@ -401,15 +407,14 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen bg-app-bg overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Sidebar removed as per user request */}
-
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <Header />
+        <Breadcrumbs />
         
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
-            "flex-1 overflow-y-auto no-scrollbar bg-slate-50 dark:bg-app-bg",
+            "flex-1 overflow-y-auto no-scrollbar bg-neutral-50",
             "p-0"
           )}
         >
@@ -428,7 +433,7 @@ const AppLayout = () => {
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={
               !selectedProject ? <ProjectSelectorView /> : (
-              <div className="min-h-full bg-slate-50 dark:bg-app-bg p-6 lg:p-10 space-y-10 transition-colors duration-300">
+              <div className="min-h-full bg-neutral-50 p-6 lg:p-10 space-y-10 transition-colors duration-300">
                 {/* AI Assistant Section - Expanded */}
                 <div className="max-w-full mx-auto">
                   <AIAssistant />
@@ -437,9 +442,9 @@ const AppLayout = () => {
                 {/* Dashboard Grid - Real KPIs */}
                 <div className="max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                    {/* Progress Tracker */}
-                   <div className="lg:col-span-2 bg-white dark:bg-surface p-8 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
+                   <div className="lg:col-span-2 bg-white dark:bg-surface p-8 rounded-[3rem] border border-neutral-200 dark:border-white/5 shadow-sm space-y-6">
                       <div className="flex items-center justify-between">
-                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Project Health Index</h3>
+                         <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-widest">Project Health Index</h3>
                          <div className="flex gap-2">
                             <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-bold">On Schedule</span>
                             <span className="px-3 py-1 bg-brand/10 text-brand rounded-full text-[10px] font-bold">In Budget</span>
@@ -453,8 +458,8 @@ const AppLayout = () => {
                            { label: 'Cost Variance', value: '-12%', color: 'emerald' },
                            { label: 'Quality Index', value: '98.5%', color: 'indigo' }
                          ].map(stat => (
-                           <div key={stat.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
-                              <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{stat.label}</div>
+                           <div key={stat.label} className="p-4 bg-neutral-50 dark:bg-white/5 rounded-2xl border border-neutral-100 dark:border-white/5">
+                              <div className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-1">{stat.label}</div>
                               <div className={cn(
                                 "text-xl font-black tracking-tighter",
                                 stat.color === 'brand' ? 'text-brand' : `text-${stat.color}-600 dark:text-${stat.color}-400`
@@ -463,20 +468,20 @@ const AppLayout = () => {
                          ))}
                       </div>
 
-                      <div className="h-48 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5 flex items-center justify-center relative overflow-hidden">
-                         <div className="absolute inset-x-8 bottom-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-48 bg-neutral-50 dark:bg-white/5 rounded-3xl border border-neutral-100 dark:border-white/5 flex items-center justify-center relative overflow-hidden">
+                         <div className="absolute inset-x-8 bottom-12 h-1 bg-neutral-200 dark:bg-white/10 rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: '0%' }}
                               animate={{ width: '68%' }}
                               className="h-full bg-brand shadow-[0_0_20px_rgba(255,92,0,0.4)]" 
                             />
                          </div>
-                         <div className="text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter opacity-10">PMIS PERFORMANCE ENGINE</div>
+                         <div className="text-4xl font-black text-neutral-900 dark:text-white italic tracking-tighter opacity-10">PMIS PERFORMANCE ENGINE</div>
                       </div>
                    </div>
 
                    {/* Quick Actions / Recent Activity */}
-                   <div className="bg-slate-900 dark:bg-[#1a1a1a] p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden transition-colors border border-white/5">
+                   <div className="bg-neutral-900 dark:bg-[#1a1a1a] p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden transition-colors border border-white/5">
                       <div className="absolute top-0 right-0 w-48 h-48 bg-brand/10 rounded-full blur-3xl -mr-24 -mt-24" />
                       <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-brand">Critical Alerts</h3>
                       <div className="space-y-4">
@@ -488,11 +493,11 @@ const AppLayout = () => {
                            <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3">
                               <div className={cn(
                                 "w-2 h-2 rounded-full",
-                                alert.type === 'error' ? 'bg-rose-500 animate-pulse' :
-                                alert.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
-                              )} />
-                              <span className="text-[11px] font-bold text-slate-300">{alert.msg}</span>
-                           </div>
+                                 alert.type === 'error' ? 'bg-rose-500 animate-pulse' :
+                                 alert.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                               )} />
+                               <span className="text-[11px] font-bold text-neutral-300">{alert.msg}</span>
+                            </div>
                          ))}
                       </div>
                       <button className="w-full mt-8 py-4 bg-brand hover:bg-brand-secondary rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all">
@@ -504,7 +509,7 @@ const AppLayout = () => {
                 {/* Performance Domains Grid */}
                 <div className="max-w-full mx-auto space-y-8">
                   <div className="flex items-center justify-between px-2">
-                    <h3 className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
+                    <h3 className="text-[11px] font-bold text-neutral-900 dark:text-white uppercase tracking-[0.3em]">{t('performance_domains')}</h3>
                     <div className="flex gap-2">
                       <div className="px-3 py-1 bg-brand/10 text-brand rounded-full text-[9px] font-bold uppercase tracking-widest border border-brand/20">
                         8 Active Domains
@@ -528,19 +533,19 @@ const AppLayout = () => {
                         <Link 
                           key={d.id} 
                           to={`/page/${hubId}`}
-                          className="group bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all text-left flex flex-col justify-between h-[220px]"
+                          className="group bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-neutral-200 dark:border-white/5 shadow-sm hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all text-left flex flex-col justify-between h-[220px]"
                         >
                            <div className="flex justify-between items-start">
-                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-white/5 shadow-inner group-hover:bg-brand/10 transition-colors">
-                               <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-brand text-slate-400 dark:text-slate-500" />
+                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-neutral-50 dark:bg-white/5 shadow-inner group-hover:bg-brand/10 transition-colors">
+                               <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-brand text-neutral-500 dark:text-neutral-400" />
                              </div>
                              <div className="p-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                                <TrendingUp className="w-4 h-4" />
                              </div>
                            </div>
                            <div className="space-y-1">
-                             <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors group-hover:text-brand">{t(d.id)}</h3>
-                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed line-clamp-2">
+                             <h3 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight transition-colors group-hover:text-brand">{stripNumericPrefix(t(d.id))}</h3>
+                             <p className="text-xs text-neutral-600 dark:text-neutral-400 font-bold leading-relaxed line-clamp-2">
                                {t(d.id + '_desc') || 'Standardized performance management and reporting.'}
                              </p>
                            </div>
@@ -552,33 +557,33 @@ const AppLayout = () => {
 
                 {/* Quick Stats Banner */}
                 <div className="max-w-7xl mx-auto">
-                   <div className="bg-slate-900 dark:bg-ribbon rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-slate-900/20 relative overflow-hidden transition-colors border border-white/5">
+                   <div className="bg-neutral-900 dark:bg-ribbon rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-neutral-900/20 relative overflow-hidden transition-colors border border-white/5">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
                       
                       <div className="text-center space-y-1 relative z-10">
                         <div className="text-3xl font-bold text-white tracking-tighter italic">94.2%</div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('utilization')}</div>
+                        <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{t('utilization')}</div>
                       </div>
                       
-                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
+                      <div className="w-px h-12 bg-neutral-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
-                        <div className="text-3xl font-bold text-emerald-400 tracking-tighter italic">0.98 <span className="text-xs font-normal text-slate-500 not-italic ml-1">CPI</span></div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('efficiency')}</div>
+                        <div className="text-3xl font-bold text-emerald-400 tracking-tighter italic">0.98 <span className="text-xs font-normal text-neutral-500 not-italic ml-1">CPI</span></div>
+                        <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{t('efficiency')}</div>
                       </div>
 
-                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
+                      <div className="w-px h-12 bg-neutral-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
-                        <div className="text-3xl font-bold text-brand tracking-tighter italic">12 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Days</span></div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('milestones_ahead')}</div>
+                        <div className="text-3xl font-bold text-brand tracking-tighter italic">12 <span className="text-xs font-normal text-neutral-500 not-italic ml-1">Days</span></div>
+                        <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{t('milestones_ahead')}</div>
                       </div>
 
-                      <div className="w-px h-12 bg-slate-800 dark:bg-white/10 hidden md:block" />
+                      <div className="w-px h-12 bg-neutral-800 dark:bg-white/10 hidden md:block" />
 
                       <div className="text-center space-y-1 relative z-10">
-                        <div className="text-3xl font-bold text-amber-400 tracking-tighter italic">0 <span className="text-xs font-normal text-slate-500 not-italic ml-1">Issues</span></div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('critical')}</div>
+                        <div className="text-3xl font-bold text-amber-400 tracking-tighter italic">0 <span className="text-xs font-normal text-neutral-500 not-italic ml-1">Issues</span></div>
+                        <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{t('critical')}</div>
                       </div>
                    </div>
                 </div>
@@ -661,13 +666,13 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6">
-        <div className="w-20 h-20 bg-[#505050] rounded-[2rem] flex items-center justify-center shadow-2xl shadow-black/50 mb-4 animate-pulse">
-          <span className="text-[#FF5C00] font-black text-2xl italic tracking-tighter">PMIS</span>
+      <div className="min-h-screen bg-app-bg flex flex-col items-center justify-center gap-6">
+        <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-black/5 mb-4 animate-pulse border border-neutral-100">
+          <span className="text-brand font-black text-2xl italic tracking-tighter">PMIS</span>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3 text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <div className="flex items-center gap-3 text-neutral-400 font-bold text-[10px] uppercase tracking-[0.3em]">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
             Initializing System...
           </div>
         </div>
@@ -685,10 +690,15 @@ export default function App() {
             <ProjectProvider>
               <UIProvider>
                 <CurrencyProvider>
-                  <Router>
-                    <AppLayout />
-                    <Toaster position="top-right" />
-                  </Router>
+                  <ToolsProvider>
+                    <Router>
+                      <AppLayout />
+                      <LeftRibbonBar />
+                      <RightRibbonBar />
+                      <ToolWorkspace />
+                      <Toaster position="top-right" />
+                    </Router>
+                  </ToolsProvider>
                 </CurrencyProvider>
               </UIProvider>
             </ProjectProvider>

@@ -322,52 +322,52 @@ export const WorkPackagesView: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="p-8 space-y-12 bg-white rounded-[3rem] border border-slate-200 shadow-xl"
+            className="p-6 space-y-8 bg-white rounded-3xl border border-slate-200 shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-8">
-              <div className="flex items-center gap-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+              <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setIsAdding(false)} 
-                  className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center hover:bg-slate-200 transition-all"
+                  className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all"
                 >
-                  <ChevronRight className={cn("w-6 h-6 text-slate-600", isRtl ? "" : "rotate-180")} />
+                  <ChevronRight className={cn("w-5 h-5 text-slate-600", isRtl ? "" : "rotate-180")} />
                 </button>
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                     {editingId ? 'Edit Work Package' : 'New Work Package'}
                   </h2>
-                  <p className="text-slate-500 font-medium">Define work package scope and classification.</p>
+                  <p className="text-xs text-slate-500 font-medium">Define work package scope and classification.</p>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setIsAdding(false);
                     setIsManualTitle(false);
                   }}
-                  className="px-8 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all"
+                  className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
                 >
-                  Discard Changes
+                  Discard
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg"
                 >
                   Save & Apply
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              <div className="lg:col-span-2 space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
                 {/* Secondary Info Grid */}
-                <div className="grid grid-cols-2 gap-8 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-                  <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cost Account (Level 1)</label>
                     <select
                       value={formData.divisionCode}
                       onChange={(e) => setFormData({ ...formData, divisionCode: e.target.value, code: '', title: '' })}
-                      className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                     >
                       <option value="">Select Cost Account</option>
                       {masterFormatData.map((div, idx) => (
@@ -375,12 +375,12 @@ export const WorkPackagesView: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Current Status</label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                     >
                       <option value="Not Started">Not Started</option>
                       <option value="In Progress">In Progress</option>
@@ -389,19 +389,19 @@ export const WorkPackagesView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="grid grid-cols-3 gap-8">
-                    <div className="space-y-3">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Entity Code</label>
                       <input
                         type="text"
                         value={formData.code}
                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                         placeholder="00000"
-                        className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-mono font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
-                    <div className="col-span-2 space-y-3">
+                    <div className="col-span-2 space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Package Title</label>
                       {!isManualTitle ? (
                         <select
@@ -413,7 +413,7 @@ export const WorkPackagesView: React.FC = () => {
                               setFormData({ ...formData, title: e.target.value });
                             }
                           }}
-                          className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                         >
                           <option value="">Select Title...</option>
                           {masterFormatSections
@@ -431,51 +431,51 @@ export const WorkPackagesView: React.FC = () => {
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             placeholder="Work Package Title"
-                            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all pr-14"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all pr-12"
                             autoFocus
                           />
                           <button 
                             onClick={() => setIsManualTitle(false)}
-                            className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500 transition-colors"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500 transition-colors"
                             title="Back to list"
                           >
-                            <List className="w-5 h-5" />
+                            <List className="w-4 h-4" />
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Scope Description</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={6}
-                      className="w-full px-6 py-5 bg-white border border-slate-200 rounded-[2rem] text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none shadow-inner"
+                      rows={4}
+                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none shadow-inner"
                       placeholder="Enter detailed scope, deliverables, and boundaries for this work package..."
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-blue-400">Classification Help</h3>
-                   <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                     Choose a cost account from the list to see suggested MasterFormat items. Proper classification ensures accurate financial rollups.
+              <div className="space-y-4">
+                <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full blur-2xl -mr-12 -mt-12" />
+                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-blue-400">Classification Help</h3>
+                   <p className="text-[11px] text-slate-400 leading-relaxed mb-4">
+                     Choose a cost account from the list to see suggested MasterFormat items.
                    </p>
-                   <div className="space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
+                   <div className="space-y-2 max-h-[350px] overflow-y-auto no-scrollbar pr-1">
                     {formData.divisionCode ? (
                       masterFormatData.find(d => d.number === formData.divisionCode)?.items.map((item, idx) => (
                         <button
                           key={`${item.code}-${idx}`}
                           onClick={() => handleMFSelect(item)}
                           className={cn(
-                            "w-full flex items-center justify-between p-4 rounded-2xl text-left transition-all border",
+                            "w-full flex items-center justify-between p-3 rounded-xl text-left transition-all border",
                             formData.code === item.code 
-                              ? "bg-blue-600 border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.4)]" 
+                              ? "bg-blue-600 border-blue-500 shadow-lg" 
                               : "bg-white/5 border-white/5 hover:bg-white/10"
                           )}
                         >
@@ -487,7 +487,7 @@ export const WorkPackagesView: React.FC = () => {
                         </button>
                       ))
                     ) : (
-                      <div className="text-center py-12 text-slate-600 text-[10px] font-bold uppercase tracking-widest border border-dashed border-white/10 rounded-3xl">
+                      <div className="text-center py-10 text-slate-600 text-[10px] font-bold uppercase tracking-widest border border-dashed border-white/10 rounded-2xl">
                         Select a Cost Account
                       </div>
                     )}

@@ -111,12 +111,15 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
 
 export function stripNumericPrefix(title: string | undefined | null): string {
   if (!title) return '';
-  // Matches "1.0 ", "5.1.1 ", "03.1_", "[5.1.1]", "5.1.1: " etc. at the start or end
+  // Matches "1.0 ", "5.1.1 ", "5.1.1: ", "[5.1.1] " etc. at the start or end
+  // We avoid stripping if followed by underscore as it's likely a technical key (e.g. 1.1.1_summary)
   const stripped = title
-    .replace(/^\[?[\d\.]+\]?[_\s-:]*/, '') // Start: [1.0] Title
-    .replace(/[_\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
+    .replace(/^\[?[\d\.]+\]?[\s-:]+/, '') // Start: [1.0] Title
+    .replace(/[\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
     .trim();
   
+  // If we stripped everything, it means it was JUST a numeric identifier.
+  // In this case, we return the original string because we don't want to show an empty label.
   return stripped || title;
 }
 

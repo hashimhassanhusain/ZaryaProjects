@@ -64,14 +64,14 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Delete {selectedIds.length} risks?</p>
         <div className="flex justify-end gap-2">
-          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">Cancel</button>
+          <button onClick={() => toast.dismiss(toastRef.id)} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">Cancel</button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 const batch = writeBatch(db);
                 selectedIds.forEach(id => {
@@ -139,19 +139,19 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
   };
 
   const handleDelete = async (id: string) => {
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this risk?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 await deleteDoc(doc(db, 'risks', id));
                 toast.success('Risk deleted successfully');

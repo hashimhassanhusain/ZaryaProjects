@@ -43,6 +43,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { loadArabicFont } from '../lib/pdfUtils';
 import { AddWBSLevelModal } from './AddWBSLevelModal';
 import { DataImportModal } from './DataImportModal';
+import { DriveUploadButton } from './common/DriveUploadButton';
+import { StandardProcessPage } from './StandardProcessPage';
 
 interface ProjectScheduleViewProps {
   page: Page;
@@ -1707,7 +1709,22 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden">
+    <StandardProcessPage
+      page={page}
+      actions={
+        <div className="flex items-center gap-2">
+          <DriveUploadButton 
+            drivePath="5_Schedule_and_Resources/5.1_Project_Schedule_Native" 
+            label="Native Schedule" 
+          />
+          <DriveUploadButton 
+            drivePath="5_Schedule_and_Resources/5.2_Milestone_List" 
+            label="Milestone List" 
+          />
+        </div>
+      }
+    >
+      <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden">
       {activeTab === 'gantt' ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Toolbar */}
@@ -1894,7 +1911,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
               </DndContext>
             </div>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-200 dark:divide-white/5">
             {renderScheduleContent()}
           </div>
         </div>
@@ -1919,7 +1936,7 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
             >
               <div ref={ganttContainerRef} className="min-w-full">
                 {/* Timeline Header */}
-                <div className="sticky top-0 z-20 bg-white border-b border-slate-200 flex h-12">
+                <div className="sticky top-0 z-20 bg-white dark:bg-surface border-b border-slate-200 dark:border-white/10 flex h-12">
                   {timelineDays.map((day, i) => {
                     const isFirstOfMonth = day.getDate() === 1;
                     const isMonday = day.getDay() === 1;
@@ -1930,8 +1947,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
                         key={i}
                         style={{ width: dayWidth, flexShrink: 0 }}
                         className={cn(
-                          "border-r border-slate-100 flex flex-col justify-center items-center",
-                          isFirstOfMonth && "border-l-2 border-l-slate-300 bg-slate-50/50"
+                          "border-r border-slate-200 dark:border-white/5 flex flex-col justify-center items-center",
+                          isFirstOfMonth && "border-l-2 border-l-slate-300 dark:border-l-slate-700 bg-slate-50/50 dark:bg-white/5"
                         )}
                       >
                         {showLabel && (
@@ -2157,7 +2174,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
           entityName="Project Activities"
         />
       )}
-    </div>
+      </div>
+    </StandardProcessPage>
   );
 };
 

@@ -83,19 +83,19 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
   };
 
   const handleDelete = async (id: string) => {
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4 text-slate-900">
         <p className="text-sm font-bold">Are you sure you want to delete this record?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 await deleteDoc(doc(db, 'project_records', id));
                 toast.success('Record deleted successfully');

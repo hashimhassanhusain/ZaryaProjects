@@ -201,28 +201,28 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden"
+            className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden"
           >
-            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-slate-50">
-                <h3 className="text-lg font-bold text-slate-900">Add WBS Level</h3>
-                <button onClick={onClose} className="p-1.5 hover:bg-slate-50 rounded-full transition-colors">
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-slate-50">
+                <h3 className="text-base font-bold text-slate-900">Add WBS Level</h3>
+                <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full transition-colors">
                     <X className="w-4 h-4 text-slate-400" />
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
                 <input 
                   type="text" 
                   value={newWbs.title || ''}
                   onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   placeholder="e.g. South Zone, Villa 2, Floor 1"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
                 <select 
                   value={newWbs.type || 'Zone'}
                   onChange={e => {
@@ -236,7 +236,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                     
                     setNewWbs({...newWbs, type, parentId, divisionId});
                   }}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="Zone">Zone</option>
                   <option value="Area">Area</option>
@@ -248,11 +248,11 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
               </div>
               {newWbs.type === 'Work Package' && (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cost Account</label>
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cost Account</label>
                   <select 
                     value={newWbs.divisionId || '01'}
                     onChange={e => setNewWbs({...newWbs, divisionId: e.target.value})}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   >
                     {masterFormatDivisions.map(div => (
                       <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
@@ -262,8 +262,8 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
               )}
               {newWbs.type === 'Cost Account' ? (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cost Account Title</label>
-                  <div className="space-y-1.5">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cost Account Title</label>
+                  <div className="space-y-1">
                     {!isManualWbsTitle ? (
                       <select 
                         value={masterFormatDivisions.some(d => `${d.id} - ${d.title}` === newWbs.title) ? newWbs.title : ''}
@@ -275,7 +275,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                             setNewWbs({...newWbs, title: e.target.value});
                           }
                         }}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       >
                         <option value="">Select Cost Account...</option>
                         {masterFormatDivisions.map(div => (
@@ -289,7 +289,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                           type="text" 
                           value={newWbs.title || ''}
                           onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                           placeholder="Enter custom cost account title..."
                           autoFocus
                         />
@@ -305,8 +305,8 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                 </div>
               ) : newWbs.type === 'Work Package' ? (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work Package Title</label>
-                  <div className="space-y-1.5">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work Package Title</label>
+                  <div className="space-y-1">
                     {!isManualWbsTitle ? (
                       <select 
                         value={masterFormatSections.some(s => s.title === newWbs.title) ? newWbs.title : ''}
@@ -318,7 +318,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                             setNewWbs({...newWbs, title: e.target.value});
                           }
                         }}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       >
                         <option value="">Select Work Package...</option>
                         {masterFormatSections
@@ -335,7 +335,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
                           type="text" 
                           value={newWbs.title || ''}
                           onChange={e => setNewWbs({...newWbs, title: e.target.value})}
-                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                           placeholder="Enter custom work package title..."
                           autoFocus
                         />
@@ -352,37 +352,37 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
               ) : null}
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                   {newWbs.type === 'Work Package' ? 'Parent Cost Account' : 'Parent Level'}
                 </label>
                 <select 
                   value={newWbs.parentId || ''}
                   onChange={e => setNewWbs({...newWbs, parentId: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   {newWbs.type !== 'Work Package' && <option value="">None (Root Level)</option>}
                   {wbsLevels
                     .filter(l => (hierarchyRules[newWbs.type] || []).includes(l.type))
                     .map(l => (
-                      <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
+                      <option key={l.id} value={l.id}>{l.title}</option>
                     ))
                   }
                 </select>
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex gap-2 p-5 border-t border-slate-50 bg-slate-50/50">
+            <div className="flex-shrink-0 flex gap-2 p-4 border-t border-slate-50 bg-slate-50/50">
               <button 
                 onClick={onClose}
-                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+                className="flex-1 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleAddWbs}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-sm"
+                className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-sm"
               >
-                Create Level
+                Create
               </button>
             </div>
           </motion.div>

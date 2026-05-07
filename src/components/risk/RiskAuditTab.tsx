@@ -92,19 +92,19 @@ export const RiskAuditTab: React.FC<RiskAuditTabProps> = ({ audits, projectId })
   };
 
   const handleDelete = async (id: string) => {
-    toast((t) => (
+    toast((toastRef) => (
       <div className="flex flex-col gap-4">
         <p className="text-sm font-bold text-slate-900">Are you sure you want to delete this audit entry?</p>
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(toastRef.id)}
             className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={async () => {
-              toast.dismiss(t.id);
+              toast.dismiss(toastRef.id);
               try {
                 await deleteDoc(doc(db, 'risk_audits', id));
                 toast.success('Audit entry deleted successfully');

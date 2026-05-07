@@ -309,40 +309,40 @@ export const BusinessCaseView: React.FC<BusinessCaseViewProps> = ({ page, embedd
                      </div>
                   </div>
 
-                  <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
-                     <div className="flex items-center gap-3 text-indigo-400 mb-2">
+                  <div className="bg-neutral-900 p-6 rounded-3xl border border-neutral-800 space-y-4 shadow-xl">
+                     <div className="flex items-center gap-3 text-neutral-400 mb-2">
                         <DollarSign className="w-5 h-5" />
                         <h3 className="font-bold text-sm uppercase tracking-wider text-white">Financial Indicators</h3>
                      </div>
                      
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Expected ROI (%)</label>
+                           <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Expected ROI (%)</label>
                            <input 
                               type="number" 
                               value={businessCase.roi}
                               onChange={(e) => setBusinessCase({...businessCase, roi: Number(e.target.value)})}
-                              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm font-bold text-indigo-400 outline-none"
+                              className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-sm font-bold text-neutral-400 outline-none"
                            />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">NPV</label>
+                           <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">NPV</label>
                            <input 
                               type="number" 
                               value={businessCase.npv}
                               onChange={(e) => setBusinessCase({...businessCase, npv: Number(e.target.value)})}
-                              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm font-bold text-indigo-400 outline-none"
+                              className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-sm font-bold text-neutral-400 outline-none"
                            />
                         </div>
                      </div>
 
                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Payback Period</label>
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Payback Period</label>
                         <input 
                            type="text" 
                            value={businessCase.paybackPeriod}
                            onChange={(e) => setBusinessCase({...businessCase, paybackPeriod: e.target.value})}
-                           className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm font-bold text-white outline-none"
+                           className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-sm font-bold text-white outline-none"
                            placeholder="e.g. 18 Months"
                         />
                      </div>

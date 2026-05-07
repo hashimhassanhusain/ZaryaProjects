@@ -30,20 +30,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [selectedFocusArea, setSelectedFocusArea] = useState<FocusAreaId>('Planning');
   const [favorites, setFavorites] = useState<string[]>(['3.6.3', '3.6.4', '2.4.1']);
   const [isRibbonCollapsed, setIsRibbonCollapsed] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('pmo-theme');
-    return (saved as 'light' | 'dark') || 'light';
-  });
+  const [theme] = useState<'light' | 'dark'>('light');
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('pmo-theme', next);
-      return next;
-    });
+    // Theme is locked to light
   };
 
   const toggleFavorite = (id: string) => {
@@ -57,12 +50,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   React.useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    
-    // Also update data-theme attribute which some plugins use
-    root.setAttribute('data-theme', theme);
-  }, [theme]);
+    root.classList.remove('dark');
+    root.classList.add('light');
+    root.setAttribute('data-theme', 'light');
+    root.style.colorScheme = 'light';
+  }, []);
 
   return (
     <UIContext.Provider value={{ 

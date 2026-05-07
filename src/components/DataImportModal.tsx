@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, Upload, FileText, Check, AlertCircle, 
   ArrowRight, Loader2, Sparkles, Table as TableIcon,
@@ -8,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { GoogleGenAI, Type } from "@google/genai";
-import { cn } from '../lib/utils';
+import { cn, stripNumericPrefix } from '../lib/utils';
 import toast from 'react-hot-toast';
 
 interface TargetColumn {
@@ -211,8 +212,8 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -225,26 +226,26 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-200 dark:border-white/10"
       >
         {/* Header */}
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <Upload className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 leading-tight">{title}</h3>
-              <p className="text-[10px] text-slate-500">Mapping powered by AI</p>
+              <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight uppercase italic">{stripNumericPrefix(title)}</h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 font-bold uppercase tracking-widest leading-none mt-1">Smart AI Mapping Engine</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-50 rounded-full transition-all">
-            <X className="w-4 h-4 text-slate-400" />
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-full transition-all text-slate-400">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50 dark:bg-slate-900/50">
           {step === 'upload' ? (
             <div 
               onDragOver={(e) => e.preventDefault()}
@@ -256,7 +257,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
                   handleFileChange(fakeEvent);
                 }
               }}
-              className="h-full min-h-[400px] border-2 border-dashed border-slate-200 rounded-3xl bg-white flex flex-col items-center justify-center p-12 text-center group hover:border-blue-400 hover:bg-blue-50/20 transition-all cursor-pointer"
+              className="h-full min-h-[400px] border-2 border-dashed border-slate-200 dark:border-white/10 rounded-3xl bg-white dark:bg-slate-800/50 flex flex-col items-center justify-center p-12 text-center group hover:border-blue-400 dark:hover:border-blue-400/50 hover:bg-blue-50/20 transition-all cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
               <input 
@@ -266,15 +267,15 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFileChange}
               />
-              <div className="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mb-6 group-hover:scale-110 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all">
+              <div className="w-20 h-20 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 mb-6 group-hover:scale-110 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 group-hover:text-blue-600 transition-all">
                 <FileText className="w-10 h-10" />
               </div>
-              <h4 className="text-xl font-bold text-slate-900 mb-2">Drop your file here</h4>
-              <p className="text-sm text-slate-500 max-w-xs mx-auto">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Drop your file here</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
                 Support CSV and Excel files. Our AI will automatically map your columns.
               </p>
               <button 
-                className="mt-8 px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-all shadow-lg"
+                className="mt-8 px-8 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-black dark:hover:bg-blue-700 transition-all shadow-lg"
               >
                 Browse Files
               </button>
@@ -282,31 +283,31 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
           ) : (
             <div className="space-y-8">
               {/* Mapping Table */}
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">App Column</th>
-                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Mapping</th>
-                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Your File Header</th>
+                    <tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">App Column</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Mapping</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Your File Header</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                     {targetColumns.map((col) => (
-                      <tr key={col.key} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={col.key} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                            <span className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                               {col.label}
-                              {col.required && <span className="text-rose-500 text-lg">*</span>}
+                              {col.required && <span className="text-rose-600 text-lg">*</span>}
                             </span>
-                            {col.description && <span className="text-[10px] text-slate-400">{col.description}</span>}
+                            {col.description && <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold">{col.description}</span>}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className={cn(
                             "inline-flex items-center justify-center w-8 h-8 rounded-lg",
-                            mapping[col.key] ? "bg-emerald-50 text-emerald-500" : "bg-slate-100 text-slate-300"
+                            mapping[col.key] ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" : "bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600"
                           )}>
                             {mapping[col.key] ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                           </div>
@@ -317,15 +318,15 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
                               value={mapping[col.key] || ''}
                               onChange={(e) => setMapping(prev => ({ ...prev, [col.key]: e.target.value }))}
                               className={cn(
-                                "w-full pl-4 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm font-medium transition-all outline-none appearance-none",
+                                "w-full pl-4 pr-10 py-2.5 bg-white dark:bg-slate-950 border rounded-xl text-sm font-bold transition-all outline-none appearance-none",
                                 mapping[col.key] 
-                                  ? "border-emerald-200 focus:ring-4 focus:ring-emerald-500/10" 
-                                  : "border-slate-200 focus:ring-4 focus:ring-blue-500/10"
+                                  ? "border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 focus:ring-4 focus:ring-emerald-500/10" 
+                                  : "border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/10"
                               )}
                             >
-                              <option value="">Skip this column</option>
+                              <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Skip this column</option>
                               {headers.map(header => (
-                                <option key={header} value={header}>{header}</option>
+                                <option key={header} value={header} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{header}</option>
                               ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -342,28 +343,28 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
               {/* Preview */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h5 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <h5 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <TableIcon className="w-4 h-4 text-blue-500" />
                     Data Preview
                   </h5>
-                  <span className="text-xs text-slate-400">{rawRows.length} rows found</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{rawRows.length} rows found</span>
                 </div>
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/10 overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                         {targetColumns.filter(c => mapping[c.key]).map(col => (
-                          <th key={col.key} className="px-4 py-3 font-bold text-slate-500 truncate min-w-[120px]">
+                          <th key={col.key} className="px-4 py-3 font-bold text-slate-500 dark:text-slate-400 truncate min-w-[120px]">
                             {col.label}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-50 dark:divide-white/5">
                       {rawRows.slice(0, 5).map((row, idx) => (
                         <tr key={idx}>
                           {targetColumns.filter(c => mapping[c.key]).map(col => (
-                            <td key={col.key} className="px-4 py-3 text-slate-600 truncate">
+                            <td key={col.key} className="px-4 py-3 text-slate-600 dark:text-slate-400 truncate font-medium">
                               {row[mapping[col.key]]}
                             </td>
                           ))}
@@ -372,7 +373,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
                     </tbody>
                   </table>
                   {rawRows.length > 5 && (
-                    <div className="p-3 text-center text-slate-400 border-t border-slate-50 bg-slate-50/30">
+                    <div className="p-3 text-center text-slate-400 dark:text-slate-500 border-t border-slate-50 dark:border-white/5 bg-slate-50/30 dark:bg-white/5 font-medium">
                       Show more rows in the summary...
                     </div>
                   )}
@@ -383,10 +384,10 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
+        <div className="px-8 py-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
           <div className="flex items-center gap-4">
             {isSuggesting && (
-              <div className="flex items-center gap-2 text-blue-600 animate-pulse">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 animate-pulse">
                 <Sparkles className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase tracking-wider">AI is Suggesting Mapping...</span>
               </div>
@@ -394,7 +395,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
             {step === 'mapping' && !isSuggesting && (
                 <button 
                   onClick={() => suggestMapping(headers)}
-                  className="px-4 py-2 text-blue-600 font-bold text-xs hover:bg-blue-50 rounded-xl transition-all flex items-center gap-2"
+                  className="px-4 py-2 text-blue-600 dark:text-blue-400 font-bold text-xs hover:bg-blue-50 dark:hover:bg-blue-400/10 rounded-xl transition-all flex items-center gap-2"
                 >
                     <Sparkles className="w-4 h-4" />
                     Re-run AI Suggestion
@@ -404,7 +405,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
           <div className="flex items-center gap-3">
             <button 
               onClick={onClose}
-              className="px-6 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-50 rounded-xl transition-all"
+              className="px-6 py-2.5 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all"
             >
               Cancel
             </button>
@@ -412,7 +413,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
               <button 
                 onClick={handleImport}
                 disabled={isProcessing}
-                className="px-8 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
+                className="px-8 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-black dark:hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
               >
                 {isProcessing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -424,7 +425,9 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
             )}
           </div>
         </div>
+
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };

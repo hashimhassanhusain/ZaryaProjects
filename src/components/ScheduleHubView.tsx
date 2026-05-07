@@ -194,28 +194,28 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
             <Calendar className="w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">Master Schedule Hub</h2>
+            <h2 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight italic uppercase">Master Schedule Hub</h2>
             <p className="text-xs font-bold text-brand uppercase tracking-[0.2em] mt-1">PMBOK Phase Alignment Dashboard</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 group-focus-within:text-brand transition-colors" />
             <input 
               type="text" 
               placeholder="Search schedule artifacts..." 
-              className="pl-11 pr-6 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xs font-bold w-64 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all shadow-sm text-slate-900 dark:text-white"
+              className="pl-11 pr-6 py-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl text-xs font-bold w-64 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all shadow-sm text-neutral-900 dark:text-white"
             />
           </div>
-          <button className="px-6 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm">
+          <button className="px-6 py-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm">
             <Archive className="w-4 h-4" />
             Archive Ready
           </button>
         </div>
       </div>
 
-      <div className="bg-slate-900 dark:bg-surface rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
+      <div className="bg-neutral-900 dark:bg-surface rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/10 rounded-full blur-[100px] -mr-[200px] -mt-[200px]" />
          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
             {/* Input Arsenal */}
@@ -229,7 +229,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
                <div className="space-y-4">
                   {['Activity List', 'Activity Attributes', 'Project Network Diagram', 'Resource Calendars'].map(item => (
                      <div key={item} className="group p-5 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 rounded-2xl transition-all cursor-pointer flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-300">{item}</span>
+                        <span className="text-xs font-bold text-neutral-300">{item}</span>
                         <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white transition-all" />
                      </div>
                   ))}
@@ -243,11 +243,11 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
                   <Cpu className="w-10 h-10 text-amber-400 relative z-10" />
                </div>
                <h4 className="text-sm font-black uppercase tracking-[0.3em] text-amber-400 mb-2">Processing Logic</h4>
-               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Schedule Compression Engine</p>
+               <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest text-center">Schedule Compression Engine</p>
                <div className="mt-12 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-slate-800" />
-                  <div className="w-12 h-px bg-slate-800" />
-                  <div className="w-2 h-2 rounded-full bg-slate-800" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-800" />
+                  <div className="w-12 h-px bg-neutral-800" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-800" />
                </div>
             </div>
 
@@ -267,12 +267,12 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
                         </div>
                         <div>
                            <div className="text-lg font-bold">Project Schedule</div>
-                           <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Project Schedule</div>
+                           <div className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest leading-none mt-1">Project Schedule</div>
                         </div>
                      </div>
                      <span className="px-3 py-1 bg-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-lg">Baseline</span>
                   </div>
-                  <button className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Export PDF Deliverable</button>
+                  <button className="w-full py-4 bg-neutral-800 hover:bg-neutral-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Export PDF Deliverable</button>
                </div>
             </div>
          </div>
@@ -283,24 +283,24 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
           <div 
             key={p.id}
             onClick={() => handleTabChange(p.id)}
-            className="group bg-white dark:bg-surface rounded-[2.5rem] p-10 border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-2xl hover:shadow-brand/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white dark:bg-surface rounded-[2.5rem] p-10 border border-neutral-200 dark:border-white/5 shadow-sm hover:shadow-2xl hover:shadow-brand/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-white/5 rounded-full translate-x-16 -translate-y-16 group-hover:bg-brand/10 transition-colors" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-neutral-50 dark:bg-white/5 rounded-full translate-x-16 -translate-y-16 group-hover:bg-brand/10 transition-colors" />
             <div className="relative z-10 space-y-6">
               <div className={cn(
-                "w-14 h-14 rounded-2xl bg-slate-50 dark:bg-white/10 flex items-center justify-center text-slate-400 group-hover:text-white transition-all duration-500",
-                p.size === 'large' ? "bg-brand/10 text-brand group-hover:bg-brand group-hover:shadow-brand/30" : "group-hover:bg-slate-900 dark:group-hover:bg-brand group-hover:shadow-slate-900/30 dark:group-hover:shadow-brand/30"
+                "w-14 h-14 rounded-2xl bg-neutral-50 dark:bg-white/10 flex items-center justify-center text-neutral-400 group-hover:text-white transition-all duration-500",
+                p.size === 'large' ? "bg-brand/10 text-brand group-hover:bg-brand group-hover:shadow-brand/30" : "group-hover:bg-neutral-900 dark:group-hover:bg-brand group-hover:shadow-neutral-900/30 dark:group-hover:shadow-brand/30"
               )}>
                 <p.icon className={cn("w-7 h-7", p.size === 'large' && "w-8 h-8")} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-brand transition-colors">
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white group-hover:text-brand transition-colors">
                   {stripNumericPrefix(p.title)}
                 </h3>
                 <p className="text-[11px] text-brand font-bold uppercase tracking-widest">
                   {p.group}
                 </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed line-clamp-2 mt-2">
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 font-medium leading-relaxed line-clamp-2 mt-2">
                   {th(p.id + '_sched_summary')}
                 </p>
               </div>
@@ -345,7 +345,7 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-slate-50 dark:bg-background transition-colors">
+    <div className="flex flex-col min-h-screen w-full bg-neutral-50 dark:bg-background transition-colors">
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}
@@ -353,18 +353,18 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
       />
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {activeTab !== 'overview' && (
-          <header className="px-6 py-3 bg-white dark:bg-surface border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+          <header className="px-6 py-3 bg-white dark:bg-surface border-b border-neutral-100 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/10">
+              <div className="w-8 h-8 rounded-lg bg-neutral-50 dark:bg-white/5 flex items-center justify-center text-neutral-400 border border-neutral-100 dark:border-white/10">
                 <Calendar className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">
+                <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400 leading-none mb-1">
                   <span>{stripNumericPrefix(t(page.id === 'sched' ? 'schedule' : page.title))}</span>
                   <ChevronRight className="w-2 h-2 opacity-50" />
                   <span className="text-brand">{stripNumericPrefix(t(activeTab))}</span>
                 </div>
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none uppercase italic">
+                <h2 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight leading-none uppercase italic">
                   {stripNumericPrefix(t(activeTab))}
                 </h2>
               </div>

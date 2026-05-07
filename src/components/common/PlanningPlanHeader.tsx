@@ -50,13 +50,13 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
   return (
     <div className="space-y-6 mb-12">
       {/* Heritage Header */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+      <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
          
          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
             <div className="space-y-4 max-w-2xl">
                <div className="flex items-center gap-3">
-                  <div className="px-3 py-1 bg-blue-500 text-[9px] font-black uppercase tracking-[0.2em] rounded-full">
+                  <div className="px-3 py-1 bg-neutral-700 text-[9px] font-black uppercase tracking-[0.2em] rounded-full">
                      {t('master_foundation_data') || 'Master Foundation Data'}
                   </div>
                   <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold">
@@ -71,23 +71,23 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
                
                <div className="flex flex-wrap gap-6">
                   <div className="flex items-center gap-2.5 opacity-80">
-                     <User className="w-4 h-4 text-blue-400" />
+                     <User className="w-4 h-4 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{t('pm') || 'Project Manager'}</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('pm') || 'Project Manager'}</span>
                         <span className="text-xs font-bold">{basis?.manager || 'Not Assigned'}</span>
                      </div>
                   </div>
                   <div className="flex items-center gap-2.5 opacity-80">
-                     <Calendar className="w-4 h-4 text-blue-400" />
+                     <Calendar className="w-4 h-4 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{t('start_date') || 'Planned Start'}</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('start_date') || 'Planned Start'}</span>
                         <span className="text-xs font-bold">{basis?.startDate || '---'}</span>
                      </div>
                   </div>
                   <div className="flex items-center gap-2.5 opacity-80">
-                     <DollarSign className="w-4 h-4 text-blue-400" />
+                     <DollarSign className="w-4 h-4 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{t('initial_budget') || 'Initial Budget'}</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('initial_budget') || 'Initial Budget'}</span>
                         <span className="text-xs font-bold">
                            {basis?.budget?.toLocaleString()} {basis?.currency}
                         </span>
@@ -100,8 +100,8 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
                {/* Version Selector */}
                <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl border border-white/10">
                   <div className="flex flex-col items-end pr-3 border-r border-white/10 italic">
-                     <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{t('current_baseline') || 'Current Baseline'}</span>
-                     <span className="text-xs font-black text-blue-400">V{currentVersion}</span>
+                     <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('current_baseline') || 'Current Baseline'}</span>
+                     <span className="text-xs font-black text-neutral-400">V{currentVersion}</span>
                   </div>
                   
                   <div className="relative group">
@@ -112,10 +112,10 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
                      >
                         {versions.length > 0 ? (
                           versions.map(v => (
-                            <option key={v.id} value={v.version} className="text-slate-900">V{v.version} - {v.userName}</option>
+                            <option key={v.id} value={v.version} className="text-neutral-900">V{v.version} - {v.userName}</option>
                           ))
                         ) : (
-                          <option value="1.0" className="text-slate-900">V1.0 - Default</option>
+                          <option value="1.0" className="text-neutral-900">V1.0 - Default</option>
                         )}
                      </select>
                      <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
@@ -123,7 +123,7 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
 
                   <button 
                     onClick={onNewVersion}
-                    className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-all active:scale-90"
+                    className="w-10 h-10 bg-neutral-700 rounded-xl flex items-center justify-center hover:bg-neutral-600 transition-all active:scale-90"
                     title="Generate New Version"
                   >
                      <Plus className="w-5 h-5" />

@@ -12,8 +12,22 @@ export interface Alert {
   msg: string;
 }
 
+export interface BOQVersion {
+  id: string;
+  projectId: string;
+  versionNumber: string;
+  title: string;
+  status: 'Draft' | 'Issued' | 'Approved' | 'Archived';
+  description?: string;
+  issuedAt?: any;
+  issuedBy?: string;
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface BOQItem {
   id: string;
+  versionId?: string; // Reference to BOQVersion
   description: string;
   unit: string;
   quantity: number;
@@ -28,6 +42,9 @@ export interface BOQItem {
   inputCurrency?: 'USD' | 'IQD';
   inputRate?: number;
   exchangeRateUsed?: number;
+  projectId?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface WBSLevel {

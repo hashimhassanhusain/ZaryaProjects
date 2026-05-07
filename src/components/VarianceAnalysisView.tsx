@@ -32,6 +32,7 @@ import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 // Helper functions for live calculations
 function getCostCompletion(activity: Activity, purchaseOrders: PurchaseOrder[]): number {
@@ -505,6 +506,10 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             Submit Analysis
           </button>
+          <DriveUploadButton
+            drivePath="6_Financials_and_Procurements/6.20_Cost_Control_Reports"
+            label="Upload External Report"
+          />
         </div>
       </div>
 

@@ -4,6 +4,8 @@ import { getParent } from '../data';
 import { BarChart3, Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle2, AlertCircle, ShieldCheck, FileText, Printer, Download, Share2, UserCheck, Calendar, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
+import { StandardProcessPage } from './StandardProcessPage';
+import { DriveUploadButton } from './common/DriveUploadButton';
 import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -178,27 +180,27 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
   if (loading) return <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>;
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-end gap-3 mb-8">
-        <button 
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing...' : 'Sync with Project Data'}
-        </button>
-        <div className="flex gap-2">
-          <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
-            <Printer className="w-4 h-4" />
+    <StandardProcessPage
+      page={page}
+      actions={
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync with Project Data'}
           </button>
-          <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 transition-all">
-            <Download className="w-4 h-4" />
-          </button>
+          <DriveUploadButton
+            drivePath="6_Financials_and_Procurements/6.20_Cost_Control_Reports"
+            label="Upload EVM Report"
+          />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      }
+    >
+      <div className="space-y-8 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           {/* Main Metrics Card */}
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -214,43 +216,43 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Core Values */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Core Values</h4>
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Core Values</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">BAC</div>
-                      <div className="text-lg font-bold text-slate-900">{formatCurrency(evmMetrics.bac)}</div>
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">BAC</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(evmMetrics.bac)}</div>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Planned Value (PV)</div>
-                      <div className="text-lg font-bold text-slate-900">{formatCurrency(evmMetrics.pv)}</div>
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Planned Value (PV)</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(evmMetrics.pv)}</div>
                     </div>
-                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="text-[10px] font-bold text-blue-400 uppercase mb-1">Earned Value (EV)</div>
-                      <div className="text-lg font-bold text-blue-900">{formatCurrency(evmMetrics.ev)}</div>
+                    <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Earned Value (EV)</div>
+                      <div className="text-lg font-bold text-blue-900 dark:text-blue-200">{formatCurrency(evmMetrics.ev)}</div>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Actual Cost (AC)</div>
-                      <div className="text-lg font-bold text-slate-900">{formatCurrency(evmMetrics.ac)}</div>
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Actual Cost (AC)</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(evmMetrics.ac)}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Variances */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Variances</h4>
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Variances</h4>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                    <div className="flex justify-between items-center p-4 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl shadow-sm">
                       <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase">Schedule Variance (SV)</div>
+                        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Schedule Variance (SV)</div>
                         <div className={`text-xl font-bold ${evmMetrics.sv >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {evmMetrics.sv >= 0 ? '+' : ''}{formatCurrency(evmMetrics.sv)}
                         </div>
                       </div>
                       {evmMetrics.sv >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-rose-500" />}
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                    <div className="flex justify-between items-center p-4 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl shadow-sm">
                       <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase">Cost Variance (CV)</div>
+                        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Cost Variance (CV)</div>
                         <div className={`text-xl font-bold ${evmMetrics.cv >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {evmMetrics.cv >= 0 ? '+' : ''}{formatCurrency(evmMetrics.cv)}
                         </div>
@@ -262,38 +264,38 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
               </div>
 
               {/* Indices */}
-              <div className="mt-12 pt-8 border-t border-slate-100">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Performance Indices</h4>
+              <div className="mt-12 pt-8 border-t border-slate-100 dark:border-white/5">
+                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-6">Performance Indices</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <div className="flex justify-between items-end">
-                      <span className="text-sm font-bold text-slate-700">SPI (Schedule)</span>
-                      <span className={`text-2xl font-semibold ${evmMetrics.spi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">SPI (Schedule)</span>
+                      <span className={`text-2xl font-black ${evmMetrics.spi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {formatIndex(evmMetrics.spi)}
                       </span>
                     </div>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-3 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-1000 ${evmMetrics.spi >= 1 ? 'bg-emerald-500' : 'bg-amber-500'}`}
                         style={{ width: `${Math.min(evmMetrics.spi * 50, 100)}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 italic">Values {'>'} 1.00 indicate project is ahead of schedule.</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-bold italic">Values {'>'} 1.00 indicate project is ahead of schedule.</p>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-end">
-                      <span className="text-sm font-bold text-slate-700">CPI (Cost)</span>
-                      <span className={`text-2xl font-semibold ${evmMetrics.cpi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">CPI (Cost)</span>
+                      <span className={`text-2xl font-black ${evmMetrics.cpi >= 1 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {formatIndex(evmMetrics.cpi)}
                       </span>
                     </div>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-3 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-1000 ${evmMetrics.cpi >= 1 ? 'bg-emerald-500' : 'bg-amber-500'}`}
                         style={{ width: `${Math.min(evmMetrics.cpi * 50, 100)}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 italic">Values {'>'} 1.00 indicate project is under budget.</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-bold italic">Values {'>'} 1.00 indicate project is under budget.</p>
                   </div>
                 </div>
               </div>
@@ -349,36 +351,36 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
           </section>
 
           {/* Progress Overview */}
-          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-900 mb-8 flex items-center gap-2">
+          <section className="bg-white dark:bg-surface p-8 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-8 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-500" />
               Progress Comparison
             </h3>
             <div className="space-y-8">
               <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700">
+                <div className="flex justify-between text-sm font-black text-slate-800 dark:text-slate-200">
                   <span>Planned Completion</span>
                   <span>{evmMetrics.percentPlanned.toFixed(1)}%</span>
                 </div>
-                <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-slate-300" style={{ width: `${evmMetrics.percentPlanned}%` }} />
+                <div className="h-4 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-slate-400 dark:bg-slate-700" style={{ width: `${evmMetrics.percentPlanned}%` }} />
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700">
+                <div className="flex justify-between text-sm font-black text-slate-800 dark:text-slate-200">
                   <span>Earned Completion (Actual Progress)</span>
                   <span>{evmMetrics.percentEarned.toFixed(1)}%</span>
                 </div>
-                <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-4 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500" style={{ width: `${evmMetrics.percentEarned}%` }} />
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700">
+                <div className="flex justify-between text-sm font-black text-slate-800 dark:text-slate-200">
                   <span>Budget Spent</span>
                   <span>{evmMetrics.percentSpent.toFixed(1)}%</span>
                 </div>
-                <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-4 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                   <div className="h-full bg-amber-500" style={{ width: `${evmMetrics.percentSpent}%` }} />
                 </div>
               </div>
@@ -424,8 +426,9 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
               ID: ZARYA-EVM-AUTO
             </div>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </StandardProcessPage>
   );
 };

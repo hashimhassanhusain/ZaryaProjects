@@ -41,6 +41,7 @@ import autoTable from 'jspdf-autotable';
 
 import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { DriveUploadButton } from './common/DriveUploadButton';
 
 interface CorrespondenceLogViewProps {
   page: Page;
@@ -262,6 +263,23 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
     ]
   };
 
+  const driveActions = (
+    <div className="flex items-center gap-2">
+      <DriveUploadButton 
+        drivePath="0_Transmittals_and_Audit_Trail/0.1_Incoming_Transmittals/0.1.1_Emails" 
+        label="Emails" 
+      />
+      <DriveUploadButton 
+        drivePath="0_Transmittals_and_Audit_Trail/0.2_Outgoing_Transmittals/0.2.1_RFIs" 
+        label="RFIs" 
+      />
+      <DriveUploadButton 
+        drivePath="0_Transmittals_and_Audit_Trail/0.2_Outgoing_Transmittals/0.2.2_Submittals" 
+        label="Submittals" 
+      />
+    </div>
+  );
+
   return (
     <StandardProcessPage
       page={page}
@@ -270,6 +288,7 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
       isSaving={isSaving}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
+      actions={driveActions}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -306,7 +325,7 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
               <div className="flex justify-end pr-2">
                  <button 
                    onClick={() => setViewMode('grid')}
-                   className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-all uppercase tracking-wider shadow-sm"
+                   className="flex items-center gap-1.5 px-3 py-2 bg-neutral-100 text-neutral-600 rounded-xl text-[10px] font-bold hover:bg-neutral-200 transition-all uppercase tracking-wider shadow-sm"
                  >
                    <ArrowLeft className="w-3.5 h-3.5" />
                    {t('back_to_list')}
@@ -314,24 +333,24 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
               </div>
 
               {/* Correspondence Canvas */}
-              <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+              <section className="bg-white rounded-[3rem] border border-neutral-200 shadow-sm overflow-hidden">
+                <div className="p-8 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-900/20">
+                    <div className="w-12 h-12 bg-neutral-900 rounded-2xl flex items-center justify-center shadow-lg shadow-neutral-900/20">
                       <FilePlus className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900 tracking-tight">Correspondence Details</h2>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Official Record Management</p>
+                      <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Correspondence Details</h2>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Official Record Management</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+                    <div className="flex bg-white rounded-xl border border-neutral-200 p-1 shadow-sm">
                       <button 
                         onClick={() => setFormData({ ...formData, type: 'Incoming' })}
                         className={cn(
                           "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2",
-                          formData.type === 'Incoming' ? "bg-slate-900 text-white shadow-md shadow-slate-200" : "text-slate-400 hover:text-slate-600"
+                          formData.type === 'Incoming' ? "bg-neutral-900 text-white shadow-md shadow-neutral-200" : "text-neutral-400 hover:text-neutral-600"
                         )}
                       >
                         <Inbox className="w-3 h-3" />
@@ -341,7 +360,7 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
                         onClick={() => setFormData({ ...formData, type: 'Outgoing' })}
                         className={cn(
                           "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2",
-                          formData.type === 'Outgoing' ? "bg-slate-900 text-white shadow-md shadow-slate-200" : "text-slate-400 hover:text-slate-600"
+                          formData.type === 'Outgoing' ? "bg-neutral-900 text-white shadow-md shadow-neutral-200" : "text-neutral-400 hover:text-neutral-600"
                         )}
                       >
                         <Send className="w-3 h-3" />
@@ -355,44 +374,44 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                       <div className="lg:col-span-1 space-y-8">
                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-slate-900 mb-2 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2 text-neutral-900 mb-2 border-b border-neutral-100 pb-3">
                               <History className="w-4 h-4 text-blue-600" />
                               <h3 className="text-[10px] font-black uppercase tracking-widest">Reference Data</h3>
                             </div>
                             <div className="space-y-4">
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Reference Number</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Reference Number</label>
                                   <input 
                                     type="text"
                                     value={formData.refNumber}
                                     onChange={(e) => setFormData({ ...formData, refNumber: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all"
+                                    className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-neutral-500/5 transition-all"
                                   />
                                </div>
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correspondence Date</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Correspondence Date</label>
                                   <input 
                                     type="date"
                                     value={formData.date}
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all"
+                                    className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-neutral-500/5 transition-all"
                                   />
                                </div>
                             </div>
                          </div>
 
                          <div className="space-y-4 pt-4">
-                            <div className="flex items-center gap-2 text-slate-900 mb-2 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2 text-neutral-900 mb-2 border-b border-neutral-100 pb-3">
                               <PlusCircle className="w-4 h-4 text-emerald-600" />
                               <h3 className="text-[10px] font-black uppercase tracking-widest">Status & Priority</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Priority</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Priority</label>
                                   <select 
                                     value={formData.priority}
                                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm"
+                                    className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm"
                                   >
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
@@ -400,11 +419,11 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
                                   </select>
                                </div>
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Status</label>
                                   <select 
                                     value={formData.status}
                                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm"
+                                    className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none shadow-sm"
                                   >
                                     <option value="Open">Open</option>
                                     <option value="Pending Response">Pending Response</option>
@@ -417,29 +436,29 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
 
                       <div className="lg:col-span-2 space-y-8">
                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-slate-900 mb-2 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2 text-neutral-900 mb-2 border-b border-neutral-100 pb-3">
                               <User className="w-4 h-4 text-blue-600" />
                               <h3 className="text-[10px] font-black uppercase tracking-widest">Parties involved</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Sender</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Sender</label>
                                   <input 
                                     type="text"
                                     placeholder="Entity / Name"
                                     value={formData.sender}
                                     onChange={(e) => setFormData({ ...formData, sender: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all shadow-sm"
+                                    className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-neutral-500/5 transition-all shadow-sm"
                                   />
                                </div>
                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Recipient</label>
+                                  <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Recipient</label>
                                   <input 
                                     type="text"
                                     placeholder="Entity / Name"
                                     value={formData.recipient}
                                     onChange={(e) => setFormData({ ...formData, recipient: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all shadow-sm"
+                                    className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-neutral-500/5 transition-all shadow-sm"
                                   />
                                </div>
                             </div>
@@ -447,23 +466,23 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
 
                          <div className="space-y-6 pt-4">
                             <div className="space-y-1.5">
-                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                               <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Subject</label>
                                <input 
                                  type="text"
                                  placeholder="Core topic of correspondence..."
                                  value={formData.subject}
                                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                 className="w-full px-6 py-5 bg-white border border-slate-200 rounded-[2rem] text-lg font-black tracking-tight outline-none focus:ring-8 focus:ring-blue-500/5 transition-all shadow-sm"
+                                 className="w-full px-6 py-5 bg-white border border-neutral-200 rounded-[2rem] text-lg font-black tracking-tight outline-none focus:ring-8 focus:ring-blue-500/5 transition-all shadow-sm"
                                />
                             </div>
                             <div className="space-y-1.5">
-                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Description / Key Notes</label>
+                               <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Description / Key Notes</label>
                                <textarea 
                                  rows={6}
                                  placeholder="Detail the contents or required actions..."
                                  value={formData.description}
                                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                 className="w-full px-8 py-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm font-medium leading-relaxed outline-none focus:ring-8 focus:ring-slate-500/5 transition-all shadow-inner"
+                                 className="w-full px-8 py-8 bg-neutral-50 border border-neutral-100 rounded-[2.5rem] text-sm font-medium leading-relaxed outline-none focus:ring-8 focus:ring-neutral-500/5 transition-all shadow-inner"
                                />
                             </div>
                          </div>
@@ -473,24 +492,24 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
 
                 {/* History Stack */}
                 {versions.length > 0 && (
-                  <div className="p-8 border-t border-slate-100 bg-slate-50/30">
+                  <div className="p-8 border-t border-neutral-100 bg-neutral-50/30">
                      <div className="flex items-center gap-2 mb-6">
-                        <History className="w-4 h-4 text-slate-400" />
-                        <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Snapshot History</h3>
+                        <History className="w-4 h-4 text-neutral-400" />
+                        <h3 className="text-[10px] font-bold text-neutral-900 uppercase tracking-widest">Snapshot History</h3>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {versions.map(v => (
                           <div 
                             key={v.id} 
                             onClick={() => setFormData(v.data as CorrespondenceEntry)}
-                            className="p-5 bg-white border border-slate-200 rounded-3xl hover:border-blue-500 transition-all cursor-pointer group flex items-start gap-4 shadow-sm hover:shadow-md"
+                            className="p-5 bg-white border border-neutral-200 rounded-3xl hover:border-blue-500 transition-all cursor-pointer group flex items-start gap-4 shadow-sm hover:shadow-md"
                           >
-                             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all font-black text-xs">
+                             <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all font-black text-xs">
                                 v{v.version}
                              </div>
                              <div className="min-w-0">
-                                <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight truncate">{v.changeSummary}</div>
-                                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">{v.userName} • {new Date(v.timestamp).toLocaleDateString()}</div>
+                                <div className="text-[10px] font-black text-neutral-900 uppercase tracking-tight truncate">{v.changeSummary}</div>
+                                <div className="text-[9px] text-neutral-400 font-bold uppercase tracking-widest mt-1">{v.userName} • {new Date(v.timestamp).toLocaleDateString()}</div>
                              </div>
                           </div>
                         ))}
@@ -498,20 +517,20 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
                   </div>
                 )}
 
-                <div className="bg-slate-900 p-8 flex items-center justify-between border-t border-slate-800">
+                <div className="bg-neutral-900 p-8 flex items-center justify-between border-t border-neutral-800">
                    <div className="flex items-center gap-6">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Version Control</span>
                         <span className="text-xl font-black text-white italic tracking-tighter">v{formData.version}</span>
                       </div>
-                      <div className="w-px h-10 bg-slate-800" />
+                      <div className="w-px h-10 bg-neutral-800" />
                       <div className="flex gap-4">
                          <div className="px-5 py-2 bg-white/5 rounded-xl border border-white/10 flex flex-col">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Type</span>
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Type</span>
                             <span className="text-xs font-bold text-white">{formData.type}</span>
                          </div>
                          <div className="px-5 py-2 bg-white/5 rounded-xl border border-white/10 flex flex-col">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Status</span>
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Status</span>
                             <span className="text-xs font-bold text-emerald-400">{formData.status}</span>
                          </div>
                       </div>
