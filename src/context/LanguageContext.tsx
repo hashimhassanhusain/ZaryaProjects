@@ -83,6 +83,7 @@ const translations: Record<Language, Record<string, string>> = {
     'users': 'Users',
     'contacts': 'Contacts',
     'companies': 'Companies',
+    'supplier_master': 'Supplier Master Register',
     '3m_resources': '3M Resources',
     'work_packages': 'Work Packages',
     'wbs_hierarchy': 'WBS Hierarchy',
@@ -911,6 +912,42 @@ const translations: Record<Language, Record<string, string>> = {
     'foundation_insights': 'Foundation Insights',
     'eefs': 'EEFs',
     'opas': 'OPAs',
+    'supplier_code': 'Supplier Code',
+    'supplier_name': 'Supplier/Company Name',
+    'discipline': 'Discipline',
+    'phone': 'Phone',
+    '1.6.1': 'High-Level Resource Strategy',
+    '1.6.1_summary': 'Identify and define high-level strategic resources required for the project phases.',
+    '1.6.2': 'Resource Acquisition Strategy',
+    '1.6.2_summary': 'Detailed plan for how resources will be acquired, including make-or-buy decisions.',
+    '2.6.1': 'Resource Requirements Matrix',
+    '2.6.1_summary': 'Mapping specific resource requirements to work packages and activities.',
+    '2.6.2': 'Resource Management Plan',
+    '2.6.2_summary': 'How resources will be identified, acquired, managed and released.',
+    '2.6.3': 'Resource Control Framework',
+    '2.6.3_summary': 'Policies and procedures for monitoring and controlling resource utilization.',
+    '3.6.1': 'Resource Assignment Records',
+    '3.6.1_summary': 'Documentation of confirmed resource assignments to project tasks.',
+    '3.6.2': 'Team Performance Assessments',
+    '3.6.2_summary': 'Formal evaluation of team and individual project performance.',
+    '3.6.3': 'Project Task Manager',
+    '3.6.4': 'Minutes of Meeting (MOM)',
+    '4.6.1': 'Resource Performance Reports',
+    '4.6.1_summary': 'Reports monitoring actual resource consumption against the baseline.',
+    '4.6.2': 'Resource Change Log',
+    '4.6.2_summary': 'Central log tracking all changes to resource allocations or strategies.',
+    '5.6.1': 'Resource Release Report',
+    '5.6.1_summary': 'Formal sign-off and documentation for the release of project resources.',
+    '5.6.2': 'Lessons Learned',
+    '5.6.2_summary': 'Capture and archive insights gained regarding project resource management.',
+    '3.3.4_summary': 'Comprehensive registry of all approved project suppliers and their codes.',
+    'strategy_structure': 'Strategy & Structure',
+    'acquisition_booking': 'Acquisition & Booking',
+    'performance_release': 'Performance & Release',
+    'resource_breakdown_structure_short': 'RBS',
+    'calendars': 'Calendars',
+    'utilization': 'Utilization',
+    'release_close': 'Release & Close',
   },
   ar: {
     'boq_versions': 'إصدارات جدول الكميات',
@@ -991,6 +1028,7 @@ const translations: Record<Language, Record<string, string>> = {
     'users': 'المستخدمين',
     'contacts': 'جهات الاتصال',
     'companies': 'الشركات',
+    'supplier_master': 'سجل الموردين المعتمدين',
     '3m_resources': 'موارد 3M',
     'work_packages': 'حزم العمل',
     'wbs_hierarchy': 'الهيكل الهرمي للمشروع',
@@ -1096,6 +1134,41 @@ const translations: Record<Language, Record<string, string>> = {
     'view_meeting': 'عرض الاجتماع',
     'attendees': 'الحاضرون',
     'agenda': 'جدول الأعمال',
+    '1.6.1': 'استراتيجية الموارد عالية المستوى',
+    '1.6.1_summary': 'تحديد متطلبات الموارد وفئات التوريد للمشروع.',
+    '1.6.2': 'استراتيجية شراء الموارد',
+    '1.6.2_summary': 'المنهج المتبع لشراء الموارد الفنية والبشرية.',
+    '2.6.1': 'مصفوفة متطلبات الموارد',
+    '2.6.1_summary': 'رسم متطلبات الموارد لحزم عمل المشروع المحددة.',
+    '2.6.2': 'خطة إدارة الموارد',
+    '2.6.2_summary': 'تعريف كيفية إدارة الموارد وتخصيصها وتحريرها.',
+    '2.6.3': 'إطار التحكم في الموارد',
+    '2.6.3_summary': 'السياسات والضوابط لضمان الاستخدام الأمثل لموارد المشروع.',
+    '3.6.1': 'سجلات تخصيص الموارد',
+    '3.6.1_summary': 'توثيق الموارد المخصصة لكل نشاط أو مهمة.',
+    '3.6.2': 'تقييمات أداء الفريق',
+    '3.6.2_summary': 'تقييم كفاءة الفريق وتحديد مجالات التحسين.',
+    '3.6.3': 'مدير مهام المشروع',
+    '3.6.4': 'محاضر الاجتماعات (MOM)',
+    '4.6.1': 'تقارير أداء الموارد',
+    '4.6.1_summary': 'مراقبة استهلاك الموارد مقارنة بالخطة.',
+    '4.6.2': 'سجل تغيير الموارد',
+    '4.6.2_summary': 'تتبع التعديلات على تخصيصات الموارد.',
+    '5.6.1': 'تقرير تسريح الموارد',
+    '5.6.1_summary': 'توثيق عملية إنهاء خدمة الموارد أو تحويلها.',
+    '5.6.2': 'الدروس المستفادة',
+    '5.6.2_summary': 'تحليل نجاحات وتحديات إدارة الموارد.',
+    '3.3.4': 'سجل الموردين الرئيسي',
+    '3.3.4_summary': 'قاعدة بيانات شاملة لجميع الموردين المعتمدين وتاريخ تعاملهم.',
+    'strategy_structure': 'الاستراتيجية والهيكل',
+    'acquisition_booking': 'الشراء والحجز',
+    'performance_release': 'الأداء والتسريح',
+    'calendars': 'التقاويم',
+    'utilization': 'الاستخدام',
+    'release_close': 'التسريح والإغلاق',
+    'resource_breakdown_structure_short': 'هيكل تقسيم الموارد (RBS)',
+    'ram_raci_matrix': 'مصفوفة RACI',
+
     'decisions': 'القرارات',
     'incidents': 'الحوادث',
     'site_weather': 'حالة الطقس في الموقع',
@@ -1487,15 +1560,11 @@ const translations: Record<Language, Record<string, string>> = {
     '2.4.3': 'تطوير ميزانية المشروع',
     '2.4.4': 'تحديد إطار الرقابة المالية',
     '2.6': 'نطاق الموارد',
-    '2.6.1': 'متطلبات موارد النشاط',
-    '3.6.3': 'إدارة المهام',
-    '3.6.4': 'الاجتماعات والمحاضر',
     '2.6.4': 'هيكل تقسيم الموارد',
     '2.6.5': 'مصفوفة تخصيص المسؤوليات',
     '2.6.6': 'الأدوار والمسؤوليات',
     '2.6.7': 'معايير اختيار المصدر',
     '2.7': 'مركز المخاطر والفرص',
-    '2.7.5': 'سجل المخاطر',
     '3.1.1': 'طلبات التغيير',
     '2.7.1': 'تقييم الاحتمالية والأثر',
     '2.7.2': 'مصفوفة الاحتمالية والأثر',
@@ -1510,7 +1579,6 @@ const translations: Record<Language, Record<string, string>> = {
     '3.3.5': 'اتفاقية تشغيل الفريق',
     '3.3.2': 'تقييم أداء عضو الفريق',
     '3.3.6': 'تقييم أداء الفريق',
-    '3.3.4': 'سجل الموردين الرئيسي',
     'vendor_evaluation': 'تقييم الموردين',
     'add_new_supplier': 'اضافة مورد جديد',
     'edit_supplier_profile': 'تعديل ملف المورد',
@@ -1631,7 +1699,6 @@ const translations: Record<Language, Record<string, string>> = {
     'job_descriptions': 'الوصف الوظيفي',
     'optimization': 'التحسين',
     'export_landscape_pdf': 'تصدير PDF بالعرض',
-    'ram_raci_matrix': 'مصفوفة RAM / RACI',
     'intersection_wbs_personnel': 'تقاطع حزم عمل WBS والموظفين المعينين.',
     'responsible': 'مسؤول',
     'accountable': 'مساءل',
@@ -1863,27 +1930,26 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [language, setLanguage] = useState<Language>('en');
 
   useEffect(() => {
-    // UI is always English LTR
-    document.documentElement.lang = 'en';
-    document.documentElement.dir = 'ltr';
-  }, []);
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
 
   const t = (key: string) => {
-    const text = translations['en'][key] || key;
+    const text = translations[language][key] || translations['en'][key] || key;
     return stripNumericPrefix(text);
   };
 
   const th = (key: string) => {
-    const text = translations['en'][key] || key;
+    const text = translations[language][key] || translations['en'][key] || key;
     return stripNumericPrefix(text);
   };
 
-  const isRtl = false;
-  const isHelpRtl = false;
+  const isRtl = language === 'ar';
+  const isHelpRtl = language === 'ar';
 
   return (
-    <LanguageContext.Provider value={{ language: 'en', setLanguage: () => {}, t, th, isRtl, isHelpRtl }}>
-      <div className="font-sans" dir="ltr">
+    <LanguageContext.Provider value={{ language, setLanguage, t, th, isRtl, isHelpRtl }}>
+      <div className="font-sans" dir={isRtl ? 'rtl' : 'ltr'}>
         {children}
       </div>
     </LanguageContext.Provider>

@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { masterFormatDivisions } from '../data';
 import { useLanguage } from '../context/LanguageContext';
 import { DataImportModal } from './DataImportModal';
+import { UniversalDataTable } from './common/UniversalDataTable';
+import { EntityConfig } from '../types';
 
 interface SupplierMasterRegisterProps {
   page: Page;
@@ -118,10 +120,14 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
   const supplierStats = useMemo(() => {
     return suppliers.map(supplier => {
-      const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier.name);
-      const totalPOAmount = supplierPOs.reduce((sum, po) => sum + po.amount, 0);
-      const totalPayments = supplierPOs.reduce((sum, po) => sum + (po.amount * (po.completion || 0) / 100), 0);
+      const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier.name || po.buyFromPartner === supplier.vendorCode);
+      const totalPOAmount = supplierPOs.reduce((sum, po) => sum + (po.amount || 0), 0);
+      const totalPayments = supplierPOs.reduce((sum, po) => sum + ((po.amount || 0) * (po.completion || 0) / 100), 0);
       const balance = totalPOAmount - totalPayments;
+      
+      const avgCompletion = supplierPOs.length > 0 
+        ? supplierPOs.reduce((acc, po) => acc + (po.completion || 0), 0) / supplierPOs.length 
+        : 0;
 
       return {
         supplierId: supplier.id,
@@ -129,16 +135,109 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
         totalPayments,
         balance,
         poCount: supplierPOs.length,
+        avgCompletion,
+        reliability: avgCompletion > 80 ? 'High' : avgCompletion > 40 ? 'Medium' : 'Low',
         pos: supplierPOs
       };
     });
   }, [suppliers, purchaseOrders]);
+
+  const dashboardMetrics = useMemo(() => {
+    const totalCommitted = supplierStats.reduce((sum, s) => sum + s.totalPOAmount, 0);
+    const totalPaid = supplierStats.reduce((sum, s) => sum + s.totalPayments, 0);
+    const activeVendors = suppliers.filter(s => s.status === 'Active').length;
+    
+    return {
+      totalCommitted,
+      totalPaid,
+      activeVendors,
+      reliabilityIndex: (supplierStats.filter(s => s.reliability === 'High').length / (suppliers.length || 1)) * 100
+    };
+  }, [supplierStats, suppliers]);
+
+  const renderDashboard = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Financial Pulse</div>
+        <div className="text-2xl font-black text-slate-900">{formatCurrency(dashboardMetrics.totalCommitted)}</div>
+        <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+          Neural Committed Capital
+        </div>
+      </motion.div>
+      
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Disbursed</div>
+        <div className="text-2xl font-black text-emerald-600">{formatCurrency(dashboardMetrics.totalPaid)}</div>
+        <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+          {Math.round((dashboardMetrics.totalPaid / (dashboardMetrics.totalCommitted || 1)) * 100)}% Execution
+        </div>
+      </motion.div>
+
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendor Ecosystem</div>
+        <div className="text-2xl font-black text-slate-900">{dashboardMetrics.activeVendors} <span className="text-xs text-slate-400">Active</span></div>
+        <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-purple-500 rounded-full" />
+          Neural Link: Stable
+        </div>
+      </motion.div>
+
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reliability Index</div>
+        <div className="text-2xl font-black text-amber-600">{Math.round(dashboardMetrics.reliabilityIndex)}%</div>
+        <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+          Predictive Risk Mitigated
+        </div>
+      </motion.div>
+    </div>
+  );
 
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.vendorCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.discipline.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const supplierConfig: EntityConfig = {
+    id: 'suppliers',
+    label: t('supplier_master'),
+    icon: Briefcase,
+    collection: 'companies',
+    columns: [
+      { key: 'vendorCode', label: t('supplier_code') || 'Code', type: 'string' },
+      { key: 'name', label: t('supplier_name') || 'Company Name', type: 'string' },
+      { key: 'discipline', label: t('discipline'), type: 'string' },
+      { key: 'status', label: t('status') || 'Status', type: 'status' },
+      { key: 'email', label: t('email') || 'Email', type: 'string' },
+      { key: 'phone', label: t('phone') || 'Phone', type: 'string' },
+    ]
+  };
 
   const handleSaveSupplier = async (supplierData: Partial<Supplier>) => {
     if (!selectedProject) return;
@@ -155,7 +254,9 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
         updatedAt: new Date().toISOString(),
         supplierCode: supplierData.vendorCode || '',
         discipline: supplierData.discipline || '',
-        projectId: selectedProject.id
+        projectId: selectedProject.id,
+        is_internal: false,
+        entity_type: 'vendor'
       };
 
       if (!editingSupplier) {
@@ -164,21 +265,21 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
       await setDoc(doc(db, 'companies', supplierId), companyData);
       
-      // --- STAKEHOLDER SYNC ---
+      // --- STAKEHOLDER SYNC (Neural Mapping) ---
       try {
-        const stakeholderId = `supplier_${supplierId}`;
+        const stakeholderId = `SH-${supplierId}`;
         const stakeholderRef = doc(db, 'stakeholders', stakeholderId);
         
         const newStakeholder: Stakeholder = {
           id: stakeholderId,
           projectId: selectedProject.id,
           name: companyData.name,
-          position: 'External Supplier',
+          position: 'Vendor / Partner',
           organization: companyData.name,
-          role: 'Supplier/Contractor',
+          role: 'Supplier',
           email: companyData.email || '',
           phone: companyData.phone || '',
-          location: '',
+          location: companyData.address || '',
           type: 'External',
           influence: 'Medium',
           interest: 'High',
@@ -192,9 +293,9 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
           phaseOfMostInterest: 'Construction',
           status: 'Active',
           updatedAt: new Date().toISOString(),
-          updatedBy: 'System',
+          updatedBy: 'System AI',
           createdAt: new Date().toISOString(),
-          createdBy: 'System'
+          createdBy: 'System AI'
         };
 
         await setDoc(stakeholderRef, newStakeholder);
@@ -204,147 +305,77 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
       setIsAddingSupplier(false);
       setEditingSupplier(null);
+      toast.success(editingSupplier ? 'Integration Updated' : 'Partner Integrated & Neural Synced');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'vendors');
+      handleFirestoreError(error, OperationType.WRITE, 'companies');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse tracking-tighter">Syncing Intelligence...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 pb-20 font-sans">
-      <div className="flex flex-col md:flex-row justify-end items-start md:items-end gap-3">
-        <button 
-          onClick={() => setShowImportModal(true)}
-          className="bg-neutral-100 text-neutral-700 px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-neutral-200 transition-all"
-          style={{ borderRadius: '0px' }}
-        >
-          {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 text-neutral-400" />}
-          {isImporting ? 'Importing...' : 'Import Data'}
-        </button>
-        <button 
-          onClick={() => setIsAddingSupplier(true)}
-          className="bg-neutral-900 text-white px-6 py-3 font-bold text-sm flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-900/10"
-          style={{ borderRadius: '0px' }}
-        >
-          <Plus className="w-4 h-4" />
-          {t('add_new_supplier')}
-        </button>
+      {renderDashboard()}
+
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white shadow-xl shadow-black/10">
+            <Briefcase className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Intelligent Vendor Ecosystem</h2>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Unified Neural Multi-Supplier Intelligence</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all rounded-full"
+          >
+            {isImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3 text-slate-400" />}
+            Neural Import
+          </button>
+          <button 
+            onClick={() => setIsAddingSupplier(true)}
+            className="px-8 py-2.5 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 rounded-full"
+          >
+            <Plus className="w-4 h-4" />
+            Integrate Partner
+          </button>
+        </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-neutral-200 flex flex-wrap items-center gap-4 p-4" style={{ borderRadius: '0px' }}>
-        <div className="relative flex-1 min-w-[300px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <input 
-            type="text" 
-            placeholder={t('search_suppliers')} 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-neutral-50 border-none text-sm font-medium focus:ring-0 transition-all text-neutral-900"
-            style={{ borderRadius: '0px' }}
+      {/* Universal Data Table Integration */}
+      {!selectedSupplier && !isAddingSupplier && (
+        <div className="flex-1 bg-white rounded-3xl overflow-hidden border border-slate-200 min-h-[600px]">
+          <UniversalDataTable 
+            config={supplierConfig}
+            data={suppliers.map(s => ({
+              ...s,
+              email: s.contactDetails?.email,
+              phone: s.contactDetails?.phone
+            }))}
+            onRowClick={(record) => setSelectedSupplier(record)}
+            onDeleteRecord={async (id) => {
+              try {
+                await deleteDoc(doc(db, 'companies', id));
+                toast.success('Supplier removed');
+              } catch (err) {
+                handleFirestoreError(err, OperationType.DELETE, 'companies');
+              }
+            }}
+            showAddButton={false}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <button className="p-3 text-neutral-500 hover:bg-neutral-100 transition-all" style={{ borderRadius: '0px' }}><Filter className="w-4 h-4" /></button>
-          <button className="p-3 text-neutral-500 hover:bg-neutral-100 transition-all" style={{ borderRadius: '0px' }}><ExternalLink className="w-4 h-4" /></button>
-        </div>
-      </div>
-
-      {/* Supplier Table */}
-      <div className="bg-white border border-neutral-200 overflow-hidden shadow-sm" style={{ borderRadius: '0px' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-neutral-50 border-b border-neutral-200">
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('supplier_code')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('supplier_name')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">{t('discipline')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('po_total')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('paid')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-right">{t('balance')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-center">{t('status')}</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest text-center">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {filteredSuppliers.map(supplier => {
-                const stats = supplierStats.find(s => s.supplierId === supplier.id);
-                const isEnded = supplier.status === 'Contract Ended';
-                
-                return (
-                  <tr 
-                    key={supplier.id} 
-                    className={cn(
-                      "group hover:bg-neutral-50/80 transition-colors cursor-pointer relative",
-                      isEnded && "bg-neutral-50/50 grayscale-[0.5]"
-                    )}
-                    onClick={() => setSelectedSupplier(supplier)}
-                  >
-                    <td className="px-6 py-5">
-                      <span className="text-xs font-mono font-bold text-neutral-500">{supplier.vendorCode}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors">{supplier.name}</span>
-                        <span className="text-[10px] text-neutral-400 font-medium">{supplier.contactDetails.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="text-[10px] font-bold bg-neutral-100 text-neutral-600 px-2 py-1 uppercase tracking-wider">
-                        {supplier.discipline}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <span className="text-xs font-bold text-neutral-900">{formatCurrency(stats?.totalPOAmount || 0)}</span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <span className="text-xs font-bold text-emerald-600">{formatCurrency(stats?.totalPayments || 0)}</span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <span className="text-xs font-bold text-blue-600">{formatCurrency(stats?.balance || 0)}</span>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <span className={cn(
-                        "text-[9px] font-semibold px-2 py-1 uppercase tracking-tighter",
-                        supplier.status === 'Active' ? "bg-emerald-100 text-emerald-700" :
-                        supplier.status === 'Suspended' ? "bg-amber-100 text-amber-700" :
-                        "bg-neutral-200 text-neutral-600"
-                      )}>
-                        {supplier.status === 'Active' ? t('active') :
-                         supplier.status === 'Suspended' ? t('suspended') : 
-                         t('contract_ended')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center justify-center gap-2">
-                        <button 
-                          className="p-2 text-neutral-400 hover:text-blue-600 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); /* Link to PDF */ }}
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
-                        <button 
-                          className="p-2 text-neutral-400 hover:text-blue-600 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); setEditingSupplier(supplier); setIsAddingSupplier(true); }}
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Side Panel for Supplier Details */}
       <AnimatePresence>

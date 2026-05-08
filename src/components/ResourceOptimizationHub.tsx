@@ -63,6 +63,7 @@ type TabType =
   | 'meetings'
   | 'operating-agreement'
   | 'inventory-3m'
+  | 'supplier-master'
   | 'optimization'
   | 'performance'
   | 'progress';
@@ -95,7 +96,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
     { id: 'meetings', pageId: '2.6.22', label: t('meetings'), icon: Clock, group: 'staffing' },
     
     // ASSETS
-    { id: 'inventory-3m', pageId: '3.3.4', label: t('inventory'), icon: Package, group: 'assets' },
+    { id: 'supplier-master', pageId: '3.3.4', label: t('supplier_master'), icon: Users2, group: 'assets' },
     { id: 'optimization', pageId: '3m_resources', label: t('optimization'), icon: Zap, group: 'assets' },
     
     // ANALYTICS
@@ -157,7 +158,7 @@ export const ResourceOptimizationHub: React.FC<ResourceOptimizationHubProps> = (
           {activeTab === 'tasks' && <TasksView page={pages.find(p => p.id === '2.6.21')!} />}
           {activeTab === 'meetings' && <DetailView page={pages.find(p => p.id === '2.6.22')!} />}
           {activeTab === 'operating-agreement' && <TeamGovernanceTab projectId={projectId} />}
-          {activeTab === 'inventory-3m' && <SupplierMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
+          {activeTab === 'supplier-master' && <SupplierMasterRegister page={pages.find(p => p.id === '3.3.4')!} />}
           {activeTab === 'optimization' && <ProcessImprovementTab projectId={projectId} />}
           {activeTab === 'performance' && <PerformanceStatusTab projectId={projectId} />}
           {activeTab === 'progress' && <ProgressReportView page={pages.find(p => p.id === '3.3.3')!} />}

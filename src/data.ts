@@ -1178,6 +1178,22 @@ export const pages: Page[] = [
     }
   },
   { 
+    id: '3.3.4', 
+    title: 'Supplier Master Register', 
+    type: 'terminal', 
+    parentId: 'res',
+    domain: 'resources', 
+    focusArea: 'Executing', 
+    icon: 'Users2', 
+    collectionName: 'companies',
+    summary: 'Centralized registry of all project suppliers, vendors, and partners integrated with neural PO mapping.',
+    details: {
+      inputs: ['Purchase Orders', 'Vendor Contracts', 'Stakeholder Register'],
+      tools: ['Neural Data Mapping', 'Supplier Performance KPI', 'Vendor Onboarding'],
+      outputs: ['Supplier Master Database', 'Vendor Performance Index', 'Integrated Ecosystem']
+    }
+  },
+  { 
     id: '4.6.1', 
     title: 'Resource Performance Reports', 
     type: 'terminal', 

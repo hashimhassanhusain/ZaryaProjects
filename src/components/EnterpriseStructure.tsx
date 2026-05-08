@@ -31,7 +31,7 @@ interface TreeNodeProps {
 const TreeNode: React.FC<TreeNodeProps> = ({ company, allCompanies, level, onDrop }) => {
   const { t, isRtl } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
-  const children = allCompanies.filter(c => c.parent_entity_id === company.id);
+    const children = allCompanies.filter(c => c.parent_entity_id === company.id && c.is_internal !== false && c.type !== 'Supplier' && c.type !== 'Stakeholder' && c.entity_type !== 'vendor');
   const [isOver, setIsOver] = useState(false);
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -211,7 +211,7 @@ export const EnterpriseStructure: React.FC = () => {
     }
   };
 
-  const rootCompanies = companies.filter(c => !c.parent_entity_id);
+  const rootCompanies = companies.filter(c => !c.parent_entity_id && c.is_internal !== false && c.type !== 'Supplier' && c.type !== 'Stakeholder' && c.entity_type !== 'vendor');
 
   return (
     <div className={`p-8 space-y-8 ${isRtl ? 'rtl' : 'ltr'}`}>
@@ -281,11 +281,11 @@ export const EnterpriseStructure: React.FC = () => {
               </div>
               <div className="p-4 bg-blue-50 rounded-2xl">
                 <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Internal Companies</div>
-                <div className="text-2xl font-bold text-blue-600">{companies.filter(c => c.is_internal !== false).length}</div>
+                <div className="text-2xl font-bold text-blue-600">{companies.filter(c => c.is_internal !== false && c.type !== 'Supplier' && c.type !== 'Stakeholder' && c.entity_type !== 'vendor').length}</div>
               </div>
               <div className="p-4 bg-amber-50 rounded-2xl">
                 <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">External Vendors</div>
-                <div className="text-2xl font-bold text-amber-600">{companies.filter(c => c.is_internal === false).length}</div>
+                <div className="text-2xl font-bold text-amber-600">{companies.filter(c => c.is_internal === false || c.type === 'Supplier' || c.entity_type === 'vendor').length}</div>
               </div>
             </div>
           </div>

@@ -40,12 +40,12 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
   return (
     <div className={cn(
       "bg-ribbon border-b border-neutral-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
-      isRibbonCollapsed ? "h-[32px]" : "h-[95px]",
+      isRibbonCollapsed ? "h-[32px]" : "h-[105px]",
       className
     )}>
       {!isRibbonCollapsed && groups.map((group) => {
         return (
-          <div key={group.id} className="flex flex-col h-full shrink-0">
+          <div key={group.id} className="flex flex-col h-full shrink-0 pb-1.5">
             <div className="flex items-center px-1 flex-1 h-[75px]">
               {group.tabs.map((tab) => {
                 const isActive = activeTabId === tab.id;
@@ -82,7 +82,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
               })}
             </div>
             {group.label && (
-              <div className="text-[10px] font-black text-text-primary dark:text-white uppercase tracking-[0.3em] text-center py-1 mt-auto bg-white/50 border border-slate-100 dark:bg-white/5 rounded-full shadow-sm mx-1">
+              <div className="text-[9px] font-black text-text-primary dark:text-neutral-400 uppercase tracking-widest text-center py-1 mt-auto bg-white/40 border border-slate-100/50 dark:bg-white/5 rounded-full shadow-sm mx-1 min-w-[60px]">
                 {group.label}
               </div>
             )}

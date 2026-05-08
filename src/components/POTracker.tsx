@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem } from '../types';
+import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem, EntityConfig } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download, ArrowLeft, Printer, Briefcase, User, DollarSign, Coins, RefreshCw } from 'lucide-react';
@@ -13,6 +13,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { DataImportModal } from './DataImportModal';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface POTrackerProps {
   page: Page;
@@ -117,51 +118,61 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   useEffect(() => {
     if (!selectedProject) return;
 
-    const posUnsubscribe = onSnapshot(
-      query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)), 
-      (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
-        setPos(data);
-        setLoading(false);
-      }, (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'purchase_orders');
-      }
-    );
+    let posUnsubscribe: () => void;
+    let vendorsUnsubscribe: () => void;
+    let activitiesUnsubscribe: () => void;
+    let wbsUnsubscribe: () => void;
+    let boqUnsubscribe: () => void;
 
-    const vendorsUnsubscribe = onSnapshot(
-      query(collection(db, 'companies'), where('type', '==', 'Supplier')),
-      (snapshot) => {
-        setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
-      }
-    );
+    try {
+      posUnsubscribe = onSnapshot(
+        query(collection(db, 'purchase_orders'), where('projectId', '==', selectedProject.id)), 
+        (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PurchaseOrder));
+          setPos(data);
+          setLoading(false);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'purchase_orders');
+        }
+      );
 
-    const activitiesUnsubscribe = onSnapshot(
-      query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
-      (snapshot) => {
-        setActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity)));
-      }
-    );
+      vendorsUnsubscribe = onSnapshot(
+        query(collection(db, 'companies'), where('type', '==', 'Supplier')),
+        (snapshot) => {
+          setVendors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
+        }
+      );
 
-    const wbsUnsubscribe = onSnapshot(
-      query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id)),
-      (snapshot) => {
-        setWbsLevels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
-      }
-    );
+      activitiesUnsubscribe = onSnapshot(
+        query(collection(db, 'activities'), where('projectId', '==', selectedProject.id)),
+        (snapshot) => {
+          setActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity)));
+        }
+      );
 
-    const boqUnsubscribe = onSnapshot(
-      query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)),
-      (snapshot) => {
-        setBoqItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BOQItem)));
-      }
-    );
+      wbsUnsubscribe = onSnapshot(
+        query(collection(db, 'wbs'), where('projectId', '==', selectedProject.id)),
+        (snapshot) => {
+          setWbsLevels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel)));
+        }
+      );
+
+      boqUnsubscribe = onSnapshot(
+        query(collection(db, 'boq'), where('projectId', '==', selectedProject.id)),
+        (snapshot) => {
+          setBoqItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BOQItem)));
+        }
+      );
+    } catch (err) {
+      console.error("Failed to setup subscribers:", err);
+    }
 
     return () => {
-      posUnsubscribe();
-      vendorsUnsubscribe();
-      activitiesUnsubscribe();
-      wbsUnsubscribe();
-      boqUnsubscribe();
+      posUnsubscribe?.();
+      vendorsUnsubscribe?.();
+      activitiesUnsubscribe?.();
+      wbsUnsubscribe?.();
+      boqUnsubscribe?.();
     };
   }, [selectedProject, baseCurrency, globalExchangeRate]);
 
@@ -180,6 +191,8 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
                 id: supplierId,
                 name: sName,
                 type: 'Supplier',
+                is_internal: false,
+                entity_type: 'vendor',
                 status: 'Approved',
                 reliability: 'Active',
                 category: 'Auto-Synced From POs',
@@ -432,75 +445,98 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const poTargetColumns = [
     { key: 'id', label: 'PO Number / ID', required: true, description: 'Unique identifier for the PO' },
     { key: 'date', label: 'Order Date', required: true, type: 'date' as const, description: 'Date of the order' },
-    { key: 'supplier', label: 'Supplier Name', required: true, description: 'Name of the vendor' },
+    { key: 'buyFromPartner', label: 'Business Partner Code', description: 'Supplier Code (e.g., SUP000031)' },
+    { key: 'supplier', label: 'Business Partner Name', required: true, description: 'Name of the vendor' },
     { key: 'masterFormat', label: 'Cost Account (Division)', description: 'MasterFormat code (e.g., 03, 09)' },
     { key: 'amount', label: 'Total Amount', type: 'number' as const, description: 'Total value of the PO' },
     { key: 'inputCurrency', label: 'Currency', type: 'string' as const, description: 'USD or IQD' },
     { key: 'exchangeRateUsed', label: 'Exchange Rate', type: 'number' as const, description: 'Rate used for conversion' },
     { key: 'contractNumber', label: 'Contract Number', description: 'Associated contract ID' },
     { key: 'workPackageId', label: 'Work Package ID', description: 'Associated WBS code' },
+    { key: 'divisions', label: 'Division Description', description: 'e.g. Division 03 - Concrete' },
     { key: 'lineDescription', label: 'Item Description', description: 'Description for the line item' },
     { key: 'lineQuantity', label: 'Item Quantity', type: 'number' as const, description: 'Quantity for this line item' },
     { key: 'lineUnit', label: 'Item Unit', description: 'Unit of measure (pcs, m3, etc.)' },
     { key: 'lineRate', label: 'Item Rate', type: 'number' as const, description: 'Unit rate for this line item' },
   ];
 
+  const neuralDataMapping = async (supplierName: string, supplierCode: string, projectId: string) => {
+    try {
+      if (!supplierName) return null;
+      const supplierId = supplierCode || `SUP-${supplierName.replace(/\s+/g, '-').toUpperCase()}`;
+      
+      const existing = vendors.find(v => v.id === supplierId || v.name === supplierName);
+      if (existing) return supplierId;
+
+      const supplierRef = doc(db, 'companies', supplierId);
+      const supplierSnap = await getDoc(supplierRef);
+      
+      if (!supplierSnap.exists()) {
+        await setDoc(supplierRef, {
+          id: supplierId,
+          name: supplierName,
+          type: 'Supplier',
+          is_internal: false,
+          entity_type: 'vendor',
+          status: 'Approved',
+          reliability: 'Active',
+          category: 'Neural Synced',
+          projectId,
+          vendorCode: supplierCode,
+          createdAt: new Date().toISOString()
+        });
+        
+        const stakId = `SH-${supplierId}`;
+        await setDoc(doc(db, 'stakeholders', stakId), {
+          id: stakId,
+          projectId: projectId,
+          name: supplierName,
+          organization: supplierName,
+          position: 'Vendor / Partner',
+          role: 'Supplier',
+          type: 'External',
+          status: 'Active',
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        });
+      }
+      return supplierId;
+    } catch (err) {
+      console.error("Neural mapping failed:", err);
+      return null;
+    }
+  };
+
   const handleImportPOData = async (mappedData: any[]) => {
     if (!selectedProject) return;
     setIsAnalyzing(true);
-    let updatedCount = 0;
+    let successCount = 0;
     
     try {
-      // Group data by PO ID in memory first to minimize Firestore writes and stay within Free Tier Quota
+      // Group data by PO ID
       const groupedData: Record<string, any[]> = {};
       for (const item of mappedData) {
-        const id = item.id;
-        if (!id) continue;
-        if (!groupedData[id]) groupedData[id] = [];
-        groupedData[id].push(item);
+        if (!item.id) continue;
+        if (!groupedData[item.id]) groupedData[item.id] = [];
+        groupedData[item.id].push(item);
       }
 
-      const totalUniquePOs = Object.keys(groupedData).length;
-      console.log(`Processing ${totalUniquePOs} unique POs from ${mappedData.length} rows.`);
+      const poIds = Object.keys(groupedData);
+      for (const id of poIds) {
+        const rows = groupedData[id];
+        const firstRow = rows[0];
 
-      // Step 1: Pre-register any new suppliers found in the import data
-      const uniqueSuppliers = new Set(mappedData.map(item => item.supplier).filter(Boolean));
-      for (const supplierName of Array.from(uniqueSuppliers)) {
-        try {
-          // Check if supplier exists in companies collection
-          const supplierQuery = query(collection(db, 'companies'), where('name', '==', supplierName), where('type', '==', 'Supplier'), limit(1));
-          const supplierSnap = await getDocs(supplierQuery);
-          
-          if (supplierSnap.empty) {
-            const supplierId = `SUP-${crypto.randomUUID().slice(0, 8)}`;
-            await setDoc(doc(db, 'companies', supplierId), {
-              id: supplierId,
-              name: supplierName,
-              type: 'Supplier',
-              status: 'Approved',
-              reliability: 'Active',
-              category: 'Imported Vendor',
-              createdAt: new Date().toISOString()
-            });
-            console.log(`Registered new supplier in companies: ${supplierName}`);
-          }
-        } catch (sErr) {
-          console.warn("Failed to auto-register supplier during import:", supplierName, sErr);
-        }
-      }
+        // Neural mapping outside transaction
+        await neuralDataMapping(firstRow.supplier, firstRow.buyFromPartner, selectedProject.id);
 
-      for (const [id, rows] of Object.entries(groupedData)) {
         await runTransaction(db, async (transaction) => {
           const poRef = doc(db, 'purchase_orders', id);
           const poSnap = await transaction.get(poRef);
           
-          // Use the first row for shared PO data
-          const firstRow = rows[0];
           const inputCurrency = firstRow.inputCurrency || (poSnap.exists() ? poSnap.data().inputCurrency : baseCurrency);
           const exchangeRateUsed = firstRow.exchangeRateUsed || (poSnap.exists() ? poSnap.data().exchangeRateUsed : globalExchangeRate);
 
-          // Prepare all line items from the grouped rows
-          const newItemsForPO: POLineItem[] = rows.map(row => ({
+          const newItems: POLineItem[] = rows.map(row => ({
             id: crypto.randomUUID(),
             description: row.lineDescription || row.description || 'Line Item',
             quantity: parseFloat(row.lineQuantity) || 0,
@@ -515,59 +551,40 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
           }));
 
           if (poSnap.exists()) {
-            // PO exists: Append all new line items and update total
             const existingData = poSnap.data() as PurchaseOrder;
-            const updatedLineItems = [...(existingData.lineItems || []), ...newItemsForPO];
-            const newTotalAmount = updatedLineItems.reduce((sum, li) => sum + li.amount, 0);
-            
+            const updatedLineItems = [...(existingData.lineItems || []), ...newItems];
             transaction.update(poRef, {
               lineItems: updatedLineItems,
-              amount: newTotalAmount,
+              amount: updatedLineItems.reduce((sum, li) => sum + li.amount, 0),
               updatedAt: new Date().toISOString()
             });
           } else {
-            // PO doesn't exist: Create core PO structure with all line items
-            const totalAmount = newItemsForPO.reduce((sum, li) => sum + li.amount, 0);
-            const poData: PurchaseOrder = {
+            transaction.set(poRef, {
               id,
               projectId: selectedProject.id,
               date: firstRow.date || new Date().toISOString().split('T')[0],
               supplier: firstRow.supplier || 'Unknown Supplier',
-              amount: totalAmount,
+              buyFromPartner: firstRow.buyFromPartner || '',
+              amount: newItems.reduce((sum, li) => sum + li.amount, 0),
               status: 'Approved',
               workflowStatus: 'Approved',
               inputCurrency,
               exchangeRateUsed,
-              lineItems: newItemsForPO,
+              lineItems: newItems,
               projectName: selectedProject.name,
-              purchaseOffice: selectedProject.code,
-              wbsId: firstRow.wbsId || '',
-              activityId: firstRow.activityId || '',
-              workPackageId: firstRow.workPackageId || '',
-              masterFormat: firstRow.masterFormat || '',
-              contractNumber: firstRow.contractNumber || '',
-              company: firstRow.company || '',
-              buyer: firstRow.buyer || '',
-              buyerName: firstRow.buyerName || '',
-              location: firstRow.location || '',
-              actualCost: parseFloat(firstRow.actualCost) || 0,
               divisions: firstRow.divisions || '',
-              completion: parseFloat(firstRow.completion) || 0,
-              createdAt: new Date().toISOString()
-            };
-            transaction.set(poRef, poData);
+              completion: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
           }
         });
-        updatedCount++;
+        successCount++;
       }
-      toast.success(`Successfully processed ${updatedCount} Purchase Orders (${mappedData.length} rows total).`);
-    } catch (err: any) {
-      console.error("Error importing POs:", err);
-      if (err.message?.includes('Quota exceeded')) {
-        toast.error("تجاوزت الحصة المجانية لعمليات الكتابة (Firestore Quota). سيتم إعادة ضبط الحصة غداً. يمكنك متابعة التفاصيل في موقع Firebase.");
-      } else {
-        toast.error("Failed to import some Purchase Orders. Check console for details.");
-      }
+      toast.success(`Successfully processed ${successCount} Purchase Orders`);
+      setView('list');
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.WRITE, 'purchase_orders');
     } finally {
       setIsAnalyzing(false);
     }
@@ -762,6 +779,88 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     setSelectedPOIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  const poTableData = useMemo(() => {
+    return pos.map(po => {
+      const wbs = wbsLevels.find(w => w.id === po.wbsId);
+      const activity = activities.find(a => a.id === po.activityId);
+      const totalQty = (po.lineItems || []).reduce((sum, li) => sum + li.quantity, 0);
+      const avgRate = po.amount / (totalQty || 1);
+      const unit = po.lineItems?.[0]?.unit || '-';
+      
+      return {
+        ...po,
+        wbsCode: wbs?.code || 'N/A',
+        masterFormat: po.masterFormat || 'N/A',
+        activityDescription: activity?.description || 'N/A',
+        totalQty,
+        avgRate,
+        unit
+      };
+    });
+  }, [pos, wbsLevels, activities]);
+
+  const poConfig: EntityConfig = {
+    id: 'purchase_orders',
+    label: 'Purchase Orders',
+    icon: ShoppingCart,
+    collection: 'purchase_orders',
+    columns: [
+      { key: 'wbsCode', label: 'WBS', type: 'badge' },
+      { key: 'masterFormat', label: 'Cost Account', type: 'string' },
+      { key: 'activityDescription', label: 'Activity', type: 'string' },
+      { key: 'id', label: 'Order / Contract', type: 'badge' },
+      { key: 'date', label: 'Order Date', type: 'date' },
+      { key: 'supplier', label: 'Suppliers', type: 'string' },
+      { key: 'totalQty', label: 'Qty', type: 'number' },
+      { key: 'unit', label: 'Unit', type: 'string' },
+      { key: 'avgRate', label: 'Rate', type: 'currency' },
+      { key: 'amount', label: `Total (${baseCurrency})`, type: 'currency' },
+      { key: 'status', label: 'Status', type: 'status' },
+      { key: 'completion', label: '% Completion', type: 'progress' },
+      { key: 'actualStartDate', label: 'Actual Start', type: 'date' },
+      { key: 'actualFinishDate', label: 'Actual Finish', type: 'date' },
+    ]
+  };
+
+  const handleBulkDeleteAction = async (ids: string[]) => {
+    try {
+      const batch = writeBatch(db);
+      const affectedActivityIds = new Set<string>();
+      
+      for (const id of ids) {
+        const po = pos.find(p => p.id === id);
+        if (po?.activityId) affectedActivityIds.add(po.activityId);
+        batch.delete(doc(db, 'purchase_orders', id));
+      }
+      
+      await batch.commit();
+      
+      for (const actId of affectedActivityIds) {
+        await rollupToParent('po', actId);
+      }
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      throw err;
+    }
+  };
+
+  const handleDeleteRecord = async (id: string) => {
+    try {
+      const po = pos.find(p => p.id === id);
+      const affectedActivityId = po?.activityId;
+      
+      await deleteDoc(doc(db, 'purchase_orders', id));
+      
+      if (affectedActivityId) {
+        await rollupToParent('po', affectedActivityId);
+      }
+      toast.success('Purchase Order deleted');
+    } catch (err) {
+      console.error("Delete failed:", err);
+      toast.error('Failed to delete Purchase Order');
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -2112,12 +2211,17 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
                   </div>
                   <div>
                     <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('supplier')}</div>
-                    <div className="text-sm font-bold text-slate-900">{po.supplier}</div>
+                    <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                       {po.supplier}
+                       <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-sm font-black uppercase">Neural Auto-Link</span>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Cost Account</div>
-                    <div className="text-sm font-bold text-slate-700">{po.masterFormat}</div>
-                  </div>
+                  {po.buyFromPartner && (
+                    <div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Partner Code</div>
+                      <div className="text-sm font-bold text-slate-500 font-mono">{po.buyFromPartner}</div>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Amount</div>
@@ -2171,193 +2275,123 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
 
   const renderPOLog = () => {
     return (
-      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-bold text-slate-900">PO Log - Detailed Tracking</h3>
-            {selectedPOIds.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-lg"
-              >
-                <span className="text-[10px] font-bold text-red-600">{selectedPOIds.length} selected</span>
-                <button 
-                  onClick={handleBulkDelete}
-                  className="p-1 hover:bg-red-100 rounded text-red-600 transition-colors"
-                  title="Delete Selected"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            )}
+      <div className="relative group/polog">
+        <div className="absolute top-0 right-0 p-4 z-10 pointer-events-none opacity-0 group-hover/polog:opacity-100 transition-opacity">
+          <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-xl text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            <Sparkles className="w-3 h-3 text-blue-500" />
+            Glassmorphism Mode Active
           </div>
-          <div className="flex gap-2">
+        </div>
+
+        <UniversalDataTable 
+          config={{
+            ...poConfig,
+            columns: poConfig.columns.map(col => {
+              if (col.key === 'id') {
+                return {
+                  ...col,
+                  render: (val: string, row: any) => (
+                    <div className="relative group/po-id">
+                      <div className="font-mono font-bold text-blue-600 cursor-help hover:underline decoration-blue-200 underline-offset-4">
+                        {val}
+                      </div>
+                      {/* Hover Intelligence Popover */}
+                      <div className="absolute left-full top-0 ml-4 w-64 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 z-50 opacity-0 group-hover/po-id:opacity-100 pointer-events-none transition-all scale-95 group-hover/po-id:scale-100 origin-left">
+                        <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 italic">Neural Intelligence</div>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                              <div className="text-[8px] text-slate-500 uppercase">Supplier</div>
+                              <div className="text-xs text-white font-bold truncate">{row.supplier}</div>
+                            </div>
+                            <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                              <div className="text-[8px] text-slate-500 uppercase">Partner Code</div>
+                              <div className="text-xs text-white font-bold">{row.buyFromPartner || row.buy_from_partner || 'N/A'}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="p-3 bg-brand/10 rounded-xl border border-brand/20">
+                            <div className="text-[8px] text-brand uppercase mb-1">Impact Analysis</div>
+                            <div className="text-[10px] text-white leading-relaxed">
+                              This order covers <span className="font-bold text-brand">{row.lineItems?.length || 0}</span> items in <span className="font-bold">{row.masterFormat || 'Global'}</span> division. 
+                              Status: <span className="text-emerald-400 font-bold">{row.workflowStatus || row.status}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                            <div className="w-6 h-6 bg-blue-500/20 rounded flex items-center justify-center">
+                              <Database className="w-3 h-3 text-blue-400" />
+                            </div>
+                            <div className="text-[9px] text-slate-400">Drive Folder: <span className="text-blue-400">Villa-2/Suppliers/{row.supplier}</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+              }
+              return col;
+            })
+          }}
+          data={poTableData}
+          onRowClick={(po) => handleViewPO(po)}
+          onNewClick={() => {
+            setNewPO({
+              id: '',
+              date: new Date().toISOString().split('T')[0],
+              supplier: '',
+              buyFromPartner: '',
+              wbsId: '',
+              masterFormat: '',
+              activityId: '',
+              lineItems: [],
+              contractNumber: '',
+              contractDuration: 0,
+              contractDurationType: 'Calendar Days',
+              contractDriveUrl: '',
+              changeOrdersUrl: '',
+              sowUrl: ''
+            });
+            setEditingPOId(null);
+            setView('form');
+          }}
+          onDeleteRecord={handleDeleteRecord}
+          onBulkDelete={handleBulkDeleteAction}
+          title="Intelligent Vendor Ecosystem Log"
+          favoriteControl={
             <button 
               onClick={() => setView('import')}
               className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
             >
               {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-              {isAnalyzing ? 'Importing...' : 'Import Data'}
+              {isAnalyzing ? 'Neural Syncing...' : 'Import Data'}
             </button>
-            <button
-              onClick={() => {
-                setNewPO({
-                  id: '',
-                  date: new Date().toISOString().split('T')[0],
-                  supplier: '',
-                  wbsId: '',
-                  masterFormat: '',
-                  activityId: '',
-                  lineItems: [],
-                  contractNumber: '',
-                  contractDuration: 0,
-                  contractDurationType: 'Calendar Days',
-                  contractDriveUrl: '',
-                  changeOrdersUrl: '',
-                  sowUrl: ''
-                });
-                setEditingPOId(null);
-                setView('form');
-              }}
-              className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-3 h-3" /> Add Purchase Order
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[10px] border-collapse">
-            <thead className="bg-slate-100 text-slate-500 font-bold uppercase tracking-wider">
-              <tr className="divide-x divide-slate-200">
-                <th className="px-3 py-3 w-10">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    checked={selectedPOIds.length === pos.length && pos.length > 0}
-                    onChange={handleSelectAll}
-                  />
-                </th>
-                <th className="px-3 py-3 whitespace-nowrap">WBS</th>
-                <th className="px-3 py-3 whitespace-nowrap">Cost Account</th>
-                <th className="px-3 py-3 whitespace-nowrap">Activity</th>
-                <th className="px-3 py-3 whitespace-nowrap">Order / Contract</th>
-                <th className="px-3 py-3 whitespace-nowrap">Order Date</th>
-                <th className="px-3 py-3 whitespace-nowrap">{t('suppliers')}</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Qty</th>
-                <th className="px-3 py-3 whitespace-nowrap">Unit</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Rate</th>
-                <th className="px-3 py-3 whitespace-nowrap text-right font-bold">Total ({baseCurrency})</th>
-                <th className="px-3 py-3 whitespace-nowrap">Status</th>
-                <th className="px-3 py-3 whitespace-nowrap text-center">Docs</th>
-                <th className="px-3 py-3 whitespace-nowrap text-center">% Completion</th>
-                <th className="px-3 py-3 whitespace-nowrap">Actual Start</th>
-                <th className="px-3 py-3 whitespace-nowrap">Actual Finish</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {pos.map((po, idx) => {
-                const wbs = wbsLevels.find(w => w.id === po.wbsId);
-                const activity = activities.find(a => a.id === po.activityId);
-                const totalQty = po.lineItems.reduce((sum, li) => sum + li.quantity, 0);
-                const avgRate = po.amount / (totalQty || 1);
-                const unit = po.lineItems[0]?.unit || '-';
-                const isSelected = selectedPOIds.includes(po.id);
-
-                return (
-                  <tr 
-                    key={idx} 
-                    onClick={() => handleViewPO(po)}
-                    className={cn(
-                      "hover:bg-slate-50 transition-colors divide-x divide-slate-100 cursor-pointer",
-                      isSelected && "bg-blue-50/50"
-                    )}
-                  >
-                    <td className="px-3 py-3 text-center" onClick={(e) => handleSelectRow(e, po.id)}>
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        checked={isSelected}
-                        readOnly
-                      />
-                    </td>
-                    <td className="px-3 py-3 font-bold text-slate-700">{wbs?.code || 'N/A'}</td>
-                    <td className="px-3 py-3 text-slate-500">{po.masterFormat || 'N/A'}</td>
-                    <td className="px-3 py-3 text-slate-600 font-medium">{activity?.description || 'N/A'}</td>
-                    <td className="px-3 py-3">
-                      <div className="font-mono font-bold text-blue-600">{po.id}</div>
-                      {po.contractNumber && (
-                        <div className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1">
-                          <ShieldCheck className="w-2.5 h-2.5" />
-                          {po.contractNumber}
-                          {po.contractDuration && (
-                            <span className="text-slate-300 ml-1">({po.contractDuration} {po.contractDurationType === 'Work Days' ? 'WD' : 'CD'})</span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 text-slate-500">{po.date}</td>
-                    <td className="px-3 py-3 font-bold text-slate-900">{po.supplier}</td>
-                    <td className="px-3 py-3 text-right font-mono text-slate-600">{totalQty.toLocaleString()}</td>
-                    <td className="px-3 py-3 text-slate-500">{unit}</td>
-                    <td className="px-3 py-3 text-right font-mono text-slate-600">{formatAmount(avgRate, baseCurrency)}</td>
-                    <td className={cn("px-3 py-3 text-right font-bold font-mono", getAmountColor(po.amount))}>
-                      {formatAmount(po.amount, baseCurrency)}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-[9px] font-bold uppercase",
-                        po.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      )}>
-                        {po.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1 justify-center">
-                        {po.contractDriveUrl && (
-                          <a href={po.contractDriveUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-blue-50 text-blue-600 rounded" title="Contract PDF" onClick={e => e.stopPropagation()}>
-                            <FileText className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                        {po.sowUrl && (
-                          <a href={po.sowUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-emerald-50 text-emerald-600 rounded" title="Scope of Work (Scope Domain)" onClick={e => e.stopPropagation()}>
-                            <DraftingCompass className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                        {po.changeOrdersUrl && (
-                          <a href={po.changeOrdersUrl} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-amber-50 text-amber-600 rounded" title="Change Orders" onClick={e => e.stopPropagation()}>
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                        {!po.contractDriveUrl && !po.sowUrl && !po.changeOrdersUrl && <span className="text-slate-300">-</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden min-w-[40px]">
-                          <div 
-                            className="h-full bg-emerald-500 transition-all"
-                            style={{ width: `${po.completion || 0}%` }}
-                          />
-                        </div>
-                        <span className="font-bold text-slate-700">{po.completion || 0}%</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-slate-500">{po.actualStartDate || '-'}</td>
-                    <td className="px-3 py-3 text-slate-500">{po.actualFinishDate || '-'}</td>
-                  </tr>
-                );
-              })}
-              {pos.length === 0 && (
-                <tr>
-                  <td colSpan={11} className="px-3 py-12 text-center text-slate-400">
-                    No purchase orders found for this project.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+          }
+          primaryAction={{
+            label: 'Issue New PO',
+            icon: Plus,
+            onClick: () => {
+               setNewPO({
+                id: '',
+                date: new Date().toISOString().split('T')[0],
+                supplier: '',
+                buyFromPartner: '',
+                wbsId: '',
+                masterFormat: '',
+                activityId: '',
+                lineItems: [],
+                contractNumber: '',
+                contractDuration: 0,
+                contractDurationType: 'Calendar Days',
+                contractDriveUrl: '',
+                changeOrdersUrl: '',
+                sowUrl: ''
+              });
+              setEditingPOId(null);
+              setView('form');
+            }
+          }}
+        />
       </div>
     );
   };

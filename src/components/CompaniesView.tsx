@@ -18,9 +18,10 @@ export const CompaniesView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [filterType, setFilterType] = useState<'All' | 'Internal' | 'Supplier' | 'Stakeholder'>('All');
   const [formData, setFormData] = useState<Partial<Company>>({
     name: '',
-    type: 'Supplier',
+    type: 'Main',
     status: 'Active',
     address: '',
     phone: '',
@@ -116,8 +117,8 @@ export const CompaniesView: React.FC = () => {
         name: formData.name.trim(),
         type: formData.type || 'Supplier',
         status: formData.status || 'Active',
-        is_internal: !!formData.is_internal,
-        entity_type: formData.entity_type || 'subsidiary',
+        is_internal: formData.type === 'Main',
+        entity_type: formData.type === 'Supplier' ? 'vendor' : (formData.entity_type || 'subsidiary'),
         updatedAt: new Date().toISOString()
       };
 
@@ -152,10 +153,17 @@ export const CompaniesView: React.FC = () => {
     }
   };
 
-  const filteredCompanies = companies.filter(c => 
-    (c.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
-    (c.type || '').toLowerCase().includes((searchQuery || '').toLowerCase())
-  );
+  const filteredCompanies = companies.filter(c => {
+    const matchesSearch = (c.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+                         (c.type || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+    
+    if (filterType === 'All') return matchesSearch;
+    if (filterType === 'Internal') return matchesSearch && (c.is_internal !== false && c.type !== 'Supplier' && c.type !== 'Stakeholder');
+    if (filterType === 'Supplier') return matchesSearch && (c.type === 'Supplier' || c.is_internal === false);
+    if (filterType === 'Stakeholder') return matchesSearch && c.type === 'Stakeholder';
+    
+    return matchesSearch;
+  });
 
   if (isLoading) {
     return (
@@ -170,19 +178,35 @@ export const CompaniesView: React.FC = () => {
       {view === 'list' ? (
         <>
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-200">
-                <Building2 className="w-8 h-8 text-white" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-200">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">{t('companies')}</h1>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{t('manage_companies_desc')}</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">{t('companies')}</h1>
-                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{t('manage_companies_desc')}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="relative group">
+              
+              <div className="flex items-center gap-4">
+                {/* Type Filter Buttons */}
+                <div className="flex bg-slate-100 p-1 rounded-xl mr-4">
+                  {(['All', 'Internal', 'Supplier', 'Stakeholder'] as const).map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setFilterType(type)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
+                        filterType === type ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                 <input 
                   type="text"

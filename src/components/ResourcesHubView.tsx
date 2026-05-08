@@ -24,12 +24,13 @@ import { ResourceAcquisitionView } from './ResourceAcquisitionView';
 import { ResourceReleaseView } from './ResourceReleaseView';
 
 import { DomainDashboard } from './DomainDashboard';
+import { SupplierMasterRegister } from './SupplierMasterRegister';
 
 interface ResourcesHubViewProps {
   page: Page;
 }
 
-type TabType = 'overview' | 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 'release' | 'plan';
+type TabType = 'overview' | 'raci' | 'rbs' | 'acquisition' | 'assignments' | 'utilization' | 'release' | 'plan' | 'suppliers';
 
 export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
   const { t, isRtl } = useLanguage();
@@ -59,6 +60,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
       label: t('acquisition_booking'),
       tabs: [
         { id: 'assignments', label: t('calendars'), icon: Calendar },
+        { id: 'suppliers', label: t('supplier_master'), icon: Users2 },
       ]
     },
     {
@@ -77,6 +79,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
       case 'raci': return <RACIMatrixView page={page} />;
       case 'utilization': return <ResourceManagerDashboard page={page} />;
       case 'acquisition': return <ResourceAcquisitionView page={page} />;
+      case 'suppliers': return <SupplierMasterRegister page={page} />;
       case 'release': return <ResourceReleaseView page={page} />;
       default: return <ResourceManagerDashboard page={page} />;
     }
