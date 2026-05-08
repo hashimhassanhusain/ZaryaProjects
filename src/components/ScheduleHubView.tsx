@@ -228,9 +228,9 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
                </div>
                <div className="space-y-4">
                   {['Activity List', 'Activity Attributes', 'Project Network Diagram', 'Resource Calendars'].map(item => (
-                     <div key={item} className="group p-5 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 rounded-2xl transition-all cursor-pointer flex items-center justify-between">
-                        <span className="text-xs font-bold text-neutral-300">{item}</span>
-                        <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white transition-all" />
+                     <div key={item} className="group p-5 bg-white/10 border border-white/10 hover:bg-white/20 hover:border-white/30 rounded-2xl transition-all cursor-pointer flex items-center justify-between">
+                        <span className="text-xs font-bold text-white uppercase tracking-widest">{item}</span>
+                        <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-all" />
                      </div>
                   ))}
                </div>

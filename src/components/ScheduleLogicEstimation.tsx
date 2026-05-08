@@ -134,7 +134,7 @@ export const ScheduleLogicEstimation: React.FC<ScheduleLogicEstimationProps> = (
               </div>
               <div>
                 <h2 className="text-3xl font-semibold text-slate-900 tracking-tight leading-none italic">Logic Builder</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Sequence & Estimate Duration Engine</p>
+                <p className="text-xs text-slate-950 dark:text-neutral-300 font-bold uppercase tracking-widest mt-1">Sequence & Estimate Duration Engine</p>
               </div>
             </div>
         </header>
@@ -143,8 +143,8 @@ export const ScheduleLogicEstimation: React.FC<ScheduleLogicEstimationProps> = (
            {/* Activity List */}
            <div className="col-span-4 space-y-4">
               <div className="flex items-center justify-between px-2">
-                <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Activity Sequence</h3>
-                <span className="text-[9px] font-bold text-slate-400 px-2 py-0.5 bg-slate-50 rounded-md ring-1 ring-slate-100">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-950 dark:text-neutral-300">Activity Sequence</h3>
+                <span className="text-[9px] font-bold text-slate-800 px-2 py-0.5 bg-slate-100 rounded-md ring-1 ring-slate-200">
                   {activities.length} ITEMS
                 </span>
               </div>

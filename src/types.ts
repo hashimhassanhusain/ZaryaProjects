@@ -107,6 +107,8 @@ export interface PurchaseOrder {
   inputCurrency?: 'USD' | 'IQD';
   exchangeRateUsed?: number;
   history?: POActivity[];
+  createdAt?: string;
+  updatedAt?: string;
   // Extra fields for PO Log
   company?: string;
   buyFromPartner?: string;

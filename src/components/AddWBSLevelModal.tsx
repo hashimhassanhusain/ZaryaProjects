@@ -40,10 +40,10 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
 
   const hierarchyRules: Record<string, string[]> = {
     'Zone': [],
-    'Area': ['Zone'],
-    'Building': ['Area', 'Zone'],
-    'Cost Account': ['Building', 'Area', 'Zone'],
-    'Work Package': ['Cost Account']
+    'Area': ['Zone', 'Root'],
+    'Building': ['Area', 'Zone', 'Root'],
+    'Cost Account': ['Building', 'Area', 'Zone', 'Root'],
+    'Work Package': ['Cost Account', 'Building', 'Area', 'Zone', 'Root']
   };
 
   useEffect(() => {
@@ -66,10 +66,12 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
     const parent = wbsLevels.find(l => l.id === newWbs.parentId);
     
     if (newWbs.type === 'Work Package') {
-      // If we switched to Work Package and current parent isn't a Cost Account, find the first available CA
-      if (!parent || parent.type !== 'Cost Account') {
+      // If we switched to Work Package and current parent isn't in allowed list, find the first available CA
+      if (!parent || !allowedParents.includes(parent.type)) {
         const firstCA = wbsLevels.find(l => l.type === 'Cost Account');
-        setNewWbs(prev => ({ ...prev, parentId: firstCA?.id || '' }));
+        if (firstCA) {
+          setNewWbs(prev => ({ ...prev, parentId: firstCA.id }));
+        }
       }
     } else if (newWbs.type === 'Zone') {
       setNewWbs(prev => ({ ...prev, parentId: '' }));
@@ -109,46 +111,15 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
     try {
       let activeParentId = newWbs.parentId;
 
-      // Special handling for Work Package: ensure Cost Account level exists
+      // Handling for Work Package: optionally link to Cost Account level
       if (newWbs.type === 'Work Package') {
         const parent = wbsLevels.find(l => l.id === activeParentId);
         
-        // If parent is already a Cost Account, use it directly
-        if (parent && parent.type === 'Cost Account') {
-          // Division id should match the parent if it's a CA? 
-          // Usually yes, but we use the parent itself as activeParentId
-        } else {
-          // If parent is not a CA (legacy support or 'None'), find or create one
-          const division = masterFormatDivisions.find(d => d.id === newWbs.divisionId);
-          const caTitle = division ? `${division.id} - ${division.title}` : `Division ${newWbs.divisionId}`;
-          
-          let caLevel = wbsLevels.find(l => 
-            l.type === 'Cost Account' && 
-            l.divisionCode === (newWbs.divisionId || '01') && 
-            (activeParentId ? l.parentId === activeParentId : !l.parentId)
-          );
-
-          if (!caLevel) {
-            const caId = crypto.randomUUID();
-            const currentDivisionId = newWbs.divisionId || '01';
-            const caCode = generateCode('Cost Account', activeParentId || undefined, wbsLevels, currentDivisionId);
-            const newCaLevel: any = {
-              id: caId,
-              projectId: selectedProject.id,
-              title: caTitle,
-              type: 'Cost Account',
-              code: caCode,
-              status: 'Not Started',
-              divisionCode: currentDivisionId,
-              level: activeParentId ? (wbsLevels.find(l => l.id === activeParentId)?.level || 0) + 1 : 1
-            };
-            if (activeParentId) newCaLevel.parentId = activeParentId;
-            
-            await setDoc(doc(db, 'wbs', caId), newCaLevel);
-            activeParentId = caId;
-          } else {
-            activeParentId = caLevel.id;
-          }
+        // If parent is not a CA (legacy support or 'None'), and user wants a CA parent, create one
+        // But let's allow it to be flexible. If no parent is selected, we don't force CA creation
+        // unless there's a reason to.
+        if (!parent || parent.type !== 'Cost Account') {
+           // We'll keep activeParentId as is (could be Building, Area, or empty)
         }
       }
 

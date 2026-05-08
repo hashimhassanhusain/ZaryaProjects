@@ -60,19 +60,19 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                     <button
                       onClick={() => onTabChange(tab.id)}
                       className={cn(
-                        "flex flex-col items-center justify-center min-w-[72px] h-[72px] mt-0.5 px-2 rounded-md transition-all relative",
+                        "flex flex-col items-center justify-center min-w-[72px] h-[72px] mt-0.5 px-2 rounded-xl transition-all relative group",
                         isActive 
-                          ? "bg-brand/10 text-brand shadow-[inset_0_0_0_1px_rgba(var(--color-brand),0.1)] dark:bg-white/10 dark:text-brand" 
-                          : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white"
+                          ? "bg-text-primary text-white shadow-xl shadow-brand/10 border-b-4 border-brand" 
+                          : "text-text-secondary dark:text-neutral-300 hover:bg-white dark:hover:bg-white/5 hover:text-text-primary dark:hover:text-white"
                       )}
                     >
                       {tab.focusArea && (
-                        <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm", getFocusColor(tab.focusArea))} />
+                        <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm z-10", getFocusColor(tab.focusArea))} />
                       )}
-                      <tab.icon className={cn("w-7 h-7 mb-1", isActive ? "text-brand" : "text-neutral-600 dark:text-neutral-400")} strokeWidth={1.5} />
+                      <tab.icon className={cn("w-7 h-7 mb-1 transition-transform group-hover:scale-110", isActive ? "text-brand" : "text-text-secondary opacity-60 group-hover:text-text-primary group-hover:opacity-100")} strokeWidth={1.5} />
                       <span className={cn(
-                        "text-[10px] font-black leading-tight text-center max-w-[100px] uppercase tracking-tighter transition-colors break-words",
-                        isActive ? "text-brand" : "text-neutral-900 group-hover:text-brand"
+                        "text-[10px] font-black leading-tight text-center max-w-[120px] uppercase tracking-tighter transition-colors break-words italic",
+                        isActive ? "text-white" : "text-text-primary group-hover:text-brand"
                       )}>
                         {tab.label}
                       </span>
@@ -82,7 +82,7 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
               })}
             </div>
             {group.label && (
-              <div className="text-[10px] font-black text-neutral-900 dark:text-white uppercase tracking-[0.2em] text-center py-0.5 mt-auto bg-neutral-50/50 dark:bg-white/5 rounded-sm">
+              <div className="text-[10px] font-black text-text-primary dark:text-white uppercase tracking-[0.3em] text-center py-1 mt-auto bg-white/50 border border-slate-100 dark:bg-white/5 rounded-full shadow-sm mx-1">
                 {group.label}
               </div>
             )}

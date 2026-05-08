@@ -274,11 +274,12 @@ export const ProjectCharterForm: React.FC<ProjectCharterFormProps> = ({
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Estimated Budget</label>
               {isEditing ? (
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
                   value={formData['Estimated Budget'] || ''}
-                  onChange={(e) => updateField('Estimated Budget', e.target.value)}
+                  onChange={(e) => updateField('Estimated Budget', Math.max(0, parseFloat(e.target.value) || 0).toString())}
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-inner"
-                  placeholder="Enter estimated budget..."
+                  placeholder="0"
                 />
               ) : (
                 <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-700 font-semibold">

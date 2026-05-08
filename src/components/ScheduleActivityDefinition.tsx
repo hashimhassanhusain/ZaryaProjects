@@ -222,7 +222,7 @@ export const ScheduleActivityDefinition: React.FC<ScheduleActivityDefinitionProp
           <div className="col-span-4 space-y-4">
             <div className="flex items-center gap-2 px-2">
               <Layers className="w-4 h-4 text-slate-400" />
-              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Work Packages</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-700 dark:text-slate-500">Work Packages</h3>
             </div>
             
             <div className="space-y-2 max-h-[600px] overflow-y-auto no-scrollbar pr-2">

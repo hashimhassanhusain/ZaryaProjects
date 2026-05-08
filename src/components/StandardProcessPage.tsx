@@ -160,7 +160,7 @@ const QuickViewModal: React.FC<{
                ) : (
                  <>
                    <div className="space-y-4">
-                      <h3 className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 italic">Connected Data Extract</h3>
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-950 dark:text-neutral-300 italic">Connected Data Extract</h3>
                       <p className="text-sm font-medium text-neutral-600 leading-relaxed italic">
                         {linkedPage?.summary || `This is a quick-read snapshot of the approved ${stripNumericPrefix(title)}. The full interactive tool is available in the respective performance domain.`}
                       </p>
@@ -170,19 +170,19 @@ const QuickViewModal: React.FC<{
                      <div className="grid grid-cols-2 gap-4">
                         {Object.entries(liveData).filter(([k]) => !['id', 'projectId', 'updatedAt', 'createdAt'].includes(k)).map(([key, value], idx) => (
                           <div key={`${key}-${idx}`} className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                             <p className="text-[9px] font-bold text-neutral-400 uppercase mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
-                             <p className="text-sm font-semibold text-neutral-700">{String(value)}</p>
+                             <p className="text-[9px] font-black text-slate-950 dark:text-neutral-400 uppercase mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
+                             <p className="text-sm font-bold text-slate-900">{String(value)}</p>
                           </div>
                         ))}
                      </div>
                    ) : (
                      <div className="grid grid-cols-2 gap-8">
                         <div className="p-8 bg-neutral-50 rounded-[2rem] space-y-4">
-                           <h4 className="text-[9px] font-semibold uppercase text-neutral-400">Governance Context</h4>
+                           <h4 className="text-[9px] font-black uppercase text-slate-950">Governance Context</h4>
                            <div className="space-y-4">
                               <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-                                 <span className="text-xs font-bold text-neutral-600">Domain</span>
-                                 <span className="text-[10px] font-semibold text-neutral-900 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
+                                 <span className="text-xs font-black text-slate-900">Domain</span>
+                                 <span className="text-[10px] font-black text-slate-950 uppercase tracking-widest">{linkedPage?.domain || 'N/A'}</span>
                               </div>
                               <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
                                  <span className="text-xs font-bold text-neutral-600">Status</span>
@@ -207,7 +207,7 @@ const QuickViewModal: React.FC<{
             </div>
 
             <div className="px-5 py-3 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between">
-               <p className="text-[9px] font-semibold text-neutral-400 uppercase italic">{id}</p>
+               <p className="text-[9px] font-black text-slate-950 dark:text-neutral-400 uppercase italic">{id}</p>
                <button onClick={onClose} className="flex items-center gap-2 px-4 py-1.5 bg-neutral-900 text-white rounded-lg text-[9px] font-semibold uppercase tracking-widest">
                   View Source
                   <ChevronRight className="w-3 h-3" />
@@ -429,20 +429,20 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                                             <FileText className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
                                           </div>
                                           <div className={cn("flex-1", isRtl && "text-right")}>
-                                            <h1 className="text-xl md:text-3xl font-black text-neutral-950 tracking-tighter italic uppercase leading-none flex flex-wrap items-center gap-x-2">
+                                            <h1 className="text-xl md:text-2xl font-black text-text-primary tracking-tighter italic uppercase leading-none flex flex-wrap items-center gap-x-2">
                                               {grandParentPage && (
-                                                <span className="text-neutral-300 font-bold inline-flex items-center gap-2">
+                                                <span className="text-text-secondary/30 font-black inline-flex items-center gap-2">
                                                   {stripNumericPrefix(grandParentTitle)}
-                                                  <span className="opacity-40"> &gt; </span>
+                                                  <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
                                                 </span>
                                               )}
                                               {parentPage && (
-                                                <span className="text-neutral-400 font-bold inline-flex items-center gap-2">
+                                                <span className="text-text-secondary/50 font-black inline-flex items-center gap-2">
                                                   {stripNumericPrefix(parentTitle)}
-                                                  <span className="opacity-40"> &gt; </span>
+                                                  <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
                                                 </span>
                                               )}
-                                              <span className="text-neutral-900">{stripNumericPrefix(displayTitle)}</span>
+                                              <span className="text-text-primary">{stripNumericPrefix(displayTitle)}</span>
                                             </h1>
                                           </div>
                                         </div>
@@ -504,7 +504,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
                               {/* HUB DASHBOARD VIEW */}
                               {page.type === 'hub' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8">
                                   {pages
                                     .filter(p => p.parentId === page.id || (p.domain === page.domain && p.focusArea === page.focusArea && p.id !== page.id && !p.parentId))
                                     .map((childPage, childIdx) => (
@@ -514,21 +514,21 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.05 * childIdx }}
                                         onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${childPage.id}` : `/page/${childPage.id}`)}
-                                        className="group p-5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer overflow-hidden"
+                                        className="group p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border-b-4 hover:border-brand"
                                       >
-                                        <div className="flex items-start justify-between mb-4">
-                                          <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                                            <ArrowRight className={cn("w-4 h-4", isRtl ? "rotate-180" : "")} />
+                                        <div className="flex items-start justify-between mb-8">
+                                          <div className="w-12 h-12 bg-app-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-text-secondary group-hover:bg-text-primary group-hover:text-white transition-colors">
+                                            <ArrowRight className={cn("w-5 h-5", isRtl ? "rotate-180" : "")} />
                                           </div>
-                                          <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 rounded font-black text-[8px] text-slate-400 uppercase tracking-widest leading-none">
-                                            {childPage.id}
+                                          <div className="px-3 py-1 bg-app-bg dark:bg-white/5 rounded-lg font-black text-[9px] text-text-secondary uppercase tracking-[0.2em] leading-none opacity-60">
+                                            {stripNumericPrefix(childPage.id)}
                                           </div>
                                         </div>
                                         <div>
-                                          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-1 group-hover:text-brand transition-colors">
+                                          <h3 className="text-lg font-black text-text-primary dark:text-white uppercase italic tracking-tighter mb-2 group-hover:text-brand transition-colors">
                                             {stripNumericPrefix(t(childPage.id) === childPage.id ? childPage.title : t(childPage.id))}
                                           </h3>
-                                          <p className="text-[10px] text-slate-400 font-medium leading-relaxed line-clamp-2">
+                                          <p className="text-xs text-text-secondary font-medium leading-relaxed line-clamp-3 opacity-80">
                                             {t(childPage.id + '_summary') || childPage.summary}
                                           </p>
                                         </div>

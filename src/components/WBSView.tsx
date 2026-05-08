@@ -57,10 +57,10 @@ export const WBSView: React.FC = () => {
 
   const hierarchyRules: Record<string, string[]> = {
     'Zone': [],
-    'Area': ['Zone'],
-    'Building': ['Area', 'Zone'],
+    'Area': ['Zone', 'Root'],
+    'Building': ['Area', 'Zone', 'Root'],
     'Cost Account': ['Building', 'Area', 'Zone', 'Root'],
-    'Work Package': ['Cost Account']
+    'Work Package': ['Cost Account', 'Building', 'Area', 'Zone', 'Root']
   };
 
   const ribbonGroups: RibbonGroup[] = [
@@ -429,6 +429,36 @@ export const WBSView: React.FC = () => {
     setIsManualTitle(!isStandard);
   };
 
+  const handleInlineSaveWbs = async (id: string, field: string, value: any) => {
+    try {
+      const level = wbsLevels.find(l => l.id === id);
+      if (!level) return;
+
+      let updateData: any = { 
+        [field]: value,
+        updatedAt: new Date().toISOString()
+      };
+
+      // If updating divisionCode on a Work Package, sync parentId
+      if (field === 'divisionCode' && level.type === 'Work Package') {
+        const matchingCA = wbsLevels.find(l => l.type === 'Cost Account' && l.divisionCode === value);
+        if (matchingCA) {
+          updateData.parentId = matchingCA.id;
+          updateData.level = matchingCA.level + 1;
+        }
+      }
+
+      await setDoc(doc(db, 'wbs', id), { ...level, ...updateData });
+      
+      // Trigger rollup
+      if (updateData.parentId || level.parentId) {
+        await rollupToParent('division', updateData.parentId || level.parentId || '');
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'wbs');
+    }
+  };
+
   const handleDeleteWbs = async (id: string) => {
     const level = wbsLevels.find(l => l.id === id);
     if (!level) return;
@@ -593,7 +623,10 @@ export const WBSView: React.FC = () => {
                       <div className="text-base font-semibold text-slate-900">{level.title}</div>
                     </div>
                     <div className={cn("flex items-center gap-3 mt-0.5", isRtl && "flex-row-reverse")}>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">{t(level.type.toLowerCase().replace(' ', ''))}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
+                        {t(level.type.toLowerCase().replace(' ', ''))}
+                        {level.type === 'Work Package' && level.divisionCode && ` (${level.divisionCode})`}
+                      </div>
                       <span className="text-slate-200">|</span>
                       <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{formatCurrency(totalValue)}</div>
                       <span className="text-slate-200">|</span>
@@ -720,6 +753,7 @@ export const WBSView: React.FC = () => {
             data={wbsLevels.filter(l => l.type === 'Cost Account')}
             onRowClick={handleEditWbs}
             onDeleteRecord={handleDeleteWbs}
+            onInlineSave={handleInlineSaveWbs}
             title={stripNumericPrefix(t('cost_accounts'))}
             favoriteControl={null}
           />
@@ -729,6 +763,7 @@ export const WBSView: React.FC = () => {
             data={wbsLevels.filter(l => l.type === 'Work Package')}
             onRowClick={handleEditWbs}
             onDeleteRecord={handleDeleteWbs}
+            onInlineSave={handleInlineSaveWbs}
             title={stripNumericPrefix(t('work_packages'))}
             favoriteControl={null}
             primaryAction={{
@@ -862,6 +897,20 @@ export const WBSView: React.FC = () => {
                     </select>
                   </div>
                 </div>
+                {editingWbs.type === 'Work Package' && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account (Division)</label>
+                    <select 
+                      value={editingWbs.divisionCode || '01'}
+                      onChange={e => setEditingWbs({...editingWbs, divisionCode: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    >
+                      {masterFormatDivisions.map(div => (
+                        <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {editingWbs.type === 'Cost Account' ? (
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account Title</label>
@@ -982,8 +1031,8 @@ export const WBSView: React.FC = () => {
                     <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
                   </select>
                   {editingWbs.type === 'Work Package' && wbsLevels.filter(l => l.type === 'Cost Account').length === 0 && (
-                    <p className="mt-1 text-[10px] text-rose-500 font-bold uppercase tracking-wider">
-                      No Cost Accounts available to link.
+                    <p className="mt-1 text-[10px] text-blue-500 font-bold uppercase tracking-wider opacity-60">
+                      Note: You can also create a dedicated "Cost Account" level in the hierarchy for advanced grouping.
                     </p>
                   )}
                 </div>
@@ -1003,10 +1052,11 @@ export const WBSView: React.FC = () => {
                           updatedWbs.divisionCode = div ? div.id : (updatedWbs.title.match(/\d+/)?.[0] || '01');
                         } else if (updatedWbs.type === 'Work Package') {
                           const parent = wbsLevels.find(l => l.id === updatedWbs.parentId);
-                          if (parent && parent.divisionCode) {
+                          // Inherit division code from parent if parent is a Cost Account and no division code is set locally
+                          if (!updatedWbs.divisionCode && parent && parent.divisionCode) {
                             updatedWbs.divisionCode = parent.divisionCode;
-                          } else {
-                            delete updatedWbs.divisionCode;
+                          } else if (!updatedWbs.divisionCode) {
+                             updatedWbs.divisionCode = '01';
                           }
                         } else {
                           delete updatedWbs.divisionCode;

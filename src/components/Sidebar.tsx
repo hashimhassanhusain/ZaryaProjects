@@ -76,18 +76,18 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className={cn(
-      'h-screen bg-neutral-50 border-e border-neutral-200 flex flex-col shrink-0 transition-all duration-300 relative z-40 shadow-[4px_0_24px_rgba(0,0,0,0.03)]',
+      'h-screen bg-app-bg border-e border-neutral-200 flex flex-col shrink-0 transition-all duration-300 relative z-40',
       isSidebarOpen ? 'w-80 overflow-y-auto custom-scrollbar' : 'w-0 overflow-hidden border-none'
     )}>
       <div className="flex flex-col h-full" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* LOGO SECTION */}
         <div className="p-8 shrink-0 flex items-center gap-4 cursor-pointer group" onClick={() => navigate('/')}>
              {/* New Logo */}
-             <div className="w-12 h-12 bg-neutral-800 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <span className="text-[#FF5C00] font-black text-[10px] tracking-tighter">PMIS</span>
+             <div className="w-12 h-12 bg-text-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <span className="text-brand font-black text-[10px] tracking-tighter">PMIS</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-text-main font-black text-2xl tracking-tighter leading-none italic uppercase">ZARYA</span>
+               <span className="text-text-primary font-black text-2xl tracking-tighter leading-none italic uppercase">ZARYA</span>
                <span className="text-[9px] font-black text-brand tracking-[0.4em] leading-none uppercase mt-2 opacity-80">{t('pmo_system')}</span>
              </div>
         </div>
@@ -97,7 +97,7 @@ export const Sidebar: React.FC = () => {
           
           {/* ── ENTERPRISE HUB (COMPANIES & PROJECTS) ── */}
           <div className="space-y-3">
-             <h3 className="px-4 text-[10px] font-black text-neutral-400 uppercase tracking-[0.3em] flex items-center justify-between opacity-60">
+             <h3 className="px-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] flex items-center justify-between opacity-60">
                 {t('enterprise')}
                 <Building className="w-3 h-3" />
              </h3>
@@ -234,9 +234,9 @@ export const Sidebar: React.FC = () => {
                       )}>
                         <AreaIcon className="w-4 h-4" />
                       </div>
-                      <span className="flex-1 text-left text-[13px] font-black uppercase tracking-wider">{stripNumericPrefix(t(area.id))}</span>
-                      <div className="p-1 rounded-md bg-surface border border-neutral-100">
-                        {isExpanded ? <ChevronDown className="w-3 h-3 text-neutral-400" /> : <ChevronRight className={cn("w-3 h-3 text-neutral-400", isRtl && "rotate-180")} />}
+                      <span className="flex-1 text-left text-[13px] font-black uppercase tracking-wider text-text-primary">{stripNumericPrefix(t(area.id))}</span>
+                      <div className="p-1 rounded-md bg-white border border-neutral-100">
+                        {isExpanded ? <ChevronDown className="w-3 h-3 text-text-secondary" /> : <ChevronRight className={cn("w-3 h-3 text-text-secondary", isRtl && "rotate-180")} />}
                       </div>
                     </button>
 

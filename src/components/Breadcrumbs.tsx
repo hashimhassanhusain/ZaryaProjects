@@ -56,16 +56,16 @@ export const Breadcrumbs: React.FC = () => {
   crumbs.push({ label: stripNumericPrefix(th(currentPage.id)), path: location.pathname, current: true });
 
   return (
-    <nav className="flex items-center px-6 py-3 bg-white border-b border-neutral-100 overflow-x-auto no-scrollbar shrink-0">
+    <nav className="flex items-center px-6 py-3 bg-white border-b border-neutral-100 overflow-x-auto no-scrollbar shrink-0 shadow-sm">
       <div className="flex items-center gap-2">
         {crumbs.map((crumb, idx) => (
           <React.Fragment key={idx}>
-            {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-300 mx-1 shrink-0" />}
+            {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-text-secondary mx-1 shrink-0 opacity-40" />}
             <Link 
               to={crumb.path}
               className={cn(
                 "text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors",
-                crumb.current ? "text-brand" : "text-neutral-400 hover:text-neutral-900"
+                crumb.current ? "text-brand" : "text-text-secondary hover:text-text-primary"
               )}
             >
               {crumb.label}

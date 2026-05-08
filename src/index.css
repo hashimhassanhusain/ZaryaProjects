@@ -11,7 +11,8 @@
   --color-sidebar: var(--sidebar-bg);
   --color-app-bg: var(--app-bg);
   --color-surface: var(--surface-bg);
-  --color-text-main: var(--text-primary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
   --color-ribbon: var(--ribbon-bg);
   --color-brand-dark: var(--brand-dark);
 }
@@ -21,31 +22,35 @@ html {
 }
 
 :root {
-  --brand-primary: #FF5C00;
-  --brand-secondary: #FF8533;
-  --brand-dark: #1f2937;
+  --brand-primary: #ff6d00; /* Safety Orange */
+  --brand-secondary: #ff8533;
+  --brand-dark: #1A1C1E; /* Dark Charcoal */
   --sidebar-bg: #ffffff;
-  --app-bg: #f9fafb;
+  --app-bg: #f7f9fb; /* Very Light Gray */
   --surface-bg: #ffffff;
-  --text-primary: #111827;
+  --text-primary: #1A1C1E; /* Dark Charcoal for Headings */
+  --text-secondary: #44474E; /* Medium Gray for Body */
   --ribbon-bg: #ffffff;
 }
 
 .dark {
-  /* Forcing dark mode to look like light mode but maybe with darker grays if it's accidentally triggered */
-  --brand-primary: #FF5C00;
-  --brand-secondary: #FF8533;
-  --brand-dark: #1f2937;
-  --sidebar-bg: #ffffff;
-  --app-bg: #f9fafb;
-  --surface-bg: #ffffff;
-  --text-primary: #111827;
-  --ribbon-bg: #ffffff;
+  --brand-primary: #ff6d00;
+  --brand-secondary: #ff8533;
+  --brand-dark: #1A1C1E;
+  --sidebar-bg: #1A1C1E;
+  --app-bg: #0F1113;
+  --surface-bg: #1A1C1E;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1A1;
+  --ribbon-bg: #1A1C1E;
 }
 
 @layer base {
   body {
-    @apply font-sans text-text-main bg-app-bg antialiased transition-colors duration-300;
+    @apply font-sans text-text-secondary bg-app-bg antialiased transition-colors duration-300;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-text-primary tracking-tight;
   }
 }
 
@@ -55,11 +60,11 @@ html {
   }
   
   .sidebar-item-active {
-    @apply bg-brand/5 text-brand font-semibold;
+    @apply bg-brand/10 text-brand font-bold;
   }
   
   .sidebar-item-inactive {
-    @apply text-slate-500 hover:bg-slate-50 hover:text-slate-900;
+    @apply text-slate-500 hover:bg-slate-50 hover:text-text-primary;
   }
 
   /* Custom Sidebar Scrollbar */

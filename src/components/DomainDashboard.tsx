@@ -18,7 +18,8 @@ import {
   UserSearch, Layout, Coins, Receipt, Wallet, Landmark, Eye, MessageCircleWarning,
   Smile, Archive, Calculator, Lock, FilePlus, History, CalendarDays,
   Play, Gauge, Settings2, Library, Network, Search, UserPlus, Handshake, MessagesSquare,
-  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle, Star, FolderOpen, Printer
+  FolderArchive, ListTodo, ArrowRightLeft, FileSearch, HelpCircle, Star, FolderOpen, Printer,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, RiskEntry, ProjectIssue, RiskAuditEntry, Stakeholder, User as UserType } from '../types';
@@ -609,7 +610,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
   const activeHubId = null;
 
   return (
-    <div className="w-full flex flex-col h-full bg-neutral-50 dark:bg-app-bg transition-colors duration-300">
+    <div className="w-full flex flex-col h-full bg-app-bg transition-colors duration-300">
       {/* ── Office-Style Ribbon ── */}
       <Ribbon 
         groups={ribbonGroups}
@@ -629,69 +630,69 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             className="w-full h-full"
           >
             {activeTab === 'overview' ? (
-              <div className="p-8 space-y-12">
+              <div className="p-10 space-y-12">
                 {/* Domain Header Card */}
-                <div className="bg-white dark:bg-surface p-10 rounded-[3rem] border border-neutral-200 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-3xl -mr-20 -mt-20" />
-                   <div className="relative z-10 flex items-center gap-8">
-                       <div className="w-20 h-20 rounded-[2.5rem] bg-neutral-900 dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
-                           <Icon className="w-10 h-10" strokeWidth={1} />
+                <div className="bg-white dark:bg-surface p-12 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between border-b-8 border-app-bg">
+                   <div className="absolute top-0 right-0 w-96 h-96 bg-brand/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                   <div className="relative z-10 flex items-center gap-10">
+                       <div className="w-24 h-24 rounded-[3rem] bg-text-primary dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
+                           <Icon className="w-12 h-12" strokeWidth={1} />
                        </div>
                       <div className="space-y-1">
-                         <div className="flex items-center gap-3">
-                           <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                         <div className="flex items-center gap-4">
+                           <h1 className="text-2xl md:text-3xl font-black text-text-primary dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
-                               "p-2 rounded-xl transition-all shadow-sm",
-                               isFavorite ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-300 hover:text-neutral-400"
+                               "p-3 rounded-2xl transition-all shadow-sm border",
+                               isFavorite ? "bg-amber-50 border-amber-200 text-amber-500" : "bg-white dark:bg-neutral-800 border-slate-100 text-slate-300 hover:text-slate-400"
                              )}
                            >
                              <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
                            </button>
                          </div>
-                         <p className="text-sm font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-widest leading-none">
+                         <p className="text-sm font-black text-text-secondary dark:text-neutral-400 uppercase tracking-[0.2em] leading-none opacity-60">
                            {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
                          </p>
                       </div>
                    </div>
                    <div className="relative z-10 flex items-center gap-3">
-                      <div className="px-5 py-2 bg-brand text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand/20">
+                      <div className="px-6 py-2.5 bg-brand text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-brand/20 italic">
                          {t('enterprise_standard')}
                       </div>
                    </div>
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-neutral-200 dark:border-white/5 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-neutral-400 dark:text-neutral-500">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                   <div className="bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm space-y-6 border-b-4">
+                      <div className="flex items-center gap-3 text-text-secondary opacity-40">
                          <Activity className="w-4 h-4" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('status')}</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">{t('status')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">{t('healthy')}</div>
-                      <div className="h-1 w-full bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="text-3xl font-black text-text-primary dark:text-white uppercase italic tracking-tighter">{t('healthy')}</div>
+                      <div className="h-2 w-full bg-app-bg rounded-full overflow-hidden">
                          <div className="h-full bg-emerald-500 w-[94%]" />
                       </div>
                    </div>
                    
-                   <div className="bg-white dark:bg-surface p-6 rounded-[2rem] border border-neutral-200 dark:border-white/5 shadow-sm space-y-4">
-                      <div className="flex items-center gap-3 text-neutral-400 dark:text-neutral-500">
+                   <div className="bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm space-y-6 border-b-4">
+                      <div className="flex items-center gap-3 text-text-secondary opacity-40">
                          <CheckCircle2 className="w-4 h-4" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest">{t('compliance')}</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">{t('compliance')}</span>
                       </div>
-                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">98.2%</div>
-                      <div className="text-[10px] font-bold text-emerald-600 uppercase">↑ 2.1% {t('this_month')}</div>
+                      <div className="text-3xl font-black text-text-primary dark:text-white italic tracking-tighter">98.2%</div>
+                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">↑ 2.1% {t('this_month')}</div>
                    </div>
 
-                    <div className="col-span-2 bg-neutral-900 dark:bg-brand-dark p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
+                    <div className="col-span-2 bg-text-primary dark:bg-brand-dark p-10 rounded-[3rem] shadow-xl relative overflow-hidden border-b-4 border-brand">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
                       <div className="relative z-10 flex items-center justify-between h-full">
-                         <div className="space-y-2">
-                            <h4 className="text-white text-xs font-bold uppercase tracking-widest opacity-40">{t('domain_kpi_index')}</h4>
-                            <div className="text-4xl font-bold text-white tracking-tighter italic">A+ <span className="text-xs font-normal opacity-60 not-italic ml-2">{t('standard_compliance')}</span></div>
+                         <div className="space-y-3">
+                            <h4 className="text-white text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{t('domain_kpi_index')}</h4>
+                            <div className="text-5xl font-black text-white tracking-tighter italic">A+ <span className="text-[10px] font-black opacity-40 not-italic ml-4 uppercase tracking-widest">{t('standard_compliance')}</span></div>
                          </div>
-                         <div className="w-32 h-16">
+                         <div className="w-40 h-20 opacity-80">
                             {getChartData()}
                          </div>
                       </div>
@@ -699,43 +700,43 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 </div>
 
                 {/* Focus Areas Visualization */}
-                <div className="space-y-6">
-                   <div className="flex items-center justify-between px-2">
-                      <h3 className="text-[11px] font-bold text-neutral-900 dark:text-white uppercase tracking-[0.3em]">{t('process_lifecycle')}</h3>
-                      <div className="flex gap-4">
+                <div className="space-y-8">
+                   <div className="flex items-center justify-between px-4">
+                      <h3 className="text-xs font-black text-text-primary dark:text-white uppercase tracking-[0.4em]">{t('process_lifecycle')}</h3>
+                      <div className="flex gap-6">
                          {areas.map(area => (
-                           <div key={area} className="flex items-center gap-2">
-                              <div className={cn("w-2 h-2 rounded-full", focusAreaColors[area])} />
-                              <span className="text-[8px] font-bold text-neutral-400 uppercase">{t(area)}</span>
+                           <div key={area} className="flex items-center gap-2.5">
+                              <div className={cn("w-2.5 h-2.5 rounded-full", focusAreaColors[area])} />
+                              <span className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">{t(area)}</span>
                            </div>
                          ))}
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                       {areas.map(area => {
                         const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
                         return (
-                          <div key={area} className="bg-neutral-100/50 rounded-[2.5rem] p-6 space-y-4 border border-neutral-200/50">
-                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{t(area)}</span>
-                                <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold text-white", focusAreaColors[area])}>
+                          <div key={area} className="bg-white/40 rounded-[3rem] p-8 space-y-6 border border-white/60 backdrop-blur-sm shadow-inner">
+                             <div className="flex items-center justify-between px-2">
+                                <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60">{t(area)}</span>
+                                <span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg", focusAreaColors[area])}>
                                    {areaChildren.length}
                                 </span>
                              </div>
-                             <div className="space-y-2">
+                             <div className="space-y-3">
                                 {areaChildren.map(child => (
                                   <button 
                                     key={child.id}
                                     onClick={() => handleTabChange(child.id)}
-                                    className="w-full p-4 bg-white dark:bg-surface border border-neutral-100 dark:border-white/5 rounded-2xl text-[11px] font-bold text-neutral-700 dark:text-neutral-300 text-left hover:border-brand/30 hover:shadow-md transition-all flex items-center justify-between group"
+                                    className="w-full p-5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[1.5rem] text-[11px] font-black text-text-primary dark:text-neutral-300 text-left hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 transition-all flex items-center justify-between group border-b-4 hover:border-brand"
                                   >
-                                     <span className="truncate pr-4 italic">{stripNumericPrefix(t(child.id)) || child.title}</span>
-                                     <ChevronRight className="w-3 h-3 text-neutral-300 group-hover:text-brand transition-colors" />
+                                     <span className="truncate pr-4 italic uppercase tracking-tighter">{stripNumericPrefix(t(child.id)) || child.title}</span>
+                                     <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand transition-all group-hover:translate-x-1" />
                                   </button>
                                 ))}
                                 {areaChildren.length === 0 && (
-                                  <div className="p-4 border border-dashed border-neutral-200 rounded-2xl text-[9px] font-bold text-neutral-300 text-center uppercase">
+                                  <div className="p-6 border-2 border-dashed border-slate-100 rounded-[1.5rem] text-[9px] font-black text-slate-200 text-center uppercase tracking-widest">
                                      {t('no_processes')}
                                   </div>
                                 )}

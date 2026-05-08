@@ -133,26 +133,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
                     <TrendingUp className="w-4 h-4" />
                   </div>
-                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('boq_value_by_location')}</h3>
+                  <h3 className="text-sm font-black text-text-primary uppercase tracking-[0.2em]">{t('boq_value_by_location')}</h3>
                 </div>
                 {(isAdmin || userProfile?.accessiblePages?.includes('2.4.1')) && (
-                  <Link to="/page/2.4.1" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  <Link to="/page/2.4.1" className="text-[10px] font-black text-brand hover:opacity-80 flex items-center gap-1 uppercase tracking-widest">
                     {t('view_all_boq')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {locationTotals.map((loc, idx) => (
                   <motion.div
                     key={loc.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm group hover:border-emerald-200 transition-all"
+                    className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm group hover:border-brand/30 transition-all hover:shadow-xl hover:shadow-brand/5 border-b-4"
                   >
-                    <div className="flex justify-between items-start mb-3">
+                    <div className="flex justify-between items-start mb-6">
                       <div className={cn(
-                        "p-2 rounded-xl text-xs font-semibold",
+                        "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
                         loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
                         loc.type === 'Building' ? "bg-brand/10 text-brand" :
                         "bg-amber-50 text-amber-600"
@@ -160,8 +160,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                         {t(loc.type.toLowerCase())}
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">{loc.title}</div>
-                    <div className="text-sm font-semibold text-emerald-600 font-mono">{formatAmount(loc.total, 'IQD')}</div>
+                    <div className="text-lg font-black text-text-primary mb-2 group-hover:text-brand transition-colors uppercase italic tracking-tighter">{loc.title}</div>
+                    <div className="text-sm font-bold text-emerald-600 font-mono tracking-tight">{formatAmount(loc.total, 'IQD')}</div>
                   </motion.div>
                 ))}
               </div>
@@ -176,16 +176,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                   <div className="p-1.5 bg-brand/10 text-brand rounded-lg">
                     <Calendar className="w-4 h-4" />
                   </div>
-                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">{t('project_schedule_summary')}</h3>
+                  <h3 className="text-sm font-black text-text-primary uppercase tracking-[0.2em]">{t('project_schedule_summary')}</h3>
                 </div>
                 {(isAdmin || userProfile?.accessiblePages?.includes('2.3')) && (
-                  <Link to="/page/2.3" className="text-xs font-semibold text-brand hover:opacity-80 flex items-center gap-1">
+                  <Link to="/page/2.3" className="text-[10px] font-black text-brand hover:opacity-80 flex items-center gap-1 uppercase tracking-widest">
                     {t('view_full_schedule')} <ChevronRight className="w-3 h-3" />
                   </Link>
                 )}
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
-                <div className="space-y-4">
+              <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm overflow-hidden">
+                <div className="space-y-8">
                   {activities.filter(a => a.startDate && a.finishDate).slice(0, 5).map((act, idx) => {
                     const start = new Date(act.startDate!);
                     const finish = new Date(act.finishDate!);
@@ -195,25 +195,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                     const progress = Math.min(100, Math.max(0, (current / total) * 100));
 
                     return (
-                      <div key={act.id} className="space-y-2">
+                      <div key={act.id} className="space-y-3">
                         <div className="flex justify-between items-end">
                           <div>
-                            <div className="text-sm font-semibold text-slate-900">{act.description}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{act.startDate} — {act.finishDate}</div>
+                            <div className="text-sm font-black text-text-primary italic uppercase tracking-tighter">{act.description}</div>
+                            <div className="text-[10px] text-text-secondary font-black opacity-40 uppercase tracking-widest">{act.startDate} — {act.finishDate}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-semibold text-brand">{Math.round(progress)}%</div>
-                            <div className="text-[10px] text-slate-400 uppercase tracking-widest">{act.status}</div>
+                            <div className="text-xs font-black text-brand">{Math.round(progress)}%</div>
+                            <div className="text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60">{act.status}</div>
                           </div>
                         </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-2.5 bg-app-bg rounded-full overflow-hidden">
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 1, delay: idx * 0.1 }}
                             className={cn(
-                              "h-full rounded-full",
-                              progress === 100 ? "bg-emerald-500" : "bg-brand"
+                              "h-full rounded-full transition-all",
+                              progress === 100 ? "bg-emerald-500" : "bg-brandShadow bg-brand"
                             )}
                           />
                         </div>
@@ -242,33 +242,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                 >
                     <Link
                       to={`/page/${child.id}`}
-                      className="group h-full flex flex-col p-6 bg-white dark:bg-surface border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-brand/5 hover:border-brand/30 transition-all"
+                      className="group h-full flex flex-col p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm hover:shadow-xl hover:shadow-brand/5 hover:border-brand/30 transition-all border-b-4 hover:border-brand"
                     >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-2xl group-hover:bg-brand/10 transition-colors shadow-inner">
-                          <Icon className="w-6 h-6 text-slate-400 group-hover:text-brand transition-transform group-hover:scale-110" />
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-14 h-14 flex items-center justify-center bg-app-bg dark:bg-white/5 rounded-[1.25rem] group-hover:bg-text-primary transition-colors shadow-inner">
+                          <Icon className="w-6 h-6 text-text-secondary group-hover:text-white transition-transform group-hover:scale-110" />
                         </div>
                         <StatusIcon status={child.status} />
                       </div>
                       
-                      <div className="flex-1 space-y-2">
-                        <div className="text-[10px] text-brand font-bold uppercase tracking-widest opacity-60">
+                      <div className="flex-1 space-y-3">
+                        <div className="text-[10px] text-brand font-black uppercase tracking-[0.2em] opacity-60">
                           {child.focusArea || ''}
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors">
+                        <h3 className="text-xl font-black text-text-primary dark:text-white leading-tight group-hover:text-brand transition-colors uppercase italic tracking-tighter">
                           {displayTitle}
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
+                        <p className="text-xs text-text-secondary dark:text-slate-400 leading-relaxed line-clamp-3 font-medium opacity-80">
                           {child.summary || child.content || 'Standard project artifact and management documentation.'}
                         </p>
                       </div>
 
-                      <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex items-center text-[10px] font-bold text-brand uppercase tracking-widest">
+                      <div className="mt-8 pt-6 border-t border-slate-50 dark:border-white/5 flex items-center justify-between">
+                        <div className="flex items-center text-[10px] font-black text-brand uppercase tracking-[0.2em]">
                           {t('view_artifact')}
-                          <ArrowRight className="w-3.5 h-3.5 ms-1.5 group-hover:translate-x-1 transition-transform" />
+                          <ArrowRight className="w-4 h-4 ms-2 group-hover:translate-x-1 transition-transform" />
                         </div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover:bg-brand transition-colors" />
+                        <div className="w-2 h-2 rounded-full bg-slate-100 dark:bg-white/10 group-hover:bg-brand transition-colors" />
                       </div>
                     </Link>
                 </motion.div>

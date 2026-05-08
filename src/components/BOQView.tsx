@@ -52,7 +52,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { loadArabicFont } from '../lib/pdfService';
-import { cn, stripNumericPrefix } from '../lib/utils';
+import { cn, stripNumericPrefix, formatDate } from '../lib/utils';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { HelpTooltip } from './HelpTooltip';
 import { StandardProcessPage } from './StandardProcessPage';
@@ -231,11 +231,15 @@ export const BOQView: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const baseRate = convertToBase(newItem.inputRate || 0, newItem.inputCurrency || baseCurrency, newItem.exchangeRateUsed || globalExchangeRate);
-      const amount = (newItem.quantity || 0) * baseRate;
+      const quantity = Math.max(0, newItem.quantity || 0);
+      const inputRate = Math.max(0, newItem.inputRate || 0);
+      const baseRate = convertToBase(inputRate, newItem.inputCurrency || baseCurrency, newItem.exchangeRateUsed || globalExchangeRate);
+      const amount = quantity * baseRate;
 
       const data = {
         ...newItem,
+        quantity,
+        inputRate,
         projectId: selectedProject.id,
         versionId: activeVersion.id,
         amount,
@@ -267,6 +271,41 @@ export const BOQView: React.FC = () => {
       handleFirestoreError(err, OperationType.WRITE, 'boq');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleInlineSave = async (id: string, field: string, value: any) => {
+    const item = boqItems.find(i => i.id === id);
+    if (!item) {
+      toast.error("Item not found");
+      return;
+    }
+
+    try {
+      let updateData: any = { 
+        [field]: value,
+        updatedAt: serverTimestamp()
+      };
+
+      // Recalculate amount if key fields change
+      if (field === 'quantity' || field === 'inputRate' || field === 'inputCurrency') {
+        const qty = field === 'quantity' ? Number(value) : (item.quantity || 0);
+        const rate = field === 'inputRate' ? Number(value) : (item.inputRate || 0);
+        const curr = field === 'inputCurrency' ? value : (item.inputCurrency || baseCurrency);
+        
+        const baseRateValue = convertToBase(rate, curr, item.exchangeRateUsed || globalExchangeRate);
+        updateData.amount = qty * baseRateValue;
+      }
+
+      await updateDoc(doc(db, 'boq', id), updateData);
+      
+      // Rollup if item had a WBS assignment
+      if (item.wbsId) {
+        await rollupToParent('workPackage', item.wbsId);
+      }
+    } catch (err) {
+      console.error('Error during inline save:', err);
+      handleFirestoreError(err, OperationType.UPDATE, 'boq');
     }
   };
 
@@ -310,9 +349,9 @@ export const BOQView: React.FC = () => {
     const itemToDelete = boqItems.find(i => i.id === id);
     toast((toastRef) => (
       <div className="flex flex-col gap-4">
-        <p className="text-sm font-bold text-slate-900">{language === 'ar' ? 'هل أنت متأكد من حذف هذا البند؟' : 'Are you sure you want to delete this item?'}</p>
+        <p className="text-sm font-black text-black">Are you sure you want to delete this item?</p>
         <div className="flex justify-end gap-2">
-          <button onClick={() => toast.dismiss(toastRef.id)} className="px-3 py-1 text-xs font-bold text-slate-400 uppercase tracking-widest">{t('cancel')}</button>
+          <button onClick={() => toast.dismiss(toastRef.id)} className="px-3 py-1.5 bg-slate-100 text-black rounded-lg text-xs font-black border border-slate-300">Cancel</button>
           <button 
             onClick={async () => {
               toast.dismiss(toastRef.id);
@@ -321,18 +360,41 @@ export const BOQView: React.FC = () => {
                 if (itemToDelete?.wbsId && itemToDelete.wbsId !== 'master') {
                   await rollupToParent('workPackage', itemToDelete.wbsId);
                 }
-                toast.success(language === 'ar' ? "تم الحذف" : "Deleted");
+                toast.success('Deleted successfully');
               } catch (err) {
                 handleFirestoreError(err, OperationType.DELETE, 'boq');
               }
             }} 
-            className="px-3 py-1 bg-rose-600 text-white rounded text-xs font-bold uppercase tracking-widest"
+            className="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-black shadow-sm"
           >
-            {t('delete')}
+            Delete
           </button>
         </div>
       </div>
     ), { duration: 5000 });
+  };
+
+  const handleBulkDeleteItems = async (ids: string[]) => {
+    try {
+      const batch = writeBatch(db);
+      const affectedWbsIds = new Set<string>();
+      
+      ids.forEach(id => {
+        const item = boqItems.find(i => i.id === id);
+        if (item?.wbsId && item.wbsId !== 'master') affectedWbsIds.add(item.wbsId);
+        batch.delete(doc(db, 'boq', id));
+      });
+
+      await batch.commit();
+      
+      // Refresh costs
+      for (const wbsId of Array.from(affectedWbsIds)) {
+        await rollupToParent('workPackage', wbsId);
+      }
+    } catch (err) {
+      console.error('Batch delete failed:', err);
+      throw err;
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -360,14 +422,21 @@ export const BOQView: React.FC = () => {
       const jsonMatch = text.match(/\[\s*\{.*\}\s*\]/s);
       const extracted = JSON.parse(jsonMatch ? jsonMatch[0] : text);
       
-      const mapped = extracted.map((item: any) => ({
-        ...item,
-        id: crypto.randomUUID(),
-        inputRate: item.rate,
-        inputCurrency: item.currency || baseCurrency,
-        exchangeRateUsed: globalExchangeRate,
-        amount: (item.quantity || 0) * convertToBase(item.rate || 0, item.currency || baseCurrency, globalExchangeRate)
-      }));
+      const mapped = extracted.map((item: any) => {
+        const quantity = Math.max(0, Number(item.quantity) || 0);
+        const rate = Math.max(0, Number(item.rate) || 0);
+        const inputRate = Math.max(0, Number(item.rate) || 0);
+        return {
+          ...item,
+          id: crypto.randomUUID(),
+          quantity,
+          rate,
+          inputRate,
+          inputCurrency: item.currency || baseCurrency,
+          exchangeRateUsed: globalExchangeRate,
+          amount: quantity * convertToBase(rate, item.currency || baseCurrency, globalExchangeRate)
+        };
+      });
 
       setPreviewItems(mapped);
       
@@ -420,19 +489,55 @@ export const BOQView: React.FC = () => {
     setIsSaving(true);
     
     const wpMap = new Map(workPackages.map(wp => [(wp.title || "").toLowerCase().trim(), wp.id]));
+    const wbsNodesById = new Map<string, WBSLevel>(wbsLevels.map(node => [node.id, node]));
     let fallbackCount = 0;
 
     try {
       const batch = writeBatch(db);
       const affectedWbsIds = new Set<string>();
       
+      // Step 1: Create missing work packages from mappings
+      const pkgToFinalId = new Map<string, string>();
+      
+      for (const pkgName of unmappedWorkPackages) {
+        const targetId = packageMappings[pkgName];
+        if (!targetId) continue;
+        
+        const targetNode = wbsNodesById.get(targetId);
+        if (targetNode && targetNode.type === 'Cost Account') {
+          // Create a new work package under this Cost Account
+          const newWpId = crypto.randomUUID();
+          const newWpData: WBSLevel = {
+            id: newWpId,
+            projectId: selectedProject?.id || '',
+            parentId: targetId,
+            title: pkgName,
+            type: 'Work Package',
+            level: (targetNode.level || 0) + 1,
+            code: `${targetNode.code || 'CAD'}-${Math.floor(1000 + Math.random() * 9000)}`,
+            status: 'Not Started',
+            divisionCode: targetNode.divisionCode || targetNode.code,
+            progress: 0,
+            plannedCost: 0,
+            actualCost: 0
+          };
+          batch.set(doc(db, 'wbs', newWpId), newWpData);
+          pkgToFinalId.set(pkgName, newWpId);
+          affectedWbsIds.add(newWpId);
+        } else {
+          // Mapping is likely to an existing Work Package (Merge)
+          pkgToFinalId.set(pkgName, targetId);
+          affectedWbsIds.add(targetId);
+        }
+      }
+
       previewItems.forEach(item => {
         let wbsId = item.wbsId;
         
         // Use mapping if available, otherwise try name match, otherwise use general
         const wpName = (item.workPackage || "").trim();
-        if (packageMappings[wpName]) {
-          wbsId = packageMappings[wpName];
+        if (pkgToFinalId.has(wpName)) {
+          wbsId = pkgToFinalId.get(wpName);
         } else if (!wbsId && wpName) {
           wbsId = wpMap.get(wpName.toLowerCase());
           if (!wbsId) {
@@ -449,9 +554,9 @@ export const BOQView: React.FC = () => {
         const boqData = {
           description: item.description || '',
           unit: item.unit || '',
-          quantity: Number(item.quantity) || 0,
-          rate: Number(item.rate || item.inputRate) || 0,
-          amount: Number(item.amount) || 0,
+          quantity: Math.max(0, Number(item.quantity) || 0),
+          rate: Math.max(0, Number(item.rate || item.inputRate) || 0),
+          amount: Math.max(0, Number(item.amount) || 0),
           division: item.division || '01',
           workPackage: item.workPackage || '',
           wbsId: wbsId || 'master',
@@ -459,7 +564,7 @@ export const BOQView: React.FC = () => {
           projectId: selectedProject?.id || '',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          inputRate: Number(item.inputRate || item.rate) || 0,
+          inputRate: Math.max(0, Number(item.inputRate || item.rate) || 0),
           inputCurrency: item.inputCurrency || item.currency || baseCurrency,
           exchangeRateUsed: item.exchangeRateUsed || globalExchangeRate
         };
@@ -492,6 +597,89 @@ export const BOQView: React.FC = () => {
     } catch (err) {
       console.error("Import error:", err);
       toast.error("Import failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!activeVersion) return;
+    setIsSaving(true);
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const isArabic = language === 'ar';
+      
+      if (isArabic) {
+        await loadArabicFont(doc);
+      }
+
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(15, 23, 42); // slate-900
+      doc.text(isArabic ? 'جدول الكميات' : 'Bill of Quantities', isArabic ? 190 : 20, 20, { align: isArabic ? 'right' : 'left' });
+      
+      doc.setFontSize(12);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text(`${activeVersion.title} (v${activeVersion.versionNumber})`, isArabic ? 190 : 20, 30, { align: isArabic ? 'right' : 'left' });
+      
+      doc.setFontSize(10);
+      doc.text(isArabic ? `التاريخ: ${formatDate(new Date())}` : `Date: ${formatDate(new Date())}`, isArabic ? 190 : 20, 38, { align: isArabic ? 'right' : 'left' });
+
+      const tableData = boqItems.map((item, idx) => [
+        idx + 1,
+        item.division || '',
+        item.workPackage || '',
+        item.description || '',
+        item.unit || '',
+        item.quantity || 0,
+        new Intl.NumberFormat('en-IQ', { maximumFractionDigits: 0 }).format(item.inputRate || 0),
+        new Intl.NumberFormat('en-IQ', { maximumFractionDigits: 0 }).format(item.amount || 0)
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [[
+          isArabic ? 'ت' : '#',
+          isArabic ? 'مركز التكلفة' : 'Cost Account',
+          isArabic ? 'حزمة العمل' : 'Work Package',
+          isArabic ? 'الوصف' : 'Description',
+          isArabic ? 'الوحدة' : 'Unit',
+          isArabic ? 'الكمية' : 'Qty',
+          isArabic ? 'سعر الوحدة' : 'Rate',
+          isArabic ? 'الإجمالي' : 'Total'
+        ]],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: [15, 23, 42], 
+          textColor: [255, 255, 255], 
+          fontSize: 10, 
+          fontStyle: 'bold', 
+          halign: isArabic ? 'right' : 'left' 
+        },
+        styles: { 
+          font: isArabic ? 'Amiri' : 'helvetica', 
+          fontSize: 9, 
+          halign: isArabic ? 'right' : 'left' 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { top: 45 },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          7: { fontStyle: 'bold' }
+        }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(isArabic ? `الإجمالي الكلي: ${formatCurrency(totals, baseCurrency)}` : `Grand Total: ${formatCurrency(totals, baseCurrency)}`, isArabic ? 190 : 20, finalY + 15, { align: isArabic ? 'right' : 'left' });
+
+      doc.save(`BOQ_${activeVersion.title.replace(/\s+/g, '_')}_v${activeVersion.versionNumber}.pdf`);
+      toast.success(isArabic ? 'تم تصدير ملف PDF' : 'PDF exported successfully');
+    } catch (err) {
+      console.error('PDF Export failed:', err);
+      toast.error('Failed to export PDF');
     } finally {
       setIsSaving(false);
     }
@@ -543,11 +731,17 @@ export const BOQView: React.FC = () => {
         ]}
         onImport={(data) => {
           if (!activeVersion) return;
-          const mapped = data.map(item => ({
-            ...item,
-            id: crypto.randomUUID(),
-            amount: (item.quantity || 0) * convertToBase(item.inputRate || 0, item.currency || baseCurrency, globalExchangeRate)
-          }));
+          const mapped = data.map(item => {
+            const quantity = Math.max(0, Number(item.quantity) || 0);
+            const inputRate = Math.max(0, Number(item.inputRate) || 0);
+            return {
+              ...item,
+              id: crypto.randomUUID(),
+              quantity,
+              inputRate,
+              amount: quantity * convertToBase(inputRate, item.currency || baseCurrency, globalExchangeRate)
+            };
+          });
           
           setPreviewItems(mapped);
           
@@ -570,19 +764,19 @@ export const BOQView: React.FC = () => {
         <AnimatePresence>
           {isVersionModalOpen && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 border border-slate-100 dark:border-white/5">
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 border border-slate-200 dark:border-white/5">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black italic uppercase text-slate-900 dark:text-white">{t('new_version')}</h3>
+                  <h3 className="text-xl font-black italic uppercase text-text-primary dark:text-white">{t('new_version')}</h3>
                   <button onClick={() => setIsVersionModalOpen(false)}><X className="w-6 h-6 text-slate-400" /></button>
                 </div>
                 <div className="space-y-6">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('title')}</label>
-                    <input value={newVersion.title} onChange={e => setNewVersion({...newVersion, title: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold" />
+                    <label className="text-[10px] font-black uppercase text-text-secondary tracking-widest">{t('title')}</label>
+                    <input value={newVersion.title} onChange={e => setNewVersion({...newVersion, title: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold" />
                   </div>
                   <div className="pt-4 flex gap-3">
-                    <button onClick={() => setIsVersionModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl font-bold uppercase text-xs">{t('cancel')}</button>
-                    <button onClick={handleSaveVersion} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-blue-600/20">{t('create_version')}</button>
+                    <button onClick={() => setIsVersionModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl font-bold uppercase text-xs text-text-secondary">{t('cancel')}</button>
+                    <button onClick={handleSaveVersion} className="flex-[2] py-4 bg-brand text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-brand/20">{t('create_version')}</button>
                   </div>
                 </div>
               </motion.div>
@@ -592,87 +786,183 @@ export const BOQView: React.FC = () => {
         document.body
       )}
 
-      <div className="pb-20">
+      <div className="pb-8 space-y-6">
+        {activeVersion && view === 'list' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between group"
+            >
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('total_boq_value') || 'Total BOQ Value'}</p>
+                <div className="text-2xl font-black italic text-brand tracking-tight">{formatAmount(totals, baseCurrency)}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-brand/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-6 h-6 text-brand" />
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between group"
+            >
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('item_count') || 'Item Count'}</p>
+                <div className="text-2xl font-black italic text-text-primary dark:text-white tracking-tight">{boqItems.length}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <LayoutGrid className="w-6 h-6 text-blue-500" />
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between group"
+            >
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('active_version') || 'Active Version'}</p>
+                <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tight">v{activeVersion.versionNumber}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Check className="w-6 h-6 text-emerald-500" />
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {view === 'form' ? (
-            <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8 max-w-4xl mx-auto">
-               <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-                  <div className="p-8 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
-                    <h2 className="text-xl font-black italic text-slate-900 dark:text-white uppercase">{editingItem ? 'Edit Item' : 'New BOQ Item'}</h2>
+            <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-4xl mx-auto">
+               <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
+                  <div className="p-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-between">
+                    <h2 className="text-xl font-black italic text-text-primary dark:text-white uppercase">{editingItem ? 'Edit Item' : 'New BOQ Item'}</h2>
                     <button onClick={() => setView('list')} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl"><X className="w-5 h-5 text-slate-400" /></button>
                   </div>
-                  <div className="p-10 space-y-8">
+                  <div className="p-8 space-y-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('description')}</label>
-                        <textarea value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" rows={4} />
+                        <label className="text-[10px] font-black text-text-primary dark:text-slate-300 uppercase tracking-widest">{t('description')}</label>
+                        <textarea value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold focus:ring-4 focus:ring-brand/10 transition-all outline-none" rows={4} />
                      </div>
                      <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('quantity')}</label>
-                           <input type="number" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold" />
+                           <label className="text-[10px] font-black text-text-primary dark:text-slate-300 uppercase tracking-widest">{t('quantity')}</label>
+                           <input type="number" min="0" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Math.max(0, parseFloat(e.target.value) || 0)})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold focus:ring-2 focus:ring-brand/20 outline-none" />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit_rate')}</label>
-                           <input type="number" value={newItem.inputRate} onChange={e => setNewItem({...newItem, inputRate: parseFloat(e.target.value) || 0})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold" />
+                           <label className="text-[10px] font-black text-text-primary dark:text-slate-300 uppercase tracking-widest">{t('unit_rate')}</label>
+                           <input type="number" min="0" value={newItem.inputRate} onChange={e => setNewItem({...newItem, inputRate: Math.max(0, parseFloat(e.target.value) || 0)})} className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold focus:ring-2 focus:ring-brand/20 outline-none" />
                         </div>
                      </div>
 
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('cost_center_assignment') || 'Cost Center Assignment'}</label>
+                        <label className="text-[10px] font-black text-text-secondary dark:text-slate-300 uppercase tracking-widest">{t('cost_center_assignment') || 'Cost Center Assignment'}</label>
                         <select 
                           value={newItem.wbsId || ''} 
                           onChange={e => setNewItem({...newItem, wbsId: e.target.value})}
-                          className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+                          className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold focus:ring-4 focus:ring-brand/10 transition-all outline-none appearance-none"
                         >
-                          <option value="master" className="bg-white dark:bg-slate-900">General / Master</option>
+                          <option value="master" className="bg-white dark:bg-slate-900 font-bold text-text-primary dark:text-white">General / Master</option>
                           {workPackages.map(wp => (
-                            <option key={wp.id} value={wp.id} className="bg-white dark:bg-slate-900">
+                            <option key={wp.id} value={wp.id} className="bg-white dark:bg-slate-900 font-bold text-text-primary dark:text-white">
                               {wp.title}
                             </option>
                           ))}
                         </select>
                      </div>
-                     <button onClick={handleSave} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all">
+                     <button onClick={handleSave} className="w-full py-5 bg-brand text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-brand/20 active:scale-[0.98] transition-all">
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : t('save_changes')}
                      </button>
                   </div>
                </div>
             </motion.div>
           ) : (
-            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-               {/* Versions section */}
-               <div className="space-y-4">
-                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 italic px-4">
-                    <History className="w-4 h-4" /> {t('boq_versions_history')}
-                  </h3>
-                  <div className={activeVersion ? "opacity-30 grayscale-[1] pointer-events-none transition-all duration-700" : ""}>
-                    <UniversalDataTable config={versionConfig} data={boqVersions} onRowClick={handleVersionClick} onDeleteRecord={handleDeleteVersion} showAddButton={false} />
-                  </div>
-               </div>
-
-               {/* Items section */}
-               <div className="space-y-4">
-                  <div className="flex items-center justify-between px-4">
-                     <h3 className={cn("text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 italic transition-colors", activeVersion ? "text-slate-900 dark:text-white" : "text-slate-300")}>
-                        <FileText className={cn("w-4 h-4", activeVersion ? "text-blue-500" : "text-slate-200")} /> {t('boq_line_items')}
-                     </h3>
-                     {activeVersion && (
-                       <button onClick={() => setActiveVersion(null)} className="text-[10px] font-black text-slate-400 dark:text-slate-500 hover:text-rose-500 uppercase tracking-widest transition-all flex items-center gap-1 group">
-                         <X className="w-3 h-3 group-hover:rotate-90 transition-transform" /> {t('clear_selection')}
-                       </button>
-                     )}
-                  </div>
-                  {activeVersion ? (
-                    <UniversalDataTable config={boqConfig} data={boqItems} onRowClick={handleEditItem} onDeleteRecord={handleDeleteItem} showAddButton={false} title={
-                      <div className="flex items-baseline gap-2"><span className="text-blue-600 dark:text-blue-400 font-black italic text-sm">TOTAL</span><span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{formatCurrency(totals, baseCurrency)}</span></div>
-                    } />
+            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+               <AnimatePresence mode="wait">
+                  {!activeVersion ? (
+                    <motion.div 
+                      key="versions-view"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="space-y-4">
+                        <h3 className="text-[11px] font-black text-text-primary dark:text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2 italic px-4">
+                          <History className="w-4 h-4 text-brand" /> {t('boq_versions_history')}
+                        </h3>
+                        <UniversalDataTable config={versionConfig} data={boqVersions} onRowClick={handleVersionClick} onDeleteRecord={handleDeleteVersion} showAddButton={false} />
+                      </div>
+                    </motion.div>
                   ) : (
-                   <div className="p-24 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[3rem] bg-white dark:bg-slate-900 shadow-sm">
-                      <Database className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
-                      <h4 className="text-xl font-black text-slate-400 dark:text-slate-600 uppercase italic tracking-tighter">{t('select_a_version_first')}</h4>
-                   </div>
+                    <motion.div 
+                      key="items-view"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-200 dark:border-white/10">
+                        <div className="flex items-center gap-4">
+                           <button 
+                             onClick={() => setActiveVersion(null)}
+                             className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all group"
+                             title="Back to Versions"
+                           >
+                             <ChevronRight className={cn("w-6 h-6 text-slate-400 group-hover:text-brand", isRtl ? "rotate-180" : "rotate-180")} />
+                           </button>
+                           <div>
+                              <h3 className="text-[11px] font-black text-slate-950 dark:text-white uppercase tracking-[0.3em] flex items-center gap-2 italic">
+                                 <FileText className="w-4 h-4 text-blue-500" /> {t('boq_line_items')}
+                              </h3>
+                              <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mt-0.5">{activeVersion.title} (v{activeVersion.versionNumber})</p>
+                           </div>
+                        </div>
+                        <button onClick={() => setActiveVersion(null)} className="text-[10px] font-black text-slate-600 dark:text-slate-400 hover:text-rose-600 uppercase tracking-widest transition-all flex items-center gap-1 group">
+                          <X className="w-3 h-3 group-hover:rotate-90 transition-transform" /> {t('close_details') || 'Close Details'}
+                        </button>
+                      </div>
+
+                      <UniversalDataTable 
+                        config={boqConfig} 
+                        data={boqItems} 
+                        onRowClick={handleEditItem} 
+                        onDeleteRecord={handleDeleteItem} 
+                        onBulkDelete={handleBulkDeleteItems}
+                        onInlineSave={handleInlineSave}
+                        showAddButton={false} 
+                        title={
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-blue-700 dark:text-blue-400 font-black italic text-sm">TOTAL</span>
+                            <span className="text-3xl font-black text-black dark:text-white tracking-tighter">{formatCurrency(totals, baseCurrency)}</span>
+                          </div>
+                        }
+                        batchActions={
+                          <div className="flex items-center gap-2">
+                             <button 
+                               onClick={handleExportPDF}
+                               className="flex items-center gap-2 px-4 py-2 bg-brand text-white hover:bg-brand-secondary rounded-xl text-[10px] font-black uppercase transition-all shadow-sm"
+                             >
+                                <Download className="w-3.5 h-3.5" />
+                                Export PDF
+                             </button>
+                             <button 
+                               onClick={() => toast.error('Google Drive integration required')}
+                               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase transition-all"
+                             >
+                                <Target className="w-3.5 h-3.5" />
+                                Save to Drive
+                             </button>
+                          </div>
+                        }
+                      />
+                    </motion.div>
                   )}
-               </div>
+               </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
@@ -753,7 +1043,7 @@ export const BOQView: React.FC = () => {
                                             <option value="">{language === 'ar' ? 'اختر الهدف...' : 'Select Target...'}</option>
                                             <option value="master">{language === 'ar' ? 'مركز التكلفة العام' : 'General / Master Cost Account'}</option>
                                             <optgroup label={language === 'ar' ? 'مراكز التكلفة (لإنشاء حزمة جديدة)' : 'Cost Accounts (Create New Package)'}>
-                                              {workPackages.filter(l => l.type === 'Cost Account').map(l => (
+                                              {wbsLevels.filter(l => l.type === 'Cost Account').map(l => (
                                                 <option key={l.id} value={l.id}>{l.code} - {l.title}</option>
                                               ))}
                                             </optgroup>

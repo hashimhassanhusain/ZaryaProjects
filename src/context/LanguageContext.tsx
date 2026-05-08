@@ -15,6 +15,9 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   en: {
     'boq_versions': 'BOQ Versions',
+    'total_boq_value': 'Total BOQ Value',
+    'item_count': 'Item Count',
+    'active_version': 'Active Version',
     'version_number': 'Version No.',
     'boq_revisions': 'BOQ Revisions',
     'issued_at': 'Issued At',
@@ -911,6 +914,9 @@ const translations: Record<Language, Record<string, string>> = {
   },
   ar: {
     'boq_versions': 'إصدارات جدول الكميات',
+    'total_boq_value': 'إجمالي قيمة جدول الكميات',
+    'item_count': 'عدد البنود',
+    'active_version': 'الإصدار النشط',
     'version_number': 'رقم الإصدار',
     'boq_revisions': 'مراجعات جدول الكميات',
     'issued_at': 'تاريخ الإصدار',

@@ -102,38 +102,38 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[56px] bg-surface border-b border-neutral-200 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
+    <header className="h-[56px] bg-white dark:bg-[#1A1C1E] border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
              className={cn(
-               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-neutral-200 hover:bg-neutral-50",
-               isProjectMenuOpen && "border-brand-secondary/20 bg-brand/5 shadow-sm"
+               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
+               isProjectMenuOpen && "border-brand/20 bg-brand/5 shadow-sm"
              )}
            >
               {/* New Logo Replacement for Blue Icon */}
-              <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
-                 <span className="text-[#FF5C00] font-black text-[7px] tracking-tighter">PMIS</span>
+              <div className="w-8 h-8 rounded-lg bg-text-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
+                 <span className="text-brand font-black text-[7px] tracking-tighter italic">PMIS</span>
               </div>
               <div className="flex flex-col text-left">
-                 <span className="hidden sm:block text-[8px] font-black text-brand uppercase tracking-widest leading-none mb-0.5 opacity-60">PMIS</span>
+                 <span className="hidden sm:block text-[8px] font-black text-brand uppercase tracking-widest leading-none mb-0.5 opacity-80 italic">Precision Tool</span>
                  <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-[10px] sm:text-[11px] font-black text-text-main uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
+                    <span className="text-[10px] sm:text-[11px] font-black text-text-primary uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
-                    <ChevronDown className={cn("w-3 h-3 text-neutral-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
+                    <ChevronDown className={cn("w-3 h-3 text-text-secondary transition-transform", isProjectMenuOpen && "rotate-180")} />
                  </div>
               </div>
               {/* Mobile View: Show only code if available */}
               {!selectedProject && !selectedCompany && (
-                <ChevronDown className="w-3 h-3 text-neutral-400 sm:hidden" />
+                <ChevronDown className="w-3 h-3 text-text-secondary sm:hidden" />
               )}
               {selectedProject && (
                 <div className="sm:hidden flex items-center gap-1 ml-1">
-                   <span className="text-[10px] font-black text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
-                   <ChevronDown className="w-2.5 h-2.5 text-neutral-400" />
+                   <span className="text-[10px] font-black text-text-primary bg-slate-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
+                   <ChevronDown className="w-2.5 h-2.5 text-text-secondary" />
                 </div>
               )}
            </button>
@@ -207,13 +207,13 @@ export const Header: React.FC = () => {
                  key={`${domain.id}-${idx}`} 
                  to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
                  className={cn(
-                   "flex items-center gap-1.5 px-2 lg:px-4 h-9 rounded-xl transition-all relative group shrink-0 min-w-[40px] sm:min-w-0",
+                   "flex items-center gap-1.5 px-2 lg:px-4 h-9 rounded-xl transition-all relative group shrink-0 min-w-[40px] sm:min-w-0 border border-transparent",
                    isActive 
-                    ? "bg-neutral-900 dark:bg-brand text-white shadow-lg shadow-brand/20" 
-                    : "text-neutral-900/80 dark:text-neutral-100/90 hover:text-brand hover:bg-neutral-100 dark:hover:bg-white/10"
+                    ? "bg-brand/10 text-brand border-brand/20 shadow-sm shadow-brand/5" 
+                    : "text-slate-950 dark:text-neutral-100 hover:text-brand hover:bg-slate-100 dark:hover:bg-white/10 font-bold"
                  )}
                >
-                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-neutral-500 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
+                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-900 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
                  <span className="text-[10px] lg:text-[12px] font-black uppercase tracking-widest leading-none whitespace-nowrap transition-colors">
                     {stripNumericPrefix(t(domain.id))}
                  </span>
@@ -228,13 +228,13 @@ export const Header: React.FC = () => {
         {/* Global Actions */}
         <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
            {/* Favorites & Search - Hidden on mobile */}
-           <div className="hidden sm:flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700">
+           <div className="hidden sm:flex items-center gap-1 p-1 bg-slate-100 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
                <div className="relative" ref={favoritesRef}>
                  <button 
                    onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
                    className={cn(
                      "p-2 rounded-lg transition-all",
-                     isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-neutral-400 hover:text-neutral-600"
+                     isFavoritesOpen ? "bg-white shadow-sm text-amber-500" : "text-text-secondary hover:text-text-primary"
                    )}
                  >
                     <Star className={cn("w-3.5 h-3.5", favorites.length > 0 && "fill-amber-400 text-amber-400")} />

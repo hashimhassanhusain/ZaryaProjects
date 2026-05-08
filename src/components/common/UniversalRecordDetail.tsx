@@ -49,7 +49,7 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
       {/* LEFT: INPUT CARDS HUB (PMIS Context) */}
       <aside className="w-1/4 border-r border-slate-100 dark:border-white/5 p-8 space-y-6 hidden lg:block overflow-y-auto">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-400 tracking-[0.2em]">Source Context</h3>
+          <h3 className="text-[10px] font-black uppercase text-slate-950 dark:text-slate-400 tracking-[0.2em]">Source Context</h3>
           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
         </div>
         
@@ -60,17 +60,17 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
                 <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-1 rounded-full uppercase tracking-widest">{input.id}</span>
                 <Database className="w-3.5 h-3.5 text-slate-200 dark:text-slate-700 group-hover:text-blue-400 transition-colors" />
               </div>
-              <h4 className="text-[12px] font-bold text-slate-800 dark:text-slate-200 leading-snug">{input.title}</h4>
+              <h4 className="text-[12px] font-bold text-slate-950 dark:text-slate-200 leading-snug">{input.title}</h4>
               <div className="mt-3 flex items-center gap-2">
                  <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                 <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Baseline v1.2</span>
+                 <span className="text-[9px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-widest">Baseline v1.2</span>
               </div>
             </div>
           ))}
           {inputs.length === 0 && (
             <div className="p-8 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[2rem] text-center">
               <FileText className="w-8 h-8 text-slate-100 dark:text-slate-800 mx-auto mb-3" />
-              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-600 uppercase tracking-widest leading-relaxed">No reference inputs connected to this record type</p>
+              <p className="text-[10px] font-bold text-slate-900 dark:text-slate-500 uppercase tracking-widest leading-relaxed">No reference inputs connected to this record type</p>
             </div>
           )}
         </div>
@@ -120,7 +120,7 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
                return (
                  <div key={col.key} className="space-y-4 group">
                    <div className="flex items-center justify-between px-2">
-                     <label className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.2em] block group-focus-within:text-blue-600 transition-colors">
+                     <label className="text-[10px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-[0.2em] block group-focus-within:text-blue-600 transition-colors">
                        {col.label}
                      </label>
                      <div className="w-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-focus-within:bg-blue-400 transition-colors" />

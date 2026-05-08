@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db, OperationType, handleFirestoreError } from '../firebase';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { WBSLevel } from '../types';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore';
+import { WBSLevel, EntityConfig, Page, Activity } from '../types';
 import { masterFormatData } from '../data/masterFormat';
 import { masterFormatSections } from '../constants/masterFormat';
 import { 
@@ -16,7 +16,10 @@ import {
   Layers,
   Grid3X3,
   Building2,
-  List
+  List,
+  ArrowRight,
+  FileText,
+  Star
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,21 +27,27 @@ import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from 'react-hot-toast';
 import { deriveStatus, rollupToParent } from '../services/rollupService';
-import { Activity } from '../types';
+import { UniversalDataTable } from './common/UniversalDataTable';
+import { StandardProcessPage, useStandardProcessPage } from './StandardProcessPage';
+import { generateStandardPDF } from '../lib/pdfService';
 
-export const WorkPackagesView: React.FC = () => {
+interface WorkPackagesViewProps {
+  page?: Page;
+  embedded?: boolean;
+}
+
+export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedded = false }) => {
   const { selectedProject } = useProject();
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
   const projectId = selectedProject?.id || '';
   const [workPackages, setWorkPackages] = useState<WBSLevel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string>('All');
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; title: string } | null>(null);
   const [isManualTitle, setIsManualTitle] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<Partial<WBSLevel>>({
     title: '',
@@ -55,10 +64,16 @@ export const WorkPackagesView: React.FC = () => {
     const q = query(
       collection(db, 'wbs'), 
       where('projectId', '==', projectId),
-      where('type', '==', 'Work Package')
+      where('type', '==', 'Work Package'),
+      orderBy('code', 'asc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WBSLevel));
+      const data = snapshot.docs.map(doc => {
+        const item = { id: doc.id, ...doc.data() } as WBSLevel;
+        const div = masterFormatData.find(d => d.number === item.divisionCode);
+        (item as any).divisionName = div ? `${div.number} - ${div.title}` : item.divisionCode;
+        return item;
+      });
       setWorkPackages(data);
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'wbs'));
@@ -84,6 +99,7 @@ export const WorkPackagesView: React.FC = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       const data = {
         ...formData,
@@ -94,447 +110,327 @@ export const WorkPackagesView: React.FC = () => {
 
       if (editingId) {
         await updateDoc(doc(db, 'wbs', editingId), data);
+        toast.success(t('entry_updated'));
       } else {
-        const docRef = await addDoc(collection(db, 'wbs'), data);
-        (data as any).id = docRef.id;
+        await addDoc(collection(db, 'wbs'), data);
+        toast.success(t('entry_created'));
       }
 
-      // Trigger rollup to parent
       if (data.parentId) {
         await rollupToParent('division', data.parentId);
       }
 
-      setIsAdding(false);
+      setViewMode('grid');
       setEditingId(null);
-      setIsManualTitle(false);
       setFormData({ title: '', code: '', divisionCode: '', projectId, status: 'Not Started', type: 'Work Package' });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'wbs');
+      handleFirestoreError(error, editingId ? OperationType.UPDATE : OperationType.CREATE, 'wbs');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    const wp = workPackages.find(p => p.id === id);
-    if (!wp) return;
-    setDeleteConfirmation({ id, title: wp.title });
-  };
-
-  const executeDelete = async (id: string) => {
+    if (!window.confirm(t('confirm_delete'))) return;
     try {
       const wpToDelete = workPackages.find(wp => wp.id === id);
       const parentIdToRollup = wpToDelete?.parentId;
-
       await deleteDoc(doc(db, 'wbs', id));
-
       if (parentIdToRollup) {
         await rollupToParent('division', parentIdToRollup);
       }
-
-      setDeleteConfirmation(null);
+      toast.success(t('entry_deleted'));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'wbs');
     }
   };
 
-  const filteredPackages = workPackages.filter(wp => {
-    const matchesSearch = wp.title.toLowerCase().includes(searchTerm.toLowerCase()) || wp.code.includes(searchTerm);
-    const matchesDivision = selectedDivision === 'All' || wp.divisionCode === selectedDivision;
-    return matchesSearch && matchesDivision;
-  });
-
-  const handleMFSelect = (item: any) => {
-    setFormData({
-      ...formData,
-      code: item.code,
-      title: item.title
+  const filteredPackages = useMemo(() => {
+    return workPackages.filter(wp => {
+      if (selectedDivision === 'All') return true;
+      return wp.divisionCode === selectedDivision;
     });
-    setIsManualTitle(false);
+  }, [workPackages, selectedDivision]);
+
+  const handlePrint = () => {
+    if (!selectedProject) return;
+    const columns = [t('code'), t('title'), t('cost_account'), t('status')];
+    const rows = filteredPackages.map(wp => [
+      wp.code,
+      wp.title,
+      wp.divisionCode,
+      wp.status || 'Not Started'
+    ]);
+
+    generateStandardPDF({
+      page: page || { id: 'work_packages', title: t('work_package_dictionary'), domain: 'Planning', focusArea: 'Scope', type: 'terminal' },
+      project: selectedProject,
+      data: filteredPackages,
+      columns,
+      rows
+    });
+  };
+
+  const gridConfig: EntityConfig = {
+    id: 'packages',
+    label: t('work_package_dictionary'),
+    icon: Grid3X3,
+    collection: 'wbs',
+    columns: [
+      { key: 'code', label: t('code'), type: 'badge' },
+      { key: 'title', label: t('title'), type: 'string' },
+      { key: 'divisionName', label: t('cost_account'), type: 'string' },
+      { key: 'status', label: t('status'), type: 'status' },
+    ]
+  };
+
+  const internalPage: Page = page || {
+    id: 'work_packages',
+    title: t('work_package_dictionary'),
+    domain: 'Planning',
+    focusArea: 'Scope',
+    type: 'terminal'
   };
 
   return (
-    <div className="w-full">
+    <StandardProcessPage
+      page={internalPage}
+      embedded={embedded}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      onSave={handleSave}
+      onPrint={handlePrint}
+      isSaving={isSaving}
+    >
       <AnimatePresence mode="wait">
-        {!isAdding ? (
-          <motion.div 
-            key="list"
+        {viewMode === 'edit' ? (
+          <motion.div
+            key="edit"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-8"
+            className="space-y-8 pb-20"
           >
-            {/* Breadcrumbs */}
-            <nav className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-              <span className="hover:text-slate-600 cursor-pointer transition-colors">Admin Settings</span>
-              <ChevronRight className="w-3 h-3" />
-              <span className="text-slate-900">Work Packages</span>
-            </nav>
+            <div className="bg-white rounded-[2rem] border border-slate-200 p-10 shadow-sm relative overflow-hidden">
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                  <div className="lg:col-span-2 space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border border-slate-100">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('cost_account')}</label>
+                        <select
+                          value={formData.divisionCode}
+                          onChange={(e) => setFormData({ ...formData, divisionCode: e.target.value, code: '', title: '' })}
+                          className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic"
+                        >
+                          <option value="">{t('select_cost_account')}</option>
+                          {masterFormatData.map((div, idx) => (
+                            <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('status')}</label>
+                        <select
+                          value={formData.status}
+                          onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                          className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic"
+                        >
+                          <option value="Not Started">{t('not_started')}</option>
+                          <option value="In Progress">{t('in_progress')}</option>
+                          <option value="Completed">{t('completed')}</option>
+                        </select>
+                      </div>
+                    </div>
 
-            {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-200">
-                    <Grid3X3 className="w-6 h-6 text-white" />
+                    <div className="space-y-8">
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('code')}</label>
+                            <input
+                              type="text"
+                              value={formData.code}
+                              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                              placeholder="00000"
+                              className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-mono font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic"
+                            />
+                          </div>
+                          <div className="md:col-span-2 space-y-3">
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('title')}</label>
+                            {!isManualTitle ? (
+                              <div className="relative">
+                                <select
+                                  value={masterFormatSections.some(s => s.title === formData.title) ? formData.title : ''}
+                                  onChange={(e) => {
+                                    if (e.target.value === 'manual') setIsManualTitle(true);
+                                    else setFormData({ ...formData, title: e.target.value });
+                                  }}
+                                  className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic pr-12"
+                                >
+                                  <option value="">{t('select_standard_item')}</option>
+                                  {masterFormatSections
+                                    .filter(s => s.divisionId === formData.divisionCode)
+                                    .map((section, idx) => (
+                                      <option key={`${section.id}-${idx}`} value={section.title}>{section.id} - {section.title}</option>
+                                    ))
+                                  }
+                                  <option value="manual" className="text-brand font-black">+ {t('manual_entry')}</option>
+                                </select>
+                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 text-slate-400 pointer-events-none" />
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={formData.title}
+                                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                  placeholder={t('manual_title_placeholder')}
+                                  className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic pr-14"
+                                  autoFocus
+                                />
+                                <button 
+                                  onClick={() => setIsManualTitle(false)}
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-300 hover:text-brand transition-colors bg-slate-50 rounded-lg"
+                                >
+                                  <List className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                       </div>
+
+                       <div className="space-y-3">
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('scope_description')}</label>
+                        <textarea
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          rows={6}
+                          className="w-full px-8 py-6 bg-white border border-slate-200 rounded-[2rem] text-sm text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none resize-none shadow-inner italic"
+                          placeholder={t('scope_description_placeholder')}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">Work Packages</h1>
-                </div>
-                <p className="text-slate-500 font-medium max-w-2xl ml-1">
-                  Manage project work packages based on CSI MasterFormat Level 2.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setFormData({ title: '', code: '', divisionCode: '', projectId, status: 'Not Started', type: 'Work Package' });
-                  setIsAdding(true);
-                }}
-                className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
-              >
-                <Plus className="w-4 h-4" />
-                Add Work Package
-              </button>
-            </header>
 
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search by code or title..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="flex items-center gap-2 px-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600">
-                  <Filter className="w-4 h-4" />
-                  <select 
-                    value={selectedDivision}
-                    onChange={(e) => setSelectedDivision(e.target.value)}
-                    className="bg-transparent focus:outline-none"
-                  >
-                    <option value="All">All Cost Accounts</option>
-                    {masterFormatData.map((div, idx) => (
-                      <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden mb-12">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-200">
-                    <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Code</th>
-                    <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Title</th>
-                    <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Cost Account</th>
-                    <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredPackages.map((wp, idx) => {
-                    const division = masterFormatData.find(d => d.number === wp.divisionCode);
-                    return (
-                      <tr key={`${wp.id}-${idx}`} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-5">
-                          <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            {wp.code}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-slate-900 transition-all">
-                              <Layers className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900">{wp.title}</div>
-                              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Level 2 Item</div>
-                            </div>
+                  <div className="space-y-6">
+                    <div className="p-10 bg-text-primary rounded-[3rem] text-white shadow-2xl relative overflow-hidden h-full border-b-8 border-brand">
+                       <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl -mr-20 -mt-20" />
+                       <div className="relative z-10 flex flex-col h-full">
+                          <h3 className="text-[11px] font-black uppercase tracking-[0.4em] mb-6 text-brand italic">{t('classification_guide')}</h3>
+                          <p className="text-xs text-slate-400 leading-relaxed mb-8 opacity-80">
+                            {t('classification_help_text')}
+                          </p>
+                          <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1">
+                            {formData.divisionCode ? (
+                              masterFormatData.find(d => d.number === formData.divisionCode)?.items.map((item, idx) => (
+                                <button
+                                  key={`${item.code}-${idx}`}
+                                  onClick={() => setFormData({ ...formData, code: item.code, title: item.title, isManualTitle: false })}
+                                  className={cn(
+                                    "w-full flex items-center justify-between p-5 rounded-2xl text-left transition-all border border-b-4",
+                                    formData.code === item.code 
+                                      ? "bg-brand border-brand-secondary text-white shadow-xl shadow-brand/20 -translate-y-1" 
+                                      : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20"
+                                  )}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="text-[11px] font-black italic uppercase tracking-tighter">{item.title}</span>
+                                    <span className="text-[9px] opacity-40 font-black font-mono tracking-widest mt-1">{item.code}</span>
+                                  </div>
+                                  <ArrowRight className="w-4 h-4 opacity-20" />
+                                </button>
+                              ))
+                            ) : (
+                              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-[2rem] p-10 text-center space-y-4">
+                                <Search className="w-10 h-10 text-white/10" strokeWidth={1} />
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('select_cost_account_first')}</span>
+                              </div>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-semibold uppercase tracking-wider">
-                              {wp.divisionCode}
-                            </span>
-                            <span className="text-sm font-medium text-slate-500">{division?.title}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
-                            (() => {
-                              const wpActivities = activities.filter(a => a.divisionId === wp.id || a.wbsId === wp.id);
-                              const progress = wp.progress || (wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0);
-                              const actualStart = wp.actualStart || wpActivities.find(a => a.actualStartDate)?.actualStartDate;
-                              const actualFinish = wp.actualFinish || (wpActivities.length > 0 && wpActivities.every(a => a.actualFinishDate) ? wpActivities[0].actualFinishDate : null);
-                              const derived = deriveStatus(progress, actualStart, actualFinish);
-                              return derived === 'Completed' ? "bg-emerald-50 text-emerald-600" : 
-                                     derived === 'In Progress' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500";
-                            })()
-                          )}>
-                            {(() => {
-                               const wpActivities = activities.filter(a => a.divisionId === wp.id || a.wbsId === wp.id);
-                               const progress = wp.progress || (wpActivities.length > 0 ? wpActivities.reduce((sum, a) => sum + (a.percentComplete || 0), 0) / wpActivities.length : 0);
-                               const actualStart = wp.actualStart || wpActivities.find(a => a.actualStartDate)?.actualStartDate;
-                               const actualFinish = wp.actualFinish || (wpActivities.length > 0 && wpActivities.every(a => a.actualFinishDate) ? wpActivities[0].actualFinishDate : null);
-                               return deriveStatus(progress, actualStart, actualFinish);
-                            })()}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            <button
-                              onClick={() => {
-                                setEditingId(wp.id);
-                                setFormData(wp);
-                                setIsAdding(true);
-                                const isStandard = masterFormatSections.some(s => s.title === wp.title);
-                                setIsManualTitle(!isStandard);
-                              }}
-                              className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(wp.id)}
-                              className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-red-600 transition-all shadow-sm"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                       </div>
+                    </div>
+                  </div>
+               </div>
             </div>
           </motion.div>
         ) : (
           <motion.div
-            key="form"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="p-6 space-y-8 bg-white rounded-3xl border border-slate-200 shadow-xl"
+            key="grid"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setIsAdding(false)} 
-                  className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all"
-                >
-                  <ChevronRight className={cn("w-5 h-5 text-slate-600", isRtl ? "" : "rotate-180")} />
-                </button>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    {editingId ? 'Edit Work Package' : 'New Work Package'}
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium">Define work package scope and classification.</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsAdding(false);
-                    setIsManualTitle(false);
-                  }}
-                  className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
-                >
-                  Discard
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg"
-                >
-                  Save & Apply
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-8">
-                {/* Secondary Info Grid */}
-                <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cost Account (Level 1)</label>
-                    <select
-                      value={formData.divisionCode}
-                      onChange={(e) => setFormData({ ...formData, divisionCode: e.target.value, code: '', title: '' })}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="">Select Cost Account</option>
-                      {masterFormatData.map((div, idx) => (
-                        <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
-                      ))}
-                    </select>
+            <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-surface p-6 rounded-[2rem] border border-slate-100 shadow-sm gap-6 border-b-4">
+               <div className="flex items-center gap-4 w-full md:w-auto">
+                  <div className="w-12 h-12 bg-app-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-text-secondary">
+                     <Filter className="w-5 h-5" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Current Status</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                    >
-                      <option value="Not Started">Not Started</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                    </select>
+                  <div>
+                     <h3 className="text-sm font-black text-text-primary uppercase tracking-[0.2em]">{t('division_filter')}</h3>
+                     <p className="text-[10px] font-bold text-text-secondary opacity-40 uppercase tracking-widest">{t('filter_by_cost_account')}</p>
                   </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Entity Code</label>
-                      <input
-                        type="text"
-                        value={formData.code}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                        placeholder="00000"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      />
-                    </div>
-                    <div className="col-span-2 space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Package Title</label>
-                      {!isManualTitle ? (
-                        <select
-                          value={masterFormatSections.some(s => s.title === formData.title) ? formData.title : ''}
-                          onChange={(e) => {
-                            if (e.target.value === 'manual') {
-                              setIsManualTitle(true);
-                            } else {
-                              setFormData({ ...formData, title: e.target.value });
-                            }
-                          }}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                        >
-                          <option value="">Select Title...</option>
-                          {masterFormatSections
-                            .filter(s => s.divisionId === formData.divisionCode)
-                            .map((section, idx) => (
-                              <option key={`${section.id}-${idx}`} value={section.title}>{section.id} - {section.title}</option>
-                            ))
-                          }
-                          <option value="manual" className="text-blue-600 font-bold">+ Other (Manual Entry)</option>
-                        </select>
-                      ) : (
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="Work Package Title"
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all pr-12"
-                            autoFocus
-                          />
-                          <button 
-                            onClick={() => setIsManualTitle(false)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500 transition-colors"
-                            title="Back to list"
-                          >
-                            <List className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Scope Description</label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={4}
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none shadow-inner"
-                      placeholder="Enter detailed scope, deliverables, and boundaries for this work package..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full blur-2xl -mr-12 -mt-12" />
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-blue-400">Classification Help</h3>
-                   <p className="text-[11px] text-slate-400 leading-relaxed mb-4">
-                     Choose a cost account from the list to see suggested MasterFormat items.
-                   </p>
-                   <div className="space-y-2 max-h-[350px] overflow-y-auto no-scrollbar pr-1">
-                    {formData.divisionCode ? (
-                      masterFormatData.find(d => d.number === formData.divisionCode)?.items.map((item, idx) => (
-                        <button
-                          key={`${item.code}-${idx}`}
-                          onClick={() => handleMFSelect(item)}
-                          className={cn(
-                            "w-full flex items-center justify-between p-3 rounded-xl text-left transition-all border",
-                            formData.code === item.code 
-                              ? "bg-blue-600 border-blue-500 shadow-lg" 
-                              : "bg-white/5 border-white/5 hover:bg-white/10"
-                          )}
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-[11px] font-bold">{item.title}</span>
-                            <span className="text-[9px] opacity-40 font-mono mt-0.5">{item.code}</span>
-                          </div>
-                          <ChevronRight className={cn("w-3 h-3 transition-transform", formData.code === item.code ? "rotate-90" : "")} />
-                        </button>
-                      ))
-                    ) : (
-                      <div className="text-center py-10 text-slate-600 text-[10px] font-bold uppercase tracking-widest border border-dashed border-white/10 rounded-2xl">
-                        Select a Cost Account
-                      </div>
+               </div>
+               
+               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                  <button 
+                    onClick={() => setSelectedDivision('All')}
+                    className={cn(
+                      "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-b-4",
+                      selectedDivision === 'All' ? "bg-brand border-brand-secondary text-white" : "bg-app-bg border-transparent text-text-secondary hover:bg-slate-100"
                     )}
-                  </div>
-                </div>
-              </div>
+                  >
+                     {t('all_accounts')}
+                  </button>
+                  {masterFormatData.slice(0, 5).map((div, idx) => (
+                    <button 
+                      key={`${div.number}-${idx}`}
+                      onClick={() => setSelectedDivision(div.number)}
+                      className={cn(
+                        "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-b-4",
+                        selectedDivision === div.number ? "bg-brand border-brand-secondary text-white" : "bg-app-bg border-transparent text-text-secondary hover:bg-slate-100"
+                      )}
+                    >
+                       {div.number}
+                    </button>
+                  ))}
+               </div>
             </div>
+
+            <UniversalDataTable 
+              config={gridConfig}
+              data={filteredPackages}
+              onRowClick={(record) => {
+                setEditingId(record.id);
+                setFormData({ ...record });
+                setViewMode('edit');
+                const isStandard = masterFormatSections.some(s => s.title === record.title);
+                setIsManualTitle(!isStandard);
+              }}
+              onNewClick={() => {
+                setEditingId(null);
+                setFormData({ title: '', code: '', divisionCode: '', projectId, status: 'Not Started', type: 'Work Package' });
+                setViewMode('edit');
+                setIsManualTitle(false);
+              }}
+              onDeleteRecord={handleDelete}
+              title={
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black text-brand uppercase tracking-widest bg-brand/5 px-2 py-0.5 rounded-lg border border-brand/10">100+ Pages Architecture</span>
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-black text-text-primary uppercase tracking-tight italic">
+                    {t('work_package_dictionary')}
+                  </h2>
+                </div>
+              }
+              favoriteControl={
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm hover:border-slate-200 active:scale-90 shrink-0">
+                  <Star className="w-4 h-4 text-slate-300" />
+                </div>
+              }
+            />
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteConfirmation && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
-            >
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <Trash2 className="w-8 h-8 text-red-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
-              <p className="text-slate-500 text-center mb-8">
-                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
-                This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setDeleteConfirmation(null)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => executeDelete(deleteConfirmation.id)}
-                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+    </StandardProcessPage>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download, ArrowLeft, Printer, Briefcase, User, DollarSign, Coins, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn, getFullWBSCode, generatePMISFileName, getRouteForFile } from '../lib/utils';
@@ -58,6 +58,13 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const totalPOAmount = useMemo(() => {
     return (newPO.lineItems || []).reduce((sum, li) => sum + (li.amount || 0), 0);
   }, [newPO.lineItems]);
+
+  // Get unique suppliers from both companies collection and existing POs
+  const allAvailableSuppliers = useMemo(() => {
+    const poSuppliers = pos.map(p => p.supplier).filter(Boolean);
+    const vendorNames = vendors.map(v => v.name);
+    return Array.from(new Set([...poSuppliers, ...vendorNames])).sort();
+  }, [pos, vendors]);
 
   const requiresAgreement = totalPOAmount > 3000000;
   const requiresContract = totalPOAmount > 15000000;
@@ -149,6 +156,48 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       }
     );
 
+    return () => {
+      posUnsubscribe();
+      vendorsUnsubscribe();
+      activitiesUnsubscribe();
+      wbsUnsubscribe();
+      boqUnsubscribe();
+    };
+  }, [selectedProject, baseCurrency, globalExchangeRate]);
+
+  // Auto-sync missing suppliers from existing POs
+  useEffect(() => {
+    const syncSuppliers = async () => {
+      if (pos.length > 0 && vendors.length >= 0) {
+        const poSuppliers = new Set(pos.map(p => p.supplier).filter(Boolean));
+        const existingVendorNames = new Set(vendors.map(v => v.name));
+        
+        for (const sName of Array.from(poSuppliers)) {
+          if (!existingVendorNames.has(sName)) {
+            try {
+              const supplierId = `SUP-${crypto.randomUUID().slice(0, 8)}`;
+              await setDoc(doc(db, 'companies', supplierId), {
+                id: supplierId,
+                name: sName,
+                type: 'Supplier',
+                status: 'Approved',
+                reliability: 'Active',
+                category: 'Auto-Synced From POs',
+                createdAt: new Date().toISOString()
+              });
+              console.log(`Auto-synced missing supplier: ${sName}`);
+            } catch (err) {
+              console.error("Failed to sync supplier:", sName, err);
+            }
+          }
+        }
+      }
+    };
+    syncSuppliers();
+  }, [pos.length, vendors.length]);
+
+  useEffect(() => {
+    if (!selectedProject) return;
     const fetchPmPlan = async () => {
       try {
         const q = query(
@@ -165,13 +214,6 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       }
     };
     fetchPmPlan();
-
-    return () => {
-      posUnsubscribe();
-      vendorsUnsubscribe();
-      activitiesUnsubscribe();
-      wbsUnsubscribe();
-    };
   }, [selectedProject]);
 
   // Handle incoming state to edit a specific PO
@@ -392,57 +434,140 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     { key: 'date', label: 'Order Date', required: true, type: 'date' as const, description: 'Date of the order' },
     { key: 'supplier', label: 'Supplier Name', required: true, description: 'Name of the vendor' },
     { key: 'masterFormat', label: 'Cost Account (Division)', description: 'MasterFormat code (e.g., 03, 09)' },
-    { key: 'amount', label: 'Total Amount', required: true, type: 'number' as const, description: 'Total value of the PO' },
+    { key: 'amount', label: 'Total Amount', type: 'number' as const, description: 'Total value of the PO' },
     { key: 'inputCurrency', label: 'Currency', type: 'string' as const, description: 'USD or IQD' },
     { key: 'exchangeRateUsed', label: 'Exchange Rate', type: 'number' as const, description: 'Rate used for conversion' },
     { key: 'contractNumber', label: 'Contract Number', description: 'Associated contract ID' },
+    { key: 'workPackageId', label: 'Work Package ID', description: 'Associated WBS code' },
+    { key: 'lineDescription', label: 'Item Description', description: 'Description for the line item' },
+    { key: 'lineQuantity', label: 'Item Quantity', type: 'number' as const, description: 'Quantity for this line item' },
+    { key: 'lineUnit', label: 'Item Unit', description: 'Unit of measure (pcs, m3, etc.)' },
+    { key: 'lineRate', label: 'Item Rate', type: 'number' as const, description: 'Unit rate for this line item' },
   ];
 
   const handleImportPOData = async (mappedData: any[]) => {
     if (!selectedProject) return;
     setIsAnalyzing(true);
-    let successCount = 0;
+    let updatedCount = 0;
     
     try {
+      // Group data by PO ID in memory first to minimize Firestore writes and stay within Free Tier Quota
+      const groupedData: Record<string, any[]> = {};
       for (const item of mappedData) {
-        const id = item.id || `PO-${crypto.randomUUID().slice(0, 8)}`;
-        const inputCurrency = item.inputCurrency || baseCurrency;
-        const exchangeRateUsed = item.exchangeRateUsed || globalExchangeRate;
-        
-        const poData: PurchaseOrder = {
-          id,
-          projectId: selectedProject.id,
-          date: item.date || new Date().toISOString().split('T')[0],
-          supplier: item.supplier || 'Unknown Supplier',
-          amount: parseFloat(item.amount) || 0,
-          status: 'Approved',
-          workflowStatus: 'Approved',
-          inputCurrency,
-          exchangeRateUsed,
-          lineItems: item.lineItems || [],
-          projectName: selectedProject.name,
-          purchaseOffice: selectedProject.code,
-          wbsId: item.wbsId || '',
-          activityId: item.activityId || '',
-          workPackageId: item.workPackageId || '',
-          masterFormat: item.masterFormat || '',
-          contractNumber: item.contractNumber || '',
-          company: item.company || '',
-          buyer: item.buyer || '',
-          buyerName: item.buyerName || '',
-          location: item.location || '',
-          actualCost: parseFloat(item.actualCost) || 0,
-          divisions: item.divisions || '',
-          completion: parseFloat(item.completion) || 0
-        };
-
-        await setDoc(doc(db, 'purchase_orders', id), poData);
-        successCount++;
+        const id = item.id;
+        if (!id) continue;
+        if (!groupedData[id]) groupedData[id] = [];
+        groupedData[id].push(item);
       }
-      toast.success(`Successfully imported ${successCount} Purchase Orders.`);
-    } catch (err) {
+
+      const totalUniquePOs = Object.keys(groupedData).length;
+      console.log(`Processing ${totalUniquePOs} unique POs from ${mappedData.length} rows.`);
+
+      // Step 1: Pre-register any new suppliers found in the import data
+      const uniqueSuppliers = new Set(mappedData.map(item => item.supplier).filter(Boolean));
+      for (const supplierName of Array.from(uniqueSuppliers)) {
+        try {
+          // Check if supplier exists in companies collection
+          const supplierQuery = query(collection(db, 'companies'), where('name', '==', supplierName), where('type', '==', 'Supplier'), limit(1));
+          const supplierSnap = await getDocs(supplierQuery);
+          
+          if (supplierSnap.empty) {
+            const supplierId = `SUP-${crypto.randomUUID().slice(0, 8)}`;
+            await setDoc(doc(db, 'companies', supplierId), {
+              id: supplierId,
+              name: supplierName,
+              type: 'Supplier',
+              status: 'Approved',
+              reliability: 'Active',
+              category: 'Imported Vendor',
+              createdAt: new Date().toISOString()
+            });
+            console.log(`Registered new supplier in companies: ${supplierName}`);
+          }
+        } catch (sErr) {
+          console.warn("Failed to auto-register supplier during import:", supplierName, sErr);
+        }
+      }
+
+      for (const [id, rows] of Object.entries(groupedData)) {
+        await runTransaction(db, async (transaction) => {
+          const poRef = doc(db, 'purchase_orders', id);
+          const poSnap = await transaction.get(poRef);
+          
+          // Use the first row for shared PO data
+          const firstRow = rows[0];
+          const inputCurrency = firstRow.inputCurrency || (poSnap.exists() ? poSnap.data().inputCurrency : baseCurrency);
+          const exchangeRateUsed = firstRow.exchangeRateUsed || (poSnap.exists() ? poSnap.data().exchangeRateUsed : globalExchangeRate);
+
+          // Prepare all line items from the grouped rows
+          const newItemsForPO: POLineItem[] = rows.map(row => ({
+            id: crypto.randomUUID(),
+            description: row.lineDescription || row.description || 'Line Item',
+            quantity: parseFloat(row.lineQuantity) || 0,
+            unit: row.lineUnit || 'unit',
+            rate: parseFloat(row.lineRate) || 0,
+            inputRate: parseFloat(row.lineRate) || 0,
+            amount: (parseFloat(row.lineQuantity) || 0) * convertToBase(parseFloat(row.lineRate) || 0, inputCurrency, exchangeRateUsed),
+            status: 'Pending',
+            completion: 0,
+            inputCurrency,
+            exchangeRateUsed
+          }));
+
+          if (poSnap.exists()) {
+            // PO exists: Append all new line items and update total
+            const existingData = poSnap.data() as PurchaseOrder;
+            const updatedLineItems = [...(existingData.lineItems || []), ...newItemsForPO];
+            const newTotalAmount = updatedLineItems.reduce((sum, li) => sum + li.amount, 0);
+            
+            transaction.update(poRef, {
+              lineItems: updatedLineItems,
+              amount: newTotalAmount,
+              updatedAt: new Date().toISOString()
+            });
+          } else {
+            // PO doesn't exist: Create core PO structure with all line items
+            const totalAmount = newItemsForPO.reduce((sum, li) => sum + li.amount, 0);
+            const poData: PurchaseOrder = {
+              id,
+              projectId: selectedProject.id,
+              date: firstRow.date || new Date().toISOString().split('T')[0],
+              supplier: firstRow.supplier || 'Unknown Supplier',
+              amount: totalAmount,
+              status: 'Approved',
+              workflowStatus: 'Approved',
+              inputCurrency,
+              exchangeRateUsed,
+              lineItems: newItemsForPO,
+              projectName: selectedProject.name,
+              purchaseOffice: selectedProject.code,
+              wbsId: firstRow.wbsId || '',
+              activityId: firstRow.activityId || '',
+              workPackageId: firstRow.workPackageId || '',
+              masterFormat: firstRow.masterFormat || '',
+              contractNumber: firstRow.contractNumber || '',
+              company: firstRow.company || '',
+              buyer: firstRow.buyer || '',
+              buyerName: firstRow.buyerName || '',
+              location: firstRow.location || '',
+              actualCost: parseFloat(firstRow.actualCost) || 0,
+              divisions: firstRow.divisions || '',
+              completion: parseFloat(firstRow.completion) || 0,
+              createdAt: new Date().toISOString()
+            };
+            transaction.set(poRef, poData);
+          }
+        });
+        updatedCount++;
+      }
+      toast.success(`Successfully processed ${updatedCount} Purchase Orders (${mappedData.length} rows total).`);
+    } catch (err: any) {
       console.error("Error importing POs:", err);
-      toast.error("Failed to import some Purchase Orders.");
+      if (err.message?.includes('Quota exceeded')) {
+        toast.error("تجاوزت الحصة المجانية لعمليات الكتابة (Firestore Quota). سيتم إعادة ضبط الحصة غداً. يمكنك متابعة التفاصيل في موقع Firebase.");
+      } else {
+        toast.error("Failed to import some Purchase Orders. Check console for details.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -599,11 +724,16 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const handleConfirmImport = async () => {
       if (!previewPOs) return;
       try {
+        const batch = writeBatch(db);
         const affectedActivityIds = new Set<string>();
+        
         for (const po of previewPOs) {
-          await setDoc(doc(db, 'purchase_orders', po.id), po);
+          const poRef = doc(db, 'purchase_orders', po.id);
+          batch.set(poRef, po);
           if (po.activityId) affectedActivityIds.add(po.activityId);
         }
+        
+        await batch.commit();
         
         // Trigger rollups for affected activities
         for (const actId of affectedActivityIds) {
@@ -651,12 +781,16 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
             onClick={async () => {
               toast.dismiss(toastRef.id);
               try {
+                const batch = writeBatch(db);
                 const affectedActivityIds = new Set<string>();
+                
                 for (const id of selectedPOIds) {
                   const po = pos.find(p => p.id === id);
                   if (po?.activityId) affectedActivityIds.add(po.activityId);
-                  await deleteDoc(doc(db, 'purchase_orders', id));
+                  batch.delete(doc(db, 'purchase_orders', id));
                 }
+                
+                await batch.commit();
                 
                 // Trigger rollups for affected activities
                 for (const actId of affectedActivityIds) {
@@ -1264,8 +1398,8 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
               className="w-full bg-slate-50 border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none rounded-xl"
             >
               <option value="">{t('select_supplier')}...</option>
-              {vendors.map(v => (
-                <option key={v.id} value={v.name}>{v.name}</option>
+              {allAvailableSuppliers.map(sName => (
+                <option key={sName} value={sName}>{sName}</option>
               ))}
               <option value="new" className="text-blue-600 font-medium">+ {t('add_supplier')}...</option>
             </select>
