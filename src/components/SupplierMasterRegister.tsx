@@ -6,7 +6,8 @@ import { Supplier, PurchaseOrder, Page, Stakeholder, Company } from '../types';
 import { useProject } from '../context/ProjectContext';
 import { 
   Search, Filter, Plus, MoreHorizontal, Phone, Mail, MapPin, 
-  FileText, ExternalLink, X, Loader2, Briefcase, Download, Upload
+  FileText, ExternalLink, X, Loader2, Briefcase, Download, Upload,
+  Edit, Printer, Trash2, Clock, CheckCircle2
 } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 import { toast } from 'react-hot-toast';
@@ -120,10 +121,17 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
   const supplierStats = useMemo(() => {
     return suppliers.map(supplier => {
-      const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier.name || po.buyFromPartner === supplier.vendorCode);
-      const totalPOAmount = supplierPOs.reduce((sum, po) => sum + (po.amount || 0), 0);
-      const totalPayments = supplierPOs.reduce((sum, po) => sum + ((po.amount || 0) * (po.completion || 0) / 100), 0);
-      const balance = totalPOAmount - totalPayments;
+      const supplierPOs = purchaseOrders.filter(po => 
+        (po.supplier && po.supplier.toLowerCase() === supplier.name.toLowerCase()) || 
+        (po.buyFromPartner && po.buyFromPartner === supplier.vendorCode)
+      );
+
+      const totalCommitted = supplierPOs.reduce((sum, po) => sum + (po.amount || 0), 0);
+      const totalPaid = supplierPOs.reduce((sum, po) => sum + (po.actualCost || (po.amount || 0) * (po.completion || 0) / 100), 0);
+      const outstanding = totalCommitted - totalPaid;
+      
+      const finishedPOs = supplierPOs.filter(po => po.completion === 100 || po.status?.toLowerCase() === 'completed' || po.status?.toLowerCase() === 'closed');
+      const activePOs = supplierPOs.filter(po => (po.completion || 0) < 100 && po.status?.toLowerCase() !== 'completed' && po.status?.toLowerCase() !== 'closed');
       
       const avgCompletion = supplierPOs.length > 0 
         ? supplierPOs.reduce((acc, po) => acc + (po.completion || 0), 0) / supplierPOs.length 
@@ -131,13 +139,17 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
 
       return {
         supplierId: supplier.id,
-        totalPOAmount,
-        totalPayments,
-        balance,
+        totalPOAmount: totalCommitted,
+        totalPayments: totalPaid,
+        balance: outstanding,
         poCount: supplierPOs.length,
+        finishedCount: finishedPOs.length,
+        activeCount: activePOs.length,
         avgCompletion,
         reliability: avgCompletion > 80 ? 'High' : avgCompletion > 40 ? 'Medium' : 'Low',
-        pos: supplierPOs
+        pos: supplierPOs,
+        finishedPOs,
+        activePOs
       };
     });
   }, [suppliers, purchaseOrders]);
@@ -377,114 +389,258 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
         </div>
       )}
 
-      {/* Side Panel for Supplier Details */}
-      <AnimatePresence>
-        {selectedSupplier && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedSupplier(null)}
-              className="fixed inset-0 bg-neutral-950/20 backdrop-blur-[2px] z-40"
-            />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-neutral-200"
-              style={{ borderRadius: '0px' }}
-            >
-              <div className="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50">
-                <h3 className="text-lg font-semibold text-neutral-900 uppercase tracking-tighter">{t('supplier_profile')}</h3>
-                <button onClick={() => setSelectedSupplier(null)} className="p-2 hover:bg-neutral-200 transition-all">
-                  <X className="w-5 h-5 text-neutral-500" />
+      {/* Detailed Full Screen View for Supplier */}
+      <AnimatePresence mode="wait">
+        {selectedSupplier && !editingSupplier && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 bg-white z-[500] flex flex-col pt-16 print-report"
+          >
+            {/* Header / Info Section */}
+            <div className="bg-white border-b border-neutral-100 px-8 py-6 flex items-center justify-between sticky top-0 z-20 shadow-sm no-print">
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => setSelectedSupplier(null)}
+                  className="p-3 hover:bg-neutral-100 rounded-full transition-all"
+                >
+                  <X className="w-7 h-7 text-neutral-500" />
                 </button>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
+                    <Briefcase className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-1">
+                      {selectedSupplier.name}
+                    </h3>
+                    <div className="text-[12px] text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-600 italic">{selectedSupplier.vendorCode}</span>
+                      <span className="w-1.5 h-1.5 bg-slate-200 rounded-full" />
+                      <span>{selectedSupplier.discipline}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                <div className="space-y-2">
-                  <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-[0.2em]">{t('supplier_details')}</div>
-                  <h4 className="text-2xl font-semibold text-neutral-900 uppercase leading-tight">{selectedSupplier.name}</h4>
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-neutral-400">
-                    <Briefcase className="w-3 h-3" /> {selectedSupplier.vendorCode}
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 bg-neutral-50 border border-neutral-100 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-4 h-4 text-neutral-400 mt-0.5" />
-                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.address}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-neutral-400" />
-                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-neutral-400" />
-                      <span className="text-xs font-medium text-neutral-600">{selectedSupplier.contactDetails.email}</span>
+              {/* Status Badge in Header */}
+              <div className="flex items-center gap-3">
+                 <div className={cn(
+                   "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                   selectedSupplier.status === 'Active' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-neutral-50 text-neutral-400 border-neutral-100"
+                 )}>
+                   {selectedSupplier.status}
+                 </div>
+              </div>
+            </div>
+
+            {/* Content Container (Scrollable) */}
+            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-8 pb-32">
+              <div className="max-w-7xl mx-auto space-y-8">
+                {/* 1. Profile & Quick Stats */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Strategic Contact Info */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Contact ID</div>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-4">
+                          <MapPin className="w-5 h-5 text-slate-400 mt-1 shrink-0" />
+                          <div className="text-sm text-slate-600 font-medium leading-relaxed">{selectedSupplier.contactDetails.address || 'Address Not Recorded'}</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Phone className="w-5 h-5 text-slate-400 shrink-0" />
+                          <div className="text-sm text-slate-600 font-medium">{selectedSupplier.contactDetails.phone || 'Phone Missing'}</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Mail className="w-5 h-5 text-slate-400 shrink-0" />
+                          <div className="text-sm text-slate-600 font-medium truncate">{selectedSupplier.contactDetails.email || 'Email Missing'}</div>
+                        </div>
+                      </div>
+                      <div className="pt-6 border-t border-slate-100">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Service Coverage</div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSupplier.discipline.split(',').map((tag, idx) => (
+                            <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg">
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Financial Summary</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-blue-50 border border-blue-100">
-                      <div className="text-[9px] font-semibold text-blue-400 uppercase mb-1">{t('po_total')}</div>
-                      <div className="text-lg font-semibold text-blue-700">
+                  {/* High Fidelity Financials */}
+                  <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('po_total')}</div>
+                      <div className="text-3xl font-black text-slate-900 tracking-tight">
                         {formatCurrency(supplierStats.find(s => s.supplierId === selectedSupplier.id)?.totalPOAmount || 0)}
                       </div>
+                      <div className="text-[10px] text-slate-500 mt-4 font-bold">
+                        {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.poCount} TOTAL CONTRACTED INSTRUMENTS
+                      </div>
                     </div>
-                    <div className="p-4 bg-emerald-50 border border-emerald-100">
-                      <div className="text-[9px] font-semibold text-emerald-400 uppercase mb-1">{t('paid')}</div>
-                      <div className="text-lg font-semibold text-emerald-700">
+
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('paid')}</div>
+                      <div className="text-3xl font-black text-emerald-600 tracking-tight">
                         {formatCurrency(supplierStats.find(s => s.supplierId === selectedSupplier.id)?.totalPayments || 0)}
                       </div>
+                      <div className="text-[10px] text-slate-500 mt-4 font-bold">
+                        {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.finishedCount} COMPLETELY EXECUTED ORDERS
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Outstanding Liability</div>
+                      <div className="text-3xl font-black text-amber-600 tracking-tight">
+                        {formatCurrency(supplierStats.find(s => s.supplierId === selectedSupplier.id)?.balance || 0)}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-4 font-bold uppercase tracking-widest animate-pulse">
+                        Sustained Account Balance
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Linked Purchase Orders</div>
-                  <div className="space-y-3">
-                    {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.pos.map(po => (
-                      <div key={po.id} className="p-4 border border-neutral-100 hover:border-blue-200 transition-all group">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="text-xs font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors uppercase">{po.id}</div>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-neutral-100 text-neutral-500 uppercase">{po.status}</span>
+                {/* 2. Detailed PO Registers */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Ongoing Contracts */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                          <Loader2 className="w-4 h-4 animate-spin-slow" />
                         </div>
-                        <div className="flex justify-between items-end">
-                          <div className="text-[10px] font-bold text-neutral-400">{po.date}</div>
-                          <div className="text-xs font-semibold text-neutral-900">{formatCurrency(po.amount)}</div>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Active Engagements</h4>
+                      </div>
+                      <div className="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-black uppercase rounded-full">
+                        {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.activeCount || 0} Open
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.activePOs.map(po => (
+                        <div key={po.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer overflow-hidden relative">
+                          <div className="absolute top-0 right-0 w-1 pt-full bg-blue-500 h-full" />
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{po.id}</div>
+                              <div className="text-sm font-bold text-slate-900 line-clamp-1 truncate max-w-[200px]">
+                                {po.projectName || 'Phase Execution Order'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-black text-slate-900">{formatCurrency(po.amount)}</div>
+                              <div className="text-[10px] font-bold text-slate-400 uppercase">{po.date}</div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                              <span className="text-slate-400">Execution Progress</span>
+                              <span className="text-blue-600">{po.completion || 0}%</span>
+                            </div>
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500 rounded-full transition-all duration-1000"
+                                style={{ width: `${po.completion || 0}%` }}
+                              />
+                            </div>
+                          </div>
                         </div>
+                      ))}
+                      {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.activeCount === 0 && (
+                        <div className="bg-white p-12 rounded-3xl border-2 border-dashed border-slate-200 text-center space-y-2">
+                          <div className="text-sm font-black text-slate-300 uppercase tracking-widest">No Active Contracts</div>
+                          <div className="text-[10px] text-slate-400">All assigned orders have been concluded.</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Concluded Contracts */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
+                          <X className="w-4 h-4 rotate-45" />
+                        </div>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Concluded Statements</h4>
                       </div>
-                    ))}
-                    {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.pos.length === 0 && (
-                      <div className="text-center py-8 border-2 border-dashed border-neutral-100 text-neutral-400 text-xs font-bold">
-                        {t('no_pos_found')}
+                      <div className="px-3 py-1 bg-emerald-100 text-emerald-600 text-[10px] font-black uppercase rounded-full">
+                        {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.finishedCount || 0} Finished
                       </div>
-                    )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.finishedPOs.map(po => (
+                        <div key={po.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm opacity-75 hover:opacity-100 transition-all flex items-center justify-between group overflow-hidden relative">
+                           <div className="absolute top-0 right-0 w-1 pt-full bg-emerald-500 h-full opacity-20" />
+                           <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                               <FileText className="w-5 h-5" />
+                             </div>
+                             <div>
+                               <div className="text-sm font-bold text-slate-900">{po.id}</div>
+                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settled On {po.date}</div>
+                             </div>
+                           </div>
+                           <div className="text-right">
+                             <div className="text-md font-black text-slate-900">{formatCurrency(po.amount)}</div>
+                             <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Fully Disbursed</div>
+                           </div>
+                        </div>
+                      ))}
+                      {supplierStats.find(s => s.supplierId === selectedSupplier.id)?.finishedCount === 0 && (
+                        <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-2 grayscale">
+                          <div className="text-sm font-black text-slate-300 uppercase tracking-widest">No Concluded Records</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="p-6 border-t border-neutral-100 bg-neutral-50">
-                <button 
-                  className="w-full py-4 bg-neutral-900 text-white font-semibold text-xs uppercase tracking-widest hover:bg-neutral-800 transition-all"
-                  style={{ borderRadius: '0px' }}
+            {/* Bottom Actions - Floating Lower Right style */}
+            <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-3 no-print">
+               <button 
+                  onClick={() => window.print()}
+                  className="w-14 h-14 bg-white border border-slate-200 shadow-xl rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all group relative"
                 >
-                  {t('download_statement')}
+                  <Printer className="w-6 h-6" />
+                  <span className="absolute right-full mr-4 px-2 py-1 bg-neutral-900 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap uppercase tracking-widest">
+                    {t('download_statement')}
+                  </span>
                 </button>
-              </div>
-            </motion.div>
-          </>
+                <button 
+                  onClick={() => setEditingSupplier(selectedSupplier)}
+                  className="w-14 h-14 bg-white border border-slate-200 shadow-xl rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all group relative"
+                >
+                  <Edit className="w-6 h-6" />
+                  <span className="absolute right-full mr-4 px-2 py-1 bg-neutral-900 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap uppercase tracking-widest">
+                    {t('edit')}
+                  </span>
+                </button>
+                <button 
+                  className="w-14 h-14 bg-blue-600 shadow-xl shadow-blue-600/30 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-all group relative"
+                >
+                  <Download className="w-6 h-6" />
+                  <span className="absolute right-full mr-4 px-2 py-1 bg-neutral-900 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap uppercase tracking-widest">
+                    {t('download_pdf')}
+                  </span>
+                </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Add/Edit Supplier Modal - Updated to follow Company Window Style as requested */}
+      {/* Add/Edit Supplier Interface - Re-styled to be Full Screen */}
       <AnimatePresence>
         {showImportModal && (
           <DataImportModal 
@@ -497,21 +653,41 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
           />
         )}
         {isAddingSupplier && (
-          <div className="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white shadow-2xl w-full max-w-lg overflow-hidden flex flex-col rounded-3xl"
-            >
-              <div className="px-6 py-6 border-b border-neutral-100 bg-white">
-                <h3 className="text-xl font-bold text-neutral-900 tracking-tight">
-                  {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
-                </h3>
-                <p className="text-neutral-400 text-xs mt-1">{t('company_details_desc')}</p>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed inset-0 bg-white z-[501] flex flex-col pt-16 no-print"
+          >
+            {/* Header / Info Section */}
+            <div className="bg-white border-b border-neutral-100 px-8 py-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
+                  className="p-3 hover:bg-neutral-100 rounded-full transition-all text-neutral-400"
+                >
+                  <X className="w-7 h-7" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
+                    {editingSupplier ? <Edit className="w-7 h-7" /> : <Plus className="w-7 h-7" />}
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-1 italic">
+                      {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
+                    </h3>
+                    <div className="text-[12px] text-slate-400 font-bold uppercase tracking-[0.2em] ml-1">
+                      {t('company_details_desc')}
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
 
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-8 pb-32">
               <form 
+                id="supplier-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
@@ -527,101 +703,116 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     }
                   });
                 }}
-                className="p-6 space-y-4"
+                className="max-w-4xl mx-auto"
               >
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('supplier_code')}</label>
-                    <input 
-                      name="vendorCode"
-                      defaultValue={editingSupplier?.vendorCode}
-                      required
-                      placeholder="e.g. S-001"
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('operational_status')}</label>
-                    <select 
-                      name="status"
-                      defaultValue={editingSupplier?.status || 'Active'}
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    >
-                      <option value="Active">{t('active')}</option>
-                      <option value="Suspended">{t('suspended')}</option>
-                      <option value="Contract Ended">{t('contract_ended')}</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('legal_supplier_name')}</label>
-                    <input 
-                      name="name"
-                      defaultValue={editingSupplier?.name}
-                      required
-                      placeholder={t('company_name_placeholder')}
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking_widest mb-1">{t('discipline_masterformat')}</label>
-                    <select 
-                      name="discipline"
-                      defaultValue={editingSupplier?.discipline || '01'}
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    >
-                      {masterFormatDivisions.map(div => (
-                        <option key={div.id} value={`${div.id} - ${div.title}`}>{div.id} - {div.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('address')}</label>
-                    <input 
-                      name="address"
-                      defaultValue={editingSupplier?.contactDetails.address}
-                      placeholder={t('address_placeholder')}
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('phone')}</label>
-                    <input 
-                      name="phone"
-                      defaultValue={editingSupplier?.contactDetails.phone}
-                      placeholder="+964..."
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t('email')}</label>
-                    <input 
-                      name="email"
-                      type="email"
-                      defaultValue={editingSupplier?.contactDetails.email}
-                      placeholder="contact@company.com"
-                      className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-neutral-900"
-                    />
+                <div className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-10">
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('supplier_code')}</label>
+                      <input 
+                        name="vendorCode"
+                        defaultValue={editingSupplier?.vendorCode}
+                        required
+                        placeholder="e.g. S-001"
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('operational_status')}</label>
+                      <select 
+                        name="status"
+                        defaultValue={editingSupplier?.status || 'Active'}
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900"
+                      >
+                        <option value="Active">{t('active')}</option>
+                        <option value="Suspended">{t('suspended')}</option>
+                        <option value="Contract Ended">{t('contract_ended')}</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('legal_supplier_name')}</label>
+                      <input 
+                        name="name"
+                        defaultValue={editingSupplier?.name}
+                        required
+                        placeholder={t('company_name_placeholder')}
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">
+                        {t('discipline_scope')}
+                      </label>
+                      <input 
+                        name="discipline"
+                        defaultValue={editingSupplier?.discipline}
+                        required
+                        placeholder="e.g. Doors, Furniture, Civil Works"
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                      <div className="mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-4 opacity-70">Separate specialties with commas.</div>
+                    </div>
+                    <div className="col-span-2 pt-4">
+                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <span className="w-8 h-px bg-blue-100" />
+                        COMMUNICATION CHANNELS
+                        <span className="w-full h-px bg-blue-100" />
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('address')}</label>
+                      <input 
+                        name="address"
+                        defaultValue={editingSupplier?.contactDetails.address}
+                        placeholder={t('address_placeholder')}
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('phone')}</label>
+                      <input 
+                        name="phone"
+                        defaultValue={editingSupplier?.contactDetails.phone}
+                        placeholder="+964..."
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('email')}</label>
+                      <input 
+                        name="email"
+                        type="email"
+                        defaultValue={editingSupplier?.contactDetails.email}
+                        placeholder="contact@company.com"
+                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-4 flex justify-end gap-2">
-                  <button 
-                    type="button"
-                    onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
-                    className="px-4 py-2 text-neutral-600 font-bold text-sm hover:bg-neutral-100 rounded-xl transition-all"
-                  >
-                    {t('cancel')}
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-8 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
-                  >
-                    {editingSupplier ? t('update_supplier') : t('register_supplier')}
-                  </button>
-                </div>
+                <div className="h-20" /> 
               </form>
-            </motion.div>
-          </div>
+            </div>
+
+            {/* Floating Action Buttons in Lower Right */}
+            <div className="fixed bottom-8 right-8 z-[550] flex items-center gap-4 no-print">
+               <button 
+                  type="button"
+                  onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
+                  className="px-8 py-3.5 bg-white border border-slate-200 shadow-xl rounded-full text-slate-500 font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                >
+                  {t('cancel')}
+                </button>
+                <button 
+                  type="submit"
+                  form="supplier-form"
+                  className="px-12 py-3.5 bg-blue-600 text-white font-black text-[11px] uppercase tracking-widest rounded-full hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/30 flex items-center gap-3 group"
+                >
+                  <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  {editingSupplier ? t('update_supplier') : t('register_supplier')}
+                </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

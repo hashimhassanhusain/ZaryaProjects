@@ -406,16 +406,18 @@ const AppLayout = () => {
   }, [location.pathname, t]);
 
   return (
-    <div className="flex h-screen bg-app-bg overflow-hidden font-sans relative" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="flex h-screen bg-app-bg overflow-hidden font-sans relative no-print-bg" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
-        <Header />
-        <Breadcrumbs />
+        <div className="no-print">
+          <Header />
+          <Breadcrumbs />
+        </div>
         
         <main 
           dir={isRtl ? 'rtl' : 'ltr'}
           className={cn(
             "flex-1 overflow-y-auto no-scrollbar bg-app-bg",
-            "p-0"
+            "p-0 print:overflow-visible printable-content"
           )}
         >
           <div className="max-w-[1600px] mx-auto w-full">
@@ -693,9 +695,11 @@ export default function App() {
                   <ToolsProvider>
                     <Router>
                       <AppLayout />
-                      <LeftRibbonBar />
-                      <RightRibbonBar />
-                      <ToolWorkspace />
+                      <div className="no-print">
+                        <LeftRibbonBar />
+                        <RightRibbonBar />
+                        <ToolWorkspace />
+                      </div>
                       <Toaster position="top-right" />
                     </Router>
                   </ToolsProvider>
