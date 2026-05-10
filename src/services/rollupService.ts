@@ -54,6 +54,10 @@ export async function rollupToParent(
         actualCost += (child.amount || 0) * (progress / 100);
         totalWeightedProgress += (child.amount || 0) * progress;
         totalPlannedCostForProgress += (child.amount || 0);
+
+        // If line items link to different work packages, we should trigger rollups for them too
+        // but that's handled when the line item itself is changed. 
+        // For now, we assume the PO rollup is for the PO's overall state.
       });
 
       const progress = totalPlannedCostForProgress > 0 ? Math.round(totalWeightedProgress / totalPlannedCostForProgress) : 0;
@@ -68,24 +72,45 @@ export async function rollupToParent(
       };
 
       await updateDoc(poRef, updateData);
-      if (po.activityId) await rollupToParent('po', po.activityId);
+      
+      // Cascade to Work Package (either from PO level or individual line items)
+      if (po.workPackageId) {
+        await rollupToParent('po', po.workPackageId);
+      } else if (po.activityId) {
+        // Support legacy activityId field
+        await rollupToParent('po', po.activityId);
+      }
     } 
     else if (level === 'po') {
-      // Parent is a Work Package (Activity)
+      // Parent is a Work Package (represented by WBS node or legacy Activity)
+      // Check for WBS level first, then fall back to Activities collection
+      const wbsRef = doc(db, 'wbs', parentId);
+      const wbsDoc = await getDoc(wbsRef);
+      
+      if (wbsDoc.exists()) {
+        await rollupToParent('workPackage', parentId);
+        return;
+      }
+
       const parentRef = doc(db, 'activities', parentId);
       const parentDoc = await getDoc(parentRef);
       if (!parentDoc.exists()) return;
 
       const parentData = parentDoc.data() as Activity;
-      const q = query(collection(db, 'purchase_orders'), where('activityId', '==', parentId));
-      const snapshot = await getDocs(q);
-      const children = snapshot.docs.map(d => d.data() as PurchaseOrder);
+      // Fetch POs linked to this Work Package (checking both fields)
+      const q1 = query(collection(db, 'purchase_orders'), where('workPackageId', '==', parentId));
+      const q2 = query(collection(db, 'purchase_orders'), where('activityId', '==', parentId));
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      
+      const childrenMap = new Map<string, PurchaseOrder>();
+      snap1.docs.forEach(d => childrenMap.set(d.id, d.data() as PurchaseOrder));
+      snap2.docs.forEach(d => childrenMap.set(d.id, d.data() as PurchaseOrder));
+      const children = Array.from(childrenMap.values());
 
       // Rule: parent.plannedCost = max(manualCost, sum(children.plannedCost))
-      const manualPlannedCost = parentData.amount || 0; // The BOQ amount linked to it
+      const manualPlannedCost = parentData.amount || 0; 
       
       children.forEach(child => {
-        // Date Rollup
         const date = child.date || child.actualStartDate;
         if (date) {
           if (!plannedStart || date < plannedStart) plannedStart = date;

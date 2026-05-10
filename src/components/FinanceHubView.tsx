@@ -14,7 +14,8 @@ import {
   Info,
   Plus,
   Database,
-  Upload
+  Upload,
+  BarChart3
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
@@ -31,6 +32,8 @@ import { BOQView } from './BOQView';
 import { ReserveAnalysisView } from './ReserveAnalysisView';
 import { EVMReportView } from './EVMReportView';
 import { POTracker } from './POTracker';
+import { ProcurementWorkflowCenter } from './ProcurementWorkflowCenter';
+import { FinancialMatrixDashboard } from './FinancialMatrixDashboard';
 import { FinancialCloseOutView } from './FinancialCloseOutView';
 import { UniversalManager } from './common/UniversalManager';
 
@@ -89,7 +92,9 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       label: 'Procurement & Contracts',
       tabs: [
         { id: 'pos', label: 'PO Tracker', icon: Package, size: 'large' },
+        { id: 'workflow', label: 'Workflow Center', icon: FileText, size: 'large' },
         { id: 'contracts', label: 'Contracts Archive', icon: ShieldCheck, size: 'large' },
+        { id: 'matrix', label: 'Financial Matrix', icon: BarChart3, size: 'large' },
         { id: 'new-po', label: 'New PO', icon: Plus, size: 'small' },
         { id: 'new-rfq', label: 'New RFQ', icon: FileText, size: 'small' },
       ]
@@ -119,6 +124,8 @@ export const FinanceHubView: React.FC<FinanceHubViewProps> = ({ page }) => {
       case 'reserves': return <ReserveAnalysisView page={page} />;
       case 'evm': return <EVMReportView page={page} />;
       case 'pos': return <POTracker page={page} />;
+      case 'matrix': return <FinancialMatrixDashboard />;
+      case 'workflow': return <ProcurementWorkflowCenter page={page} />;
       case 'contracts': return <UniversalManager entityType="contracts" />;
       case 'new-po': return <POTracker page={{ ...page, details: { ...page.details, initialView: 'form' } }} />;
       case 'supplier-register': navigate('/page/companies'); return null;

@@ -33,6 +33,32 @@
       },
       "required": ["description", "unit", "quantity", "rate", "amount", "division", "workPackage", "location", "completion"]
     },
+    "PurchaseRequest": {
+      "title": "Purchase Request",
+      "description": "A purchase request in the approval workflow.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "requestorId": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "ConvertedToPO"] },
+        "approvals": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "signedBy": { "type": "string" },
+              "role": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          } 
+        },
+        "poId": { "type": "string" }
+      },
+      "required": ["projectId", "requestorId", "description", "amount", "status"]
+    },
     "PurchaseOrder": {
       "title": "Purchase Order",
       "description": "A purchase order for materials or labor.",
@@ -369,6 +395,28 @@
       },
       "required": ["projectId", "workflowName", "currentProcess", "improvedProcess"]
     },
+    "CostCenter": {
+      "title": "Cost Center",
+      "description": "Financial classification dimension (e.g., Master Format Divisions).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["code", "name"]
+    },
+    "StandardItem": {
+      "title": "Standard Item",
+      "description": "Standardized item classification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["code", "name"]
+    },
     "WBSLevel": {
       "title": "WBS Level",
       "description": "A node in the Work Breakdown Structure.",
@@ -377,12 +425,13 @@
         "id": { "type": "string" },
         "projectId": { "type": "string" },
         "parentId": { "type": "string" },
-        "divisionCode": { "type": "string" },
         "title": { "type": "string" },
-        "type": { "type": "string", "enum": ["Zone", "Area", "Building", "Floor", "Cost Account", "Work Package"] },
+        "type": { "type": "string" },
         "level": { "type": "number" },
         "status": { "type": "string" },
-        "code": { "type": "string" }
+        "code": { "type": "string" },
+        "costCenterId": { "type": "string" },
+        "standardItemId": { "type": "string" }
       },
       "required": ["projectId", "title", "type"]
     },
@@ -573,6 +622,14 @@
       "schema": "WBSLevel",
       "description": "Work Breakdown Structure levels."
     },
+    "/cost_centers/{id}": {
+      "schema": "CostCenter",
+      "description": "Cost centers for financial tracking."
+    },
+    "/standard_items/{id}": {
+      "schema": "StandardItem",
+      "description": "Standardized item catalog."
+    },
     "/activities/{id}": {
       "schema": "Activity",
       "description": "Project activities."
@@ -628,6 +685,10 @@
     "/boq/{itemId}": {
       "schema": "BOQItem",
       "description": "Bill of Quantities items."
+    },
+    "/purchase_requests/{requestId}": {
+      "schema": "PurchaseRequest",
+      "description": "Purchase requests in the approval workflow."
     },
     "/purchase_orders/{poId}": {
       "schema": "PurchaseOrder",

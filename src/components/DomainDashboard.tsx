@@ -86,6 +86,7 @@ import { SupplierMasterRegister } from './SupplierMasterRegister';
 import { LogManagementView } from './LogManagementView';
 import { FormalAcceptanceView } from './FormalAcceptanceView';
 import { DesignHubView } from './DesignHubView';
+import { ProcurementWorkflowCenter } from './ProcurementWorkflowCenter';
 
 // Risk Components
 import { RiskRegisterTab } from './risk/RiskRegisterTab';
@@ -191,7 +192,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
       secondary: ['1.3.1', '1.3.2', '2.3.2', '2.3.4', '2.3.5', '3.3.1', '3.3.2', '4.3.1', '4.3.2', '5.3.1', '5.3.2']
     },
     'finance': {
-      primary: ['2.4.1', '3.4.3', '1.4.2'],
+      primary: ['2.4.1', '3.4.3', '1.4.2', '3.4.5'],
       secondary: ['1.4.1', '2.4.2', '2.4.3', '3.4.1', '3.4.2', '3.4.4', '4.4.1', '4.4.2', '5.4.1', '5.4.2']
     },
     'resources': {
@@ -531,6 +532,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     const isFormalAcceptancePage = p.id === '4.1.2';
     const isDesignHubPage = p.id === 'design_hub';
 
+    if (p.id === '3.4.5') return <ProcurementWorkflowCenter page={p} />;
     if (p.id === '1.1.1') return <ProjectCharterView page={p} />;
     if (p.id === '1.1.2') return <BusinessCaseView page={p} />;
     if (isTasksPage) return <TasksView />;

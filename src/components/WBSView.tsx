@@ -126,15 +126,14 @@ export const WBSView: React.FC = () => {
   };
 
   const filteredWbsForTree = useMemo(() => {
-    if (!searchTerm) return wbsLevels;
+    if (!searchTerm) return wbsLevels.filter(l => l.type !== 'Cost Account');
     
+    // ... filtering keeping out Cost Accounts ...
     const searchLower = searchTerm.toLowerCase();
     const matchingIds = new Set<string>();
     
-    // First pass: find all nodes that match directly
     const directMatches = wbsLevels.filter(l => 
-      l.title.toLowerCase().includes(searchLower) ||
-      l.code.toLowerCase().includes(searchLower)
+        l.type !== 'Cost Account' && (l.title.toLowerCase().includes(searchLower) || l.code.toLowerCase().includes(searchLower))
     );
     
     // Second pass: include all ancestors of matches
@@ -355,7 +354,6 @@ export const WBSView: React.FC = () => {
         id,
         projectId: selectedProject.id,
         parentId: newPackage.wbsId || '',
-        divisionCode: newPackage.divisionId || '01',
         title: newPackage.title,
         type: 'Work Package',
         level: (parentWbs?.level || 0) + 1,
@@ -414,9 +412,7 @@ export const WBSView: React.FC = () => {
   const handleEditWbs = (level: WBSLevel) => {
     setEditingWbs(level);
     // Determine if it's a manual title
-    if (level.type === 'Cost Account') {
-      setIsManualWbsTitle(!masterFormatDivisions.some(d => `${d.id} - ${d.title}` === level.title));
-    } else if (level.type === 'Work Package') {
+    if (level.type === 'Work Package') {
       setIsManualWbsTitle(!masterFormatSections.some(s => s.title === level.title));
     } else {
       setIsManualWbsTitle(false);
@@ -623,9 +619,16 @@ export const WBSView: React.FC = () => {
                       <div className="text-base font-semibold text-slate-900">{level.title}</div>
                     </div>
                     <div className={cn("flex items-center gap-3 mt-0.5", isRtl && "flex-row-reverse")}>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
-                        {t(level.type.toLowerCase().replace(' ', ''))}
-                        {level.type === 'Work Package' && level.divisionCode && ` (${level.divisionCode})`}
+                      <div className="flex flex-col gap-1">
+                          <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
+                            {t(level.type.toLowerCase().replace(' ', ''))}
+                          </div>
+                          {level.type === 'Work Package' && (level.costCenterId || level.standardItemId) && (
+                              <div className={cn("flex gap-1", isRtl && "flex-row-reverse")}>
+                                  {level.costCenterId && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[8px] font-bold">CC: {level.costCenterId.substring(0,4)}</span>}
+                                  {level.standardItemId && <span className="px-1.5 py-0.5 bg-sky-50 text-sky-600 rounded text-[8px] font-bold">SI: {level.standardItemId.substring(0,4)}</span>}
+                              </div>
+                          )}
                       </div>
                       <span className="text-slate-200">|</span>
                       <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{formatCurrency(totalValue)}</div>

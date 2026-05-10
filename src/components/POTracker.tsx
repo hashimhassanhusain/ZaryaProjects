@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem, EntityConfig } from '../types';
+import { Page, PurchaseOrder, POItem, Supplier, Activity, WBSLevel, POLineItem, ProjectManagementPlan, POActivity, BOQItem, EntityConfig, CostCenter } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, setDoc, doc, query, where, updateDoc, getDoc, limit, getDocs, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { Table, FileText, BarChart3, ShieldCheck, Plus, Save, AlertTriangle, CheckCircle2, TrendingDown, Database, Loader2, ShoppingCart, Clock, X, Calendar, Search, Filter, ChevronRight, Trash2, Edit2, Sparkles, History, DraftingCompass, Upload, Download, ArrowLeft, Printer, Briefcase, User, DollarSign, Coins, RefreshCw } from 'lucide-react';
@@ -14,6 +14,9 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { DataImportModal } from './DataImportModal';
 import { UniversalDataTable } from './common/UniversalDataTable';
+import { POMigrationModal } from './POMigrationModal';
+import { LogProgressModal } from './LogProgressModal';
+import { getCostCenters } from '../services/masterDataService';
 
 interface POTrackerProps {
   page: Page;
@@ -82,6 +85,8 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewPOs, setPreviewPOs] = useState<PurchaseOrder[] | null>(null);
   const [selectedPOIds, setSelectedPOIds] = useState<string[]>([]);
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
   const [newActivityData, setNewActivityData] = useState<Partial<Activity>>({
     description: '',
@@ -91,6 +96,10 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     amount: 0,
     status: 'Not Started'
   });
+
+  useEffect(() => {
+    getCostCenters().then(setCostCenters);
+  }, []);
 
   const { language } = useLanguage();
   const getAmountColor = (amount: number) => {
@@ -783,20 +792,15 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
 
   const poTableData = useMemo(() => {
     return pos.map(po => {
-      const wbs = wbsLevels.find(w => w.id === po.wbsId);
+      const wbs = wbsLevels.find(w => w.id === po.workPackageId);
       const activity = activities.find(a => a.id === po.activityId);
-      const totalQty = (po.lineItems || []).reduce((sum, li) => sum + li.quantity, 0);
-      const avgRate = po.amount / (totalQty || 1);
-      const unit = po.lineItems?.[0]?.unit || '-';
       
       return {
         ...po,
+        wbsTitle: wbs?.title || 'Not assigned', // Fix display title
         wbsCode: wbs?.code || 'N/A',
         masterFormat: po.masterFormat || 'N/A',
-        activityDescription: activity?.description || 'N/A',
-        totalQty,
-        avgRate,
-        unit
+        activityDescription: activity?.description || 'N/A'
       };
     });
   }, [pos, wbsLevels, activities]);
@@ -813,9 +817,6 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
       { key: 'id', label: 'Order / Contract', type: 'badge' },
       { key: 'date', label: 'Order Date', type: 'date' },
       { key: 'supplier', label: 'Suppliers', type: 'string' },
-      { key: 'totalQty', label: 'Qty', type: 'number' },
-      { key: 'unit', label: 'Unit', type: 'string' },
-      { key: 'avgRate', label: 'Rate', type: 'currency' },
       { key: 'amount', label: `Total (${baseCurrency})`, type: 'currency' },
       { key: 'status', label: 'Status', type: 'status' },
       { key: 'completion', label: '% Completion', type: 'progress' },
@@ -976,15 +977,15 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
     };
     
     const descendants = findDescendants(newPO.wbsId);
-    const costAccounts = descendants.filter(l => l.type === 'Cost Account');
+    const costAccounts = descendants.filter(l => l.type === 'Work Package');
     
-    // Also check if the selected level itself is a Cost Account
+    // Also check if the selected level itself is a Work Package
     const selectedWBS = wbsLevels.find(l => l.id === newPO.wbsId);
     const result = costAccounts.map(ca => ({ 
       title: ca.title, 
       code: getFullWBSCode(ca.id, wbsLevels) || ca.code 
     }));
-    if (selectedWBS?.type === 'Cost Account') {
+    if (selectedWBS?.type === 'Work Package') {
       result.push({ 
         title: selectedWBS.title, 
         code: getFullWBSCode(selectedWBS.id, wbsLevels) || selectedWBS.code 
@@ -2276,6 +2277,20 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
   const renderPOLog = () => {
     return (
       <div className="relative group/polog">
+        <POMigrationModal 
+          isOpen={isMigrationModalOpen} 
+          onClose={() => setIsMigrationModalOpen(false)}
+          pos={pos}
+          wbsLevels={wbsLevels}
+          costCenters={costCenters}
+        />
+        {selectedPO && (
+          <LogProgressModal 
+            isOpen={!!selectedPO}
+            onClose={() => setSelectedPO(null)}
+            po={selectedPO}
+          />
+        )}
         <div className="absolute top-0 right-0 p-4 z-10 pointer-events-none opacity-0 group-hover/polog:opacity-100 transition-opacity">
           <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-xl text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Sparkles className="w-3 h-3 text-blue-500" />
@@ -2324,6 +2339,12 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
                             </div>
                             <div className="text-[9px] text-slate-400">Drive Folder: <span className="text-blue-400">Villa-2/Suppliers/{row.supplier}</span></div>
                           </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedPO(row); }}
+                            className="w-full mt-3 p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                          >
+                            Log Progress
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2359,38 +2380,23 @@ export const POTracker: React.FC<POTrackerProps> = ({ page }) => {
           onBulkDelete={handleBulkDeleteAction}
           title="Intelligent Vendor Ecosystem Log"
           favoriteControl={
-            <button 
-              onClick={() => setView('import')}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
-            >
-              {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-              {isAnalyzing ? 'Neural Syncing...' : 'Import Data'}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setView('import')}
+                className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-100 transition-all cursor-pointer border border-blue-100"
+              >
+                {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                {isAnalyzing ? 'Neural Syncing...' : 'Import Data'}
+              </button>
+              <button 
+                onClick={() => setIsMigrationModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-amber-100 transition-all cursor-pointer border border-amber-100"
+              >
+                <AlertTriangle className="w-3 h-3" />
+                Fix Orphaned POs
+              </button>
+            </div>
           }
-          primaryAction={{
-            label: 'Issue New PO',
-            icon: Plus,
-            onClick: () => {
-               setNewPO({
-                id: '',
-                date: new Date().toISOString().split('T')[0],
-                supplier: '',
-                buyFromPartner: '',
-                wbsId: '',
-                masterFormat: '',
-                activityId: '',
-                lineItems: [],
-                contractNumber: '',
-                contractDuration: 0,
-                contractDurationType: 'Calendar Days',
-                contractDriveUrl: '',
-                changeOrdersUrl: '',
-                sowUrl: ''
-              });
-              setEditingPOId(null);
-              setView('form');
-            }
-          }}
         />
       </div>
     );

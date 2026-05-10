@@ -504,8 +504,8 @@ export const BOQView: React.FC = () => {
         if (!targetId) continue;
         
         const targetNode = wbsNodesById.get(targetId);
-        if (targetNode && targetNode.type === 'Cost Account') {
-          // Create a new work package under this Cost Account
+        if (targetNode && targetNode.type !== 'Work Package') {
+          // Create a new work package under this Deliverable/Phase
           const newWpId = crypto.randomUUID();
           const newWpData: WBSLevel = {
             id: newWpId,
@@ -514,9 +514,8 @@ export const BOQView: React.FC = () => {
             title: pkgName,
             type: 'Work Package',
             level: (targetNode.level || 0) + 1,
-            code: `${targetNode.code || 'CAD'}-${Math.floor(1000 + Math.random() * 9000)}`,
+            code: `${targetNode.code || 'DLV'}-${Math.floor(1000 + Math.random() * 9000)}`,
             status: 'Not Started',
-            divisionCode: targetNode.divisionCode || targetNode.code,
             progress: 0,
             plannedCost: 0,
             actualCost: 0

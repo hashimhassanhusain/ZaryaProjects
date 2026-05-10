@@ -32,6 +32,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { HelpTooltip } from './HelpTooltip';
+import { TaskDetailPanel } from './TaskDetailPanel';
 
 export const TasksView: React.FC = () => {
   const { t, th, isRtl, isHelpRtl } = useLanguage();
@@ -106,6 +107,7 @@ export const TasksView: React.FC = () => {
 
   useEffect(() => {
     if (!selectedProject) return;
+    console.log('Fetching tasks for project:', selectedProject.id);
 
     const tasksQuery = query(
       collection(db, 'tasks'),
@@ -137,12 +139,18 @@ export const TasksView: React.FC = () => {
     };
 
     const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-      tasksData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Task[];
+      console.log('Tasks fetched:', snapshot.docs.length, 'for project', selectedProject.id);
+      tasksData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Task data:', data);
+        return {
+          id: doc.id,
+          ...data
+        };
+      }) as Task[];
       updateUnifiedTasks();
     }, (error) => {
+      console.error('Error fetching tasks:', error);
       handleFirestoreError(error, OperationType.LIST, 'tasks');
     });
 
@@ -216,13 +224,18 @@ export const TasksView: React.FC = () => {
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
 
-  const filteredTasks = tasks.filter(t => 
-    t.workspaceId === selectedWorkspaceId &&
-    (filterType === 'all' || t.sourceType === filterType) &&
-    (showOnlyMyTasks ? t.assigneeId === auth.currentUser?.uid : true) &&
-    (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     t.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredTasks = tasks.filter(t => {
+    const isWorkspaceMatch = t.workspaceId === selectedWorkspaceId;
+    const isFilterTypeMatch = (filterType === 'all' || t.sourceType === filterType);
+    const isMyTaskMatch = (showOnlyMyTasks ? t.assigneeId === auth.currentUser?.uid : true);
+    const isSearchMatch = (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (!(isWorkspaceMatch && isFilterTypeMatch && isMyTaskMatch && isSearchMatch)) {
+        console.log('Task filtered out:', t.title, { isWorkspaceMatch, isFilterTypeMatch, isMyTaskMatch, isSearchMatch, workspaceId: t.workspaceId, selectedWorkspaceId });
+    }
+    return isWorkspaceMatch && isFilterTypeMatch && isMyTaskMatch && isSearchMatch;
+  });
 
   const columns: TaskStatus[] = ['TO DO', 'PLANNING', 'RFP', 'TENDERING', 'IN PROGRESS', 'AT RISK', 'UPDATE REQUIRED', 'COMPLETED'];
 
@@ -567,6 +580,12 @@ export const TasksView: React.FC = () => {
                 {t('ac_short')}
               </span>
             )}
+            {task.isProcurement && (
+              <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                FROM PR
+              </span>
+            )}
             {task.sourceType === 'issue' && (
               <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
@@ -827,6 +846,73 @@ export const TasksView: React.FC = () => {
             </div>
           </div>
           
+          {statusToDelete && (
+            <div className="fixed inset-0 z-[1000001] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full">
+                    <h3 className="font-bold text-lg mb-2">Delete status?</h3>
+                    <p className="text-slate-600 mb-6">Are you sure you want to delete "{statusToDelete}"?</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setStatusToDelete(null)} className="flex-1 p-2 bg-slate-100 rounded-lg font-bold">Cancel</button>
+                        <button onClick={confirmDeleteStatus} className="flex-1 p-2 bg-red-600 text-white rounded-lg font-bold">Delete</button>
+                    </div>
+                </div>
+            </div>
+          )}
+          
+          {statusError && (
+             <div className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-xl shadow-lg z-[1000002]">
+                {statusError}
+             </div>
+          )}
+
+          {isManagingStatuses && (
+            <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+                <h3 className="text-xl font-bold mb-6">{t('manage_statuses')}</h3>
+                <div className="space-y-3 mb-8 max-h-[400px] overflow-y-auto">
+                  {customStatuses.map(status => (
+                    <div key={status} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      {editingStatus?.oldName === status ? (
+                         <input 
+                           autoFocus
+                           value={editingStatus.newName}
+                           onChange={(e) => setEditingStatus({...editingStatus, newName: e.target.value})}
+                           onKeyDown={(e) => e.key === 'Enter' && handleRenameStatus()}
+                           className="px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20"
+                         />
+                      ) : (
+                          <span className="font-medium text-slate-700">{translateStatus(status)}</span>
+                      )}
+                      <div className="flex gap-2">
+                          {editingStatus?.oldName === status ? (
+                            <button onClick={handleRenameStatus} className="text-blue-600 font-bold text-sm">Save</button>
+                          ) : (
+                            <>
+                              <button onClick={() => setEditingStatus({oldName: status, newName: status})}><Edit2 className="w-4 h-4 text-slate-400 hover:text-blue-600" /></button>
+                              <button onClick={() => handleDeleteStatus(status)}><Trash2 className="w-4 h-4 text-slate-400 hover:text-red-600" /></button>
+                            </>
+                          )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2 mb-6">
+                   <input 
+                     value={newStatusName} 
+                     onChange={e => setNewStatusName(e.target.value)} 
+                     placeholder={t('status_name_placeholder') || 'New status...'} 
+                     className="flex-1 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" 
+                     onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                   />
+                   <button onClick={handleAddStatus} className="bg-blue-600 text-white px-4 py-2 font-bold rounded-xl">{t('add')}</button>
+                </div>
+
+                <button onClick={() => setIsManagingStatuses(false)} className="w-full p-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200">{t('close')}</button>
+              </div>
+            </div>
+          )}
+          
           <DragOverlay dropAnimation={dropAnimation}>
             {activeId ? (
               <div className="bg-white p-4 rounded-xl border border-blue-400 shadow-xl opacity-90 scale-105 cursor-grabbing">
@@ -1069,252 +1155,18 @@ export const TasksView: React.FC = () => {
     );
   }
 
-  if (editingTaskLocal && selectedTaskId) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px]"
-      >
-        <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-3">
-              <span className={cn(
-                "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest",
-                editingTaskLocal.priority === 'High' ? "bg-red-50 text-red-600" :
-                editingTaskLocal.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-              )}>
-                {editingTaskLocal.priority} Priority
-              </span>
-              <span className="text-slate-300">|</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {editingTaskLocal.id}</span>
-              {editingTaskLocal.sourceType && (
-                <>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Source: {editingTaskLocal.sourceType}</span>
-                </>
-              )}
-            </div>
-            <input 
-              type="text"
-              value={editingTaskLocal.title || ''}
-              onChange={(e) => handleApplyLocalUpdate({ title: e.target.value })}
-              className="text-3xl font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-full p-0 hover:bg-slate-100/50 transition-all rounded-xl focus:px-4"
-              placeholder="Task Title"
-            />
-          </div>
-          <div className="flex items-center gap-2 ml-4">
-            <button 
-              onClick={saveEditingTask}
-              disabled={isSavingTask}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSavingTask && <Loader2 className="w-4 h-4 animate-spin" />}
-              {t('save_changes')}
-            </button>
-            <button 
-              onClick={() => handleSelectTask(null)}
-              className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-2xl shadow-sm transition-all flex items-center gap-2 font-bold text-sm"
-            >
-              <Plus className="w-5 h-5 rotate-45" />
-              {t('close')}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-            <div className="lg:col-span-3 space-y-12">
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</h4>
-                  <div className="text-[10px] text-slate-300 italic">Click save to apply updates</div>
-                </div>
-                <textarea 
-                  value={editingTaskLocal.description || ''}
-                  onChange={(e) => handleApplyLocalUpdate({ description: e.target.value })}
-                  className="w-full text-slate-600 text-lg leading-relaxed bg-slate-50/50 border border-transparent focus:border-blue-100 focus:bg-white focus:ring-4 focus:ring-blue-500/5 p-6 transition-all rounded-2xl resize-none h-48 outline-none"
-                  placeholder="No description provided..."
-                />
-              </section>
-
-              <section className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Notes & Discussion</h4>
-                  <span className="bg-slate-100 text-slate-500 text-[10px] px-3 py-1 rounded-full font-bold">
-                    {editingTaskLocal.notes?.length || 0} Comments
-                  </span>
-                </div>
-                
-                <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
-                    {auth.currentUser?.displayName?.charAt(0) || auth.currentUser?.email?.charAt(0) || 'U'}
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <textarea 
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Add a progress update or internal note..."
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none min-h-[100px]"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                          handleAddNote(selectedTaskId);
-                        }
-                      }}
-                    />
-                    <div className="flex justify-between items-center">
-                      <p className="text-[10px] text-slate-400">Press Cmd+Enter to post</p>
-                      <button 
-                        onClick={() => handleAddNote(selectedTaskId)}
-                        disabled={!newNote.trim()}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
-                      >
-                        Post Note
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 max-w-3xl">
-                  {editingTaskLocal.notes?.slice().reverse().map((note, idx) => (
-                    <div key={`${note.id}-${idx}`} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          {getAssignee(note.userId)?.photoURL ? (
-                            <img src={getAssignee(note.userId)?.photoURL || null} className="w-8 h-8 rounded-xl" alt="" referrerPolicy="no-referrer" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center">
-                              <User className="w-4 h-4 text-slate-400" />
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-sm font-bold text-slate-700 block">{getAssignee(note.userId)?.name}</span>
-                            <span className="text-[10px] text-slate-400 font-medium">Author</span>
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-slate-400 bg-white px-2 py-1 rounded-lg shadow-sm">{note.timestamp}</span>
-                      </div>
-                      <p className="text-sm text-slate-600 leading-relaxed pl-11">{note.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <History className="w-4 h-4 text-slate-400" />
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Activity Audit Trail</h4>
-                </div>
-                <div className="space-y-4 pl-4 border-l-2 border-slate-100">
-                  {editingTaskLocal.history?.map((item, idx) => (
-                    <div key={`${item.id}-${idx}`} className="relative py-2 group">
-                      <div className="absolute -left-[21px] top-4 w-4 h-4 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-blue-400 transition-colors"></div>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-700">{getAssignee(item.userId)?.name}</span>
-                          <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{item.action}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-medium">{item.timestamp}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            <aside className="space-y-8">
-              <div className="bg-slate-50 p-8 rounded-3xl space-y-8 border border-slate-100 shadow-sm">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Status</label>
-                  <select 
-                    value={editingTaskLocal.status}
-                    onChange={(e) => handleApplyLocalUpdate({ status: e.target.value as TaskStatus })}
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  >
-                    {customStatuses.map((c, idx) => (
-                      <option key={`${c}-${idx}`} value={c}>{translateStatus(c)}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ownership</label>
-                  <select 
-                    value={editingTaskLocal.assigneeId}
-                    onChange={(e) => handleApplyLocalUpdate({ assigneeId: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  >
-                    <option value="Unassigned">Unassigned</option>
-                    {dbUsers.map((u, idx) => (
-                      <option key={`${u.uid}-${idx}`} value={u.uid}>{u.name} ({u.role})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority</label>
-                  <select 
-                    value={editingTaskLocal.priority}
-                    onChange={(e) => handleApplyLocalUpdate({ priority: e.target.value as any })}
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Commencement</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input 
-                        type="date"
-                        value={getISODate(editingTaskLocal.startDate)}
-                        onChange={(e) => handleApplyLocalUpdate({ startDate: e.target.value })}
-                        className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Deadline</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input 
-                        type="date"
-                        value={getISODate(editingTaskLocal.endDate)}
-                        onChange={(e) => handleApplyLocalUpdate({ endDate: e.target.value })}
-                        className="w-full bg-white pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
-                <h5 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Quick Stats
-                </h5>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-blue-400 font-medium">Time Remaining</span>
-                    <span className="text-blue-900 font-bold">4 Days</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-blue-400 font-medium">Last Activity</span>
-                    <span className="text-blue-900 font-bold">2 Hours ago</span>
-                  </div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
+  {selectedTask && (
+    <TaskDetailPanel
+      task={selectedTask}
+      onUpdate={async (field: string, value: any) => {
+        await handleUpdateTask(selectedTaskId!, { [field]: value });
+      }}
+      onClose={() => handleSelectTask(null)}
+      customStatuses={customStatuses}
+      translateStatus={translateStatus}
+      users={dbUsers}
+    />
+  )}
 
   return (
     <div className="space-y-6">

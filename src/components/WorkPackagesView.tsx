@@ -70,8 +70,8 @@ export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedd
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => {
         const item = { id: doc.id, ...doc.data() } as WBSLevel;
-        const div = masterFormatData.find(d => d.number === item.divisionCode);
-        (item as any).divisionName = div ? `${div.number} - ${div.title}` : item.divisionCode;
+        // In the new decoupled architecture, division info is linked via costCenterId
+        (item as any).divisionName = 'TBD'; 
         return item;
       });
       setWorkPackages(data);

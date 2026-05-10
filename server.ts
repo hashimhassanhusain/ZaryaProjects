@@ -58,8 +58,9 @@ const getDriveClient = () => {
     });
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const docs = google.docs({ version: 'v1', auth: oauth2Client });
     lastDriveError = null; // Clear error on success initialization (though we haven't tested connection yet)
-    return { drive, clientEmail: 'OAuth2 Integration' };
+    return { drive, docs, clientEmail: 'OAuth2 Integration' };
   } catch (e: any) {
     lastDriveError = e.message;
     console.error('CRITICAL Drive Init Error:', e.message);
@@ -77,6 +78,98 @@ app.get('/api/drive/status', (req: any, res: any) => {
     last_error: error || lastDriveError,
     timestamp: new Date().toISOString()
   });
+});
+
+app.post('/api/pr/manage-folder', async (req: any, res: any) => {
+  const { prNumber, prName } = req.body;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const parentId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
+    const folderName = `${prNumber}_${prName}`;
+    const folderId = await createFolder(drive, folderName, parentId);
+    
+    // Get view link
+    const folder = await drive.files.get({ fileId: folderId, fields: 'webViewLink', supportsAllDrives: true });
+    
+    res.json({ folderId, folderUrl: folder.data.webViewLink });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/pr/upload-file', upload.single('file'), async (req: any, res: any) => {
+  const { folderId } = req.body;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+  if (!req.file || !folderId) return res.status(400).json({ error: 'File or folderId missing' });
+
+  try {
+    const fileMetadata = { name: req.file.originalname, parents: [folderId] };
+    const media = { mimeType: req.file.mimetype, body: fs.createReadStream(req.file.path) };
+    const file = await drive.files.create({ requestBody: fileMetadata, media, fields: 'id', supportsAllDrives: true });
+    
+    // Clean up
+    fs.unlinkSync(req.file.path);
+    
+    res.json({ fileId: file.data.id });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/pr/list-files/:folderId', async (req: any, res: any) => {
+  const { folderId } = req.params;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  try {
+    const listRes = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: 'files(id, name, webViewLink, mimeType)',
+      supportsAllDrives: true,
+    });
+    res.json({ files: listRes.data.files });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/generate-sow-doc', async (req: any, res: any) => {
+  const { title, prNumber, prName } = req.body;
+  const { docs, error } = getDriveClient();
+  if (error || !docs) return res.status(500).json({ error: error || 'Drive/Docs client not initialized' });
+
+  try {
+    const documentName = `${prNumber} - Scope of Work - ${prName}`;
+    const doc = await docs.documents.create({
+      requestBody: {
+        title: documentName,
+      },
+    });
+
+    const docId = doc.data.documentId!;
+
+    const requests = [
+        { insertText: { text: 'Substrate Preparation\n\n', location: { index: 1 } } },
+        { insertText: { text: 'Material and Application\n\n', location: { index: 1 } } },
+        { insertText: { text: 'Water Supply / Resources\n\n', location: { index: 1 } } },
+        { insertText: { text: 'Curing & Quality Control\n\n', location: { index: 1 } } },
+        { insertText: { text: 'Safety & Scaffolding\n\n', location: { index: 1 } } },
+        { insertText: { text: 'Project Duration & Milestones\n\n', location: { index: 1 } } },
+    ];
+
+    await docs.documents.batchUpdate({
+      documentId: docId,
+      requestBody: { requests }, 
+    });
+
+    res.json({ docUrl: `https://docs.google.com/document/d/${docId}/edit` });
+  } catch (error: any) {
+    console.error('Doc generation failed:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/api/drive/test-connection', async (req: any, res: any) => {
@@ -912,6 +1005,10 @@ app.get('/api/admin/drive-status', (req: any, res: any) => {
     parentFolderId: parentId
   });
 });
+
+
+
+
 
 // Global Error Handler for API routes to ensure JSON responses
 app.use('/api', (err: any, req: any, res: any, next: any) => {

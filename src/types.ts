@@ -47,12 +47,80 @@ export interface BOQItem {
   updatedAt?: any;
 }
 
+export interface CostCenter {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+}
+
+export interface StandardItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  unit?: string;
+}
+
+export interface Approval {
+  signedBy: string;
+  role: string;
+  timestamp: string;
+}
+
+export interface TenderBidder {
+  id: string;
+  companyName: string;
+  technicalCompliance: string;
+  financialOffer: number;
+  pros: string;
+  cons: string;
+  status: 'Invited' | 'Offer Received' | 'Shortlisted' | 'Selected' | 'Rejected';
+}
+
+export interface PRTask {
+  id: string;
+  title: string;
+  description: string;
+  assigneeName: string;
+  status: 'Open' | 'open' | 'InProgress' | 'Completed';
+  dueDate: string;
+  priority: 'Low' | 'Medium' | 'High';
+}
+
+export interface PurchaseRequest {
+  id?: string;
+  projectId: string;
+  requestorId: string;
+  description: string;
+  prName: string;
+  amount: number;
+  status: 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'ConvertedToPO' | 'Archived';
+  approvals: Approval[];
+  workPackageId: string;
+  costCenterId: string;
+  standardItemId: string;
+  poId?: string;
+  lineItems?: POLineItem[];
+  sowDescription?: string;
+  driveFolderUrl?: string;
+  driveFolderId?: string;
+  sowDocUrl?: string;
+  tenderLog?: string[];
+  bidders?: TenderBidder[];
+  tasks?: PRTask[];
+  boqItems?: BOQItem[]; // Add BOQ items support
+  currency?: 'USD' | 'IQD';
+  exchangeRate?: number;
+  createdAt?: any;
+}
+
 export interface WBSLevel {
   id: string;
   projectId: string;
   parentId?: string;
   title: string;
-  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Division' | 'Cost Account' | 'Work Package' | 'Other';
+  type: 'Zone' | 'Area' | 'Building' | 'Floor' | 'Work Package' | 'Deliverable' | 'Phase';
   level: number; // 1, 2, 3...
   code: string; // e.g. Z1, Z1-A1
   status?: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
@@ -65,7 +133,8 @@ export interface WBSLevel {
   plannedCost?: number;
   actualCost?: number;
   progress?: number;
-  divisionCode?: string; // For Cost Account type levels
+  costCenterId?: string; // Tagging for financial classification
+  standardItemId?: string; // Tagging for item classification
 }
 
 export interface POLineItem {
@@ -80,6 +149,8 @@ export interface POLineItem {
   inputCurrency?: 'USD' | 'IQD';
   inputRate?: number;
   exchangeRateUsed?: number;
+  workPackageId?: string; // Link directly to a Work Package deliverable
+  costCenterId?: string;  // Redundant but useful for direct grouping
 }
 
 export interface POActivity {
@@ -199,7 +270,9 @@ export type EntityType =
   | 'assumption_log'
   | 'decisions'
   | 'packages'
-  | 'cost_accounts';
+  | 'cost_accounts'
+  | 'cost_centers'
+  | 'standard_items';
 
 export interface EntityConfig {
   id: EntityType;
@@ -874,6 +947,9 @@ export interface Task {
   sourceType?: 'assumption_constraint' | 'meeting' | 'manual' | 'issue';
   sourceId?: string;
   projectId?: string;
+  isProcurement?: boolean;
+  parentReference?: string;
+  category?: string;
 }
 
 export interface AssumptionEntry {

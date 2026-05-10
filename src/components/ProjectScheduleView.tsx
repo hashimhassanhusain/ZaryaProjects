@@ -300,19 +300,8 @@ export const ProjectScheduleView: React.FC<ProjectScheduleViewProps> = ({ page, 
 
   const getWbsActivities = useCallback((wbs: WBSLevel) => {
     return activities.filter(a => {
-      if (wbs.type === 'Division' || wbs.type === 'Cost Account') {
-        // Direct link via ID
-        if (a.divisionId === wbs.id || a.wbsId === wbs.id) return true;
-        // Adoption logic: if activity has no wbsId/divisionId but matches this division's code
-        const divCode = wbs.divisionCode || wbs.code;
-        const actDiv = a.division || '01';
-        return !a.wbsId && !a.divisionId && actDiv === divCode;
-      }
-      
-      // For other levels (Building, Floor, etc.)
-      // Only show if it belongs specifically to this WBS node and has no divisionId.
-      // If it has a divisionId, it will be rendered by its respective Division node.
-      return a.wbsId === wbs.id && !a.divisionId;
+      // For all spatial nodes, we just check direct linkage
+      return a.wbsId === wbs.id || a.divisionId === wbs.id;
     });
   }, [activities]);
 
@@ -2186,11 +2175,7 @@ function collectAllDescendantActivities(wbsId: string, allWbs: WBSLevel[], activ
   if (!node) return [];
 
   const directActivities = activities.filter(a => {
-    if (a.wbsId === wbsId || a.divisionId === wbsId) return true;
-    const divCode = node.divisionCode || node.code;
-    const isDivisionLink = (node.type === 'Division' || node.type === 'Cost Account') && 
-                          !a.wbsId && !a.divisionId && a.division === divCode;
-    return isDivisionLink;
+    return a.wbsId === wbsId || a.divisionId === wbsId;
   });
 
   const childWbs = allWbs.filter(w => w.parentId === wbsId);

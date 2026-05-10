@@ -454,6 +454,16 @@ export const pages: Page[] = [
     }
   },
   { 
+    id: '3.4.5', 
+    title: 'Purchase Requisitions', 
+    type: 'terminal', 
+    domain: 'finance', 
+    focusArea: 'Executing', 
+    icon: 'FileText', 
+    collectionName: 'purchase_requests',
+    summary: 'Centralized workflow for creating, approving, and converting purchase requisitions.',
+  },
+  { 
     id: '3.4.4', 
     title: 'Sub-Contractor Advances', 
     type: 'terminal', 

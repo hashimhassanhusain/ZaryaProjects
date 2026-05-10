@@ -640,7 +640,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
         )}
       </AnimatePresence>
 
-      {/* Add/Edit Supplier Interface - Re-styled to be Full Screen */}
+      {/* Add/Edit Supplier Modal - Updated to follow Company Window Style as requested */}
       <AnimatePresence>
         {showImportModal && (
           <DataImportModal 
@@ -653,41 +653,32 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
           />
         )}
         {isAddingSupplier && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            className="fixed inset-0 bg-white z-[501] flex flex-col pt-16 no-print"
-          >
-            {/* Header / Info Section */}
-            <div className="bg-white border-b border-neutral-100 px-8 py-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-              <div className="flex items-center gap-6">
+          <div className="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 no-print">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 30 }}
+              className="bg-white shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col rounded-[2.5rem] relative"
+            >
+              <div className="px-10 py-10 border-b border-neutral-100 bg-white relative">
                 <button 
                   onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
-                  className="p-3 hover:bg-neutral-100 rounded-full transition-all text-neutral-400"
+                  className="absolute top-8 right-8 p-2 hover:bg-neutral-100 rounded-full transition-all text-neutral-400"
                 >
-                  <X className="w-7 h-7" />
+                  <X className="w-6 h-6" />
                 </button>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
-                    {editingSupplier ? <Edit className="w-7 h-7" /> : <Plus className="w-7 h-7" />}
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                    <Briefcase className="w-6 h-6" />
                   </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-1 italic">
-                      {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
-                    </h3>
-                    <div className="text-[12px] text-slate-400 font-bold uppercase tracking-[0.2em] ml-1">
-                      {t('company_details_desc')}
-                    </div>
-                  </div>
+                  <h3 className="text-2xl font-black text-neutral-900 tracking-tighter uppercase italic">
+                    {editingSupplier ? t('edit_supplier_profile') : t('add_new_supplier')}
+                  </h3>
                 </div>
+                <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-widest ml-16">{t('company_details_desc')}</p>
               </div>
-            </div>
 
-            {/* Scrollable Form Body */}
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-8 pb-32">
               <form 
-                id="supplier-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
@@ -703,116 +694,106 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                     }
                   });
                 }}
-                className="max-w-4xl mx-auto"
+                className="p-10 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar"
               >
-                <div className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-10">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('supplier_code')}</label>
-                      <input 
-                        name="vendorCode"
-                        defaultValue={editingSupplier?.vendorCode}
-                        required
-                        placeholder="e.g. S-001"
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('operational_status')}</label>
-                      <select 
-                        name="status"
-                        defaultValue={editingSupplier?.status || 'Active'}
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900"
-                      >
-                        <option value="Active">{t('active')}</option>
-                        <option value="Suspended">{t('suspended')}</option>
-                        <option value="Contract Ended">{t('contract_ended')}</option>
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('legal_supplier_name')}</label>
-                      <input 
-                        name="name"
-                        defaultValue={editingSupplier?.name}
-                        required
-                        placeholder={t('company_name_placeholder')}
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">
-                        {t('discipline_scope')}
-                      </label>
-                      <input 
-                        name="discipline"
-                        defaultValue={editingSupplier?.discipline}
-                        required
-                        placeholder="e.g. Doors, Furniture, Civil Works"
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                      <div className="mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-4 opacity-70">Separate specialties with commas.</div>
-                    </div>
-                    <div className="col-span-2 pt-4">
-                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                        <span className="w-8 h-px bg-blue-100" />
-                        COMMUNICATION CHANNELS
-                        <span className="w-full h-px bg-blue-100" />
-                      </div>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('address')}</label>
-                      <input 
-                        name="address"
-                        defaultValue={editingSupplier?.contactDetails.address}
-                        placeholder={t('address_placeholder')}
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('phone')}</label>
-                      <input 
-                        name="phone"
-                        defaultValue={editingSupplier?.contactDetails.phone}
-                        placeholder="+964..."
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2 italic">{t('email')}</label>
-                      <input 
-                        name="email"
-                        type="email"
-                        defaultValue={editingSupplier?.contactDetails.email}
-                        placeholder="contact@company.com"
-                        className="w-full px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('supplier_code')}</label>
+                    <input 
+                      name="vendorCode"
+                      defaultValue={editingSupplier?.vendorCode}
+                      required
+                      placeholder="e.g. S-001"
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('operational_status')}</label>
+                    <select 
+                      name="status"
+                      defaultValue={editingSupplier?.status || 'Active'}
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900"
+                    >
+                      <option value="Active">{t('active')}</option>
+                      <option value="Suspended">{t('suspended')}</option>
+                      <option value="Contract Ended">{t('contract_ended')}</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('legal_supplier_name')}</label>
+                    <input 
+                      name="name"
+                      defaultValue={editingSupplier?.name}
+                      required
+                      placeholder={t('company_name_placeholder')}
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">
+                      {t('discipline_scope')}
+                    </label>
+                    <input 
+                      name="discipline"
+                      defaultValue={editingSupplier?.discipline}
+                      required
+                      placeholder="e.g. Doors, Furniture, Civil Works"
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
+                    <div className="mt-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1 opacity-60">Separate specialties with commas.</div>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('address')}</label>
+                    <input 
+                      name="address"
+                      defaultValue={editingSupplier?.contactDetails.address}
+                      placeholder={t('address_placeholder')}
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('phone')}</label>
+                    <input 
+                      name="phone"
+                      defaultValue={editingSupplier?.contactDetails.phone}
+                      placeholder="+964..."
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 ml-1">{t('email')}</label>
+                    <input 
+                      name="email"
+                      type="email"
+                      defaultValue={editingSupplier?.contactDetails.email}
+                      placeholder="contact@company.com"
+                      className="w-full px-5 py-3.5 bg-neutral-50 border border-neutral-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-neutral-900 placeholder:text-neutral-300"
+                    />
                   </div>
                 </div>
 
-                <div className="h-20" /> 
+                <div className="h-20" /> {/* Spacer for floating buttons */}
+                
+                {/* Save Button - Floating Lower Right style within the modal or relative to screen */}
+                <div className="absolute bottom-8 right-8 flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
+                    className="px-8 py-3 bg-neutral-100 text-neutral-500 font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-neutral-200 transition-all"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-10 py-3 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2 inline-block" />
+                    {editingSupplier ? t('update_supplier') : t('register_supplier')}
+                  </button>
+                </div>
               </form>
-            </div>
-
-            {/* Floating Action Buttons in Lower Right */}
-            <div className="fixed bottom-8 right-8 z-[550] flex items-center gap-4 no-print">
-               <button 
-                  type="button"
-                  onClick={() => { setIsAddingSupplier(false); setEditingSupplier(null); }}
-                  className="px-8 py-3.5 bg-white border border-slate-200 shadow-xl rounded-full text-slate-500 font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
-                >
-                  {t('cancel')}
-                </button>
-                <button 
-                  type="submit"
-                  form="supplier-form"
-                  className="px-12 py-3.5 bg-blue-600 text-white font-black text-[11px] uppercase tracking-widest rounded-full hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/30 flex items-center gap-3 group"
-                >
-                  <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  {editingSupplier ? t('update_supplier') : t('register_supplier')}
-                </button>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

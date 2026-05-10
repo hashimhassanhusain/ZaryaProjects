@@ -72,17 +72,8 @@ function getProgress(activity: Activity, purchaseOrders: PurchaseOrder[]): numbe
 
 function getWbsActivities(wbs: WBSLevel, activities: Activity[]): Activity[] {
   return activities.filter(a => {
-    if (wbs.type === 'Division' || wbs.type === 'Cost Account') {
-      if (a.divisionId === wbs.id || a.wbsId === wbs.id) return true;
-      const divCode = wbs.divisionCode || wbs.code;
-      const actDiv = a.division || '01';
-      return !a.wbsId && !a.divisionId && actDiv === divCode;
-    }
-    
-    // For other levels, we can assume direct link if it exists
-    if (a.wbsId === wbs.id) return true;
-    
-    return false;
+    // For all spatial nodes, we just check direct linkage
+    return a.wbsId === wbs.id || a.divisionId === wbs.id;
   });
 }
 
@@ -998,10 +989,7 @@ const renderWBSRow = (
 
   return (
     <React.Fragment key={node.id}>
-      <tr className={cn(
-        "group hover:bg-slate-50 transition-colors",
-        node.type === 'Cost Account' ? "bg-slate-50/50" : ""
-      )}>
+      <tr className="group hover:bg-slate-50 transition-colors">
         <td className="px-6 py-4">
           <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 24}px` }}>
             <button 
@@ -1017,10 +1005,7 @@ const renderWBSRow = (
               <p className="text-sm font-bold text-slate-800">{node.title}</p>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{node.code}</span>
-                <span className={cn(
-                  "px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest",
-                  node.type === 'Cost Account' ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"
-                )}>
+                <span className="px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest bg-emerald-50 text-emerald-600">
                   {node.type}
                 </span>
               </div>

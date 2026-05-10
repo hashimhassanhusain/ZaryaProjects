@@ -32,6 +32,7 @@ import { AssumptionConstraintView } from './components/AssumptionConstraintView'
 import { GovernancePoliciesView } from './components/GovernancePoliciesView';
 import { SupplierMasterRegister } from './components/SupplierMasterRegister';
 import { ProjectManagementPlanView } from './components/ProjectManagementPlanView';
+import { ProcurementWorkflowCenter } from './components/ProcurementWorkflowCenter';
 import { StakeholderManagementPlanView } from './components/StakeholderManagementPlanView';
 import { CommunicationsManagementPlanView } from './components/CommunicationsManagementPlanView';
 import { LogManagementView } from './components/LogManagementView';
@@ -101,6 +102,8 @@ const PageRenderer = () => {
     : id === 'files'
       ? { id: 'files', title: t('project_files'), type: 'terminal' as const, parentId: '' }
       : pages.find(p => p.id === id);
+
+  console.log('DEBUG: Routing to page ID:', id, 'Resolved page:', page);
 
   const parent = (page as any)?.parentId ? pages.find(p => p.id === (page as any).parentId) : null;
   const grandParent = parent?.parentId ? pages.find(p => p.id === parent.parentId) : null;
@@ -216,6 +219,7 @@ const PageRenderer = () => {
   }
 
   const isPOTrackerPage = ['4.2.3', '4.2.4', '4.2.5', '4.2.6', '3.4.3', '3.4.4'].includes(page.id);
+  const isPRPage = page.id === '3.4.5';
   const isTasksPage = page.id === '3.6.3';
   const isMeetingsPage = page.id === '3.6.4' || page.id === '3.5.2';
   const isFilesPage = page.id === 'files';
@@ -277,6 +281,8 @@ const PageRenderer = () => {
         </div>
         {isTasksPage ? (
           <TasksView />
+        ) : isPRPage ? (
+          <ProcurementWorkflowCenter page={page} />
         ) : isPOTrackerPage ? (
           <POTracker page={page} />
         ) : isMeetingsPage ? (
