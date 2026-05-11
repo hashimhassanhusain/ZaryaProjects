@@ -13,7 +13,7 @@ import {
   Info
 } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, where, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -77,21 +77,57 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
     
     setIsSaving(true);
     try {
+      let riskId = '';
       if (editingRisk) {
-        await updateDoc(doc(db, 'risks', editingRisk.id), {
+        riskId = editingRisk.id;
+        await updateDoc(doc(db, 'risks', riskId), {
           ...newRisk,
           updatedAt: serverTimestamp()
         });
         toast.success("Risk updated");
       } else {
-        await addDoc(collection(db, 'risks'), {
+        const docRef = await addDoc(collection(db, 'risks'), {
           ...newRisk,
           projectId: selectedProject.id,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        riskId = docRef.id;
         toast.success("Risk identified and registered");
       }
+
+      // If a risk is assigned to a user, create/update a task for it
+      if (newRisk.ownerId) {
+        // Find existing task for this risk to prevent duplicates
+        const taskQ = query(collection(db, 'tasks'), where('sourceId', '==', riskId), where('sourceType', '==', 'risk'));
+        const taskDocs = await getDocs(taskQ);
+        
+        if (taskDocs.empty) {
+            await addDoc(collection(db, 'tasks'), {
+                projectId: selectedProject.id,
+                title: `Risk Strategy: ${newRisk.title}`,
+                description: `Risk Response Strategy: ${newRisk.responseStrategy}. Category: ${newRisk.category}`,
+                assigneeId: newRisk.ownerId,
+                status: 'TO DO',
+                priority: (newRisk.probability && newRisk.impact && newRisk.probability * newRisk.impact >= 12) ? 'High' : 'Medium',
+                sourceType: 'risk',
+                sourceId: riskId,
+                createdAt: serverTimestamp()
+            });
+            toast.success("Task generated successfully for the risk assigned");
+        } else {
+            // Update existing risk task assignee if needed
+            const existingTask = taskDocs.docs[0];
+            if (existingTask.data().assigneeId !== newRisk.ownerId) {
+                await updateDoc(doc(db, 'tasks', existingTask.id), {
+                    assigneeId: newRisk.ownerId,
+                    priority: (newRisk.probability && newRisk.impact && newRisk.probability * newRisk.impact >= 12) ? 'High' : 'Medium',
+                    updatedAt: serverTimestamp()
+                });
+            }
+        }
+      }
+
       setView('list');
       setEditingRisk(null);
       setNewRisk({ probability: 3, impact: 3, responseStrategy: 'Mitigate', status: 'Open' } as any);

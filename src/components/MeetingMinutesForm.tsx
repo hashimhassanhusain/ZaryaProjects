@@ -303,7 +303,7 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
                 dueDate: decision.dueDate,
                 status: 'TO DO',
                 priority: 'Medium',
-                sourceType: 'decision',
+                sourceType: 'meeting',
                 sourceId: decRef.id,
                 createdAt: serverTimestamp()
               });

@@ -62,10 +62,11 @@ export const addStandardItem = async (data: Omit<StandardItem, 'id'>) => {
 
 export const getSuppliers = async (): Promise<{id:string, name:string}[]> => {
   try {
-    const snap = await getDocs(collection(db, 'suppliers'));
+    const q = query(collection(db, 'companies'), where('type', '==', 'Supplier'));
+    const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, name: d.data().name }));
   } catch (err) {
-    handleFirestoreError(err, OperationType.GET, 'suppliers');
+    handleFirestoreError(err, OperationType.GET, 'companies');
     return [];
   }
 };

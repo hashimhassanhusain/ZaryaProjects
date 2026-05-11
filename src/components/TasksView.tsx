@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles, FileText, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn, getISODate, formatDate } from '../lib/utils';
@@ -64,8 +64,8 @@ export const TasksView: React.FC = () => {
     endDate: new Date().toISOString().split('T')[0],
   });
   
-  // View states: 'list', 'kanban', 'edit', 'add'
-  const activeView = isAddingTask ? 'add' : selectedTaskId ? 'edit' : viewMode;
+  // View states: 'list', 'kanban', 'add'
+  const activeView = isAddingTask ? 'add' : viewMode;
 
   const getAssignee = (uid: string) => {
     return dbUsers.find(u => u.uid === uid) || { name: 'Unassigned', photoURL: 'https://picsum.photos/seed/user/200/200' };
@@ -565,14 +565,13 @@ export const TasksView: React.FC = () => {
           className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-grab active:cursor-grabbing relative"
         >
 
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2 mb-2 pr-6">
             <span className={cn(
               "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
               task.priority === 'High' ? "bg-red-50 text-red-600" :
               task.priority === 'Medium' ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
             )}>
-              {t(task.priority.toLowerCase())}
+              {t(task.priority?.toLowerCase() || 'low')}
             </span>
             {task.sourceType === 'assumption_constraint' && (
               <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -580,10 +579,10 @@ export const TasksView: React.FC = () => {
                 {t('ac_short')}
               </span>
             )}
-            {task.isProcurement && (
-              <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                FROM PR
+            {(task.isProcurement || task.sourceType === 'pr') && (
+              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <ShoppingCart className="w-3 h-3" />
+                PR
               </span>
             )}
             {task.sourceType === 'issue' && (
@@ -592,15 +591,28 @@ export const TasksView: React.FC = () => {
                 {t('issue_label')}
               </span>
             )}
+            {task.sourceType === 'risk' && (
+              <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <ShieldAlert className="w-3 h-3" />
+                RISK
+              </span>
+            )}
             {task.sourceType === 'meeting' && (
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {t('meeting_label')}
               </span>
             )}
-          </div>
-          <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
-        </div>
+            {task.sourceType === 'daily_report' && (
+              <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <FileText className="w-3 h-3" />
+                REPORT
+              </span>
+            )}
+         </div>
+         <div className="absolute top-4 right-4">
+           <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
+         </div>
         <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-blue-600 transition-colors">{task.title}</h4>
         <p className="text-slate-500 text-xs line-clamp-2 mb-4">{task.description}</p>
         
@@ -700,6 +712,18 @@ export const TasksView: React.FC = () => {
   if (activeView === 'kanban' || activeView === 'list') {
     return (
       <div className="space-y-6">
+        {selectedTask && (
+          <TaskDetailPanel
+            task={selectedTask}
+            onUpdate={async (field: string, value: any) => {
+              await handleUpdateTask(selectedTaskId!, { [field]: value });
+            }}
+            onClose={() => handleSelectTask(null)}
+            customStatuses={customStatuses}
+            translateStatus={translateStatus}
+            users={dbUsers}
+          />
+        )}
         <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           <button 
@@ -1154,19 +1178,6 @@ export const TasksView: React.FC = () => {
       </motion.div>
     );
   }
-
-  {selectedTask && (
-    <TaskDetailPanel
-      task={selectedTask}
-      onUpdate={async (field: string, value: any) => {
-        await handleUpdateTask(selectedTaskId!, { [field]: value });
-      }}
-      onClose={() => handleSelectTask(null)}
-      customStatuses={customStatuses}
-      translateStatus={translateStatus}
-      users={dbUsers}
-    />
-  )}
 
   return (
     <div className="space-y-6">

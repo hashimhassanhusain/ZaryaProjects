@@ -76,6 +76,12 @@ export interface TenderBidder {
   pros: string;
   cons: string;
   status: 'Invited' | 'Offer Received' | 'Shortlisted' | 'Selected' | 'Rejected';
+  scoreCard?: {
+    technical: number;
+    financial: number;
+    pastPerformance: number;
+    risk: number;
+  };
 }
 
 export interface PRTask {
@@ -180,6 +186,8 @@ export interface PurchaseOrder {
   history?: POActivity[];
   createdAt?: string;
   updatedAt?: string;
+  prId?: string;
+  prName?: string;
   // Extra fields for PO Log
   company?: string;
   buyFromPartner?: string;
@@ -942,9 +950,11 @@ export interface Task {
   startDate: string;
   endDate: string;
   priority: 'Low' | 'Medium' | 'High';
+  supplierId?: string;
+  supplierName?: string;
   history?: TaskActivity[];
   notes?: TaskNote[];
-  sourceType?: 'assumption_constraint' | 'meeting' | 'manual' | 'issue';
+  sourceType?: 'assumption_constraint' | 'meeting' | 'manual' | 'issue' | 'risk' | 'pr' | 'daily_report';
   sourceId?: string;
   projectId?: string;
   isProcurement?: boolean;

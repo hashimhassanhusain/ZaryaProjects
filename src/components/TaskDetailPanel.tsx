@@ -5,6 +5,7 @@ import { Task, TaskStatus, User as UserType } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { handleFirestoreError, OperationType, db, auth } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { SearchableSelect } from './common/SearchableSelect';
 
 interface TaskDetailPanelProps {
   task: Task;
@@ -13,6 +14,7 @@ interface TaskDetailPanelProps {
   customStatuses: string[];
   translateStatus: (status: string) => string;
   users: UserType[];
+  suppliers: {id: string, name: string}[];
 }
 
 export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ 
@@ -21,7 +23,8 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   onClose, 
   customStatuses, 
   translateStatus, 
-  users 
+  users,
+  suppliers 
 }) => {
   const [newNote, setNewNote] = useState('');
 
@@ -123,6 +126,19 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                         <option value="">Unassigned</option>
                         {users.map(u => <option key={u.uid} value={u.uid}>{u.name}</option>)}
                       </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Linked Vendor / Supplier</label>
+                        <SearchableSelect 
+                            options={suppliers}
+                            value={task.supplierId || ''}
+                            onChange={(id, name) => {
+                                onUpdate('supplierId', id);
+                                onUpdate('supplierName', name);
+                            }}
+                            placeholder="Select Vendor..."
+                        />
                     </div>
 
                     <div className="space-y-2">

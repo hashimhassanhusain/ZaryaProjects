@@ -395,11 +395,12 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
                                                     projectId: selectedProject.id,
                                                     title: `PO Task: ${item.poNumber} - ${item.description}`,
                                                     description: `Auto-generated from Daily Report. PO: ${item.poNumber}, Progress: ${((item.quantityDone / item.totalQuantity) * 100).toFixed(1)}%`,
-                                                    status: 'Todo',
+                                                    status: 'TO DO',
                                                     priority: 'Medium',
                                                     poId: item.poId,
                                                     poNumber: item.poNumber,
                                                     supplier: po?.supplier || '',
+                                                    sourceType: 'daily_report',
                                                     createdAt: serverTimestamp(),
                                                     updatedAt: serverTimestamp()
                                                 });
