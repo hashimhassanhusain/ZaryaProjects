@@ -278,6 +278,23 @@ export const TasksView: React.FC = () => {
     }
   };
 
+  const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(t('confirm_delete') || 'Are you sure you want to delete this task?')) return;
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      if (task.sourceType === 'issue') {
+        await deleteDoc(doc(db, 'issues', taskId.replace('issue-', '')));
+      } else {
+        await deleteDoc(doc(db, 'tasks', taskId));
+      }
+      toast.success(t('task_deleted_success') || 'Task deleted successfully');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'tasks');
+    }
+  };
+
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
       const task = tasks.find(t => t.id === taskId);
@@ -727,6 +744,13 @@ export const TasksView: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => setIsAddingTask(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+          >
+            <Plus className="w-4 h-4" />
+            {t('add_task')}
+          </button>
+          <button 
             onClick={() => setIsManagingStatuses(true)}
             className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
           >
@@ -764,13 +788,6 @@ export const TasksView: React.FC = () => {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button 
-            onClick={() => setIsAddingTask(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-          >
-            <Plus className="w-4 h-4" />
-            {t('add_task')}
-          </button>
         </div>
       </div>
 
@@ -962,8 +979,9 @@ export const TasksView: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-          <tr className="bg-slate-50 border-b border-slate-100">
-            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('task_label')}</th>
+          <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-white/10">
+            <th className="px-6 py-4 text-[10px] font-bold text-brand uppercase tracking-widest w-20">{t('actions')}</th>
+            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('task_label')}</th>
             <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('status_label')}</th>
             <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('assignee_label')}</th>
             <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('priority_label')}</th>
@@ -977,6 +995,14 @@ export const TasksView: React.FC = () => {
                   onClick={() => handleSelectTask(task.id)}
                   className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
+                  <td className="px-6 py-4 bg-slate-50/50 dark:bg-white/2">
+                    <button 
+                      onClick={(e) => handleDeleteTask(task.id, e)}
+                      className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 bg-white dark:bg-surface border border-rose-100 dark:border-rose-500/20 rounded-xl transition-all shadow-sm active:scale-95"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <div className="font-bold text-slate-800 text-sm flex items-center gap-2">

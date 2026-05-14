@@ -23,7 +23,9 @@ import {
 import { PurchaseRequest, TenderBidder } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useProject } from '../context/ProjectContext';
-import { db, storage, auth } from '../firebase';
+import { useAuth } from '../context/UserContext';
+import { DriveFolderPromptModal } from './common/DriveFolderPromptModal';
+import { db, storage, auth, handleFirestoreError, OperationType } from '../firebase';
 import { 
   collection, 
   query, 
@@ -40,28 +42,33 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { SearchableSelect } from './common/SearchableSelect';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface ProcurementDocument {
-  id: string;
+  id?: string;
   prId: string;
   projectId: string;
-  originator: 'PRO' | 'ENG' | 'SUP' | 'PM' | 'CLT';
-  category: 'TECHNICAL' | 'FINANCIAL' | 'LEGAL' | 'CORR' | 'CATALOG';
+  originator: string;
+  category: string;
   docType: string;
   supplierId?: string;
   supplierName?: string;
   refNo: string;
   description: string;
   version: string;
-  date: string;
   fullName: string;
-  status: 'Draft' | 'Sent' | 'Received' | 'Approved' | 'Rejected';
-  fileUrl?: string;
+  status: string;
+  firebaseUrl?: string;
   driveFileId?: string;
-  size?: string;
-  extension?: string;
+  drivePath?: string;
+  size?: number;
+  mimeType?: string;
   uploadedAt: any;
   uploadedBy: string;
+  metadata?: {
+    prCode: string;
+    projectCode: string;
+  };
 }
 
 const ORIGINATORS = [
@@ -97,6 +104,7 @@ interface ProcurementDocumentHubProps {
 export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ pr, bidders, suppliers }) => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
+  const { isAdmin } = useAuth();
   const [documents, setDocuments] = useState<ProcurementDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
@@ -104,6 +112,7 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     originator: 'PRO',
@@ -120,15 +129,36 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
     setLoading(true);
     const q = query(
       collection(db, 'procurement_documents'),
-      where('prId', '==', pr.id),
-      orderBy('uploadedAt', 'desc')
+      where('prId', '==', pr.id)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setDocuments(snap.docs.map(d => ({ id: d.id, ...d.data() } as ProcurementDocument)));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ProcurementDocument));
+      // Sort in frontend to avoid composite index requirement
+      docs.sort((a, b) => {
+        const timeA = a.uploadedAt?.toMillis ? a.uploadedAt.toMillis() : (a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0);
+        const timeB = b.uploadedAt?.toMillis ? b.uploadedAt.toMillis() : (b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0);
+        return timeB - timeA;
+      });
+      setDocuments(docs);
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore onSnapshot error in procurement_documents:", error);
+      handleFirestoreError(error, OperationType.LIST, 'procurement_documents');
       setLoading(false);
     });
     return () => unsub();
   }, [pr.id]);
+
+  const handleDeleteDocument = async (id?: string) => {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, 'procurement_documents', id));
+      toast.success(isRtl ? 'تم حذف المستند بنجاح' : 'Document deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error(isRtl ? 'فشل حذف المستند' : 'Failed to delete document');
+    }
+  };
 
   const getSupplierName = useCallback((id: string) => {
     const bidder = bidders.find(b => b.id === id);
@@ -139,6 +169,7 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
   }, [bidders, suppliers]);
 
   const generateFileName = useCallback(() => {
+    const companyCode = selectedProject?.companyCode || 'ZARYA';
     const projectCode = selectedProject?.code || 'PRJ';
     const prCode = pr.id?.slice(-6).toUpperCase() || 'PR';
     const supplier = getSupplierName(formData.supplierId);
@@ -146,74 +177,163 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const cleanDesc = (formData.description || 'DOC').trim().replace(/\s+/g, '_');
     
-    return `${supplierCode}-${projectCode}-${formData.originator}-${prCode}-${formData.category}-${formData.refNo}-${cleanDesc}-${formData.version}-${dateStr}`;
+    return `${companyCode}-${projectCode}-${supplierCode}-${formData.originator}-${prCode}-${formData.category}-${cleanDesc}-${dateStr}`;
   }, [selectedProject?.code, pr.id, formData, getSupplierName]);
+
+  const performUpload = async (fileToUpload: File, projectRootId: string) => {
+    const toastId = toast.loading(isRtl ? '🔍 جاري الرفع...' : '☁️ Uploading...', { duration: 15000 });
+
+    // Check if supplier is available, otherwise allow 'GENERAL'
+    const finalSupplierId = formData.supplierId || 'GENERAL';
+    const finalSupplierName = bidders.find(b => b.id === finalSupplierId)?.companyName || suppliers.find(s => s.id === finalSupplierId)?.name || 'General Project Doc';
+
+    const fullName = generateFileName();
+    const extension = '.' + fileToUpload.name.split('.').pop()?.toLowerCase();
+
+    try {
+      console.log('🚀 [PMIS] Starting upload sequence for file:', fileToUpload.name);
+      toast.loading(isRtl ? '☁️ جاري رفع الملف الآن...' : '☁️ File is being uploaded...', { id: toastId });
+
+      // 1. Firebase Storage Upload
+      const drivePath = '.'; // Export to root since trees are ignored
+      console.log(`📡 [Root ID Protocol] Initiating Storage Sync via path: ${drivePath}`);
+
+      let firebaseUrl = '';
+      let driveFileId = '';
+
+      try {
+        console.log('📦 [Step 1] Uploading to Firebase Storage...');
+        const storageRef = ref(storage, `procurement_temp/${selectedProject!.code}/${fullName}${extension}`);
+        const uploadResult = await Promise.race([
+          uploadBytes(storageRef, fileToUpload),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase Storage Upload Timeout')), 10000))
+        ]) as any;
+        firebaseUrl = await getDownloadURL(uploadResult.ref);
+        console.log(`✅ [Firebase Storage] Success: ${firebaseUrl}`);
+      } catch (storageErr) {
+        console.warn('⚠️ [Firebase Storage] Failed or blocked. Attempting Direct Server Upload fallback...', storageErr);
+        // Try direct upload to server as fallback regardless of size (let the server/proxy dictate limits)
+        console.log('🔄 [Step 1 Fallback] Trying direct server upload...');
+        toast.loading(isRtl ? '🔄 جاري الرفع المباشر (تجاوز التخزين المؤقت)...' : '🔄 Direct Upload Fallback...', { id: toastId });
+        
+        const directFormData = new FormData();
+        directFormData.append('file', fileToUpload);
+        directFormData.append('projectRootId', projectRootId);
+        directFormData.append('path', drivePath);
+        directFormData.append('fileName', fullName + extension);
+        directFormData.append('projectCode', selectedProject!.code || '16314');
+
+        const directRes = await fetch('/api/drive/upload-by-path', {
+          method: 'POST',
+          body: directFormData
+        });
+
+        if (directRes.ok) {
+          const directJson = await directRes.json();
+          driveFileId = directJson.fileId;
+          console.log('✅ [Direct Drive Sync] Success:', driveFileId);
+        } else {
+           const errorText = await directRes.text();
+           console.error('❌ [Direct Drive Sync] Server Error:', errorText);
+           throw new Error(`Storage & Direct Upload both failed: ${errorText}`);
+        }
+      }
+
+      // 2. Google Drive Upload via Root ID Protocol (Only if not already uploaded via direct fallback)
+      if (!driveFileId && firebaseUrl) {
+        try {
+          console.log('📦 [Step 2] Syncing to Google Drive via Server...');
+          const payload = {
+            fileUrl: firebaseUrl,
+            projectRootId,
+            path: drivePath,
+            fileName: fullName + extension,
+            projectCode: selectedProject!.code || '16314',
+            mimeType: fileToUpload.type
+          };
+
+          const driveRes = await fetch('/api/drive/upload-by-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (driveRes.ok) {
+            const driveJson = await driveRes.json();
+            driveFileId = driveJson.fileId || '';
+            console.log('✅ [Root ID Protocol] Drive Sync Successful:', driveFileId);
+          } else {
+            const errorData = await driveRes.json().catch(() => ({ error: 'Unknown server error' }));
+            console.error('❌ [Root ID Protocol] Drive Upload Failed:', errorData);
+          }
+        } catch (e) {
+          console.warn('⚠️ [PMIS] Drive Sync failed with network error. File is in Firebase but not in Drive:', e);
+        }
+      }
+
+      // 3. Firestore Record (Cataloging)
+      const newDoc = {
+        prId: pr.id,
+        projectId: selectedProject!.id,
+        originator: formData.originator,
+        category: formData.category,
+        docType: formData.docType,
+        supplierId: finalSupplierId,
+        supplierName: finalSupplierName,
+        refNo: formData.refNo || 'N/A',
+        description: formData.description || 'No description provided',
+        version: formData.version || '1',
+        fullName: fullName + extension,
+        status: 'Received',
+        fileUrl: firebaseUrl,
+        firebaseUrl: firebaseUrl,
+        driveFileId,
+        drivePath,
+        size: (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB',
+        extension,
+        uploadedAt: serverTimestamp(),
+        uploadedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+        metadata: {
+          prCode: pr.prNumber || 'N/A',
+          projectCode: selectedProject!.code || '16314'
+        }
+      };
+
+      console.log('📝 [Step 3] Logging Metadata to Firestore...', newDoc);
+      await addDoc(collection(db, 'procurement_documents'), newDoc);
+      
+      toast.success(isRtl ? 'تم رفع الملف بنجاح' : 'Document uploaded successfully', { id: toastId });
+    } catch (err) {
+      console.error('💥 [PMIS] Cataloging failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to catalog document', { id: toastId });
+    }
+  };
 
   const handleFileUpload = async () => {
     if (!pendingFile || !pr.id || !selectedProject) return;
     
-    if (!formData.supplierId) {
-      toast.error('You must select a Related Bidder or Company Originator before uploading.');
-      return;
+    // Immediately close modal and keep a reference to upload it
+    const fileToUpload = pendingFile;
+    setIsUploadModalOpen(false);
+
+    // Drive folder verification First
+    let projectRootId = selectedProject.driveFolderId;
+    if (!projectRootId || projectRootId.length < 5 || projectRootId === '.') {
+       if (isAdmin) {
+         setIsPromptOpen(true);
+       } else {
+         toast.error(
+           isRtl
+             ? 'لم يتم العثور على مجلد المشروع الرئيسي. يرجى الاتصال بالآدمن.'
+             : 'Project Main Folder not found. Please contact the Admin.',
+           { duration: 4000 }
+         );
+       }
+       return;
     }
-
-    const toastId = toast.loading('Processing Procurement Asset...');
-    const fullName = generateFileName();
-    const extension = '.' + pendingFile.name.split('.').pop()?.toLowerCase();
-    const supplierName = getSupplierName(formData.supplierId);
-    const supplierFound = supplierName !== 'GEN' ? supplierName : undefined;
-
-    try {
-      // 1. Firebase Storage Upload
-      const storageRef = ref(storage, `procurement/${selectedProject.id}/${pr.id}/${fullName}${extension}`);
-      const uploadRes = await uploadBytes(storageRef, pendingFile);
-      const fileUrl = await getDownloadURL(uploadRes.ref);
-
-      // 2. Drive Upload (Simulation/Placeholder for actual API)
-      let driveFileId = '';
-      if (pr.driveFolderId) {
-        try {
-          const driveData = new FormData();
-          driveData.append('file', pendingFile);
-          driveData.append('folderId', pr.driveFolderId);
-          driveData.append('name', fullName + extension);
-          // Actual Drive API call would go here
-        } catch (e) {
-          console.warn('Drive upload error:', e);
-        }
-      }
-
-      // 3. Firestore Entry
-      const newDoc: Omit<ProcurementDocument, 'id'> = {
-        prId: pr.id,
-        projectId: selectedProject.id,
-        originator: formData.originator as any,
-        category: formData.category as any,
-        docType: formData.docType,
-        supplierId: formData.supplierId,
-        supplierName: supplierFound,
-        refNo: formData.refNo,
-        description: formData.description,
-        version: formData.version,
-        date: new Date().toISOString(),
-        fullName: fullName + extension,
-        status: 'Received',
-        fileUrl,
-        driveFileId,
-        size: (pendingFile.size / (1024 * 1024)).toFixed(2) + ' MB',
-        extension,
-        uploadedAt: serverTimestamp(),
-        uploadedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
-      };
-
-      await addDoc(collection(db, 'procurement_documents'), newDoc);
-      toast.success('Document cataloged successfully', { id: toastId });
-      setIsUploadModalOpen(false);
-      setPendingFile(null);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to catalog document', { id: toastId });
-    }
+    
+    setPendingFile(null);
+    await performUpload(fileToUpload, projectRootId);
   };
 
   const filteredDocs = documents.filter(d => {
@@ -286,107 +406,76 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
             {documents.filter(d => d.category === 'TECHNICAL').length}
           </p>
         </div>
-        <button 
-          onClick={() => setIsUploadModalOpen(true)}
-          className="bg-blue-600 p-5 rounded-[2rem] shadow-xl shadow-blue-500/20 flex flex-col justify-center items-center text-white hover:bg-blue-700 transition-all active:scale-95 group"
-        >
-          <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mt-2">Upload Asset</p>
-        </button>
       </div>
 
       {/* Docs Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50/50 border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Document Registry</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:table-cell">Originator</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">Supplier</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredDocs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-slate-300" />
-                      </div>
-                      <p className="text-slate-400 font-bold text-sm">No procurement assets cataloged yet</p>
+        <UniversalDataTable
+          primaryAction={{
+            label: 'Upload Asset',
+            icon: Plus,
+            onClick: () => setIsUploadModalOpen(true)
+          }}
+          config={{
+            collection: 'procurement_documents',
+            label: 'Procurement Document',
+            columns: [
+              { key: 'fullName', label: 'Document Registry', type: 'text', render: (val, row) => (
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border",
+                    row.category === 'TECHNICAL' ? "bg-indigo-50 border-indigo-100 text-indigo-500" :
+                    row.category === 'FINANCIAL' ? "bg-emerald-50 border-emerald-100 text-emerald-500" :
+                    "bg-slate-50 border-slate-100 text-slate-400"
+                  )}>
+                    <FileText className="w-5 h-5" strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{val}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-lg">{row.docType}</span>
+                      <span className="text-[10px] font-medium text-slate-300">•</span>
+                      <span className="text-[10px] font-bold text-slate-400 italic">{row.version}</span>
+                      <span className="text-[10px] font-medium text-slate-300">•</span>
+                      <span className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200" title={row.drivePath || `Financials_and_Procurements_6/${row.category || ''}/${row.docType || ''}`}>
+                        {row.drivePath || `Financials_and_Procurements_6/${row.category || ''}/${row.docType || ''}`}
+                      </span>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredDocs.map(doc => (
-                  <tr key={doc.id} className="group hover:bg-slate-50/50 transition-all">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border",
-                          doc.category === 'TECHNICAL' ? "bg-indigo-50 border-indigo-100 text-indigo-500" :
-                          doc.category === 'FINANCIAL' ? "bg-emerald-50 border-emerald-100 text-emerald-500" :
-                          "bg-slate-50 border-slate-100 text-slate-400"
-                        )}>
-                          <FileText className="w-5 h-5" strokeWidth={2.5} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{doc.fullName}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-lg">{doc.docType}</span>
-                            <span className="text-[10px] font-medium text-slate-300">•</span>
-                            <span className="text-[10px] font-bold text-slate-400 italic">{doc.version}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 hidden lg:table-cell">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-[8px] font-black border border-orange-100">
-                          {doc.originator}
-                        </div>
-                        <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{doc.originator}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 hidden md:table-cell">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-3.5 h-3.5 text-slate-300" />
-                        <span className="text-xs font-black text-slate-600 uppercase tracking-tight">{doc.supplierName || '---'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className={cn(
-                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        doc.status === 'Approved' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                        doc.status === 'Draft' ? "bg-slate-100 text-slate-500" :
-                        "bg-orange-50 text-orange-600 border border-orange-100"
-                      )}>
-                        {doc.status === 'Approved' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {doc.status}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                        <button 
-                          onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank')}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              ) },
+              { key: 'originator', label: 'Originator', type: 'text', render: (val) => (
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-[8px] font-black border border-orange-100">
+                    {val}
+                  </div>
+                  <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{val}</span>
+                </div>
+              ) },
+              { key: 'supplierName', label: 'Supplier', type: 'text', render: (val) => (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="text-xs font-black text-slate-600 uppercase tracking-tight">{val || '---'}</span>
+                </div>
+              ) },
+              { key: 'status', label: 'Status', type: 'status', render: (val) => (
+                <div className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                  val === 'Approved' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                  val === 'Draft' ? "bg-slate-100 text-slate-500" :
+                  "bg-orange-50 text-orange-600 border border-orange-100"
+                )}>
+                  {val === 'Approved' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                  {val}
+                </div>
+              ) }
+            ]
+          }}
+          data={filteredDocs}
+          onRowClick={() => {}}
+          onDeleteRecord={(id) => handleDeleteDocument(id)}
+          title={<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document Registry</span>}
+        />
       </div>
 
       {/* Smart Upload Modal */}
@@ -542,6 +631,22 @@ export const ProcurementDocumentHub: React.FC<ProcurementDocumentHubProps> = ({ 
           </div>
         )}
       </AnimatePresence>
+
+      <DriveFolderPromptModal 
+        isOpen={isPromptOpen}
+        onClose={() => {
+          setIsPromptOpen(false);
+          setPendingFile(null);
+        }}
+        onSuccess={async (newFolderId) => {
+          setIsPromptOpen(false);
+          if (pendingFile) {
+            const fileToUpload = pendingFile;
+            setPendingFile(null);
+            await performUpload(fileToUpload, newFolderId);
+          }
+        }}
+      />
     </div>
   );
 };

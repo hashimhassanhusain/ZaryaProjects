@@ -212,8 +212,7 @@ export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedd
             className="space-y-8 pb-20"
           >
             <div className="bg-white rounded-[2rem] border border-slate-200 p-10 shadow-sm relative overflow-hidden">
-               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                  <div className="lg:col-span-2 space-y-10">
+               <div className="max-w-4xl mx-auto space-y-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border border-slate-100">
                       <div className="space-y-3">
                         <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('cost_account')}</label>
@@ -224,7 +223,14 @@ export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedd
                         >
                           <option value="">{t('select_cost_account')}</option>
                           {masterFormatData.map((div, idx) => (
-                            <option key={`${div.number}-${idx}`} value={div.number}>{div.number} - {div.title}</option>
+                            <optgroup key={`grp-${div.number}`} label={`${div.number} - ${div.title}`}>
+                              <option value={div.number}>{div.number} - {div.title}</option>
+                              {div.items.map(item => (
+                                <option key={item.code} value={item.code}>
+                                  &nbsp;&nbsp;{item.code} - {item.title}
+                                </option>
+                              ))}
+                            </optgroup>
                           ))}
                         </select>
                       </div>
@@ -256,45 +262,15 @@ export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedd
                           </div>
                           <div className="md:col-span-2 space-y-3">
                             <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">{t('title')}</label>
-                            {!isManualTitle ? (
-                              <div className="relative">
-                                <select
-                                  value={masterFormatSections.some(s => s.title === formData.title) ? formData.title : ''}
-                                  onChange={(e) => {
-                                    if (e.target.value === 'manual') setIsManualTitle(true);
-                                    else setFormData({ ...formData, title: e.target.value });
-                                  }}
-                                  className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic pr-12"
-                                >
-                                  <option value="">{t('select_standard_item')}</option>
-                                  {masterFormatSections
-                                    .filter(s => s.divisionId === formData.divisionCode)
-                                    .map((section, idx) => (
-                                      <option key={`${section.id}-${idx}`} value={section.title}>{section.id} - {section.title}</option>
-                                    ))
-                                  }
-                                  <option value="manual" className="text-brand font-black">+ {t('manual_entry')}</option>
-                                </select>
-                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 text-slate-400 pointer-events-none" />
-                              </div>
-                            ) : (
                               <div className="relative">
                                 <input
                                   type="text"
                                   value={formData.title}
                                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                  placeholder={t('manual_title_placeholder')}
-                                  className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic pr-14"
-                                  autoFocus
+                                  placeholder={t('manual_title_placeholder') || 'Enter Work Package title'}
+                                  className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-text-primary focus:ring-4 focus:ring-brand/10 transition-all outline-none italic"
                                 />
-                                <button 
-                                  onClick={() => setIsManualTitle(false)}
-                                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-300 hover:text-brand transition-colors bg-slate-50 rounded-lg"
-                                >
-                                  <List className="w-4 h-4" />
-                                </button>
                               </div>
-                            )}
                           </div>
                        </div>
 
@@ -309,46 +285,6 @@ export const WorkPackagesView: React.FC<WorkPackagesViewProps> = ({ page, embedd
                         />
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="p-10 bg-text-primary rounded-[3rem] text-white shadow-2xl relative overflow-hidden h-full border-b-8 border-brand">
-                       <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl -mr-20 -mt-20" />
-                       <div className="relative z-10 flex flex-col h-full">
-                          <h3 className="text-[11px] font-black uppercase tracking-[0.4em] mb-6 text-brand italic">{t('classification_guide')}</h3>
-                          <p className="text-xs text-slate-400 leading-relaxed mb-8 opacity-80">
-                            {t('classification_help_text')}
-                          </p>
-                          <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1">
-                            {formData.divisionCode ? (
-                              masterFormatData.find(d => d.number === formData.divisionCode)?.items.map((item, idx) => (
-                                <button
-                                  key={`${item.code}-${idx}`}
-                                  onClick={() => setFormData({ ...formData, code: item.code, title: item.title, isManualTitle: false })}
-                                  className={cn(
-                                    "w-full flex items-center justify-between p-5 rounded-2xl text-left transition-all border border-b-4",
-                                    formData.code === item.code 
-                                      ? "bg-brand border-brand-secondary text-white shadow-xl shadow-brand/20 -translate-y-1" 
-                                      : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20"
-                                  )}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="text-[11px] font-black italic uppercase tracking-tighter">{item.title}</span>
-                                    <span className="text-[9px] opacity-40 font-black font-mono tracking-widest mt-1">{item.code}</span>
-                                  </div>
-                                  <ArrowRight className="w-4 h-4 opacity-20" />
-                                </button>
-                              ))
-                            ) : (
-                              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-[2rem] p-10 text-center space-y-4">
-                                <Search className="w-10 h-10 text-white/10" strokeWidth={1} />
-                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('select_cost_account_first')}</span>
-                              </div>
-                            )}
-                          </div>
-                       </div>
-                    </div>
-                  </div>
                </div>
             </div>
           </motion.div>

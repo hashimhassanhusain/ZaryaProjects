@@ -251,7 +251,7 @@ export const QualityAuditForm: React.FC<QualityAuditFormProps> = ({ audit, isEdi
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
         <div className="relative z-10 space-y-6">
           <div className="flex flex-wrap gap-3">
-            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-semibold uppercase tracking-widest border border-blue-200">Executing Focus Area</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-semibold uppercase tracking-widest border border-blue-200">Executing</span>
             <span className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-semibold uppercase tracking-widest border border-emerald-200">Governance Performance Domain</span>
           </div>
           

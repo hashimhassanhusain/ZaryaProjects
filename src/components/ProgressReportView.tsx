@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Page, WeatherData, DailyReportActivity, SiteIssue, PurchaseOrder, User, Activity } from '../types';
 import { users } from '../data';
 import { cn } from '../lib/utils';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
+import { db, auth, storage, handleFirestoreError, OperationType } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, setDoc, increment, onSnapshot, query, where, orderBy, deleteDoc, getDocs, Timestamp } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -438,22 +439,33 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
     setIsUploadingPhoto(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('projectRootId', selectedProject.driveFolderId || '');
-      formData.append('path', 'SITE_OPERATIONS_04/04.2_Progress_Photos_and_Videos');
+      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      const path = 'Performance_Reports_Quality_and_Communications_7/07.2_Progress_Photos_and_Videos';
+      
+      // 1. Upload to Firebase Storage first (buffer)
+      const storageRef = ref(storage, `buffer/${selectedProject.id}/${Date.now()}_${file.name}`);
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-      const response = await fetch('/api/drive/upload-by-path', {
+      // 2. Upload to Drive by URL
+      const response = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: downloadUrl,
+          fileName: file.name,
+          projectRootId: ROOT_FOLDER_ID,
+          projectCode: selectedProject.code || '16314',
+          path: path
+        })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ fileId: 'unknown' }));
       // In a real app, we'd store the Drive file ID or a webViewLink.
       // For now, we'll use a placeholder or the file ID if we can resolve it to a viewable URL.
       setPhotos([...photos, data.fileId]);
@@ -663,18 +675,29 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
     setIsUploadingToDrive(true);
     try {
-      const formData = new FormData();
-      formData.append('file', pdfPreviewBlob, pdfFileName);
-      formData.append('projectRootId', selectedProject?.driveFolderId || '');
-      formData.append('path', pendingPath);
+      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      
+      // 1. Upload to Firebase Storage first (buffer)
+      const storagePath = `buffer/${selectedProject.id}/${Date.now()}_${pdfFileName}`;
+      const storageRef = ref(storage, storagePath);
+      const uploadResult = await uploadBytes(storageRef, pdfPreviewBlob);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-      const response = await fetch('/api/drive/upload-by-path', {
+      // 2. Upload to Drive by URL
+      const response = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: downloadUrl,
+          fileName: pdfFileName,
+          projectRootId: ROOT_FOLDER_ID,
+          projectCode: selectedProject?.code || '16314',
+          path: pendingPath
+        })
       });
 
       if (!response.ok) {
-        const errData = await response.json();
+        const errData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
         throw new Error(errData.error || 'Failed to upload to Google Drive');
       }
 

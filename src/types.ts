@@ -146,17 +146,21 @@ export interface WBSLevel {
 export interface POLineItem {
   id: string;
   description: string;
-  quantity: number;
+  quantity: number; // This will represent the Planned/Original Quantity
   unit: string;
-  rate: number;
-  amount: number;
+  rate: number; // This will represent the Planned/Original Rate
+  amount: number; // This will represent the Planned/Original Amount
+  actualQuantity?: number;
+  actualRate?: number;
+  actualAmount?: number;
   status: string;
   completion?: number; // 0-100
   inputCurrency?: 'USD' | 'IQD';
-  inputRate?: number;
+  inputRate?: number; // Planned Input Rate
+  inputActualRate?: number;
   exchangeRateUsed?: number;
-  workPackageId?: string; // Link directly to a Work Package deliverable
-  costCenterId?: string;  // Redundant but useful for direct grouping
+  workPackageId?: string; 
+  costCenterId?: string;  
 }
 
 export interface POActivity {
@@ -208,7 +212,8 @@ export interface PurchaseOrder {
   contractNumber?: string;
   contractDuration?: number;
   contractDurationType?: 'Work Days' | 'Calendar Days';
-  contractDriveUrl?: string;
+  contractDriveUrl?: string; // Signed PDF
+  draftDocUrl?: string; // Google Docs draft
   changeOrdersUrl?: string;
   sowUrl?: string;
   contractId?: string; // Reference to official contract
@@ -254,6 +259,8 @@ export interface ProjectLogEntry {
   updatedAt: string;
 }
 
+import type { ReactNode } from 'react';
+
 export type EntityType = 
   | 'contracts' 
   | 'purchase_orders' 
@@ -293,6 +300,7 @@ export interface EntityConfig {
     type: 'string' | 'number' | 'date' | 'status' | 'currency' | 'badge' | 'progress';
     visible?: boolean;
     width?: number;
+    render?: (val: any, row: any) => ReactNode;
   }[];
   sections?: {
     id: string;
@@ -902,7 +910,7 @@ export interface User {
   name: string;
   email: string;
   photoURL: string;
-  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office' | 'stakeholder';
+  role: 'admin' | 'project-manager' | 'engineer' | 'safety-officer' | 'technical-office' | 'stakeholder' | 'super-admin' | 'enterprise-admin' | 'system-administrator';
   companyId?: string;
   companyName?: string;
   accessiblePages?: string[];
@@ -1261,11 +1269,6 @@ export interface FormalAcceptanceVersion {
   userName: string;
   data: Partial<FormalAcceptanceEntry>;
   changeSummary: string;
-}
-
-export interface BreadcrumbItem {
-  title: string;
-  path: string;
 }
 
 export interface Supplier {

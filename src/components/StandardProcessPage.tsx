@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom';
 import { Page, EntityConfig, Project } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { BreadcrumbHeader } from './BreadcrumbHeader';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface StandardProcessPageContextType {
   pageHeader: React.ReactNode;
   favoriteControl: React.ReactNode;
+  registerSaveAction: (action: () => void) => void;
+  registerUploadAction: (action: (fileId: string) => void) => void;
 }
 
 export const StandardProcessPageContext = React.createContext<StandardProcessPageContextType | null>(null);
@@ -39,7 +40,8 @@ import {
   AlertCircle,
   X,
   Plus,
-  ChevronDown
+  ChevronDown,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -48,6 +50,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useProjectTools } from '../context/ToolsContext';
 import { toast } from 'react-hot-toast';
 import { HelpTooltip } from './HelpTooltip';
+import { DriveUploadButton } from './common/DriveUploadButton';
+import { getDrivePathForPage } from '../lib/utils';
 
 import { UniversalDataTable } from './common/UniversalDataTable';
 import { PlanningPlanHeader } from './common/PlanningPlanHeader';
@@ -74,6 +78,10 @@ interface StandardProcessPageProps {
   isArchived?: boolean;
   actions?: React.ReactNode;
   onNew?: () => void;
+  onUploadSuccess?: (fileId: string) => void;
+  customFileName?: string;
+  drivePathOverride?: string;
+  onSync?: () => void;
   primaryAction?: {
     label: string;
     icon: any;
@@ -242,7 +250,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   actions,
   onNew,
   primaryAction,
-  secondaryActions = []
+  secondaryActions = [],
+  drivePathOverride,
+  customFileName,
+  onUploadSuccess: onUploadSuccessProp,
+  onSync
 }) => {
   const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
@@ -306,6 +318,8 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   const [quickView, setQuickView] = useState<{ isOpen: boolean; title: string, id: string }>({ isOpen: false, title: '', id: '' });
   const [isFavorite, setIsFavorite] = useState(false);
   const [driveSyncStatus, setDriveSyncStatus] = useState<'synced' | 'syncing' | 'idle'>('synced');
+  const [saveAction, setSaveAction] = useState<(() => void) | null>(null);
+  const [uploadAction, setUploadAction] = useState<((fileId: string) => void) | null>(null);
 
   useEffect(() => {
     if (collectionName && selectedProject && viewMode === 'grid') {
@@ -344,23 +358,140 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
     window.dispatchEvent(new Event('storage'));
   };
 
-  const pageHeader = <BreadcrumbHeader page={page} />;
-
-
   const favoriteControl = (
-    <button 
-      onClick={toggleFavorite} 
+    <button
+      onClick={toggleFavorite}
       className={cn(
-        "w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm hover:border-slate-200 active:scale-90 shrink-0", 
-        isFavorite && "bg-amber-50 border-amber-200 text-amber-500"
+        "p-2.5 rounded-xl transition-all active:scale-95 border",
+        isFavorite 
+          ? "bg-amber-50 border-amber-100 text-amber-500" 
+          : "bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-400"
       )}
     >
       <Star className={cn("w-4 h-4", isFavorite && "fill-current")} />
     </button>
   );
 
+  const autoActions = [];
+  if (viewMode === 'edit' && onSave) {
+    autoActions.push({
+      label: t('save'),
+      icon: Save,
+      onClick: onSave,
+      loading: isSaving,
+      type: 'primary'
+    });
+  }
+  if (onPrint) {
+    autoActions.push({
+      label: t('print'),
+      icon: Printer,
+      onClick: onPrint,
+      type: 'secondary'
+    });
+  }
+
+  const effectivePrimaryAction = primaryAction || autoActions.find(a => a.type === 'primary');
+  const effectiveSecondaryActions = [...secondaryActions, ...autoActions.filter(a => a.type === 'secondary')];
+
+  const pageHeader = (
+    <div className={cn("px-6 py-4 flex items-center justify-between bg-white dark:bg-white/5 border-b border-slate-100 dark:border-white/5", isRtl && "flex-row-reverse")}>
+      <div className={cn("flex flex-col gap-0.5", isRtl && "items-end text-right")}>
+        {/* Breadcrumb Trail */}
+        <div className={cn("flex items-center gap-2 mb-2", isRtl && "flex-row-reverse")}>
+          <button 
+            onClick={() => navigate('/')}
+            className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+          >
+            {t('performance_domains')}
+          </button>
+          
+          {grandParentPage && (
+            <>
+              <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
+              <button 
+                onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${grandParentPage.id}` : `/page/${grandParentPage.id}`)}
+                className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+              >
+                {stripNumericPrefix(grandParentTitle)}
+              </button>
+            </>
+          )}
+
+          {parentPage && (
+            <>
+              <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
+              <button 
+                onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${parentPage.id}` : `/page/${parentPage.id}`)}
+                className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+              >
+                {stripNumericPrefix(parentTitle)}
+              </button>
+            </>
+          )}
+
+          <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
+          <span className="text-[10px] font-black text-brand uppercase tracking-widest">
+            {stripNumericPrefix(displayTitle)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <h1 className="text-sm md:text-lg font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">
+            {parentPage && (
+              <span className="opacity-30">{stripNumericPrefix(parentTitle)} <span className="mx-1 italic font-light">›</span> </span>
+            )}
+            {stripNumericPrefix(displayTitle)}
+          </h1>
+        </div>
+      </div>
+      <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
+        {effectiveSecondaryActions.map((action, idx) => (
+          <button
+            key={`sec-action-${idx}`}
+            onClick={action.onClick}
+            disabled={action.loading}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-all"
+          >
+            {action.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <action.icon className="w-3 h-3" />}
+            {action.label}
+          </button>
+        ))}
+
+        {effectivePrimaryAction && (
+          <button
+            onClick={effectivePrimaryAction.onClick}
+            disabled={effectivePrimaryAction.loading}
+            className="flex items-center gap-2 px-4 py-1.5 bg-brand text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-secondary shadow-lg shadow-brand/20 transition-all active:scale-95"
+          >
+            {effectivePrimaryAction.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <effectivePrimaryAction.icon className="w-3.5 h-3.5" />}
+            {effectivePrimaryAction.label}
+          </button>
+        )}
+
+        {actions}
+        {favoriteControl}
+      </div>
+    </div>
+  );
+
+  const handleSave = () => {
+    if (saveAction) {
+      saveAction();
+    } else if (onSave) {
+      onSave();
+    }
+  };
+
+  const contextValue = {
+    pageHeader,
+    favoriteControl,
+    registerSaveAction: (action: () => void) => setSaveAction(() => action),
+    registerUploadAction: (action: (fileId: string) => void) => setUploadAction(() => action)
+  };
+
   return (
-    <StandardProcessPageContext.Provider value={{ pageHeader, favoriteControl }}>
+    <StandardProcessPageContext.Provider value={contextValue}>
       <div className="min-h-screen bg-app-bg flex flex-col print:bg-white print:p-0">
       <QuickViewModal 
         isOpen={quickView.isOpen} 
@@ -374,6 +505,11 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
           <section className="col-span-12 space-y-4 flex flex-col">
             <div className={cn("flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
                <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
+                  {!embedded && (viewMode !== 'grid' || !collectionName) && (
+                    <div className="shrink-0 border-b border-slate-100 dark:border-white/5">
+                      {pageHeader}
+                    </div>
+                  )}
                   <AnimatePresence mode="wait">
                     {viewMode === 'grid' && collectionName ? (
                       <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 overflow-hidden flex flex-col">
@@ -393,9 +529,27 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                           data={gridData} 
                           onRowClick={() => setViewMode('edit')} 
                           onNewClick={handleNew} 
-                          onDeleteRecord={() => {}} 
+                          onDeleteRecord={async (id) => { 
+                            if (collectionName) {
+                              try {
+                                await deleteDoc(doc(db, collectionName, id));
+                                toast.success(isRtl ? 'تم حذف السجل بنجاح' : 'Record deleted successfully');
+                              } catch (err) {
+                                console.error(err);
+                                toast.error(isRtl ? 'فشل حذف السجل' : 'Failed to delete record');
+                              }
+                            }
+                          }}
                           favoriteControl={favoriteControl}
-                          showAddButton={false}
+                          showAddButton={true}
+                          title={stripNumericPrefix(displayTitle)}
+                          description={page.summary}
+                          extraActions={actions}
+                          primaryAction={primaryAction ? {
+                            label: primaryAction.label,
+                            icon: primaryAction.icon,
+                            onClick: primaryAction.onClick
+                          } : undefined}
                         />
                       </motion.div>
                     ) : (
@@ -421,74 +575,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                                 />
                               ) : (
                                 <div className="flex flex-col space-y-2">
-                                  {!embedded && (
-                                    <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 mt-2", isRtl && "md:flex-row-reverse")}>
-                                      <div className="flex-1 space-y-2">
-                                        <div className={cn("flex items-start gap-4", isRtl && "flex-row-reverse")}>
-                                          <div className="w-12 h-12 bg-neutral-900 rounded-2xl flex items-center justify-center shadow-lg shrink-0 group">
-                                            <FileText className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                                          </div>
-                                          <div className={cn("flex-1", isRtl && "text-right")}>
-                                            <h1 className="text-xl md:text-2xl font-black text-text-primary tracking-tighter italic uppercase leading-none flex flex-wrap items-center gap-x-2">
-                                              {grandParentPage && (
-                                                <span className="text-text-secondary/30 font-black inline-flex items-center gap-2">
-                                                  {stripNumericPrefix(grandParentTitle)}
-                                                  <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
-                                                </span>
-                                              )}
-                                              {parentPage && (
-                                                <span className="text-text-secondary/50 font-black inline-flex items-center gap-2">
-                                                  {stripNumericPrefix(parentTitle)}
-                                                  <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
-                                                </span>
-                                              )}
-                                              <span className="text-text-primary">{stripNumericPrefix(displayTitle)}</span>
-                                            </h1>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
-                                        {viewMode === 'grid' && collectionName && !isArchived && (
-                                          <button 
-                                            onClick={handleNew}
-                                            className="group flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl shadow-lg shadow-brand/10 hover:bg-brand-secondary transition-all active:scale-95"
-                                          >
-                                            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
-                                              <Plus className="w-3 h-3" />
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">{t('add_entry')}</span>
-                                          </button>
-                                        )}
-
-                                        {secondaryActions.map((action, idx) => (
-                                          <button
-                                            key={`sec-action-${idx}`}
-                                            onClick={action.onClick}
-                                            disabled={action.loading}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-all"
-                                          >
-                                            {action.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <action.icon className="w-3 h-3" />}
-                                            {action.label}
-                                          </button>
-                                        ))}
-
-                                        {primaryAction && (
-                                          <button
-                                            onClick={primaryAction.onClick}
-                                            disabled={primaryAction.loading}
-                                            className="flex items-center gap-2 px-4 py-1.5 bg-brand text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-brand-secondary shadow-lg shadow-brand/20 transition-all active:scale-95"
-                                          >
-                                            {primaryAction.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <primaryAction.icon className="w-3.5 h-3.5" />}
-                                            {primaryAction.label}
-                                          </button>
-                                        )}
-
-                                        {actions}
-                                        {favoriteControl}
-                                      </div>
-                                    </div>
-                                  )}
+                                  {/* Header actions are now globally handled via Ribbon or Tabs */}
                                 </div>
                               )}
                               
@@ -504,36 +591,72 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
                               {/* HUB DASHBOARD VIEW */}
                               {page.type === 'hub' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8">
-                                  {pages
-                                    .filter(p => p.parentId === page.id || (p.domain === page.domain && p.focusArea === page.focusArea && p.id !== page.id && !p.parentId))
-                                    .map((childPage, childIdx) => (
-                                      <motion.div
-                                        key={childPage.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.05 * childIdx }}
-                                        onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${childPage.id}` : `/page/${childPage.id}`)}
-                                        className="group p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border-b-4 hover:border-brand"
-                                      >
-                                        <div className="flex items-start justify-between mb-8">
-                                          <div className="w-12 h-12 bg-app-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-text-secondary group-hover:bg-text-primary group-hover:text-white transition-colors">
-                                            <ArrowRight className={cn("w-5 h-5", isRtl ? "rotate-180" : "")} />
-                                          </div>
-                                          <div className="px-3 py-1 bg-app-bg dark:bg-white/5 rounded-lg font-black text-[9px] text-text-secondary uppercase tracking-[0.2em] leading-none opacity-60">
-                                            {stripNumericPrefix(childPage.id)}
-                                          </div>
+                                <div className="space-y-8">
+                                  {/* Hub Summary Cards */}
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-4">
+                                     <div className="p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm space-y-6 border-b-4">
+                                        <div className="flex items-center gap-3 text-text-secondary opacity-40">
+                                           <CheckCircle2 className="w-4 h-4" />
+                                           <span className="text-[10px] font-black uppercase tracking-widest">{t('compliance')}</span>
                                         </div>
-                                        <div>
-                                          <h3 className="text-lg font-black text-text-primary dark:text-white uppercase italic tracking-tighter mb-2 group-hover:text-brand transition-colors">
-                                            {stripNumericPrefix(t(childPage.id) === childPage.id ? childPage.title : t(childPage.id))}
-                                          </h3>
-                                          <p className="text-xs text-text-secondary font-medium leading-relaxed line-clamp-3 opacity-80">
-                                            {t(childPage.id + '_summary') || childPage.summary}
-                                          </p>
+                                        <div className="text-3xl font-black text-text-primary dark:text-white uppercase italic tracking-tighter">94.2%</div>
+                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                           <div className="h-full bg-brand w-[94%]" />
                                         </div>
-                                      </motion.div>
-                                    ))}
+                                     </div>
+
+                                     <div className="p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm space-y-6 border-b-4">
+                                        <div className="flex items-center gap-3 text-text-secondary opacity-40">
+                                           <Loader2 className="w-4 h-4 text-brand" />
+                                           <span className="text-[10px] font-black uppercase tracking-widest">{t('in_progress')}</span>
+                                        </div>
+                                        <div className="text-3xl font-black text-text-primary dark:text-white italic tracking-tighter">{pages.filter(p => p.parentId === page.id).length}</div>
+                                        <div className="text-[9px] font-bold text-brand uppercase tracking-widest italic">{t('active_tools')}</div>
+                                     </div>
+
+                                     <div className="col-span-2 bg-text-primary p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex items-center justify-between border-b-4 border-brand">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16" />
+                                        <div className="relative z-10 space-y-2">
+                                           <h4 className="text-white/40 text-[9px] font-black uppercase tracking-[0.3em]">{t('domain_performance')}</h4>
+                                           <div className="text-4xl font-black text-white italic tracking-tighter">Gold Standard</div>
+                                        </div>
+                                        <div className="w-24 h-12 bg-white/10 rounded-xl backdrop-blur-sm flex items-center justify-center">
+                                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+                                        </div>
+                                     </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8">
+                                    {pages
+                                      .filter(p => p.parentId === page.id || (p.domain === page.domain && p.focusArea === page.focusArea && p.id !== page.id && !p.parentId))
+                                      .map((childPage, childIdx) => (
+                                        <motion.div
+                                          key={childPage.id}
+                                          initial={{ opacity: 0, y: 20 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ delay: 0.05 * childIdx }}
+                                          onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${childPage.id}` : `/page/${childPage.id}`)}
+                                          className="group p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] shadow-sm hover:border-brand/40 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border-b-4 hover:border-brand"
+                                        >
+                                          <div className="flex items-start justify-between mb-8">
+                                            <div className="w-12 h-12 bg-app-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-text-secondary group-hover:bg-text-primary group-hover:text-white transition-colors">
+                                              <ArrowRight className={cn("w-5 h-5", isRtl ? "rotate-180" : "")} />
+                                            </div>
+                                            <div className="px-3 py-1 bg-app-bg dark:bg-white/5 rounded-lg font-black text-[9px] text-text-secondary uppercase tracking-[0.2em] leading-none opacity-60">
+                                              {stripNumericPrefix(childPage.id)}
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <h3 className="text-lg font-black text-text-primary dark:text-white uppercase italic tracking-tighter mb-2 group-hover:text-brand transition-colors line-clamp-1">
+                                              {stripNumericPrefix(t(childPage.id) === childPage.id ? childPage.title : t(childPage.id))}
+                                            </h3>
+                                            <p className="text-xs text-text-secondary font-medium leading-relaxed line-clamp-3 opacity-80">
+                                              {t(childPage.id + '_summary') || childPage.summary}
+                                            </p>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                  </div>
                                 </div>
                               )}
 
@@ -563,25 +686,96 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
 
           <div className={cn("fixed bottom-4 right-4 z-50 flex flex-col items-end gap-1.5 print:hidden", isRtl && "right-auto left-4 items-start")}>
             <AnimatePresence>
-              {viewMode === 'edit' && !isArchived && (
-                <div className="flex flex-col gap-1.5">
-                  <HelpTooltip title={t('save_new')} text={t('save_button_tooltip')} position={isRtl ? "right" : "left"}>
-                    <motion.button initial={{ opacity: 0, scale: 0.8, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} onClick={() => onSave?.()} disabled={isSaving} className="group flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl shadow-2xl hover:bg-brand-secondary active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}</div><span className="text-[10px] font-black uppercase tracking-widest">{t('save_new')}</span></motion.button>
-                  </HelpTooltip>
-                  <div className="flex items-center gap-1.5">
-                    <HelpTooltip title={t('update')} text={t('update_button_tooltip')} position="top">
-                      <button onClick={() => onSave?.()} className="h-10 px-4 bg-white text-slate-600 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-orange-50 text-brand flex items-center justify-center group-hover:bg-brand group-hover:text-white"><CheckCircle2 className="w-3.5 h-3.5" /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('update')}</span></button>
-                    </HelpTooltip>
-                    <HelpTooltip title={t('cancel')} text={t('cancel_button_tooltip')} position="top">
-                      <button onClick={() => setViewMode('grid')} className="h-10 px-4 bg-white text-neutral-600 rounded-xl shadow-xl border border-neutral-100 flex items-center gap-2 group active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-neutral-50 text-neutral-400 flex items-center justify-center group-hover:bg-neutral-900 group-hover:text-white"><ArrowRight className={cn("w-3.5 h-3.5 rotate-180", isRtl && "rotate-0")} /></div><span className="text-[8px] font-black uppercase tracking-widest">{t('cancel')}</span></button>
-                    </HelpTooltip>
-                  </div>
+              {!isArchived && (
+                <div className="flex flex-col gap-1.5 items-end">
+                  {viewMode === 'edit' && (
+                    <div className="flex flex-col gap-1.5 items-end">
+                      <HelpTooltip title={t('save_new')} text={t('save_button_tooltip')} position={isRtl ? "right" : "left"}>
+                        <motion.button 
+                          initial={{ opacity: 0, scale: 0.8, x: 20 }} 
+                          animate={{ opacity: 1, scale: 1, x: 0 }} 
+                          exit={{ opacity: 0, scale: 0.8, x: 20 }} 
+                          onClick={handleSave} 
+                          disabled={isSaving} 
+                          className="group flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl shadow-2xl hover:bg-brand-secondary active:scale-95 transition-all"
+                        >
+                          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+                            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{t('save_new')}</span>
+                        </motion.button>
+                      </HelpTooltip>
+
+                      <div className="flex items-center gap-1.5">
+                        <HelpTooltip title={t('update')} text={t('update_button_tooltip')} position="top">
+                          <button 
+                            onClick={() => onSave?.()} 
+                            className="h-10 px-4 bg-white dark:bg-slate-900 text-slate-600 rounded-xl shadow-xl border border-slate-100 dark:border-white/5 flex items-center gap-2 group active:scale-95 transition-all"
+                          >
+                            <div className="w-6 h-6 rounded-lg bg-orange-50 text-brand flex items-center justify-center group-hover:bg-brand group-hover:text-white">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-widest">{t('update')}</span>
+                          </button>
+                        </HelpTooltip>
+                        
+                        <HelpTooltip title={t('cancel')} text={t('cancel_button_tooltip')} position="top">
+                          <button 
+                            onClick={() => setViewMode('grid')} 
+                            className="h-10 px-4 bg-white dark:bg-slate-900 text-neutral-600 rounded-xl shadow-xl border border-neutral-100 dark:border-white/5 flex items-center gap-2 group active:scale-95 transition-all"
+                          >
+                            <div className="w-6 h-6 rounded-lg bg-neutral-50 text-neutral-400 flex items-center justify-center group-hover:bg-neutral-900 group-hover:text-white">
+                              <ArrowRight className={cn("w-3.5 h-3.5 rotate-180", isRtl && "rotate-0")} />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-widest">{t('cancel')}</span>
+                          </button>
+                        </HelpTooltip>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5">
                     <HelpTooltip title={t('print_preview')} text={t('print_button_tooltip')} position="top">
-                      <button onClick={onPrint} className="group flex items-center gap-2 px-4 py-2.5 bg-neutral-900 text-white rounded-xl shadow-2xl hover:bg-black active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-brand"><Printer className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('print_preview')}</span></button>
+                      <button 
+                        onClick={onPrint} 
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-neutral-900 text-white rounded-xl shadow-2xl hover:bg-black active:scale-95 transition-all"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-brand">
+                          <Printer className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{t('print_preview')}</span>
+                      </button>
                     </HelpTooltip>
+                    
+                    <HelpTooltip title={t('upload_file')} text={t('upload_button_tooltip')} position="top">
+                      <DriveUploadButton 
+                        drivePath={drivePathOverride || getDrivePathForPage(page.id, page.focusArea, collectionName)}
+                        customFileName={customFileName}
+                        onUploadSuccess={(fileId) => {
+                          toast.success(t('upload_success'));
+                          if (uploadAction) {
+                            uploadAction(fileId);
+                          }
+                          onUploadSuccessProp?.(fileId);
+                        }}
+                      />
+                    </HelpTooltip>
+
                     <HelpTooltip title={t('sync_to_drive')} text={t('sync_button_tooltip')} position="top">
-                      <button onClick={async () => { setDriveSyncStatus('syncing'); await new Promise(r => setTimeout(r, 2000)); setDriveSyncStatus('synced'); toast.success(t('synced_to_drive_success')); }} className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-brand to-brand-secondary text-white rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"><div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center"><Cloud className="w-3.5 h-3.5" /></div><span className="text-[9px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span></button>
+                      <button 
+                        onClick={onSync ? onSync : async () => { 
+                          setDriveSyncStatus('syncing'); 
+                          await new Promise(r => setTimeout(r, 2000)); 
+                          setDriveSyncStatus('synced'); 
+                          toast.success(t('synced_to_drive_success')); 
+                        }} 
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-brand to-brand-secondary text-white rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+                          <Cloud className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{t('sync_to_drive')}</span>
+                      </button>
                     </HelpTooltip>
                   </div>
                 </div>

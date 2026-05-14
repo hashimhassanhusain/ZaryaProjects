@@ -31,9 +31,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { cn, generatePMISFileName, stripNumericPrefix } from '../lib/utils';
+import { cn, generatePMISFileName, stripNumericPrefix, getSmartFileNameForRecord } from '../lib/utils';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { db, OperationType, handleFirestoreError, auth, storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, deleteDoc, setDoc, limit, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 
@@ -133,6 +134,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
   const [analysisSearch, setAnalysisSearch] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
+  const [activeRecord, setActiveRecord] = useState<any>(null);
 
   // --- CHANGE MANAGEMENT PLAN STATE ---
   const [isChangeManagementPlan, setIsChangeManagementPlan] = useState(false);
@@ -770,7 +773,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         const pdfBlob = doc.output('blob');
         
         // --- AUTOMATED STORAGE ROUTING ---
-        let drivePath = '01_PROJECT_MANAGEMENT_FORMS';
+        // Using "Business_Initiation_and_Governance_1" as the root for forms
+        let drivePath = 'Business_Initiation_and_Governance_1';
         const pathParts = page.id.split('.');
         
         // Match server.ts structure: 01_PROJECT_MANAGEMENT_FORMS / X.0_FocusArea / X.Y_Domain_Domain
@@ -815,14 +819,23 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
           drivePath += '/2.1.3_QUALITY_MANAGEMENT_PLAN';
         }
         
-        const uploadData = new FormData();
-        uploadData.append('file', pdfBlob, fileName);
-        uploadData.append('projectRootId', selectedProject.driveFolderId);
-        uploadData.append('path', drivePath); 
+        // 1. Upload to Firebase Storage first (buffer)
+        const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+        const storageRef = ref(storage, `buffer/${selectedProject.id}/${Date.now()}_${fileName}`);
+        const uploadResult = await uploadBytes(storageRef, pdfBlob);
+        const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-        const res = await fetch('/api/drive/upload-by-path', {
+        // 2. Upload to Drive by URL
+        const res = await fetch('/api/drive/upload-by-url', {
           method: 'POST',
-          body: uploadData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: downloadUrl,
+            fileName: fileName,
+            projectRootId: ROOT_FOLDER_ID,
+            projectCode: selectedProject.code || '16314',
+            path: drivePath
+          })
         });
         
         let errorData: any = null;
@@ -2068,7 +2081,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Interest</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Strategy</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">Last Updated</th>
-                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                  <th className="px-8 py-5 text-[10px] font-semibold text-brand uppercase tracking-[0.2em] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -2859,7 +2872,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Project Role</th>
                   <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsibility</th>
                   <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Authority</th>
-                  <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-8 py-4 text-[10px] font-semibold text-brand uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -3363,7 +3376,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                   <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Quality Role</th>
                   <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Responsibilities</th>
                   <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100">Authority</th>
-                  {isEditing && <th className="px-8 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Actions</th>}
+                  {isEditing && <th className="px-8 py-6 text-[10px] font-semibold text-brand uppercase tracking-widest border-b border-slate-100 dark:border-white/10 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -4165,7 +4178,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
                       <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Role</th>
                       <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Influence</th>
                       <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Engagement</th>
-                      <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                      <th className="px-6 py-4 text-[10px] font-semibold text-brand uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -4450,10 +4463,16 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
   return (
     <StandardProcessPage
       page={page}
+      viewMode={isEditing || viewMode === 'edit' ? 'edit' : 'grid'}
+      onViewModeChange={(mode) => {
+        setViewMode(mode);
+        setIsEditing(mode === 'edit');
+      }}
       onSave={() => handleSaveDocument(true)}
       onPrint={() => generatePDF(false)}
       isSaving={isCreating}
       collectionName={collectionName}
+      customFileName={activeRecord ? getSmartFileNameForRecord(collectionName || page.id, activeRecord) : undefined}
       inputs={isCharterPage ? [
         { id: '1.4.1', title: 'Business Case', status: 'Approved' },
         { id: 'agreements', title: 'Agreements', status: 'Finalized' },
@@ -4463,7 +4482,12 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
       <div className="space-y-8 flex-1 flex flex-col min-h-0">
         {/* Detail Content */}
         {collectionName ? (
-           <UniversalManager entityType={collectionName as any} inputs={page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []} />
+           <UniversalManager 
+             entityType={collectionName as any} 
+             inputs={page.details?.inputs?.map((id: string) => ({ id, title: pages.find(p => p.id === id)?.title || id })) || []} 
+             onViewChange={(v) => setViewMode(v === 'detail' ? 'edit' : 'grid')}
+             onRecordSelect={(r) => setActiveRecord(r)}
+           />
         ) : (
           <>
             {isLogPage && (
@@ -4589,9 +4613,11 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden"
             >
-              <div className="p-8 bg-slate-50 border-b border-slate-100">
-                <h3 className="text-lg font-semibold text-slate-900">Editing Plan Information</h3>
-                <p className="text-sm text-slate-500">Update the fields below to modify the {page.title}.</p>
+              <div className="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 leading-none mb-1">Editing Plan Information</h3>
+                  <p className="text-[11px] font-medium text-slate-400">Update the fields below to modify the {page.title}.</p>
+                </div>
               </div>
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {page.formFields?.map((field, index) => (

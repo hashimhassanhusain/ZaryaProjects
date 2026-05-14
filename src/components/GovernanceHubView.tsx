@@ -37,7 +37,6 @@ import {
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { UniversalManager } from './common/UniversalManager';
@@ -53,6 +52,7 @@ import { SourcingStrategyView } from './SourcingStrategyView';
 import { ExecutionQAView } from './ExecutionQAView';
 import { PerformanceMonitoringView } from './PerformanceMonitoringView';
 import { FoundationCenterView } from './FoundationCenterView';
+import { ContractManagementHub } from './ContractManagementHub';
 
 interface GovernanceHubViewProps {
   page: Page;
@@ -72,6 +72,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
 
   const [activeTab, setActiveTab] = useState<string>(getInitialTab());
   
+  React.useEffect(() => {
+    setActiveTab(getInitialTab());
+  }, [page.id]);
+
   const allManagementPlans = [
     { id: '1.1.1', title: t('1.1.1'), icon: Target, desc: 'Project authorization and high-level vision hub.', focusArea: 'Initiating' },
     { id: '1.1.3', title: t('1.1.3'), icon: ListChecks, desc: 'Detailed log for tracking assumptions and constraints.', focusArea: 'Initiating' },
@@ -93,7 +97,6 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
   const ribbonGroups: RibbonGroup[] = [
     {
       id: 'domain-overview',
-      label: t('navigation'),
       tabs: [
         { 
           id: 'overview', 
@@ -105,7 +108,6 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     },
     {
       id: 'initiating',
-      label: t('1.0'), // Initiating Focus Area
       tabs: initiatingPlans.map(p => ({
         id: p.id,
         label: stripNumericPrefix(t(p.id) === p.id ? p.title : t(p.id)),
@@ -115,7 +117,6 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     },
     {
       id: 'planning',
-      label: t('2.0'), // Planning Focus Area
       tabs: planningPlans.map(p => ({
         id: p.id,
         label: stripNumericPrefix(t(p.id) === p.id ? p.title : t(p.id)),
@@ -124,8 +125,13 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       }))
     },
     {
+      id: 'execution',
+      tabs: [
+        { id: 'contract-management', label: 'Contract Management', icon: FileText, size: 'large' },
+      ]
+    },
+    {
       id: 'performance-logs',
-      label: t('monitoring'),
       tabs: [
         { id: 'risks', label: t('risk_register'), icon: AlertTriangle },
         { id: 'issues', label: t('issue_log'), icon: Activity },
@@ -135,7 +141,6 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
     },
     {
       id: 'foundation-group',
-      label: t('foundation_center') || 'Foundation Center',
       tabs: [
         { id: 'eefs', label: 'EEFs', icon: ShieldCheck, size: 'large' },
         { id: 'opas', label: 'OPAs', icon: Database, size: 'large' },
@@ -240,6 +245,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
       case 'foundation': return <FoundationCenterView page={targetPage} embedded={true} />;
       
       // Logs
+      case 'contract-management': return <ContractManagementHub page={targetPage} />;
       case 'risks': return <UniversalManager entityType="risks" />;
       case 'issues': return <UniversalManager entityType="issues" />;
       case 'changes': return <UniversalManager entityType="changes" />;
@@ -263,12 +269,6 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
         onTabChange={(id) => setActiveTab(id as string)}
       />
       <div className="flex-1 overflow-y-auto">
-        {activeTab !== 'overview' && (
-          <BreadcrumbHeader 
-            page={page} 
-            activeTabLabel={stripNumericPrefix(t(activeTab))}
-          />
-        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

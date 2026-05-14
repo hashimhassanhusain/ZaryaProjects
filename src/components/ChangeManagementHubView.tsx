@@ -39,6 +39,7 @@ import { db, OperationType, handleFirestoreError, auth } from '../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, getDocs, getDoc } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface ChangeManagementHubViewProps {
   page: Page;
@@ -715,72 +716,53 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/30 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Impact</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                Array(3).fill(0).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-8 py-4 h-16 bg-slate-50/50" />
-                  </tr>
-                ))
-              ) : filteredRequests.length > 0 ? (
-                filteredRequests.map((cr) => (
-                  <tr 
-                    key={cr.id} 
-                    onClick={() => handleRequestClick(cr)}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer group"
-                  >
-                    <td className="px-8 py-5">
+          <UniversalDataTable
+            config={{
+              collection: 'change_requests',
+              label: 'Change Request',
+              columns: [
+                { key: 'action', label: 'Action', type: 'text', render: () => (
+                    <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                ) },
+                { key: 'requestId', label: 'ID', type: 'text', render: (_, cr) => (
+                    <>
                       <div className="text-sm font-semibold text-slate-900">{cr.requestId}</div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">v{cr.version.toFixed(1)}</div>
-                    </td>
-                    <td className="px-8 py-5">
+                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">v{(cr.version ?? 1.0).toFixed(1)}</div>
+                    </>
+                ) },
+                { key: 'description', label: 'Description', type: 'text', render: (_, cr) => (
+                    <>
                       <div className="text-sm font-medium text-slate-700 line-clamp-1">{cr.description}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{cr.contractor}</div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border",
-                        cr.status === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                        cr.status === 'Pending' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                        "bg-blue-50 text-blue-600 border-blue-100"
-                      )}>
-                        {cr.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className={cn(
-                        "text-sm font-semibold",
-                        (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <button className="p-2 text-slate-300 group-hover:text-blue-600 transition-colors">
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-8 py-12 text-center text-slate-400 font-bold uppercase text-[10px]">
-                    No change requests found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    </>
+                ) },
+                { key: 'status', label: 'Status', type: 'status', render: (val) => (
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border",
+                      val === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                      val === 'Pending' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                      "bg-blue-50 text-blue-600 border-blue-100"
+                    )}>
+                      {val}
+                    </span>
+                ) },
+                { key: 'impact', label: 'Impact', type: 'text', render: (_, cr) => (
+                    <div className={cn(
+                      "text-sm font-semibold",
+                      (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
+                    )}>
+                      {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
+                    </div>
+                ) }
+              ]
+            }}
+            data={filteredRequests}
+            onRowClick={(row) => handleRequestClick(row as ChangeRequest)}
+            showAddButton={false}
+            title={<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Total Change Requests: {filteredRequests.length}</span>}
+          />
         </div>
       </div>
 

@@ -193,7 +193,7 @@ export const EVMReportView: React.FC<EVMReportViewProps> = ({ page }) => {
             {isSyncing ? 'Syncing...' : 'Sync with Project Data'}
           </button>
           <DriveUploadButton
-            drivePath="6_Financials_and_Procurements/6.20_Cost_Control_Reports"
+            drivePath="Financials_and_Procurements_6/Cost_Control_Reports"
             label="Upload EVM Report"
           />
         </div>

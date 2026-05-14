@@ -1,0 +1,2 @@
+src/lib/pdfUtils.ts:9:    const response = await fetch(fontUrl);
+src/context/CurrencyContext.tsx:85:      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');

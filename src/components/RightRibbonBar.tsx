@@ -39,15 +39,15 @@ export const RightRibbonBar: React.FC = () => {
             <button
               onClick={() => openTool(tool.id)}
               className={cn(
-                "w-22 h-22 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1.5",
+                "w-18 h-18 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1",
                 isActive 
                   ? "bg-brand text-white shadow-lg shadow-brand/20 scale-105" 
                   : "bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 hover:bg-brand/10 hover:text-brand hover:scale-105"
               )}
             >
-              <Icon className="w-6 h-6 mb-1.5" strokeWidth={2.5} />
+              <Icon className="w-5 h-5 mb-1" strokeWidth={2.5} />
               <span className={cn(
-                "text-[11px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
+                "text-[9px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
                 isActive ? "text-white" : "text-neutral-900 dark:text-neutral-200 group-hover:text-brand"
               )}>
                 {language === 'ar' ? tool.nameAr : tool.name}

@@ -46,8 +46,8 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { cn } from "../lib/utils";
-import { BreadcrumbHeader } from "./BreadcrumbHeader";
 import { motion, AnimatePresence } from "motion/react";
+import { UniversalDataTable } from "./common/UniversalDataTable";
 import toast from "react-hot-toast";
 
 interface DesignFile {
@@ -138,6 +138,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   });
 
   const generateFileName = useCallback(() => {
+    const companyCode = selectedProject?.companyCode || "ZARYA";
     const projectCode = selectedProject?.code || "PROJECT";
     const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "");
     const cleanDesc = formData.description.trim().replace(/\s+/g, "_");
@@ -145,8 +146,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
       formData.type === "DWG"
         ? `-${formData.discipline.substring(0, 4).toUpperCase()}`
         : "";
-    return `${projectCode}-${formData.originator}${discCode}-D${formData.division}-${formData.type}-${formData.refNo}-${cleanDesc}-${formData.version}-${dateStr}`;
-  }, [selectedProject?.code, formData]);
+    return `${companyCode}-${projectCode}-${formData.originator}${discCode}-D${formData.division}-${formData.type}-${formData.refNo}-${cleanDesc}-${formData.version}-${dateStr}`;
+  }, [selectedProject?.code, selectedProject?.companyCode, formData]);
 
   const [isScanning, setIsScanning] = useState(false);
 
@@ -273,90 +274,59 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
     });
 
     try {
-      // Parallelize both uploads for efficiency
-      const driveUploadPromise = (async () => {
-        if (!selectedProject.driveFolderId) return "";
-        try {
-          const driveData = new FormData();
-          driveData.append("file", currentPendingFile);
-          driveData.append("projectRootId", selectedProject.driveFolderId);
-          
-          const subTypeMap: Record<string, string> = {
-            "Site Plans": "4.1.1_Site_Plans",
-            "Floor Plans": "4.1.2_Floor_Plans",
-            "Sections": "4.1.3_Sections",
-            "Elevations": "4.1.4_Elevations",
-            "RCP": "4.1.5_RCP",
-            "Floor Patterns": "4.1.6_Floor_Patterns",
-            "Schedules": "4.1.7_Schedules",
-            "Architectural Details": "4.1.8_Architectural_Details",
-            "Landscape Plans": "4.1.9_Landscape_Plans",
-            "3D Renders": "4.1.10_3D_Renders",
-            "General Notes": "4.2.1_General_Notes",
-            "Foundations and Slabs": "4.2.2_Foundations_and_Slabs",
-            "Vertical Elements": "4.2.3_Vertical_Elements",
-            "Beams Reinforcement": "4.2.4_Beams_Reinforcement",
-            "Staircase Details": "4.2.5_Staircase_Details",
-            "Misc Structures": "4.2.6_Misc_Structures",
-            "HVAC": "4.3.1_HVAC",
-            "Plumbing and Drainage": "4.3.2_Plumbing_and_Drainage",
-            "Fire Fighting": "4.3.3_Fire_Fighting",
-            "Vertical Transportation": "4.3.4_Vertical_Transportation",
-            "Kitchen and Cold Storage": "4.3.5_Kitchen_and_Cold_Storage",
-            "Specialized Machinery": "4.3.6_Specialized_Machinery_Bowling",
-            "Pool and Water Features": "4.3.7_Pool_and_Water_Features",
-            "Gas Systems": "4.3.8_Gas_Systems",
-            "Lighting": "4.4.1_Lighting",
-            "Power": "4.4.2_Power",
-            "Low Current": "4.4.3_Low_Current"
-          };
-
-          const subFolder = subTypeMap[currentFormData.subType] || 
-                             (currentFormData.type === "SPE" ? "4.5_Archive_Superseded_Drawings" : currentFormData.discipline);
-          
-          const drivePath = `4_Technical_Engineering_and_Drawings/${divisionObj?.div || "4.1_Architectural"}/${subFolder}`;
-          driveData.append("path", drivePath);
-
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 180000); // 3m timeout for slow connections
-
-          const driveRes = await fetch("/api/drive/upload-by-path", {
-            method: "POST",
-            body: driveData,
-            signal: controller.signal
-          }).finally(() => clearTimeout(timeoutId));
-
-          const contentType = driveRes.headers.get("content-type");
-          if (driveRes.ok && contentType && contentType.includes("application/json")) {
-            const driveOutcome = await driveRes.json();
-            return driveOutcome.fileId;
-          } else {
-            const text = await driveRes.text();
-            console.error(`Drive upload failed with status ${driveRes.status}. Body: ${text.substring(0, 200)}`);
-            return "";
-          }
-        } catch (err) {
-          console.error("Drive upload background failed:", err);
-          return "";
-        }
-      })();
-
-      const firebaseUploadPromise = (async () => {
-        try {
-          const storageRef = ref(storage, `designs/${selectedProject.id}/${fullName}${extension}`);
-          const uploadResult = await uploadBytes(storageRef, currentPendingFile);
-          return await getDownloadURL(uploadResult.ref);
-        } catch (err) {
-          console.error("Firebase upload background failed:", err);
-          return "";
-        }
-      })();
-
-      const [driveFileId, fileUrl] = await Promise.all([driveUploadPromise, firebaseUploadPromise]);
-
-      if (!driveFileId && !fileUrl) {
-        throw new Error("Both upload paths failed.");
+      // 1. Firebase Storage Upload (Reliable Middleman)
+      let fileUrl = "";
+      try {
+        const storagePath = `designs/${selectedProject.id}/${fullName}${extension}`;
+        console.log('📡 [Project Sync] Uploading to Firebase Asset Buffer:', storagePath);
+        
+        const storageRef = ref(storage, storagePath);
+        const uploadResult = await Promise.race([
+          uploadBytes(storageRef, currentPendingFile),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase Storage Upload Timeout')), 15000))
+        ]) as any;
+        
+        fileUrl = await getDownloadURL(uploadResult.ref);
+        console.log('✅ [Project Sync] Firebase Buffer Ready:', fileUrl);
+      } catch (err) {
+        console.error("❌ Firebase upload failed:", err);
+        throw new Error("Failed to upload to technical buffer. Please check your connection.");
       }
+
+        // 2. Google Drive Sync (via Buffer URL to bypass 10MB limit)
+      let driveFileId = "";
+      try {
+        const ROOT_FOLDER_ID = selectedProject.driveFolderId || process.env.VITE_GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+        
+        const drivePath = "."; // Export to root since trees are ignored
+        console.log(`📡 [Project Sync] Initiating Drive Upload-by-URL protocol: ${drivePath}`);
+
+        const driveRes = await fetch("/api/drive/upload-by-url", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectRootId: ROOT_FOLDER_ID,
+            path: drivePath,
+            projectCode: selectedProject.code || '16314',
+            fileUrl: fileUrl,
+            fileName: fullName + extension,
+            mimeType: currentPendingFile.type || 'application/octet-stream'
+          })
+        });
+
+        if (driveRes.ok) {
+          const driveData = await driveRes.json();
+          driveFileId = driveData.fileId;
+          console.log('✅ [Project Sync] Google Drive Sync Successful:', driveFileId);
+        } else {
+          const errorText = await driveRes.text();
+          console.error("❌ Drive sync failed:", errorText);
+          // Don't throw here, we still have the Firebase link which is better than nothing
+        }
+      } catch (err) {
+        console.error("❌ Google Drive sync protocol error:", err);
+      }
+
 
       // 3. Save to Registry
       const newDesign: Omit<DesignFile, "id"> = {
@@ -618,896 +588,93 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         isRtl && "rtl",
       )}
     >
-      {/* Header */}
-      <BreadcrumbHeader 
-        page={page} 
-        className="rounded-[2.5rem] border border-slate-200"
-        actions={
-          <div className="flex items-center gap-3">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        className="hidden" 
+        accept=".rvt,.dwg,.pdf,.ifc,.jpg,.jpeg,.png" 
+      />
+      
+      <div className="flex-1 min-h-0 bg-white dark:bg-surface rounded-[2.5rem] shadow-sm overflow-hidden border border-slate-200 dark:border-white/10">
+        <UniversalDataTable
+          config={{
+            id: 'project_designs',
+            label: t(page.id) === page.id ? page.title : t(page.id),
+            icon: DraftingCompass,
+            collection: 'project_designs',
+            columns: [
+              { 
+                key: 'fullName', 
+                label: 'Asset Reference', 
+                type: 'string',
+                render: (val, record) => (
+                  <div className="flex flex-col gap-1 min-w-[250px]">
+                    <span className="text-[11px] font-mono font-black text-slate-900 dark:text-white break-all group-hover:text-blue-600 transition-colors flex items-center gap-2">
+                       {record.type === "dwg" ? <DraftingCompass className="w-3.5 h-3.5 text-slate-900" /> : <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />}
+                       {val}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-500 italic uppercase tracking-wider line-clamp-1">{record.description}</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded text-[9px] font-black border border-blue-100 dark:border-blue-500/20">
+                        <History className="w-3 h-3" />
+                        {record.version}
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(record.uploadedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                )
+              },
+              { key: 'originator', label: 'Originator', type: 'string' },
+              { key: 'division', label: 'Classification', type: 'string' },
+              { key: 'status', label: 'Status', type: 'status' },
+              { key: 'size', label: 'Size', type: 'string' }
+            ]
+          }}
+          data={filteredDesigns}
+          onRowClick={handleDownload}
+          onNewClick={() => {
+            setFormData(prev => ({ ...prev, type: "DWG" }));
+            triggerUpload();
+          }}
+          onDeleteRecord={(id) => {
+            const file = designs.find(d => d.id === id);
+            if (file) {
+              setFileToDelete(file);
+              setShowDeleteConfirm(true);
+            }
+          }}
+          primaryAction={{
+            label: t('upload_asset') || 'UPLOAD ASSET',
+            icon: Upload,
+            onClick: () => {
+              setFormData(prev => ({ ...prev, type: "DWG" }));
+              triggerUpload();
+            }
+          }}
+          extraActions={
             <button 
               onClick={scanDriveFolders}
               disabled={isScanning}
-              className="flex items-center gap-3 px-5 py-4 bg-white border border-slate-200 text-slate-600 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] hover:bg-slate-50 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
             >
               {isScanning ? (
-                <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <HardDrive className="w-4 h-4 text-slate-400" strokeWidth={3} />
+                <HardDrive className="w-3.5 h-3.5" />
               )}
-              Sync from Drive
+              {isScanning ? 'Scanning...' : 'Sync Drive'}
             </button>
-            <button
-              onClick={() => {
-                setFormData((prev) => ({ ...prev, type: "DWG" }));
-                triggerUpload();
-              }}
-              className="flex items-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
-            >
-              <Plus className="w-4 h-4" strokeWidth={3} />
-              {t("upload_digital_asset")}
-            </button>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-4 bg-slate-100 text-slate-500 rounded-[1.5rem] hover:bg-slate-200 transition-all active:scale-95"
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-          </div>
-        }
-      />
-
-      {/* Smart Upload Modal */}
-      <AnimatePresence>
-        {isAddOpen && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAddOpen(false)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-            >
-              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-24 -mt-24 blur-3xl opacity-50" />
-
-              <div className="flex-shrink-0 mb-4 relative z-10">
-                <h2 className="text-lg font-black text-slate-900 tracking-tight italic uppercase flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-blue-600" />
-                  {t("smart_asset_cataloging") || "Smart Asset Cataloging"}
-                </h2>
-              </div>
-
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="grid grid-cols-2 gap-3 relative z-10 pb-2">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("originator") || "Originator"}
-                    </label>
-                    <select
-                      value={formData.originator}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          originator: e.target.value as any,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    >
-                      {ORIGINATORS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("asset_type") || "Asset Type"}
-                    </label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormData({ ...formData, type: val });
-                      }}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    >
-                      {FILE_TYPES.map((f) => (
-                        <option key={f.code} value={f.code}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {formData.type === "DWG" && (
-                    <>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                          Discipline
-                        </label>
-                        <select
-                          value={formData.discipline}
-                          onChange={(e) => {
-                            const disc = disciplines.find(
-                              (d) => d.label === e.target.value,
-                            );
-                            setFormData({
-                              ...formData,
-                              discipline: e.target.value,
-                              subType: disc?.categories[0] || "",
-                            });
-                          }}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                        >
-                          {disciplines.map((d) => (
-                            <option key={d.id} value={d.label}>
-                              {isRtl ? d.labelAr : d.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                          Drawing Classification
-                        </label>
-                        <select
-                          value={formData.subType}
-                          onChange={(e) =>
-                            setFormData({ ...formData, subType: e.target.value })
-                          }
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                        >
-                          {disciplines
-                            .find((d) => d.label === formData.discipline)
-                            ?.categories.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  <div
-                    className={cn(
-                      "space-y-1",
-                      formData.type !== "DWG" && "col-span-2",
-                    )}
-                  >
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("division") || "Division (MasterFormat)"}
-                    </label>
-                    <select
-                      value={formData.division}
-                      onChange={(e) =>
-                        setFormData({ ...formData, division: e.target.value })
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    >
-                      {DIVISIONS.map((d) => (
-                        <option key={d.code} value={d.code}>
-                          {d.div} - {d.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {formData.type !== "DWG" && <div className="hidden" />}
-
-                  <div className="col-span-1 space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("ref_no") || "Reference No."}
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.refNo}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          refNo: e.target.value.padStart(3, "0"),
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("description") || "Description"}
-                    </label>
-                    <input
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({ ...formData, description: e.target.value })
-                      }
-                      placeholder="e.g. GroundFloor_Layout"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("version") || "Version"}
-                    </label>
-                    <select
-                      value={formData.version}
-                      onChange={(e) =>
-                        setFormData({ ...formData, version: e.target.value })
-                      }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-blue-500"
-                    >
-                      {Array.from(
-                        { length: 10 },
-                        (_, i) => `V${(i + 1).toString().padStart(2, "0")}`,
-                      ).map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {t("naming_preview") || "Naming Preview"}
-                    </label>
-                    <div className="w-full bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2 text-[9px] font-mono font-bold text-blue-600 break-all leading-relaxed">
-                      {generateFileName()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-shrink-0 mt-4 flex gap-2 pt-2 border-t border-slate-100">
-                <button
-                  onClick={() => setIsAddOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-200 transition-all"
-                >
-                  {t("cancel") || "Cancel"}
-                </button>
-                <button
-                  onClick={handleSaveUpload}
-                  className="flex-[2] py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all"
-                >
-                  {t("confirm_catalog") || "Confirm & Catalog"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <section className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden p-6 space-y-6">
-        <div
-          className={cn(
-            "flex flex-col lg:flex-row lg:items-center justify-between gap-6",
-            isRtl && "lg:flex-row-reverse",
-          )}
-        >
-          <div
-            className={cn(
-              "flex items-center gap-2 p-1 bg-slate-100 rounded-xl w-full lg:w-fit",
-              isRtl && "flex-row-reverse",
-            )}
-          >
-            {[
-              {
-                id: "all",
-                label: isRtl ? "السجل العام" : "Registry",
-                icon: FileText,
-              },
-              {
-                id: "dwg",
-                label: isRtl ? "المخططات" : "Drawings",
-                icon: DraftingCompass,
-              },
-              {
-                id: "3d",
-                label: isRtl ? "ريندرات" : "Renders",
-                icon: ImageIcon,
-              },
-              {
-                id: "specs",
-                label: isRtl ? "مواصفات" : "Specs",
-                icon: FileText,
-              },
-            ].map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => {
-                  setActiveType(filter.id as any);
-                  setActiveDiscipline("all");
-                  setActiveSubFilter("all");
-                }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                  activeType === filter.id
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-900",
-                )}
-              >
-                <filter.icon className="w-3.5 h-3.5" />
-                {filter.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative group w-full lg:w-72">
-            <Search
-              className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400",
-                isRtl && "left-auto right-4",
-              )}
-            />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isRtl ? "بحث..." : "Search..."}
-              className={cn(
-                "w-full bg-slate-50 border border-slate-100 rounded-xl py-3 pl-10 pr-4 text-[11px] font-bold outline-none focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all",
-                isRtl && "text-right pr-10 pl-4",
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Delete Confirmation Modal */}
-        <AnimatePresence>
-          {showDeleteConfirm && fileToDelete && (
-            <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowDeleteConfirm(false)}
-                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl overflow-hidden"
-              >
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
-                    <Trash2 className="w-8 h-8" strokeWidth={2.5} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                      Delete Digital Asset?
-                    </h3>
-                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                      Are you sure you want to permanently delete this file? This action cannot be undone.
-                    </p>
-                  </div>
-
-                  {/* File Stats Card */}
-                  <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      <span>File Name</span>
-                      <span className="text-slate-900 truncate max-w-[200px] ml-4">{fileToDelete.fullName}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      <span>Reference</span>
-                      <span className="text-slate-900 font-mono italic">{fileToDelete.refNo}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      <span>Size</span>
-                      <span className="text-slate-900">{fileToDelete.size}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 w-full pt-2">
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all active:scale-95"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleDelete(fileToDelete.id)}
-                      className="px-6 py-4 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 active:scale-95"
-                    >
-                      Delete Asset
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Hidden File Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept=".rvt,.dwg,.pdf,.ifc,.jpg,.jpeg,.png"
+          }
+          title={t(page.id) === page.id ? page.title : t(page.id)}
+          description="Digital Asset Registry & Technical Drawings"
         />
-
-        <AnimatePresence>
-          {activeType === "dwg" && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-4 pt-4 border-t border-slate-100 overflow-hidden"
-            >
-              <div
-                className={cn(
-                  "flex flex-wrap items-center gap-2",
-                  isRtl && "flex-row-reverse",
-                )}
-              >
-                <button
-                  onClick={() => {
-                    setActiveDiscipline("all");
-                    setActiveSubFilter("all");
-                  }}
-                  className={cn(
-                    "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                    activeDiscipline === "all"
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200",
-                  )}
-                >
-                  {isRtl ? "الكل" : "All"}
-                </button>
-                {disciplines.map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => {
-                      setActiveDiscipline(d.label);
-                      setActiveSubFilter("all");
-                    }}
-                    className={cn(
-                      "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                      activeDiscipline === d.label
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                        : "bg-slate-100 text-slate-500 hover:bg-slate-200",
-                    )}
-                  >
-                    {isRtl ? d.labelAr : d.label}
-                  </button>
-                ))}
-              </div>
-
-              {activeDiscipline !== "all" && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={cn(
-                    "flex items-center gap-2 pl-4 border-l-2 border-blue-500/20",
-                    isRtl && "flex-row-reverse border-l-0 border-r-2",
-                  )}
-                >
-                  <button
-                    onClick={() => setActiveSubFilter("all")}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all",
-                      activeSubFilter === "all"
-                        ? "bg-amber-100 text-amber-700 font-bold"
-                        : "text-slate-400 hover:text-slate-600",
-                    )}
-                  >
-                    {isRtl ? "جميع التصنيفات" : "All Categories"}
-                  </button>
-                  {disciplines
-                    .find((d) => d.label === activeDiscipline)
-                    ?.categories.map((sub) => (
-                      <button
-                        key={sub}
-                        onClick={() => setActiveSubFilter(sub)}
-                        className={cn(
-                          "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all",
-                          activeSubFilter === sub
-                            ? "bg-amber-100 text-amber-700 font-bold"
-                            : "text-slate-400 hover:text-slate-600",
-                        )}
-                      >
-                        {sub}
-                      </button>
-                    ))}
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </section>
-
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {isSettingsOpen && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4">
-            <div
-              onClick={() => setIsSettingsOpen(false)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-3xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
-            >
-              <div className="flex-shrink-0 flex justify-between items-center mb-4">
-                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                  Manage Classifications
-                </h2>
-                <button 
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-all"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      Add New Discipline
-                    </h3>
-                    <div className="space-y-2">
-                      <input
-                        placeholder="Label (e.g. Interior Design)"
-                        value={newDisc.label}
-                        onChange={(e) =>
-                          setNewDisc((p) => ({ ...p, label: e.target.value }))
-                        }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
-                      />
-                      <input
-                        placeholder="Label Arabic (e.g. تصميم داخلي)"
-                        value={newDisc.labelAr}
-                        onChange={(e) =>
-                          setNewDisc((p) => ({ ...p, labelAr: e.target.value }))
-                        }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
-                      />
-                      <button
-                        onClick={handleAddDiscipline}
-                        className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95"
-                      >
-                        Add Discipline
-                      </button>
-                    </div>
-
-                    <div className="pt-4 space-y-2">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Active Disciplines
-                      </h3>
-                      <div className="space-y-1.5">
-                        {disciplines.map((d) => (
-                          <div
-                            key={d.id}
-                            className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all"
-                          >
-                            <div className="flex flex-col">
-                              <span className="text-xs font-black text-slate-900">
-                                {d.label}
-                              </span>
-                              <span className="text-[9px] font-bold text-slate-400">
-                                {d.labelAr}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => handleDeleteDiscipline(d.id)}
-                              className="text-slate-300 p-1.5 hover:bg-rose-50 hover:text-rose-500 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      Add Category to Discipline
-                    </h3>
-                    <div className="space-y-2">
-                      <select
-                        value={newCat.discId}
-                        onChange={(e) =>
-                          setNewCat((p) => ({ ...p, discId: e.target.value }))
-                        }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm outline-none focus:bg-white transition-all focus:ring-2 focus:ring-blue-500/20"
-                      >
-                        <option value="">Select Discipline...</option>
-                        {disciplines.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        placeholder="Category Name (e.g. Moodboards)"
-                        value={newCat.label}
-                        onChange={(e) =>
-                          setNewCat((p) => ({ ...p, label: e.target.value }))
-                        }
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500/20"
-                      />
-                      <button
-                        onClick={handleAddCategory}
-                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
-                      >
-                        Add Category
-                      </button>
-                    </div>
-
-                    <div className="pt-4 space-y-2">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Discipline Categories
-                      </h3>
-                      <div className="space-y-3">
-                        {disciplines.map((d) => (
-                          <div
-                            key={d.id}
-                            className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 group hover:bg-white transition-all"
-                          >
-                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest opacity-60">
-                              {d.label}
-                            </span>
-                            <div className="flex flex-wrap gap-2">
-                              {d.categories.map((cat) => (
-                                <span
-                                  key={cat}
-                                  className="px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-600 flex items-center gap-2 hover:border-blue-200 transition-all"
-                                >
-                                  {cat}
-                                  <button
-                                    onClick={async () => {
-                                      const filtered = d.categories.filter(
-                                        (c) => c !== cat,
-                                      );
-                                      await updateDoc(
-                                        doc(db, "design_disciplines", d.id),
-                                        { categories: filtered },
-                                      );
-                                    }}
-                                    className="text-slate-300 hover:text-rose-500 transition-colors"
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              ))}
-                              {d.categories.length === 0 && (
-                                <span className="text-[9px] font-medium text-slate-400 italic">No categories defined</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Compact Registry List View */}
-      <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest",
-                    isRtl && "text-right",
-                  )}
-                >
-                  Type
-                </th>
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest",
-                    isRtl && "text-right",
-                  )}
-                >
-                  Revision Code / Description
-                </th>
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest",
-                    isRtl && "text-right",
-                  )}
-                >
-                  Originator
-                </th>
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest",
-                    isRtl && "text-right",
-                  )}
-                >
-                  Classification
-                </th>
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest",
-                    isRtl && "text-right",
-                  )}
-                >
-                  Status
-                </th>
-                <th
-                  className={cn(
-                    "px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right",
-                    isRtl && "text-left",
-                  )}
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              <AnimatePresence mode="popLayout">
-                {filteredDesigns.map((design) => (
-                  <motion.tr
-                    key={design.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="group hover:bg-blue-50/50 transition-all text-left cursor-pointer"
-                  >
-                    <td
-                      className="px-6 py-5"
-                      onClick={() => handleDownload(design)}
-                    >
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-110",
-                          design.type === "3d"
-                            ? "bg-indigo-500"
-                            : design.type === "dwg"
-                              ? "bg-slate-900"
-                              : "bg-blue-500",
-                        )}
-                      >
-                        {design.type === "3d" ? (
-                          <ImageIcon className="w-5 h-5" />
-                        ) : (
-                          <DraftingCompass className="w-5 h-5" />
-                        )}
-                      </div>
-                    </td>
-                    <td
-                      className="px-6 py-5"
-                      onClick={() => handleDownload(design)}
-                    >
-                      <div className="flex flex-col gap-1 min-w-[300px]">
-                        <span className="text-[11px] font-mono font-black text-slate-900 break-all group-hover:text-blue-600 transition-colors">
-                          {design.fullName}
-                        </span>
-                        <span className="text-[10px] font-medium text-slate-500 italic uppercase tracking-wider">
-                          {design.description}
-                        </span>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black border border-blue-100">
-                            <History className="w-3 h-3" />
-                            {design.version}
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(design.uploadedAt).toLocaleDateString()}
-                          </span>
-                          <span className="text-[9px] font-bold text-slate-400 tracking-tighter uppercase">
-                            {design.size}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
-                          {design.uploadedBy.charAt(0)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-                            {design.originator}
-                          </span>
-                          <span className="text-[8px] font-bold text-slate-400">
-                            {design.uploadedBy}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                          {design.division}
-                        </span>
-                        {design.subType && (
-                          <span className="text-[9px] font-bold text-blue-500/70">
-                            {design.discipline} - {design.subType}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 w-fit",
-                          design.status === "Approved"
-                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                            : design.status === "Work in Progress"
-                              ? "bg-blue-50 text-blue-600 border border-blue-100"
-                              : "bg-amber-50 text-amber-600 border border-amber-100",
-                        )}
-                      >
-                        {design.status === "Approved" ? (
-                          <CheckCircle2 className="w-3 h-3" />
-                        ) : (
-                          <Clock className="w-3 h-3" />
-                        )}
-                        {design.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center justify-end gap-2">
-                        {design.status !== "Approved" && (
-                          <button
-                            onClick={() => handleApprove(design.id)}
-                            className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                            title="Approve"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(design);
-                          }}
-                          className="p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                          title="Download Asset"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFileToDelete(design);
-                            setShowDeleteConfirm(true);
-                          }}
-                          className="p-2.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-
-          {filteredDesigns.length === 0 && (
-            <div className="py-32 flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
-                <Search className="w-8 h-8" />
-              </div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                {t("no_designs_found") ||
-                  "No Assets found in this classification"}
-              </p>
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* Hidden File Input */}
     </div>
   );
 };

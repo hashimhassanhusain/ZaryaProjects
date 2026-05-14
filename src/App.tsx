@@ -55,6 +55,7 @@ import { ResourcesView } from './components/ResourcesView';
 import { ContactsView } from './components/ContactsView';
 import { WorkPackagesView } from './components/WorkPackagesView';
 import { EnterpriseStructure } from './components/EnterpriseStructure';
+import { PMISAdministrationView } from './components/PMISAdministrationView';
 import { pages } from './data';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
@@ -63,7 +64,7 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 import { ResourceOptimizationHub } from './components/ResourceOptimizationHub';
 import { ScheduleHubView } from './components/ScheduleHubView';
-import { FinanceHubView } from './components/FinanceHubView';
+import { FinanceHubExecutiveDashboard } from './components/FinanceHubView';
 import { StakeholdersHubView } from './components/StakeholdersHubView';
 import { ResourcesHubView } from './components/ResourcesHubView';
 import { RiskOpportunityHub } from './components/RiskOpportunityHub';
@@ -164,18 +165,37 @@ const PageRenderer = () => {
     return <ProjectSelectorView />;
   }
 
-  // If it's a schedule page, always use ScheduleHubView or the direct view
-  const isSchedulePage = page.domain === 'schedule' || page.id === 'sched';
-
+  // Domain-specific custom Hub bypasses
+  const isSchedulePage = page.domain === 'controls' || page.id === 'ctrl';
   if (isSchedulePage) {
-    return (
-      <div className="w-full">
-        <ScheduleHubView page={page} />
-      </div>
-    );
+    return <div className="w-full"><ScheduleHubView page={page} /></div>;
+  }
+  
+  if (page.domain === 'finance' || page.id === 'fin') {
+    return <div className="w-full"><FinanceHubExecutiveDashboard page={page} /></div>;
   }
 
-  // Handle Hub pages (Focus Areas and Domains)
+  if (page.domain === 'governance' || page.id === 'gov') {
+    return <div className="w-full"><GovernanceHubView page={page} /></div>;
+  }
+
+  if (page.domain === 'resources' || page.id === 'res') {
+    return <div className="w-full"><ResourcesHubView page={page} /></div>;
+  }
+
+  if (page.domain === 'stakeholders' || page.id === 'stak') {
+    return <div className="w-full"><StakeholdersHubView page={page} /></div>;
+  }
+
+  if (page.domain === 'risk' || page.id === 'risk') {
+    return <div className="w-full"><RiskOpportunityHub page={page} /></div>;
+  }
+
+  if (page.domain === 'administration' || page.id === 'admin_hub') {
+    return <div className="w-full"><PMISAdministrationView page={page} /></div>;
+  }
+
+  // Handle remaining generic Hub pages
   if (page.type === 'hub') {
     const allChildren = pages.filter(p => p.parentId === page.id || (page.domain && p.domain === page.domain && p.id !== page.id));
     const accessibleChildren = allChildren.filter(child => {
@@ -267,6 +287,24 @@ const PageRenderer = () => {
   const isFoundationPage = page.id === 'foundation';
   const isDesignHubPage = page.id === 'design_hub';
 
+  // Hub vs Terminal Logic
+  if ((page.type as string) === 'hub') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={page.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="w-full"
+        >
+          <DomainDashboard page={page} childrenPages={pages.filter(p => p.parentId === page.id)} />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -294,7 +332,7 @@ const PageRenderer = () => {
         ) : isFilesPage ? (
           <FileExplorer projectId={selectedProject?.id || ''} />
         ) : isFinancePage ? (
-          <FinanceHubView page={page} />
+          <FinanceHubExecutiveDashboard page={page} />
         ) : isResourcesPage ? (
           <ResourcesHubView page={page} />
         ) : isStakeholdersPage ? (
@@ -386,8 +424,6 @@ const PageRenderer = () => {
 import { AIAssistant } from './components/AIAssistant';
 import { FoundationInsights } from './components/FoundationInsights';
 
-import { Breadcrumbs } from './components/Breadcrumbs';
-
 const AppLayout = () => {
   const { t, isRtl } = useLanguage();
   const { selectedProject } = useProject();
@@ -416,7 +452,6 @@ const AppLayout = () => {
       <div className="flex-1 flex flex-col overflow-hidden w-full min-w-0">
         <div className="no-print">
           <Header />
-          <Breadcrumbs />
         </div>
         
         <main 
@@ -528,13 +563,15 @@ const AppLayout = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {PERFORMANCE_DOMAINS.map(d => {
                       const hubId = {
+                        'communications': 'comm',
                         'governance': 'gov',
                         'delivery': 'scope',
-                        'schedule': 'sched',
+                        'controls': 'ctrl',
                         'finance': 'fin',
                         'stakeholders': 'stak',
                         'resources': 'res',
-                        'risk': 'risk'
+                        'risk': 'risk',
+                        'handover': 'handover_hub'
                       }[d.id] || 'gov';
                       
                       return (

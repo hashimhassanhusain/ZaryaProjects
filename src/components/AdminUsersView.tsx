@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { User as UserType } from '../types';
-import { Breadcrumbs } from './Breadcrumbs';
 import { toast } from 'react-hot-toast';
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 export const AdminUsersView: React.FC = () => {
   const navigate = useNavigate();
@@ -106,57 +106,50 @@ export const AdminUsersView: React.FC = () => {
           <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Users: {users.length}</div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-widest text-[10px]">
-              <tr>
-                <th className="px-8 py-4">User Info</th>
-                <th className="px-8 py-4">Company</th>
-                <th className="px-8 py-4">Role</th>
-                <th className="px-8 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredUsers.map((user, idx) => (
-                <tr key={`${user.uid}-${idx}`} className="hover:bg-slate-50/50 transition-all group cursor-pointer" onClick={() => handleEditUser(user.uid)}>
-                  <td className="px-8 py-5">
+        <UniversalDataTable
+          config={{
+            collection: 'users',
+            label: 'User',
+            columns: [
+              { key: 'userInfo', label: 'User Info', type: 'text', render: (_, row) => (
                     <div className="flex items-center gap-3">
-                      {user.photoURL ? (
-                        <img src={user.photoURL || null} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" referrerPolicy="no-referrer" />
+                      {row.photoURL ? (
+                        <img src={row.photoURL || undefined} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-sm border-2 border-white shadow-sm">
-                          {user.name.charAt(0)}
+                          {row.name.charAt(0)}
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-slate-800">{user.name}</div>
-                        <div className="text-[10px] text-slate-400 font-medium">{user.email}</div>
+                        <div className="font-bold text-slate-800">{row.name}</div>
+                        <div className="text-[10px] text-slate-400 font-medium">{row.email}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-medium">{user.companyName || 'Not Assigned'}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                      user.role === 'admin' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                    <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100" onClick={(e) => handleDeleteUser(user.uid, e)}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ) },
+              { key: 'companyName', label: 'Company', type: 'text', render: (val) => (
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="font-medium">{val || 'Not Assigned'}</span>
+                </div>
+              ) },
+              { key: 'role', label: 'Role', type: 'status', render: (val) => (
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                  val === 'admin' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                }`}>
+                  {val}
+                </span>
+              ) }
+            ]
+          }}
+          data={filteredUsers}
+          onRowClick={(row) => handleEditUser(row.uid || row.id)}
+          onDeleteRecord={(id) => {
+            const e = new Event('click') as unknown as React.MouseEvent;
+            handleDeleteUser(id, e);
+          }}
+          showAddButton={false}
+          title={<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Total Users: {users.length}</span>}
+        />
       </div>
     </div>
   );

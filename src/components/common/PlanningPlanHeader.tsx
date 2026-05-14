@@ -48,47 +48,48 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
   );
 
   return (
-    <div className="space-y-6 mb-12">
+    <div className="space-y-4 mb-6">
       {/* Heritage Header */}
-      <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+      <div className="bg-neutral-900 rounded-3xl p-6 text-white relative overflow-hidden shadow-xl">
+         <div className="absolute top-0 right-0 w-48 h-48 bg-slate-500/5 rounded-full blur-3xl -mr-24 -mt-24" />
          
-         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-            <div className="space-y-4 max-w-2xl">
-               <div className="flex items-center gap-3">
-                  <div className="px-3 py-1 bg-neutral-700 text-[9px] font-black uppercase tracking-[0.2em] rounded-full">
-                     {t('master_foundation_data') || 'Master Foundation Data'}
+         <div className="flex flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-6 flex-1 min-w-0">
+               <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                     <span className="px-2 py-0.5 bg-neutral-700 text-[8px] font-black uppercase tracking-widest rounded-full shrink-0">
+                        {t('master_foundation_data') || 'Master Data'}
+                     </span>
+                     <div className="flex items-center gap-1.5 text-emerald-400 text-[9px] font-bold shrink-0">
+                        <ShieldCheck className="w-3 h-3" />
+                        {t('synchronized_with_charter') || 'Sync'}
+                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold">
-                     <ShieldCheck className="w-3.5 h-3.5" />
-                     {t('synchronized_with_charter') || 'Synchronized with Project Charter'}
-                  </div>
+                  <h2 className="text-xl font-black italic uppercase tracking-tight truncate">
+                     {basis?.title || selectedProject?.name}
+                  </h2>
                </div>
                
-               <h2 className="text-2xl md:text-3xl font-black italic uppercase tracking-tight">
-                  {basis?.title || selectedProject?.name}
-               </h2>
-               
-               <div className="flex flex-wrap gap-6">
-                  <div className="flex items-center gap-2.5 opacity-80">
-                     <User className="w-4 h-4 text-neutral-400" />
+               <div className="hidden md:flex flex-wrap gap-4 border-l border-white/10 pl-6">
+                  <div className="flex items-center gap-2 opacity-80 shrink-0">
+                     <User className="w-3.5 h-3.5 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('pm') || 'Project Manager'}</span>
-                        <span className="text-xs font-bold">{basis?.manager || 'Not Assigned'}</span>
+                        <span className="text-[7px] font-black uppercase tracking-widest text-neutral-400">PM</span>
+                        <span className="text-[10px] font-bold">{basis?.manager || 'Not Assigned'}</span>
                      </div>
                   </div>
-                  <div className="flex items-center gap-2.5 opacity-80">
-                     <Calendar className="w-4 h-4 text-neutral-400" />
+                  <div className="flex items-center gap-2 opacity-80 shrink-0">
+                     <Calendar className="w-3.5 h-3.5 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('start_date') || 'Planned Start'}</span>
-                        <span className="text-xs font-bold">{basis?.startDate || '---'}</span>
+                        <span className="text-[7px] font-black uppercase tracking-widest text-neutral-400">START</span>
+                        <span className="text-[10px] font-bold">{basis?.startDate || '---'}</span>
                      </div>
                   </div>
-                  <div className="flex items-center gap-2.5 opacity-80">
-                     <DollarSign className="w-4 h-4 text-neutral-400" />
+                  <div className="flex items-center gap-2 opacity-80 shrink-0">
+                     <DollarSign className="w-3.5 h-3.5 text-neutral-400" />
                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('initial_budget') || 'Initial Budget'}</span>
-                        <span className="text-xs font-bold">
+                        <span className="text-[7px] font-black uppercase tracking-widest text-neutral-400">BUDGET</span>
+                        <span className="text-[10px] font-bold">
                            {basis?.budget?.toLocaleString()} {basis?.currency}
                         </span>
                      </div>
@@ -96,56 +97,48 @@ export const PlanningPlanHeader: React.FC<PlanningPlanHeaderProps> = ({
                </div>
             </div>
 
-            <div className="flex flex-col items-end gap-3">
+            <div className="flex items-center gap-3 shrink-0">
                {/* Version Selector */}
-               <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl border border-white/10">
-                  <div className="flex flex-col items-end pr-3 border-r border-white/10 italic">
-                     <span className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{t('current_baseline') || 'Current Baseline'}</span>
-                     <span className="text-xs font-black text-neutral-400">V{currentVersion}</span>
+               <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-xl border border-white/10">
+                  <div className="flex flex-col items-end pr-2 border-r border-white/10 italic">
+                     <span className="text-[7px] font-black uppercase tracking-widest text-neutral-400">V{currentVersion}</span>
                   </div>
                   
                   <div className="relative group">
                      <select 
                        value={currentVersion}
                        onChange={(e) => onVersionChange(e.target.value)}
-                       className="bg-transparent text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer pr-8 appearance-none py-2 pl-4"
+                       className="bg-transparent text-[9px] font-black uppercase tracking-widest outline-none cursor-pointer pr-6 appearance-none py-1 pl-2"
                      >
                         {versions.length > 0 ? (
                           versions.map(v => (
-                            <option key={v.id} value={v.version} className="text-neutral-900">V{v.version} - {v.userName}</option>
+                            <option key={v.id} value={v.version} className="text-neutral-900">V{v.version}</option>
                           ))
                         ) : (
-                          <option value="1.0" className="text-neutral-900">V1.0 - Default</option>
+                          <option value="1.0" className="text-neutral-900">V1.0</option>
                         )}
                      </select>
-                     <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                     <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
                   </div>
 
                   <button 
                     onClick={onNewVersion}
-                    className="w-10 h-10 bg-neutral-700 rounded-xl flex items-center justify-center hover:bg-neutral-600 transition-all active:scale-90"
+                    className="w-7 h-7 bg-neutral-700 rounded-lg flex items-center justify-center hover:bg-neutral-600 transition-all active:scale-90"
                     title="Generate New Version"
                   >
-                     <Plus className="w-5 h-5" />
+                     <Plus className="w-4 h-4" />
                   </button>
                </div>
-               
-               <p className="text-[9px] font-medium text-slate-500 italic max-w-[200px] text-right">
-                  {t('plan_version_desc') || 'Versions are immutable snapshots. Create a new version to apply fundamental planning changes.'}
-               </p>
             </div>
          </div>
       </div>
 
-      {/* Description Sync */}
-      <div className="flex items-start gap-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-         <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-         <div className="space-y-1">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-900">{t('inherited_mission') || 'Inherited Project Mission'}</h4>
-            <p className="text-xs text-blue-800/70 font-medium leading-relaxed italic">
-               "{basis?.description || 'No mission description available from charter.'}"
-            </p>
-         </div>
+      {/* Description Sync - Compact */}
+      <div className="flex items-center gap-3 px-4 py-2 bg-blue-50/50 rounded-xl border border-blue-100/50">
+         <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+         <p className="text-[10px] text-blue-800/70 font-medium leading-none italic truncate">
+            {basis?.description || 'No mission description available from charter.'}
+         </p>
       </div>
     </div>
   );

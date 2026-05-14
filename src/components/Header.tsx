@@ -9,7 +9,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { auth } from '../firebase';
 import { getDoc, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { cn, stripNumericPrefix } from '../lib/utils';
+import { cn, stripNumericPrefix, isAdminRole } from '../lib/utils';
 
 import { useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
@@ -22,13 +22,16 @@ import { PERFORMANCE_DOMAINS } from '../constants/navigation';
 import { SmartCard } from './SmartCard';
 
 const hubIds: Record<string, string> = {
+  'communications': 'comm',
   'governance': 'gov',
   'delivery': 'scope',
-  'schedule': 'sched',
+  'controls': 'ctrl',
   'finance': 'fin',
   'stakeholders': 'stak',
   'resources': 'res',
-  'risk': 'risk'
+  'risk': 'risk',
+  'handover': 'handover_hub',
+  'administration': 'admin_hub'
 };
 
 export const Header: React.FC = () => {
@@ -102,7 +105,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[56px] bg-white dark:bg-[#1A1C1E] border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
+    <header className="h-[48px] bg-white dark:bg-[#1A1C1E] border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
@@ -198,10 +201,14 @@ export const Header: React.FC = () => {
 
         {/* Global Hubs Navigation */}
         <nav className="flex items-center h-full gap-0.5 flex-1 px-1 lg:px-4 overflow-x-auto no-scrollbar min-w-0">
-           {PERFORMANCE_DOMAINS.map((domain, idx) => {
+           {PERFORMANCE_DOMAINS.filter(domain => !domain.isAdminOnly || (appUser && isAdminRole(appUser.role))).map((domain, idx) => {
              const Icon = domain.icon || Info;
              const hubId = hubIds[domain.id] || 'gov';
              const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
+             
+             const fullTitle = stripNumericPrefix(t(domain.id) === domain.id ? domain.title : t(domain.id));
+             const displayWord = fullTitle.split(/[\s,&]+/)[0] || fullTitle;
+
              return (
                <Link 
                  key={`${domain.id}-${idx}`} 
@@ -215,8 +222,21 @@ export const Header: React.FC = () => {
                >
                  <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-900 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
                  <span className="text-[10px] lg:text-[12px] font-black uppercase tracking-widest leading-none whitespace-nowrap transition-colors">
-                    {stripNumericPrefix(t(domain.id))}
+                    {displayWord}
                  </span>
+                 
+                 {/* Tooltip */}
+                 <div className={cn(
+                   "absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-3 bg-neutral-900 dark:bg-surface text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[200] min-w-[200px] border border-white/10 scale-95 group-hover:scale-100",
+                   isRtl ? "text-right" : "text-left"
+                 )}>
+                    <div className="font-extrabold text-[10px] uppercase tracking-wider mb-1 text-brand">{fullTitle}</div>
+                    {domain.description && (
+                      <div className="text-[9px] text-white/60 font-medium leading-tight whitespace-normal">{domain.description}</div>
+                    )}
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-900 dark:bg-surface rotate-45 border-t border-l border-white/10" />
+                 </div>
+
                  {isActive && (
                     <motion.div layoutId="nav-glow" className="absolute inset-0 bg-brand/5 rounded-xl -z-10" />
                  )}

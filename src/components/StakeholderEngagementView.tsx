@@ -7,6 +7,7 @@ import { collection, onSnapshot, query, where, updateDoc, doc, addDoc, serverTim
 import { useProject } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
+import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface Stakeholder {
   id: string;
@@ -178,23 +179,12 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
 
         {activeSubTab === 'engagement' && (
           <section className="bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm overflow-hidden">
-             <div className="p-8 border-b border-slate-50 dark:border-white/5 bg-slate-50/30">
-               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 italic">Engagement Matrix (C vs D)</h3>
-             </div>
-             <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-slate-50/50 dark:bg-white/5">
-                    <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stakeholder</th>
-                    <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Current</th>
-                    <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Desired</th>
-                    <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
-                    <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategy</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {stakeholders.map((sh) => (
-                    <tr key={sh.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-8 py-6">
+             <UniversalDataTable
+               config={{
+                  collection: 'stakeholders',
+                  label: 'Stakeholder',
+                  columns: [
+                    { key: 'name', label: 'Stakeholder', type: 'text', render: (_, sh) => (
                         <div className="flex items-center gap-3">
                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
                               {sh.name[0]}
@@ -204,18 +194,18 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sh.role}</p>
                            </div>
                         </div>
-                      </td>
-                      <td className="px-8 py-6 text-center">
+                    ) },
+                    { key: 'currentEngagement', label: 'Current', type: 'text', render: (val) => (
                         <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg uppercase">
-                           {sh.currentEngagement || 'Unaware'}
+                           {val || 'Unaware'}
                         </span>
-                      </td>
-                      <td className="px-8 py-6 text-center">
+                    ) },
+                    { key: 'desiredEngagement', label: 'Desired', type: 'text', render: (val) => (
                         <span className="text-[10px] font-semibold text-brand bg-brand/10 px-3 py-1 rounded-lg uppercase">
-                           {sh.desiredEngagement || 'Supportive'}
+                           {val || 'Supportive'}
                         </span>
-                      </td>
-                      <td className="px-8 py-6 text-center">
+                    ) },
+                    { key: 'status', label: 'Status', type: 'text', render: (_, sh) => (
                         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${getEngagementColor(sh.currentEngagement, sh.desiredEngagement)}`}>
                            {getEngagementColor(sh.currentEngagement, sh.desiredEngagement).includes('emerald') ? (
                              <CheckCircle2 className="w-3 h-3" />
@@ -226,16 +216,19 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                               {getEngagementColor(sh.currentEngagement, sh.desiredEngagement).includes('emerald') ? 'Aligned' : 'Gap Detected'}
                            </span>
                         </div>
-                      </td>
-                      <td className="px-8 py-6">
+                    ) },
+                    { key: 'strategy', label: 'Strategy', type: 'text', render: () => (
                         <button className="text-[10px] font-semibold text-brand uppercase tracking-widest hover:underline transition-all">
                            View Mitigation Plan
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-             </table>
+                    ) }
+                  ]
+               }}
+               data={stakeholders}
+               onRowClick={console.log}
+               showAddButton={false}
+               title={<span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Engagement Matrix (C vs D)</span>}
+             />
           </section>
         )}
 

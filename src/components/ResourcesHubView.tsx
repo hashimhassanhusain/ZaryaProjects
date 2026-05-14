@@ -92,7 +92,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
           <div className={cn("flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5", isRtl && "flex-row-reverse")}>
              <span>{stripNumericPrefix(t(page.domain || 'resources'))}</span>
              <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />
-             <span className="text-slate-900 dark:text-white/60">{stripNumericPrefix(t(page.focusArea))}</span>
+             <span className="text-slate-900 dark:text-white/60"></span>
              {activeTab !== 'overview' && (
                <>
                  <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />

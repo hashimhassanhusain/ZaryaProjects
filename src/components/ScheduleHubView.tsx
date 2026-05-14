@@ -102,7 +102,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     },
     {
       id: 'initiating',
-      label: t('initiating'),
       tabs: schedulePages.filter(p => p.group === 'initiating' && p.id !== '1.3.1').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
@@ -117,7 +116,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     },
     {
       id: 'planning',
-      label: t('planning'),
       tabs: schedulePages.filter(p => p.group === 'planning').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
@@ -132,7 +130,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     },
     {
       id: 'executing',
-      label: t('executing'),
       tabs: schedulePages.filter(p => p.group === 'executing').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
@@ -147,7 +144,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     },
     {
       id: 'monitoring',
-      label: t('monitoring'),
       tabs: schedulePages.filter(p => p.group === 'monitoring').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
@@ -162,7 +158,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
     },
     {
       id: 'closing',
-      label: t('closing'),
       tabs: schedulePages.filter(p => p.group === 'closing').map(p => {
         const translated = p.title;
         const stripped = stripNumericPrefix(translated);
@@ -352,25 +347,6 @@ export const ScheduleHubView: React.FC<ScheduleHubViewProps> = ({ page }) => {
         onTabChange={handleTabChange}
       />
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {activeTab !== 'overview' && (
-          <header className="px-6 py-3 bg-white dark:bg-surface border-b border-neutral-100 dark:border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-neutral-50 dark:bg-white/5 flex items-center justify-center text-neutral-400 border border-neutral-100 dark:border-white/10">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400 leading-none mb-1">
-                  <span>{stripNumericPrefix(t(page.id === 'sched' ? 'schedule' : page.title))}</span>
-                  <ChevronRight className="w-2 h-2 opacity-50" />
-                  <span className="text-brand">{stripNumericPrefix(t(activeTab))}</span>
-                </div>
-                <h2 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight leading-none uppercase italic">
-                  {stripNumericPrefix(t(activeTab))}
-                </h2>
-              </div>
-            </div>
-          </header>
-        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

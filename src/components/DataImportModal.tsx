@@ -73,14 +73,14 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
       const reader = new FileReader();
       reader.onload = (evt) => {
         const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true, cellNF: false, cellText: false });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
         
         if (data.length > 0) {
           const headerRow = data[0] as string[];
-          const rows = XLSX.utils.sheet_to_json(ws);
+          const rows = XLSX.utils.sheet_to_json(ws, { raw: false, dateNF: 'yyyy-mm-dd' });
           setHeaders(headerRow);
           setRawRows(rows);
           setStep('mapping');
@@ -113,7 +113,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
       If no clear match exists, return null for that column.
       Your output must be a valid JSON object where keys are Target Column IDs and values are File Headers.
       
-      Try to be smart about synonyms (e.g., 'Qty' matches 'quantity', 'Rate' matches 'price', 'Desc' matches 'description').`;
+      Try to be smart about synonyms (e.g., 'Qty' matches 'quantity', 'Rate' matches 'price', 'Desc' matches 'description', 'Price' matches 'rate').`;
 
       const response = await ai.models.generateContent({
         model,
@@ -179,14 +179,31 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
           
           // Type conversion
           if (col.type === 'number') {
-            val = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : val;
+            if (typeof val === 'string') {
+               val = parseFloat(val.replace(/[^0-9.-]/g, ''));
+            } else if (typeof val !== 'number') {
+               val = 0;
+            }
             if (isNaN(val)) val = 0;
           } else if (col.type === 'date' && val) {
-             try {
-                const date = new Date(val);
-                val = isNaN(date.getTime()) ? val : date.toISOString().split('T')[0];
-             } catch {
-                // Keep original
+             const strVal = String(val).trim();
+             // Try common DD/MM/YYYY format fix
+             const dmY = strVal.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+             if (dmY) {
+                const day = parseInt(dmY[1]);
+                const month = parseInt(dmY[2]) - 1;
+                const year = parseInt(dmY[3]);
+                const d = new Date(year, month, day);
+                if (!isNaN(d.getTime())) {
+                   val = d.toISOString().split('T')[0];
+                }
+             } else {
+                try {
+                   const date = new Date(strVal);
+                   val = isNaN(date.getTime()) ? val : date.toISOString().split('T')[0];
+                } catch {
+                   // Keep original
+                }
              }
           }
           

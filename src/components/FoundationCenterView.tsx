@@ -48,7 +48,6 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { DataImportModal } from './DataImportModal';
@@ -159,8 +158,18 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
     const loadingToast = toast.loading('Uploading document...');
 
     try {
-      const storageRef = ref(storage, `foundation/${selectedProject.id}/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
+      const storagePath = `foundation/${selectedProject.id}/${Date.now()}_${file.name}`;
+      console.log('Attempting Foundation Upload to:', storagePath);
+      
+      const storageRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(storageRef, file).catch(err => {
+        console.error('Foundation Storage Upload Error:', err);
+        if (err.code === 'storage/retry-limit-exceeded') {
+          throw new Error('Connection to Firebase Storage timed out. This often happens on restricted networks or VPNs. Please try a different network.');
+        }
+        throw err;
+      });
+      
       const url = await getDownloadURL(snapshot.ref);
 
       if (agreementId) {
@@ -364,29 +373,41 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
     <div className={cn("max-w-7xl mx-auto space-y-8 pb-32 px-4", isRtl && "rtl", embedded && "max-w-full pb-10 px-0")}>
        {/* Header */}
         {!embedded && (
-          <BreadcrumbHeader 
-            page={page} 
-            activeTabLabel={activeTab === 'history' ? t('history') : (activeTab === 'business' ? t('business_docs') : (activeTab === 'eefs' ? t('eefs') : t(activeTab)))}
-            className="rounded-[2rem] md:rounded-[3rem] border border-slate-200"
-            actions={
-              <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white border border-slate-200 rounded-[2.5rem] p-6 shadow-sm">
+            <div className={cn("space-y-1", isRtl && "text-right")}>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight italic uppercase">
+                {stripNumericPrefix(page.title)}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">
+                {activeTab === 'history' ? t('history') : (activeTab === 'business' ? t('business_docs') : (activeTab === 'eefs' ? t('eefs') : t(activeTab)))}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {activeTab === 'agreements' && (
                 <button 
-                  onClick={() => window.print()}
-                  className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+                  onClick={addAgreement}
+                  className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                 >
-                   <Printer className="w-5 h-5" />
+                   <Plus className="w-4 h-4" />
+                   {t('add_agreement')}
                 </button>
-                <button 
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50"
-                >
-                   {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                   {t('save_master_data')}
-                </button>
-              </div>
-            }
-          />
+              )}
+              <button 
+                onClick={() => window.print()}
+                className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+              >
+                  <Printer className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50"
+              >
+                  {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                  {t('save_master_data')}
+              </button>
+            </div>
+          </div>
         )}
 
        {/* Tabs Navigation */}
@@ -414,15 +435,6 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
               </button>
             ))}
           </div>
-
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest text-[9px] hover:bg-blue-600 transition-all shadow-lg disabled:opacity-50 ml-auto"
-          >
-             {saving ? <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
-             {t('save_master_data')}
-          </button>
        </div>
 
        {/* Tab Content */}

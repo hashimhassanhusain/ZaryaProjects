@@ -40,10 +40,6 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
               <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
                 {t(domain.id)}
               </span>
-              <LucideIcons.ChevronRight className={cn("w-3 h-3 text-slate-300", isRtl ? "rotate-180" : "")} />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-900">
-                {t(area.id)}
-              </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-1 italic uppercase">
               {t('process_hub')}
@@ -51,7 +47,7 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
           </div>
         </div>
         <p className="text-slate-500 max-w-2xl text-lg font-medium leading-relaxed">
-          {t(domain.id + '_desc') || domain.description} {isRtl ? 'يركز هذا التقاطع على' : 'This intersection focuses on'} <span className="text-slate-900 font-bold underline decoration-blue-500/30 underline-offset-4">{t(area.id)}</span> {isRtl ? 'ضمن دورة حياة المشروع.' : 'activities within the project lifecycle.'}
+          {t(domain.id + '_desc') || domain.description}
         </p>
       </div>
 
@@ -84,7 +80,6 @@ export const MatrixDashboard: React.FC<MatrixDashboardProps> = ({ domainId, focu
                 </div>
 
                 <div className="space-y-2 flex-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{page.id}</div>
                   <h3 className="text-xl font-semibold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors rtl:text-right">
                     {t(page.id) || stripNumericPrefix(page.title)}
                   </h3>

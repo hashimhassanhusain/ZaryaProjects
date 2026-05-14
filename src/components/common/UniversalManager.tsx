@@ -23,9 +23,18 @@ import { rollupToParent, RollupLevel } from '../../services/rollupService';
 interface UniversalManagerProps {
   entityType: EntityType;
   inputs?: { id: string; title: string; status?: string }[];
+  onViewChange?: (view: 'list' | 'detail') => void;
+  onRecordSelect?: (record: any) => void;
+  onRegisterSaveTrigger?: (trigger: () => void) => void;
 }
 
-export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, inputs = [] }) => {
+export const UniversalManager: React.FC<UniversalManagerProps> = ({ 
+  entityType, 
+  inputs = [],
+  onViewChange,
+  onRecordSelect,
+  onRegisterSaveTrigger
+}) => {
   const { selectedProject } = useProject();
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [data, setData] = useState<any[]>([]);
@@ -58,8 +67,12 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
     if (!selectedProject) return;
 
     try {
+      // Access current formData if called via trigger
+      const dataToSave = recordData || selectedRecord;
+      if (!dataToSave) return;
+
       const finalData = {
-        ...recordData,
+        ...dataToSave,
         projectId: selectedProject.id,
         updatedAt: serverTimestamp(),
         // Add type for generic log entries
@@ -68,7 +81,36 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
 
       let docId = recordData.id;
       if (recordData.id) {
+        const oldRecord = data.find(r => r.id === recordData.id);
         await updateDoc(doc(db, config.collection, recordData.id), finalData);
+        
+        // --- Sync Rename to Drive if applicable ---
+        const titleField = config.columns.find(c => c.key.toLowerCase().includes('name') || c.key.toLowerCase().includes('title'))?.key;
+        console.log(`🔍 [Drive Rename Sync] Checking for rename. titleField: ${titleField}, driveFileId: ${oldRecord?.driveFileId}`);
+        
+        if (titleField && oldRecord && oldRecord.driveFileId && finalData[titleField] && finalData[titleField] !== oldRecord[titleField]) {
+           const oldTitle = oldRecord[titleField] || "";
+           const extension = oldTitle.includes('.') ? oldTitle.split('.').pop() : 'pdf'; // fallback to pdf
+           const newName = finalData[titleField].includes('.') ? finalData[titleField] : `${finalData[titleField]}.${extension}`;
+           
+           console.log(`🔄 [Drive Rename Sync] Triggering rename for ${oldRecord.driveFileId} to "${newName}"`);
+           
+           fetch('/api/drive/rename', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ fileId: oldRecord.driveFileId, newName })
+           })
+           .then(res => res.json())
+           .then(resData => {
+             if (resData.success) {
+               console.log(`✅ [Drive Rename Sync] Success: ${resData.file?.name}`);
+             } else {
+               console.error(`❌ [Drive Rename Sync] Server reported failure:`, resData.error);
+             }
+           })
+           .catch(err => console.error('❌ [Drive Rename Sync] Fetch failed:', err));
+        }
+
         toast.success(`${config.label} updated successfully`);
       } else {
         const docRef = await addDoc(collection(db, config.collection), {
@@ -122,6 +164,16 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
     }
   };
 
+  useEffect(() => {
+    onRegisterSaveTrigger?.(() => {
+      // This is a bit tricky because handleSave expects data from UniversalRecordDetail
+      // But we can just use a DOM event or a ref if we had one.
+      // For now, let's assume UniversalRecordDetail will use the shared context or we find another way.
+      const saveBtn = document.getElementById('universal-save-btn');
+      if (saveBtn) saveBtn.click();
+    });
+  }, [onRegisterSaveTrigger]);
+
   if (!config) return <div className="p-8 text-rose-500">Configuration missing for {entityType}</div>;
 
   return (
@@ -133,10 +185,14 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
           onRowClick={(record) => {
             setSelectedRecord(record);
             setView('detail');
+            onViewChange?.('detail');
+            onRecordSelect?.(record);
           }}
           onNewClick={() => {
             setSelectedRecord({});
             setView('detail');
+            onViewChange?.('detail');
+            onRecordSelect?.({});
           }}
           onDeleteRecord={handleDelete}
         />
@@ -146,7 +202,10 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({ entityType, 
           initialData={selectedRecord}
           onSave={handleSave}
           onSaveAsNew={handleSaveAsNew}
-          onCancel={() => setView('list')}
+          onCancel={() => {
+            setView('list');
+            onViewChange?.('list');
+          }}
           onUploadToDrive={(data) => toast('Integration with Drive Coming Soon', { icon: '☁️' })}
           onPreviewPDF={(data) => toast('PDF Preview Triggered', { icon: '📄' })}
           inputs={inputs}

@@ -12,6 +12,12 @@ import { Readable } from 'stream';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Ensure uploads directory exists for multer
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads', { recursive: true });
+}
+
 const upload = multer({ dest: 'uploads/' });
 
 // Enhanced Folder Cache with creation promises to prevent race conditions
@@ -297,26 +303,69 @@ function generateProjectCharterPDF(projectName: string, projectCode: string, cha
 }
 
 async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
-  const fullPathKey = `${rootFolderId}/${pathParts.join('/')}`;
+  let cleanRootId = (rootFolderId || '').trim();
+  if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
+    console.log(`⚠️ [Root ID Protocol] Invalid or legacy Root ID: "${rootFolderId}". Falling back.`);
+    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+  }
+
+  const fullPathKey = `${cleanRootId}/${pathParts.join('/')}`;
+  console.log(`🔍 [Root ID Protocol] Path search: ${fullPathKey}`);
   
   if (FOLDER_CREATE_PROMISES.has(fullPathKey)) {
     return FOLDER_CREATE_PROMISES.get(fullPathKey)!;
   }
 
   const creationPromise = (async () => {
-    let currentParentId = rootFolderId;
+    let currentParentId = cleanRootId;
     
-    for (const part of pathParts) {
-      const response = await drive.files.list({
-        // @ts-ignore
-        q: `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i];
+      console.log(`   📂 Step ${i+1}: Searching "${part}" in parent "${currentParentId}"`);
+      let query = `name = '${part.replace(/'/g, "\\'")}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+      
+      // Dynamic Path Discovery: If the part has a suffix or prefix like _6 or 6_, we should be flexible
+      const suffixMatch = part.match(/[._\s](\d+)$/);
+      const prefixMatch = part.match(/^(\d+)[._\s]/);
+      const categoryNum = suffixMatch ? suffixMatch[1] : (prefixMatch ? prefixMatch[1] : null);
+      
+      let response = await drive.files.list({
+        q: query,
         fields: 'files(id, name)',
         spaces: 'drive',
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
       });
 
-      const files = response.data.files;
+      let files = response.data.files;
+
+      // If not found and has a numeric identifier, try fuzzy searching
+      if ((!files || files.length === 0) && categoryNum) {
+         console.log(`🔍 [Root ID Protocol] Literal folder "${part}" not found. Searching for category match "${categoryNum}"...`);
+         
+         const fuzzyQuery = `name contains '${categoryNum}' and '${currentParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+         const fuzzyResponse = await drive.files.list({
+           q: fuzzyQuery,
+           fields: 'files(id, name)',
+           spaces: 'drive',
+           supportsAllDrives: true,
+           includeItemsFromAllDrives: true,
+         });
+
+         const fuzzyFiles = fuzzyResponse.data.files;
+         const matched = fuzzyFiles?.find((f: any) => {
+           const n = categoryNum;
+           return f.name === n || 
+                  f.name.startsWith(`${n}_`) || f.name.startsWith(`${n}.`) || f.name.startsWith(`${n} `) ||
+                  f.name.endsWith(`_${n}`) || f.name.endsWith(`.${n}`) || f.name.endsWith(` ${n}`);
+         });
+         
+         if (matched) {
+           console.log(`🎯 [Root ID Protocol] Dynamic match found: "${matched.name}" (ID: ${matched.id})`);
+           files = [matched];
+         }
+      }
+
       if (files && files.length > 0) {
         currentParentId = files[0].id!;
       } else {
@@ -389,57 +438,166 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
 }
 
 // API Routes
+app.post('/api/drive/upload-by-url', async (req: any, res: any) => {
+  const { projectRootId, path, projectCode, fileName, mimeType } = req.body;
+  const fileUrl = req.body.url || req.body.fileUrl;
+  const executionLog: string[] = [];
+  const log = (msg: string) => { console.log(msg); executionLog.push(msg); };
+  
+  if (!projectRootId || projectRootId.trim() === '.' || projectRootId === 'undefined') {
+    return res.status(400).json({ error: 'Invalid Project Root ID' });
+  }
+
+  if (!fileUrl || !fileName) {
+    return res.status(400).json({ error: 'Missing url/fileUrl or fileName' });
+  }
+  
+  const finalPath = path || '.';
+
+  log('--- DRIVE UPLOAD BY URL START ---');
+  log(`File: ${fileName}, ProjectRoot: ${projectRootId}, Path: ${finalPath}`);
+  
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: `Google Drive client not initialized: ${error}` });
+
+  // Root ID Repair Logic: Standardize common project root IDs if they are using the default shared one
+  let cleanRootId = (projectRootId || '').trim();
+  if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
+    log(`🔧 Standardizing Root ID from "${cleanRootId}" to shared production Root ID or environment var.`);
+    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+  }
+
+  let drivePath = path || '.';
+  try {
+    const pathParts = drivePath === '.' || drivePath === '/' ? [] : drivePath.split('/').filter((p: string) => p.trim().length > 0);
+    
+    // Capture sub-logs for better debugging in the response
+    const oldLog = console.log;
+    console.log = (...args) => {
+      oldLog(...args);
+      executionLog.push(args.join(' '));
+    };
+
+    try {
+      log(`🔍 Resolving path hierarchy...`);
+      const targetFolderId = await findOrCreateFolderByPath(drive, cleanRootId, pathParts);
+      console.log = oldLog;
+
+      if (!targetFolderId) {
+        throw new Error(`Failed to resolve or create folder path: ${path}`);
+      }
+
+      log(`✅ Target Folder ID: ${targetFolderId}`);
+
+      try {
+        log(`📂 Checking for existing version to archive...`);
+        await Promise.race([
+          archiveExistingFile(drive, targetFolderId, fileName),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Archive timeout')), 8000))
+        ]);
+      } catch (archiveErr) {
+        log(`⚠️ Archive phase skipped: ${archiveErr instanceof Error ? archiveErr.message : 'Timeout'}`);
+      }
+
+      log(`📡 Fetching asset from buffer: ${fileUrl.substring(0, 50)}...`);
+      
+      let response;
+      try {
+        response = await fetch(fileUrl, { signal: AbortSignal.timeout(15000) });
+      } catch (fetchErr: any) {
+        log(`❌ Fetch failed (Maybe Timeout): ${fetchErr.message}`);
+        throw new Error(`Failed to fetch file from buffer URL (Network Error: ${fetchErr.message})`);
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file from buffer URL (Status: ${response.status} ${response.statusText})`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      log(`📄 Buffer received (${buffer.length} bytes). Processing stream...`);
+
+      log(`📤 Transmitting to Google Drive API...`);
+      const resDrive = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          parents: [targetFolderId],
+          description: `Archived via Zarya PMIS | Project: ${projectCode || 'N/A'} | Path: ${path}`,
+        },
+        media: {
+          mimeType: mimeType || 'application/octet-stream',
+          body: Readable.from(buffer),
+        },
+        supportsAllDrives: true,
+        fields: 'id, name, webViewLink',
+      });
+      
+      log(`✨ DRIVE CLOUD SYNC SUCCESSFUL. File ID: ${resDrive.data.id}`);
+      
+      res.json({ 
+        success: true, 
+        fileId: resDrive.data.id, 
+        folderId: targetFolderId,
+        log: executionLog 
+      });
+    } finally {
+      console.log = oldLog;
+    }
+  } catch (err: any) {
+    log(`❌ CRITICAL UPLOAD FAILURE: ${err.message}`);
+    res.status(500).json({ 
+      error: err.message || 'Internal Server Error during Drive Sync',
+      log: executionLog
+    });
+  }
+});
+
 app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, res: any) => {
-  const { projectRootId, path } = req.body;
+  const { projectRootId, path, projectCode, fileName } = req.body;
   const file = req.file;
   
+  let cleanRootId = (projectRootId || '').trim();
+  if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
+    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+  }
+
+  let drivePath = path || '.';
+  if (!path) {
+     drivePath = '.';
+  }
+  
+  const finalFileName = fileName || file?.originalname;
+  
   console.log('--- DRIVE UPLOAD START ---');
-  console.log(`File: ${file?.originalname}, ProjectRoot: ${projectRootId}, Path: ${path}`);
+  console.log(`File: ${finalFileName}, ProjectRoot: ${projectRootId}, Path: ${drivePath}`);
   
   const { drive, error } = getDriveClient();
   
   if (error || !drive) {
-    console.error('❌ Drive Client Error:', error);
     return res.status(500).json({ error: error || 'Google Drive client not initialized' });
   }
 
   if (!file) {
-    console.error('❌ No file received by Multer');
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  if (!projectRootId || !path) {
-    console.error('❌ Missing projectRootId or path');
-    return res.status(400).json({ error: 'Missing required parameters' });
-  }
-
   try {
-    const pathParts = path.split('/').filter((p: string) => p.length > 0);
-    console.log(`Resolving path chain: ${pathParts.join(' > ')}`);
-    
-    const targetFolderId = await findOrCreateFolderByPath(drive, projectRootId, pathParts);
+    const pathParts = drivePath === '.' || drivePath === '/' ? [] : drivePath.split('/').filter((p: string) => p.trim().length > 0);
+    const targetFolderId = await findOrCreateFolderByPath(drive, cleanRootId, pathParts);
     
     if (!targetFolderId) {
-      console.error(`❌ Folder path creation failed: ${path}`);
-      return res.status(500).json({ error: `Could not navigate or create the folder path "${path}". Please check parent folder permissions and API quota.` });
+      return res.status(500).json({ error: `Could not navigate or create the folder path "${path}".` });
     }
 
-    console.log(`✅ Target folder resolved: ${targetFolderId}. Archiving existing version (if any)...`);
-    // Attempt archive but don't let it block indefinitely
     try {
-      await Promise.race([
-        archiveExistingFile(drive, targetFolderId, file.originalname),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Archive timeout')), 15000))
-      ]);
-    } catch (archiveErr) {
-      console.warn('⚠️ Archive operation skipped or timed out:', archiveErr instanceof Error ? archiveErr.message : archiveErr);
-    }
+      await archiveExistingFile(drive, targetFolderId, finalFileName);
+    } catch (archiveErr) {}
 
-    console.log(`🚀 Sending file stream to Google Drive...`);
     const resDrive = await drive.files.create({
       requestBody: {
-        name: file.originalname,
+        name: finalFileName,
         parents: [targetFolderId],
+        description: `Project: ${projectCode || 'N/A'} | Uploaded via PMIS`,
       },
       media: {
         mimeType: file.mimetype,
@@ -449,36 +607,16 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
       fields: 'id, name, webViewLink',
     });
     
-    console.log('✨ Drive Upload Successful. File ID:', resDrive.data.id);
-    
     if (fs.existsSync(file.path)) {
       try { fs.unlinkSync(file.path); } catch (e) {}
     }
     
-    res.json({ 
-      success: true, 
-      fileId: resDrive.data.id, 
-      folderId: targetFolderId 
-    });
+    res.json({ success: true, fileId: resDrive.data.id, folderId: targetFolderId });
   } catch (err: any) {
-    console.error('❌ Upload by path failed:', err);
     if (file && fs.existsSync(file.path)) {
       try { fs.unlinkSync(file.path); } catch (e) {}
     }
-    
-    const errorMessage = err.response?.data?.error?.message || err.message || 'Upload failed';
-    
-    if (errorMessage.includes('storage quota')) {
-      return res.status(403).json({ 
-        error: "Google Drive Storage Error: Please ensure you have space and the OAuth app has writing permissions to the target folder.",
-        details: err.response?.data?.error?.errors || null
-      });
-    }
-    
-    res.status(err.response?.status || 500).json({ 
-      error: errorMessage,
-      details: err.response?.data?.error?.errors || null
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -596,92 +734,63 @@ app.post('/api/projects/init-drive', async (req: any, res: any) => {
     }
 
     const folderTree = {
-      "0_Transmittals_and_Audit_Trail": [
-        { "0.1_Incoming_Transmittals": ["0.1.1_Emails", "0.1.2_Letters"] },
-        { "0.2_Outgoing_Transmittals": ["0.2.1_RFIs", "0.2.2_Submittals", "0.2.3_Proposals"] },
-        "0.3_Internal_Memos",
-        "0.4_Email_Archive",
-        "0.5_Archive_Transmittals_Log"
+      "00_Communications_Transmittals": [
+        "Incoming Transmittals",
+        "Outgoing Transmittals",
+        "Correspondence Register",
+        "RFIs",
+        "Submittal Logs"
       ],
-      "1_Business_Initiation_and_Governance": [
-        "1.1_Business_Case_and_Feasibility",
-        "1.2_Project_Charter",
-        "1.3_Benefits_Management_Plan",
-        "1.4_Legal_Agreements_and_MoUs",
-        "1.5_Team_Charter",
-        "1.6_Policies_and_Procedures",
-        "1.7_Archive_Governance_Versions"
+      "01_Project_Governance": [
+        "Project Charter",
+        "Contract Administration",
+        "Change Control",
+        "Governance Workflows"
       ],
-      "2_Project_Management_Plan_and_Baselines": [
-        "2.1_Integrated_Project_Management_Plan",
-        { "2.2_Scope_Management": ["2.2.1_Scope_Statement", "2.2.2_WBS_and_Dictionary", "2.2.3_Requirements_Documentation"] },
-        { "2.3_Project_Baselines": ["2.3.1_Scope_Baseline", "2.3.2_Schedule_Baseline", "2.3.3_Cost_Baseline"] },
-        { "2.4_Subsidiary_Management_Plans": ["2.4.1_Quality_Management_Plan", "2.4.2_Resource_Management_Plan", "2.4.3_Communications_Management_Plan", "2.4.4_Risk_Management_Plan", "2.4.5_Procurement_Management_Plan", "2.4.6_Stakeholder_Engagement_Plan"] },
-        "2.5_Archive_Management_Plans"
+      "02_Engineering_Design_Delivery": [
+        "Technical Specifications",
+        "Shop Drawings",
+        "BIM Coordination",
+        "Material Submittals",
+        "QA_QC"
       ],
-      "3_Dynamic_Project_Registers_and_Logs": [
-        "3.1_Assumption_Log",
-        "3.2_Stakeholder_Register",
-        "3.3_Risk_Register",
-        "3.4_Issue_Log",
-        "3.5_Change_Log",
-        "3.6_Lessons_Learned_Register",
-        "3.7_Requirements_Traceability_Matrix",
-        "3.8_Archive_Registers_Versions"
+      "03_Stakeholder_Engagement": [
+        "Stakeholder Register",
+        "Meetings Management",
+        "MOM Tracking"
       ],
-      "4_Technical_Engineering_and_Drawings": [
-        { "4.1_Architectural": ["4.1.1_Site_Plans", "4.1.2_Floor_Plans", "4.1.3_Sections", "4.1.4_Elevations", "4.1.5_RCP", "4.1.6_Floor_Patterns", "4.1.7_Schedules", "4.1.8_Architectural_Details", "4.1.9_Landscape_Plans", "4.1.10_3D_Renders"] },
-        { "4.2_Structural": ["4.2.1_General_Notes", "4.2.2_Foundations_and_Slabs", "4.2.3_Vertical_Elements", "4.2.4_Beams_Reinforcement", "4.2.5_Staircase_Details", "4.2.6_Misc_Structures"] },
-        { "4.3_Mechanical": ["4.3.1_HVAC", "4.3.2_Plumbing_and_Drainage", "4.3.3_Fire_Fighting", "4.3.4_Vertical_Transportation", "4.3.5_Kitchen_and_Cold_Storage", "4.3.6_Specialized_Machinery_Bowling", "4.3.7_Pool_and_Water_Features", "4.3.8_Gas_Systems"] },
-        { "4.4_Electrical": ["4.4.1_Lighting", "4.4.2_Power", "4.4.3_Low_Current"] },
-        "4.5_Archive_Superseded_Drawings"
+      "04_Resources_Procurement_Logistics": {
+        "04.1_Human_Resources": ["Staff Attendance", "Timesheets"],
+        "04.2_Procurement_Supply_Chain": [
+          "04.2.1_Material_Request_MR",
+          "04.2.2_Purchase_Requisition_PR",
+          "04.2.3_Request_For_Quotation_RFQ",
+          "04.2.8_Purchase_Order_PO",
+          "04.2.10_Material_Receiving_Inspection_MIR"
+        ]
+      },
+      "05_Project_Controls": [
+        "Planning_and_Scheduling",
+        "Progress_Reports",
+        "Daily_Reports"
       ],
-      "5_Schedule_and_Resources": [
-        "5.1_Project_Schedule_Native",
-        "5.2_Milestone_List",
-        "5.3_Project_Network_Diagrams",
-        "5.4_Resource_Breakdown_Structure",
-        "5.5_Resource_Requirements",
-        "5.6_Project_Calendars",
-        "5.7_Archive_Schedule_Versions"
+      "06_Commercial_Finance_Cost": [
+        "BOQ_Management",
+        "Budget_Control",
+        "Invoicing",
+        "Payment_Certificates",
+        "Variations_and_Claims"
       ],
-      "6_Financials_and_Procurements": [
-        { "6.1_General_Requirements": ["6.1.1_RFQ_Quotations", "6.1.2_PO", "6.1.3_Business_Partners_Contracts"] },
-        { "6.2_Site_Work": ["6.2.1_RFQ_Quotations", "6.2.2_PO", "6.2.3_Business_Partners_Contracts"] },
-        { "6.3_Concrete": ["6.3.1_RFQ_Quotations", "6.3.2_PO", "6.3.3_Business_Partners_Contracts"] },
-        { "6.4_Masonry": ["6.4.1_RFQ_Quotations", "6.4.2_PO", "6.4.3_Business_Partners_Contracts"] },
-        "6.5_Metals",
-        "6.6_Wood_and_Plastics",
-        "6.7_Thermal_Moisture_Protection",
-        "6.8_Doors_and_Windows",
-        "6.9_Finishes",
-        "6.10_Specialties",
-        "6.11_Equipment",
-        "6.12_Furnishings",
-        "6.13_Special_Construction",
-        "6.14_Conveying_Systems",
-        "6.15_Mechanical",
-        "6.16_Electrical",
-        { "6.17_BOQ_Baselines_and_Versions": ["6.17.1_Original_BOQ", "6.17.2_Revised_BOQ_Versions", "6.17.3_Comparison_Sheets"] },
-        "6.18_Cost_Estimates_and_Basis",
-        "6.19_Project_Funding_Requirements",
-        "6.20_Cost_Control_Reports",
-        "6.21_Archive_Financial_Records"
+      "07_Risk_HSE_Compliance": [
+        "Risk_Register",
+        "HSE_Management",
+        "Incident_Reports"
       ],
-      "7_Performance_Reports_Quality_and_Communications": [
-        { "7.1_Work_Performance_Reports": ["7.1.1_Daily_Reports", "7.1.2_Weekly_Reports", "7.1.3_Monthly_Reports", "7.1.4_Dashboards_and_KPIs"] },
-        { "7.2_Quality_Control_and_Reports": ["7.2.1_Quality_Metrics", "7.2.2_Quality_Control_Measurements"] },
-        "7.3_Risk_Reports",
-        "7.4_HSE_Safety_Reports",
-        { "7.5_Meeting_Minutes": ["7.5.1_Periodic_Meetings", "7.5.2_Contractors_Meetings"] },
-        "7.6_Archive_Old_Reports_and_Minutes"
-      ],
-      "8_Deliverables_and_Project_Closure": [
-        "8.1_Verified_and_Accepted_Deliverables",
-        "8.2_As_Built_Drawings",
-        "8.3_Final_Product_Transition",
-        "8.4_Final_Project_Report",
-        "8.5_Archive_Closure_Drafts"
+      "08_Handover_Closeout_Knowledge": [
+        "Testing_and_Commissioning",
+        "Snag_List",
+        "As_Built_Documents",
+        "Lessons_Learned"
       ]
     };
 
@@ -938,6 +1047,31 @@ app.get('/api/drive/folders-recursive/:folderId', async (req: any, res: any) => 
   }
 });
 
+app.post('/api/drive/rename', async (req: any, res: any) => {
+  const { fileId, newName } = req.body;
+  const { drive, error } = getDriveClient();
+  if (error || !drive) return res.status(500).json({ error: error || 'Drive client not initialized' });
+
+  if (!fileId || !newName) {
+    return res.status(400).json({ error: 'fileId and newName are required' });
+  }
+
+  try {
+    const response = await drive.files.update({
+      fileId: fileId,
+      requestBody: {
+        name: newName
+      },
+      supportsAllDrives: true,
+      fields: 'id, name'
+    });
+    res.json({ success: true, file: response.data });
+  } catch (error: any) {
+    console.error('Failed to rename file:', error);
+    res.status(500).json({ error: error.message || 'Failed to rename file' });
+  }
+});
+
 app.get('/api/drive/files/:folderId', async (req: any, res: any) => {
   const { folderId } = req.params;
   const { drive, error } = getDriveClient();
@@ -1026,6 +1160,13 @@ app.all('/api/*', (req, res) => {
 
 async function startServer() {
   console.log('--- ZARYA SERVER STARTING ---');
+  
+  // Verify fetch availability (Node 18+)
+  if (typeof fetch === 'undefined') {
+    console.warn('⚠️ [Node Env] Global fetch is missing. This project requires Node 18+. Attempting fallback...');
+  } else {
+    console.log('✅ [Node Env] Global fetch detected.');
+  }
   
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

@@ -9,7 +9,7 @@ import {
   FileText, ExternalLink, X, Loader2, Briefcase, Download, Upload,
   Edit, Printer, Trash2, Clock, CheckCircle2
 } from 'lucide-react';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, stripNumericPrefix } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { masterFormatDivisions } from '../data';
@@ -336,35 +336,6 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
     <div className="space-y-6 pb-20 font-sans">
       {renderDashboard()}
 
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white shadow-xl shadow-black/10">
-            <Briefcase className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Intelligent Vendor Ecosystem</h2>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Unified Neural Multi-Supplier Intelligence</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowImportModal(true)}
-            className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all rounded-full"
-          >
-            {isImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3 text-slate-400" />}
-            Neural Import
-          </button>
-          <button 
-            onClick={() => setIsAddingSupplier(true)}
-            className="px-8 py-2.5 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 rounded-full"
-          >
-            <Plus className="w-4 h-4" />
-            Integrate Partner
-          </button>
-        </div>
-      </div>
-
       {/* Universal Data Table Integration */}
       {!selectedSupplier && !isAddingSupplier && (
         <div className="flex-1 bg-white rounded-3xl overflow-hidden border border-slate-200 min-h-[600px]">
@@ -385,6 +356,27 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
               }
             }}
             showAddButton={false}
+            title={
+              <div className="flex items-center gap-2">
+                <span className="opacity-40">{stripNumericPrefix(t('procurement_management'))} ›</span>
+                <span>{stripNumericPrefix(t('supplier_master'))}</span>
+              </div>
+            }
+            description={t('supplier_master_desc') || "Intelligent Vendor Ecosystem with Neural Synced data."}
+            primaryAction={{
+              label: t('integrate_partner') || 'Integrate Partner',
+              icon: Plus,
+              onClick: () => setIsAddingSupplier(true)
+            }}
+            extraActions={
+              <button 
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-1.5 bg-white border border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all rounded-lg"
+              >
+                {isImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3 text-slate-400" />}
+                {t('neural_import') || 'Neural Import'}
+              </button>
+            }
           />
         </div>
       )}

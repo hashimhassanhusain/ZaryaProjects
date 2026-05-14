@@ -40,6 +40,7 @@ import {
   setDoc,
   writeBatch
 } from 'firebase/firestore';
+import { DriveUploadButton } from './common/DriveUploadButton';
 import { rollupToParent } from '../services/rollupService';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -692,30 +693,6 @@ export const BOQView: React.FC = () => {
       viewMode={view === 'form' ? 'edit' : 'grid'}
       onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
       isSaving={isSaving}
-      primaryAction={activeVersion ? {
-        label: t('add_item'),
-        icon: Plus,
-        onClick: () => {
-          setEditingItem(null);
-          setNewItem({
-            description: '', unit: 'm3', quantity: 0, inputRate: 0, division: '01',
-            inputCurrency: baseCurrency, exchangeRateUsed: globalExchangeRate, wbsId: 'master'
-          });
-          setView('form');
-        }
-      } : {
-        label: t('create_new_version'),
-        icon: Plus,
-        onClick: () => {
-          setEditingVersion(null);
-          setNewVersion({ title: '', versionNumber: '1.0', status: 'Draft' });
-          setIsVersionModalOpen(true);
-        }
-      }}
-      secondaryActions={[
-        { label: t('import_excel'), icon: Download, onClick: () => setIsImportModalOpen(true) },
-        { label: t('import_pdf'), icon: Upload, onClick: () => document.getElementById('boq-upload')?.click(), loading: isAnalyzing }
-      ]}
     >
       <DataImportModal
         isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)}
@@ -894,7 +871,36 @@ export const BOQView: React.FC = () => {
                         <h3 className="text-[11px] font-black text-text-primary dark:text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2 italic px-4">
                           <History className="w-4 h-4 text-brand" /> {t('boq_versions_history')}
                         </h3>
-                        <UniversalDataTable config={versionConfig} data={boqVersions} onRowClick={handleVersionClick} onDeleteRecord={handleDeleteVersion} showAddButton={false} />
+                        <UniversalDataTable 
+                          config={versionConfig} 
+                          data={boqVersions} 
+                          onRowClick={handleVersionClick} 
+                          onDeleteRecord={handleDeleteVersion} 
+                          showAddButton={false} 
+                          title={
+                            <div className="flex items-center gap-2">
+                              <span className="opacity-40">{stripNumericPrefix(t('cost_management'))} ›</span>
+                              <span>{stripNumericPrefix(t('bill_of_quantities'))}</span>
+                            </div>
+                          }
+                          description={t('boq_versions_history_desc') || "Manage Bill of Quantities baselines and revisions."}
+                          primaryAction={{
+                            label: t('create_new_version'),
+                            icon: Plus,
+                            onClick: () => {
+                              setEditingVersion(null);
+                              setNewVersion({ title: '', versionNumber: '1.0', status: 'Draft' });
+                              setIsVersionModalOpen(true);
+                            }
+                          }}
+                          extraActions={
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600">
+                                <Download className="w-3 h-3" /> {t('import_excel')}
+                              </button>
+                            </div>
+                          }
+                        />
                       </div>
                     </motion.div>
                   ) : (
@@ -905,27 +911,6 @@ export const BOQView: React.FC = () => {
                       exit={{ opacity: 0, x: 20 }}
                       className="space-y-4"
                     >
-                      <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-200 dark:border-white/10">
-                        <div className="flex items-center gap-4">
-                           <button 
-                             onClick={() => setActiveVersion(null)}
-                             className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all group"
-                             title="Back to Versions"
-                           >
-                             <ChevronRight className={cn("w-6 h-6 text-slate-400 group-hover:text-brand", isRtl ? "rotate-180" : "rotate-180")} />
-                           </button>
-                           <div>
-                              <h3 className="text-[11px] font-black text-slate-950 dark:text-white uppercase tracking-[0.3em] flex items-center gap-2 italic">
-                                 <FileText className="w-4 h-4 text-blue-500" /> {t('boq_line_items')}
-                              </h3>
-                              <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mt-0.5">{activeVersion.title} (v{activeVersion.versionNumber})</p>
-                           </div>
-                        </div>
-                        <button onClick={() => setActiveVersion(null)} className="text-[10px] font-black text-slate-600 dark:text-slate-400 hover:text-rose-600 uppercase tracking-widest transition-all flex items-center gap-1 group">
-                          <X className="w-3 h-3 group-hover:rotate-90 transition-transform" /> {t('close_details') || 'Close Details'}
-                        </button>
-                      </div>
-
                       <UniversalDataTable 
                         config={boqConfig} 
                         data={boqItems} 
@@ -935,27 +920,54 @@ export const BOQView: React.FC = () => {
                         onInlineSave={handleInlineSave}
                         showAddButton={false} 
                         title={
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-blue-700 dark:text-blue-400 font-black italic text-sm">TOTAL</span>
-                            <span className="text-3xl font-black text-black dark:text-white tracking-tighter">{formatCurrency(totals, baseCurrency)}</span>
+                          <div className="flex items-center gap-4">
+                            <button 
+                              onClick={() => setActiveVersion(null)}
+                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all group"
+                            >
+                              <ChevronRight className={cn("w-5 h-5 text-slate-400 group-hover:text-brand rotate-180")} />
+                            </button>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="opacity-40 text-[10px]">{stripNumericPrefix(t('bill_of_quantities'))} ›</span>
+                                <span className="text-sm font-black uppercase tracking-tight">{activeVersion.title} (v{activeVersion.versionNumber})</span>
+                              </div>
+                              <div className="flex items-baseline gap-2 mt-1">
+                                <span className="text-blue-700 dark:text-blue-400 font-black italic text-[9px]">TOTAL</span>
+                                <span className="text-xl font-black text-black dark:text-white tracking-tighter">{formatCurrency(totals, baseCurrency)}</span>
+                              </div>
+                            </div>
                           </div>
                         }
-                        batchActions={
+                        description={activeVersion.description}
+                        primaryAction={{
+                          label: t('add_item'),
+                          icon: Plus,
+                          onClick: () => {
+                            setEditingItem(null);
+                            setNewItem({
+                              description: '', unit: 'm3', quantity: 0, inputRate: 0, division: '01',
+                              inputCurrency: baseCurrency, exchangeRateUsed: globalExchangeRate, wbsId: 'master'
+                            });
+                            setView('form');
+                          }
+                        }}
+                        extraActions={
                           <div className="flex items-center gap-2">
                              <button 
                                onClick={handleExportPDF}
-                               className="flex items-center gap-2 px-4 py-2 bg-brand text-white hover:bg-brand-secondary rounded-xl text-[10px] font-black uppercase transition-all shadow-sm"
+                               className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600"
                              >
                                 <Download className="w-3.5 h-3.5" />
                                 Export PDF
                              </button>
-                             <button 
-                               onClick={() => toast.error('Google Drive integration required')}
-                               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase transition-all"
-                             >
-                                <Target className="w-3.5 h-3.5" />
-                                Save to Drive
+                             <button onClick={() => document.getElementById('boq-upload')?.click()} className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600">
+                                {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} {t('import_pdf')}
                              </button>
+                             <DriveUploadButton 
+                               drivePath="Financials_and_Procurements_6/BOQ_Baselines_and_Versions/Revised_BOQ_Versions"
+                               label="Archive"
+                             />
                           </div>
                         }
                       />

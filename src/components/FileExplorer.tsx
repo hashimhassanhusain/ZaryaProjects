@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { storage, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Project } from '../types';
 import { useAuth } from '../context/UserContext';
 import { generatePMISFileName, cn } from '../lib/utils';
@@ -221,12 +222,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const executeUpload = async () => {
     if (!pendingFile || !project || !selectedProjectId) return;
 
-    if (pendingFile.size > 10 * 1024 * 1024) {
-      toast.error("File size exceeds 10MB limit. Please use a compressed version or lower resolution.");
+    // Increased limit as we now use URL-based upload which handles larger files
+    if (pendingFile.size > 100 * 1024 * 1024) {
+      toast.error("File size exceeds 100MB limit. For larger files, please contact IT.");
       return;
     }
 
     setUploading(true);
+    const toastId = toast.loading(isRtl ? '☁️ جاري رفع الملف إلى الخادم...' : '☁️ Uploading to buffer server...');
+    
     try {
       const targetPath = uploadMetadata.path === '/' ? '' : uploadMetadata.path;
       const resFiles = await fetch(`/api/drive/files-by-path?rootId=${project.driveFolderId}&path=${targetPath}`);
@@ -260,28 +264,42 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         finalName = `${newBaseName}.${extension}`;
       }
       
-      const formData = new FormData();
-      formData.append('file', pendingFile, finalName);
-      formData.append('projectRootId', project.driveFolderId || '');
-      formData.append('path', targetPath || '/');
+      // 1. Firebase Storage Buffer Upload
+      console.log(`🚀 [Drive Protocol] Step 1: Uploading buffer ${finalName}`);
+      const bufferPath = `drive_temp/${project.id}/${Date.now()}_${finalName}`;
+      const storageRef = ref(storage, bufferPath);
+      const uploadResult = await uploadBytes(storageRef, pendingFile);
+      const fileUrl = await getDownloadURL(uploadResult.ref);
+      
+      toast.loading(isRtl ? '🔄 جاري المزامنة مع جوجل درايف...' : '🔄 Syncing with Google Drive...', { id: toastId });
 
-      const res = await fetch('/api/drive/upload-by-path', {
+      // 2. Drive Sync via URL
+      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+      const res = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectRootId: ROOT_FOLDER_ID,
+          path: targetPath || '/',
+          projectCode: project.code || '16314',
+          fileUrl: fileUrl,
+          fileName: finalName,
+          mimeType: pendingFile.type || 'application/octet-stream'
+        })
       });
 
       if (res.ok) {
-        toast.success(`File uploaded as ${finalName}`);
+        toast.success(`File uploaded as ${finalName}`, { id: toastId });
         setPendingFile(null);
         setUploadMetadata(prev => ({ ...prev, description: '' }));
         setShowUploadModal(false);
         if (currentFolderId) fetchFiles(currentFolderId);
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({ error: 'Upload failed with an invalid response from server' }));
         throw new Error(err.error || 'Upload failed');
       }
     } catch (error: any) {
-      toast.error(`Upload failed: ${error.message}`);
+      toast.error(`Upload failed: ${error.message}`, { id: toastId });
     } finally {
       setUploading(false);
     }
@@ -302,7 +320,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         setShowDeleteConfirm(false);
         if (currentFolderId) fetchFiles(currentFolderId);
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({ error: 'Invalid response from server' }));
         throw new Error(err.error || 'Delete failed');
       }
     } catch (error: any) {

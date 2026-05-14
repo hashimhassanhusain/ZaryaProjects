@@ -23,7 +23,7 @@ export const ReserveAnalysisView: React.FC<ReserveAnalysisViewProps> = ({ page }
       page={page}
       actions={
         <DriveUploadButton
-          drivePath="6_Financials_and_Procurements/6.18_Cost_Estimates_and_Basis"
+          drivePath="Financials_and_Procurements_6/Cost_Estimates_and_Basis"
           label="Upload Analysis"
         />
       }

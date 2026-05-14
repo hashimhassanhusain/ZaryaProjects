@@ -504,13 +504,13 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                     className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
                   />
                 </th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-brand uppercase tracking-widest text-left">Actions</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Risk Statement</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Score</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Strategy</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Owner</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -541,6 +541,22 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                         onChange={() => toggleSelect(risk.id)}
                         className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
                       />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleEdit(risk); }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDelete(risk.id); }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-md">{risk.riskId}</span>
@@ -575,22 +591,6 @@ export const RiskRegisterTab: React.FC<RiskRegisterTabProps> = ({ risks, stakeho
                       )}>
                         {risk.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEdit(risk); }}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDelete(risk.id); }}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))

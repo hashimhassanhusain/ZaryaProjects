@@ -314,18 +314,38 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-bottom border-slate-200">
+                  <th className="px-8 py-5 text-[10px] font-semibold text-brand uppercase tracking-widest text-left">Actions</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Resource</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Type</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Qty</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Rate</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Amount</th>
                   <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredRequirements.map((req) => (
                   <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center justify-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => {
+                            setEditingId(req.id);
+                            setFormData(req);
+                            setView('form');
+                          }}
+                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-sm"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(req.id)}
+                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-red-600 transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         <div className={cn(
@@ -372,26 +392,6 @@ export const ResourceRequirementsTab: React.FC<ResourceRequirementsTabProps> = (
                       )}>
                         {req.status}
                       </span>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => {
-                            setEditingId(req.id);
-                            setFormData(req);
-                            setView('form');
-                          }}
-                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-sm"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(req.id)}
-                          className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-red-600 transition-all shadow-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))}

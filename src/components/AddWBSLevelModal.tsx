@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, List } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, cleanObject } from '../firebase';
 import { WBSLevel, Project, CostCenter, StandardItem } from '../types';
 import { getCostCenters, getStandardItems } from '../services/masterDataService';
 import { toast } from 'react-hot-toast';
@@ -70,12 +70,12 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
         level: parent ? parent.level + 1 : 1,
         code,
         status: 'Not Started',
-        parentId: newWbs.parentId || undefined,
-        costCenterId: newWbs.costCenterId || undefined,
-        standardItemId: newWbs.standardItemId || undefined
+        parentId: newWbs.parentId || null,
+        costCenterId: newWbs.costCenterId || null,
+        standardItemId: newWbs.standardItemId || null
       };
 
-      await setDoc(doc(db, 'wbs', levelId), level);
+      await setDoc(doc(db, 'wbs', levelId), cleanObject(level));
       
       if (newWbs.parentId) {
         await rollupToParent('division', newWbs.parentId);

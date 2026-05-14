@@ -10,8 +10,13 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore with specific database ID from config
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
-// Explicitly pass the bucket URL to avoid initialization issues
-export const storage = getStorage(app);
+// Initialize Storage with defensive bucket naming
+const bucketUrl = firebaseConfig.storageBucket || `${firebaseConfig.projectId}.firebasestorage.app`;
+export const storage = getStorage(app, bucketUrl.startsWith('gs://') ? bucketUrl : `gs://${bucketUrl}`);
+
+// Increase retry times for better resilience in preview environment
+storage.maxUploadRetryTime = 300000; // 5 minutes
+storage.maxOperationRetryTime = 300000; // 5 minutes
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
@@ -25,17 +30,8 @@ export const signInWithGoogle = async () => {
   }
 };
 
-// Connection Test
-async function testConnection() {
-  try {
-    await getDocFromServer(firestoreDoc(db, 'test', 'connection'));
-  } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
+// Connection Test removed to prevent hanging
+
 
 // Error Handling Spec for Firestore Operations
 export enum OperationType {
@@ -87,6 +83,20 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
+}
+
+export function cleanObject(obj: any): any {
+  if (obj === null || typeof obj !== 'object' || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(cleanObject);
+  
+  const cleaned: any = {};
+  Object.keys(obj).forEach(key => {
+    const val = cleanObject(obj[key]);
+    if (val !== undefined) {
+      cleaned[key] = val;
+    }
+  });
+  return cleaned;
 }
 
 export { onAuthStateChanged, signInWithPopup, GoogleAuthProvider };

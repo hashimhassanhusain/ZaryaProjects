@@ -3,11 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { Project, Company } from '../types';
-import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield, X, Building2 } from 'lucide-react';
+import { ArrowLeft, Save, Layout, Calendar, User as UserIcon, Building, MapPin, FileText, Loader2, Globe, Shield, X, Building2, Cloud } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
 import { motion } from 'motion/react';
-import { Breadcrumbs } from './Breadcrumbs';
 import { useLanguage } from '../context/LanguageContext';
 import { cn, getISODate } from '../lib/utils';
 
@@ -154,8 +153,6 @@ export const ProjectFormView: React.FC = () => {
 
   return (
     <div className="w-full py-6 px-6">
-      <Breadcrumbs currentPageId="admin-projects" />
-
       {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
         <button 
@@ -246,6 +243,19 @@ export const ProjectFormView: React.FC = () => {
                   onChange={(e) => setFormData({...formData, sponsor: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                   placeholder={t('name')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Cloud className="w-3 h-3" /> Google Drive Folder ID
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.driveFolderId || ''}
+                  onChange={(e) => setFormData({...formData, driveFolderId: e.target.value})}
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                  placeholder="e.g. 1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6"
                 />
               </div>
 

@@ -8,9 +8,8 @@ import { pages as allPages } from '../data';
 import { useProject } from '../context/ProjectContext';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { Breadcrumbs } from './Breadcrumbs';
-import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
+import { cn } from '../lib/utils';
 
 export const UserFormView: React.FC = () => {
   const { t } = useLanguage();
@@ -359,8 +358,6 @@ export const UserFormView: React.FC = () => {
 
   return (
     <div className="w-full py-6 px-6">
-      <Breadcrumbs currentPageId={pageId} />
-
       {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex gap-3 items-center z-50">
         <button 

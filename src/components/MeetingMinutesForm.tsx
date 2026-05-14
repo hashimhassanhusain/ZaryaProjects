@@ -28,7 +28,8 @@ import {
   HardDrive
 } from 'lucide-react';
 import { Meeting, MeetingAgendaItem, MeetingTask, MeetingDecision, Project, User, Stakeholder, WBSLevel, Task } from '../types';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { db, storage, OperationType, handleFirestoreError } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { cn, getISODate } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -213,11 +214,11 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     const blob = doc.output('blob');
     
     // Determine path based on meeting type matching server.ts structure
-    let path = 'MEETINGS_LOG_05/05.2_Internal_Technical_Meetings';
+    let path = 'Dynamic_Project_Registers_and_Logs_3/03.1_Meeting_Minutes/Internal_Technical';
     if (formData.type?.toLowerCase().includes('client')) {
-      path = 'MEETINGS_LOG_05/05.1_Client_Meetings';
+      path = 'Dynamic_Project_Registers_and_Logs_3/03.1_Meeting_Minutes/Client_Meetings';
     } else if (formData.type?.toLowerCase().includes('subcon')) {
-      path = 'MEETINGS_LOG_05/05.3_Subcontractor_Meetings';
+      path = 'Dynamic_Project_Registers_and_Logs_3/03.1_Meeting_Minutes/Subcontractor_Meetings';
     }
 
     return { blob, fileName, path };
@@ -231,14 +232,25 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     setIsUploadingToDrive(true);
     
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('file', pdfPreviewBlob, pdfFileName);
-      formDataToSend.append('projectRootId', project.driveFolderId);
-      formDataToSend.append('path', pendingDrivePath);
+      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      
+      // 1. Upload to Firebase Storage first (buffer)
+      const storagePath = `buffer/${project.id}/${Date.now()}_${pdfFileName}`;
+      const storageRef = ref(storage, storagePath);
+      const uploadResult = await uploadBytes(storageRef, pdfPreviewBlob);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-      const response = await fetch('/api/drive/upload-by-path', {
+      // 2. Upload to Drive by URL
+      const response = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
-        body: formDataToSend,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: downloadUrl,
+          fileName: pdfFileName,
+          projectRootId: ROOT_FOLDER_ID,
+          projectCode: project.code || '16314',
+          path: pendingDrivePath
+        })
       });
 
       if (!response.ok) {

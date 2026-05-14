@@ -157,15 +157,6 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     setActiveTab(id);
   };
 
-  // Focus area colors for indicators
-  const focusAreaColors: Record<string, string> = {
-    'Initiating': 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]',
-    'Planning': 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
-    'Executing': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]',
-    'Monitoring & Controlling': 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]',
-    'Closing': 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
-  };
-
   // Filter children based on permissions
   const filteredChildren = childrenPages.filter(child => {
     if (isAdmin) return true;
@@ -224,12 +215,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   const Icon = ICON_MAP[page.icon || 'Info'] || Info;
 
-  // Always use Focus Area division for the ribbon as per user request
   const ribbonGroups: RibbonGroup[] = [];
-
-  // Group processes by focus area for the ribbon
-  const focusAreas = ['Initiating', 'Planning', 'Executing', 'Monitoring & Controlling', 'Closing'];
-  const areas = focusAreas; 
 
   // Add the "Overview" tab first
   ribbonGroups.push({
@@ -247,41 +233,48 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
     ]
   });
 
-  // Group children by focus area
-  focusAreas.forEach(area => {
-    const areaChildren = finalChildren.filter(c => c.focusArea?.includes(area));
-    if (areaChildren.length > 0) {
-      ribbonGroups.push({
-        id: area.toLowerCase().replace(/\s+/g, '_'),
-        label: t(area),
-        tabs: areaChildren
-          .sort((a, b) => {
-            // Sort by primary vs secondary within the same focus area
-            if (domainArtifacts) {
-              const aPrimary = domainArtifacts.primary.includes(a.id);
-              const bPrimary = domainArtifacts.primary.includes(b.id);
-              if (aPrimary && !bPrimary) return -1;
-              if (!aPrimary && bPrimary) return 1;
-              return domainArtifacts.primary.indexOf(a.id) - domainArtifacts.primary.indexOf(b.id);
-            }
-            return 0;
-          })
-          .map(child => {
-            const translatedLabel = t(child.id);
-            const label = translatedLabel === child.id ? child.title : translatedLabel;
-            
-            return {
-              id: child.id,
-              label: stripNumericPrefix(label),
-              icon: ICON_MAP[child.icon || 'FileText'] || FileText,
-              description: th(child.id + '_summary') || child.summary,
-              focusArea: area, 
-              size: highUsageIds.includes(child.id) ? 'large' : 'small'
-            };
-          })
-      });
-    }
-  });
+  // Group processes by type for the ribbon (Primary vs Secondary) instead of Focus Area
+  const primaryTabs = finalChildren
+    .filter(c => domainArtifacts?.primary.includes(c.id))
+    .map(child => {
+      const translatedLabel = t(child.id);
+      const label = translatedLabel === child.id ? child.title : translatedLabel;
+      return {
+        id: child.id,
+        label: stripNumericPrefix(label),
+        icon: ICON_MAP[child.icon || 'FileText'] || FileText,
+        description: th(child.id + '_summary') || child.summary,
+        size: 'large' as const
+      };
+    });
+
+  const secondaryTabs = finalChildren
+    .filter(c => !domainArtifacts?.primary.includes(c.id))
+    .map(child => {
+      const translatedLabel = t(child.id);
+      const label = translatedLabel === child.id ? child.title : translatedLabel;
+      return {
+        id: child.id,
+        label: stripNumericPrefix(label),
+        icon: ICON_MAP[child.icon || 'FileText'] || FileText,
+        description: th(child.id + '_summary') || child.summary,
+        size: 'small' as const
+      };
+    });
+
+  if (primaryTabs.length > 0) {
+    ribbonGroups.push({
+      id: 'primary',
+      tabs: primaryTabs
+    });
+  }
+
+  if (secondaryTabs.length > 0) {
+    ribbonGroups.push({
+      id: 'secondary',
+      tabs: secondaryTabs
+    });
+  }
 
   // Auto-select overview when domain changes
   React.useEffect(() => {
@@ -618,7 +611,6 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={handleTabChange}
-        focusAreaColors={focusAreaColors}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -633,33 +625,47 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
           >
             {activeTab === 'overview' ? (
               <div className="p-10 space-y-12">
+                {/* Domain Breadcrumbs */}
+                <div className={cn("flex items-center gap-2 mb-4", isRtl && "flex-row-reverse")}>
+                   <button 
+                     onClick={() => navigate('/')}
+                     className="text-[10px] font-black text-slate-400 hover:text-brand transition-colors uppercase tracking-[0.2em] italic"
+                   >
+                     {t('performance_domains')}
+                   </button>
+                   <ChevronRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
+                   <span className="text-[10px] font-black text-brand uppercase tracking-[0.2em] italic">
+                     {stripNumericPrefix(t(domainKey))}
+                   </span>
+                </div>
+
                 {/* Domain Header Card */}
-                <div className="bg-white dark:bg-surface p-12 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between border-b-8 border-app-bg">
-                   <div className="absolute top-0 right-0 w-96 h-96 bg-brand/5 rounded-full blur-3xl -mr-32 -mt-32" />
-                   <div className="relative z-10 flex items-center gap-10">
-                       <div className="w-24 h-24 rounded-[3rem] bg-text-primary dark:bg-brand-dark flex items-center justify-center text-white shadow-2xl">
-                           <Icon className="w-12 h-12" strokeWidth={1} />
+                <div className="bg-white dark:bg-surface p-8 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between border-b-8 border-app-bg">
+                   <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full blur-3xl -mr-28 -mt-28" />
+                   <div className="relative z-10 flex items-center gap-8">
+                       <div className="w-16 h-16 rounded-[2.5rem] bg-text-primary dark:bg-brand-dark flex items-center justify-center text-white shadow-xl">
+                           <Icon className="w-8 h-8" strokeWidth={1} />
                        </div>
                       <div className="space-y-1">
-                         <div className="flex items-center gap-4">
-                           <h1 className="text-2xl md:text-3xl font-black text-text-primary dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
+                         <div className="flex items-center gap-3">
+                           <h1 className="text-xl md:text-2xl font-black text-text-primary dark:text-white tracking-tight italic uppercase">{stripNumericPrefix(t(domainKey))} {t('overview')}</h1>
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
-                               "p-3 rounded-2xl transition-all shadow-sm border",
+                               "p-2 rounded-xl transition-all shadow-sm border",
                                isFavorite ? "bg-amber-50 border-amber-200 text-amber-500" : "bg-white dark:bg-neutral-800 border-slate-100 text-slate-300 hover:text-slate-400"
                              )}
                            >
-                             <Star className={cn("w-5 h-5", isFavorite && "fill-amber-500")} />
+                             <Star className={cn("w-4 h-4", isFavorite && "fill-amber-500")} />
                            </button>
                          </div>
-                         <p className="text-sm font-black text-text-secondary dark:text-neutral-400 uppercase tracking-[0.2em] leading-none opacity-60">
+                         <p className="text-[11px] font-black text-text-secondary dark:text-neutral-400 uppercase tracking-[0.2em] leading-none opacity-60">
                            {t('project_context')}: {selectedProject?.name} • {t('active_processes')}: {filteredChildren.length}
                          </p>
                       </div>
                    </div>
-                   <div className="relative z-10 flex items-center gap-3">
-                      <div className="px-6 py-2.5 bg-brand text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-brand/20 italic">
+                   <div className="relative z-10 hidden sm:flex items-center gap-3">
+                      <div className="px-5 py-2 bg-brand text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand/20 italic">
                          {t('enterprise_standard')}
                       </div>
                    </div>
@@ -701,51 +707,33 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                    </div>
                 </div>
 
-                {/* Focus Areas Visualization */}
+                {/* Processes Grid */}
                 <div className="space-y-8">
                    <div className="flex items-center justify-between px-4">
-                      <h3 className="text-xs font-black text-text-primary dark:text-white uppercase tracking-[0.4em]">{t('process_lifecycle')}</h3>
-                      <div className="flex gap-6">
-                         {areas.map(area => (
-                           <div key={area} className="flex items-center gap-2.5">
-                              <div className={cn("w-2.5 h-2.5 rounded-full", focusAreaColors[area])} />
-                              <span className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">{t(area)}</span>
-                           </div>
-                         ))}
-                      </div>
+                      <h3 className="text-xs font-black text-text-primary dark:text-white uppercase tracking-[0.4em]">{t('available_processes')}</h3>
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                      {areas.map(area => {
-                        const areaChildren = filteredChildren.filter(c => c.focusArea?.includes(area));
-                        return (
-                          <div key={area} className="bg-white/40 rounded-[3rem] p-8 space-y-6 border border-white/60 backdrop-blur-sm shadow-inner">
-                             <div className="flex items-center justify-between px-2">
-                                <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60">{t(area)}</span>
-                                <span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg", focusAreaColors[area])}>
-                                   {areaChildren.length}
-                                </span>
-                             </div>
-                             <div className="space-y-3">
-                                {areaChildren.map(child => (
-                                  <button 
-                                    key={child.id}
-                                    onClick={() => handleTabChange(child.id)}
-                                    className="w-full p-5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[1.5rem] text-[11px] font-black text-text-primary dark:text-neutral-300 text-left hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 transition-all flex items-center justify-between group border-b-4 hover:border-brand"
-                                  >
-                                     <span className="truncate pr-4 italic uppercase tracking-tighter">{stripNumericPrefix(t(child.id)) || child.title}</span>
-                                     <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand transition-all group-hover:translate-x-1" />
-                                  </button>
-                                ))}
-                                {areaChildren.length === 0 && (
-                                  <div className="p-6 border-2 border-dashed border-slate-100 rounded-[1.5rem] text-[9px] font-black text-slate-200 text-center uppercase tracking-widest">
-                                     {t('no_processes')}
-                                  </div>
-                                )}
-                             </div>
-                          </div>
-                        );
-                      })}
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {filteredChildren.map(child => (
+                        <button 
+                          key={child.id}
+                          onClick={() => handleTabChange(child.id)}
+                          className="w-full p-6 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] text-[12px] font-black text-text-primary dark:text-neutral-300 text-left hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 transition-all flex items-center justify-between group border-b-4 hover:border-brand"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-brand transition-colors">
+                                 {React.createElement(ICON_MAP[child.icon || 'FileText'] || FileText, { className: "w-5 h-5" })}
+                              </div>
+                              <span className="italic uppercase tracking-tighter line-clamp-1">{stripNumericPrefix(t(child.id)) === child.id ? child.title : t(child.id)}</span>
+                           </div>
+                           <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand transition-all group-hover:translate-x-1" />
+                        </button>
+                      ))}
+                      {filteredChildren.length === 0 && (
+                        <div className="col-span-full p-12 border-2 border-dashed border-slate-100 rounded-[3rem] text-[10px] font-black text-slate-200 text-center uppercase tracking-widest">
+                           {t('no_processes')}
+                        </div>
+                      )}
                    </div>
                 </div>
               </div>

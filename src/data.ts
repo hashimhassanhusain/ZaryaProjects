@@ -5,7 +5,7 @@ export const currentUser: User = {
   name: 'Hashim Husain',
   email: 'hashim.h.husain@gmail.com',
   photoURL: 'https://picsum.photos/seed/hashim/200',
-  role: 'admin',
+  role: 'super-admin',
   accessiblePages: [],
   accessibleProjects: []
 };
@@ -103,19 +103,33 @@ export const projects: Project[] = [];
 
 export const pages: Page[] = [
   // --- HUBS (DOMAINS) ---
-  { id: 'gov', title: 'Governance', type: 'hub', domain: 'governance', parentId: '', icon: 'Shield', focusArea: 'Planning' },
+  { id: 'comm', title: 'Communications & Transmittals', type: 'hub', domain: 'communications', parentId: '', icon: 'MessageSquare', focusArea: 'Monitoring & Controlling' },
+  { id: 'gov', title: 'Project Governance', type: 'hub', domain: 'governance', parentId: '', icon: 'Shield', focusArea: 'Planning' },
+  { id: 'scope', title: 'Engineering, Design & Delivery', type: 'hub', domain: 'delivery', parentId: '', icon: 'Cpu', focusArea: 'Planning' },
+  { id: 'ctrl', title: 'Project Controls', type: 'hub', domain: 'controls', parentId: '', icon: 'Activity', focusArea: 'Monitoring & Controlling' },
+  { id: 'fin', title: 'Commercial, Finance & Cost', type: 'hub', domain: 'finance', parentId: '', icon: 'Banknote', focusArea: 'Planning' },
+  { id: 'res', title: 'Resources, Procurement & Logistics', type: 'hub', domain: 'resources', parentId: '', icon: 'ShoppingCart', focusArea: 'Planning' },
+  { id: 'stak', title: 'Stakeholder Engagement', type: 'hub', domain: 'stakeholders', parentId: '', icon: 'Users', focusArea: 'Planning' },
+  { id: 'risk', title: 'Risk, HSE & Compliance', type: 'hub', domain: 'risk', parentId: '', icon: 'AlertTriangle', focusArea: 'Planning' },
+  { id: 'handover_hub', title: 'Handover, Closeout & Knowledge', type: 'hub', domain: 'handover', parentId: '', icon: 'Flag', focusArea: 'Closing' },
+  { id: 'admin_hub', title: 'PMIS Enterprise Administration', type: 'hub', domain: 'administration', parentId: '', icon: 'Settings', focusArea: 'Monitoring & Controlling' },
+  
+  // 09_Administration Modules
+  { id: '09.1', title: 'User Identity & Access Management (IAM)', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'UserCheck', focusArea: 'Monitoring & Controlling', summary: 'Global user management, role assignments, and session control.' },
+  { id: '09.2', title: 'Permissions, Roles & Groups', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'Lock', focusArea: 'Monitoring & Controlling', summary: 'Centralized permissions engine for RBAC and granular access control.' },
+  { id: '09.3', title: 'Notifications & Communication Engine', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'Bell', focusArea: 'Monitoring & Controlling', summary: 'Global notification system for alerts, escalations, and mentions.' },
+  { id: '09.4', title: 'Audit Trails & System Logs', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'History', focusArea: 'Monitoring & Controlling', summary: 'Immutable audit logs tracking all system activities and user actions.' },
+  { id: '09.5', title: 'System Settings & Configuration', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'Tool', focusArea: 'Monitoring & Controlling', summary: 'Centralized platform branding, regional settings, and global defaults.' },
+  { id: '09.6', title: 'AI Engine & Automation', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'Bot', focusArea: 'Monitoring & Controlling', summary: 'Enterprise AI services, smart search, and workflow automation center.' },
+  { id: '09.7', title: 'Integrations & API Gateway', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'Link2', focusArea: 'Monitoring & Controlling', summary: 'Centralized integration platform for ERP, P6, and third-party APIs.' },
+  { id: '09.8', title: 'Storage, Backup & Recovery', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'HardDrive', focusArea: 'Monitoring & Controlling', summary: 'Enterprise storage monitoring, backups, and recovery policies.' },
+  { id: '09.9', title: 'Enterprise Dashboard', type: 'terminal', domain: 'administration', parentId: 'admin_hub', icon: 'BarChart3', focusArea: 'Monitoring & Controlling', summary: 'Global KPI dashboard for platform health and enterprise-wide visibility.' },
+  
   { id: 'foundation', title: 'Foundation Center', type: 'terminal', domain: 'governance', parentId: 'gov', icon: 'Database', focusArea: 'Initiating' },
-  { id: 'scope', title: 'Scope', type: 'hub', domain: 'delivery', parentId: '', icon: 'DraftingCompass', focusArea: 'Planning' },
-  { id: 'sched', title: 'Schedule', type: 'hub', domain: 'schedule', parentId: '', icon: 'Calendar', focusArea: 'Planning' },
-  { id: 'fin', title: 'Finance', type: 'hub', domain: 'finance', parentId: '', icon: 'Banknote', focusArea: 'Planning' },
-  { id: 'stak', title: 'Stakeholders', type: 'hub', domain: 'stakeholders', parentId: '', icon: 'Users', focusArea: 'Planning' },
-  { id: 'res', title: 'Resources', type: 'hub', domain: 'resources', parentId: '', icon: 'Package', focusArea: 'Planning' },
-  { id: 'risk', title: 'Risk', type: 'hub', domain: 'risk', parentId: '', icon: 'AlertTriangle', focusArea: 'Planning' },
   { id: 'design_hub', title: 'Design & Engineering', type: 'terminal', domain: 'delivery', parentId: 'scope', icon: 'DraftingCompass', focusArea: 'Planning', summary: 'Central repository for AutoCAD drawings, 3D models, and engineering specifications.' },
 
   // --- STAKEHOLDERS DOMAIN (ARTIFACT-CENTRIC) ---
-  { 
-    id: '1.5.1', 
+  { id: '1.5.1', 
     title: 'Stakeholder Register', 
     type: 'terminal', 
     parentId: 'stak',
@@ -130,8 +144,7 @@ export const pages: Page[] = [
       outputs: ['stakeholder-register', 'stakeholder-list', 'stakeholder-classification']
     }
   },
-  { 
-    id: '1.5.2', 
+  { id: '1.5.2', 
     title: 'Stakeholder Analysis Matrix', 
     type: 'terminal', 
     parentId: 'stak',
@@ -145,8 +158,7 @@ export const pages: Page[] = [
       outputs: ['stakeholder-analysis-matrix', 'stakeholder-prioritization', 'engagement-needs-overview']
     }
   },
-  { 
-    id: '2.5.1', 
+  { id: '2.5.1', 
     title: 'Stakeholder Engagement Plan', 
     type: 'terminal', 
     parentId: 'stak',
@@ -160,12 +172,11 @@ export const pages: Page[] = [
       outputs: ['stakeholder-engagement-plan', 'communication-strategy', 'engagement-levels-definition']
     }
   },
-  { 
-    id: '2.5.2', 
+  { id: '2.5.2', 
     title: 'Communications Management Plan', 
     type: 'terminal', 
-    parentId: 'stak',
-    domain: 'stakeholders', 
+    parentId: 'comm',
+    domain: 'communications', 
     focusArea: 'Planning', 
     icon: 'MessageSquare', 
     summary: 'Establishes project communication standards, channels, and reporting structures.',
@@ -175,8 +186,7 @@ export const pages: Page[] = [
       outputs: ['communication-plan', 'reporting-structure', 'comm-channels-matrix']
     }
   },
-  { 
-    id: '3.5.1', 
+  { id: '3.5.1', 
     title: 'Stakeholder Engagement Records', 
     type: 'terminal', 
     parentId: 'stak',
@@ -190,12 +200,11 @@ export const pages: Page[] = [
       outputs: ['stakeholder-engagement-records', 'communication-logs', 'stakeholder-feedback-data']
     }
   },
-  { 
-    id: '3.5.2', 
+  { id: '3.5.2', 
     title: 'Project Communications Log', 
     type: 'terminal', 
-    parentId: 'stak',
-    domain: 'stakeholders', 
+    parentId: 'comm',
+    domain: 'communications', 
     focusArea: 'Executing', 
     icon: 'MessagesSquare', 
     summary: 'A comprehensive log of all formal project communications and distributed information.',
@@ -205,8 +214,7 @@ export const pages: Page[] = [
       outputs: ['stakeholder-updates', 'meeting-minutes', 'communication-records']
     }
   },
-  { 
-    id: '4.5.1', 
+  { id: '4.5.1', 
     title: 'Stakeholder Engagement Reports', 
     type: 'terminal', 
     parentId: 'stak',
@@ -220,8 +228,7 @@ export const pages: Page[] = [
       outputs: ['stakeholder-engagement-reports', 'engagement-gap-analysis', 'engagement-improvement-actions']
     }
   },
-  { 
-    id: '4.5.2', 
+  { id: '4.5.2', 
     title: 'Stakeholder Issue Log', 
     type: 'terminal', 
     parentId: 'stak',
@@ -235,8 +242,7 @@ export const pages: Page[] = [
       outputs: ['resolved-stakeholder-issues', 'stakeholder-issue-resolution-log', 'escalation-records']
     }
   },
-  { 
-    id: '5.5.1', 
+  { id: '5.5.1', 
     title: 'Stakeholder Satisfaction Surveys', 
     type: 'terminal', 
     parentId: 'stak',
@@ -250,8 +256,7 @@ export const pages: Page[] = [
       outputs: ['stakeholder-satisfaction-report', 'stakeholder-lessons-learned', 'final-feedback-summary']
     }
   },
-  { 
-    id: '5.5.2', 
+  { id: '5.5.2', 
     title: 'Stakeholder Project Archive', 
     type: 'terminal', 
     parentId: 'stak',
@@ -265,8 +270,7 @@ export const pages: Page[] = [
       outputs: ['archived-stakeholder-records', 'stakeholder-archive-drive', 'final-stakeholder-documentation']
     }
   },
-  { 
-    id: '1.4.1', 
+  { id: '1.4.1', 
     title: 'Financial Feasibility Report', 
     type: 'terminal', 
     parentId: 'fin',
@@ -280,8 +284,7 @@ export const pages: Page[] = [
       outputs: ['financial-feasibility-report', 'initial-budget-range', 'investment-justification']
     }
   },
-  { 
-    id: '1.4.2', 
+  { id: '1.4.2', 
     title: 'Funding Strategy Plan', 
     type: 'terminal', 
     domain: 'finance', 
@@ -309,8 +312,7 @@ export const pages: Page[] = [
       outputs: ['BOQ Spreadsheet', 'Cost Estimate Basis']
     }
   },
-  { 
-    id: '2.4.2', 
+  { id: '2.4.2', 
     title: 'Cost Estimates & Basis', 
     type: 'terminal', 
     domain: 'finance', 
@@ -323,8 +325,7 @@ export const pages: Page[] = [
       outputs: ['cost-estimates', 'basis-of-estimates']
     }
   },
-  { 
-    id: '2.1.12', 
+  { id: '2.1.12', 
     title: 'Financial Management Plan', 
     type: 'terminal', 
     parentId: 'fin',
@@ -338,8 +339,7 @@ export const pages: Page[] = [
       outputs: ['financial-management-plan', 'control-thresholds']
     }
   },
-  { 
-    id: '2.4.3', 
+  { id: '2.4.3', 
     title: 'Cost Baseline', 
     type: 'terminal', 
     parentId: 'fin',
@@ -353,8 +353,7 @@ export const pages: Page[] = [
       outputs: ['project-cost-baseline']
     }
   },
-  { 
-    id: '2.4.5', 
+  { id: '2.4.5', 
     title: 'Project Funding Requirements', 
     type: 'terminal', 
     parentId: 'fin',
@@ -368,8 +367,7 @@ export const pages: Page[] = [
       outputs: ['project-funding-requirements']
     }
   },
-  { 
-    id: '2.4.4', 
+  { id: '2.4.4', 
     title: 'Financial Control Plan', 
     type: 'terminal', 
     domain: 'finance', 
@@ -382,8 +380,7 @@ export const pages: Page[] = [
       outputs: ['financial-control-plan', 'cost-tracking-system-structure', 'fin-reporting-templates']
     }
   },
-  { 
-    id: '3.4.1', 
+  { id: '3.4.1', 
     title: 'Funding Disbursement Records', 
     type: 'terminal', 
     domain: 'finance', 
@@ -396,8 +393,7 @@ export const pages: Page[] = [
       outputs: ['fund-disbursement-records', 'updated-cash-flow-data', 'fin-transactions-log']
     }
   },
-  { 
-    id: '3.4.2', 
+  { id: '3.4.2', 
     title: 'Project Cost Ledger', 
     type: 'terminal', 
     domain: 'finance', 
@@ -410,8 +406,7 @@ export const pages: Page[] = [
       outputs: ['actual-cost-data', 'cost-ledger', 'expense-reports']
     }
   },
-  { 
-    id: '4.4.1', 
+  { id: '4.4.1', 
     title: 'Cost Performance Reports (EVM)', 
     type: 'terminal', 
     domain: 'finance', 
@@ -424,8 +419,7 @@ export const pages: Page[] = [
       outputs: ['cost-performance-reports', 'cost-variance-cv', 'financial-forecasts']
     }
   },
-  { 
-    id: '4.4.2', 
+  { id: '4.4.2', 
     title: 'Budget Change Log', 
     type: 'terminal', 
     domain: 'finance', 
@@ -438,8 +432,7 @@ export const pages: Page[] = [
       outputs: ['approved-budget-changes', 'updated-cost-baseline', 'budget-change-log']
     }
   },
-  { 
-    id: '3.4.3', 
+  { id: '3.4.3', 
     title: 'Purchase Order Tracking', 
     type: 'terminal', 
     domain: 'finance', 
@@ -453,8 +446,7 @@ export const pages: Page[] = [
       outputs: ['Open PO Report', 'Committed Cost Variance']
     }
   },
-  { 
-    id: '3.4.5', 
+  { id: '3.4.5', 
     title: 'Purchase Requisitions', 
     type: 'terminal', 
     domain: 'finance', 
@@ -463,8 +455,7 @@ export const pages: Page[] = [
     collectionName: 'purchase_requests',
     summary: 'Centralized workflow for creating, approving, and converting purchase requisitions.',
   },
-  { 
-    id: '3.4.4', 
+  { id: '3.4.4', 
     title: 'Sub-Contractor Advances', 
     type: 'terminal', 
     domain: 'finance', 
@@ -477,8 +468,7 @@ export const pages: Page[] = [
       outputs: ['Advance Reconciliations', 'Retention Release Board']
     }
   },
-  { 
-    id: '5.4.1', 
+  { id: '5.4.1', 
     title: 'Final Financial Reconciliation', 
     type: 'terminal', 
     domain: 'finance', 
@@ -491,8 +481,7 @@ export const pages: Page[] = [
       outputs: ['final-financial-report', 'budget-utilization-summary', 'fin-closure-approval']
     }
   },
-  { 
-    id: '5.4.2', 
+  { id: '5.4.2', 
     title: 'Financial Document Archive', 
     type: 'terminal', 
     domain: 'finance', 
@@ -505,12 +494,11 @@ export const pages: Page[] = [
       outputs: ['archived-fin-records', 'fin-archive-drive', 'final-fin-documentation']
     }
   },
-  { 
-    id: '1.3.1', 
+  { id: '1.3.1', 
     title: 'High-Level Project Timeline', 
     type: 'terminal', 
-    parentId: 'sched',
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'Clock', 
     summary: 'The preliminary project timeline identifying critical milestones and time constraints phase-by-phase.',
@@ -520,11 +508,11 @@ export const pages: Page[] = [
       outputs: ['high-level-timeline', 'key-milestones-list', 'initial-time-constraints']
     }
   },
-  { 
-    id: '1.3.2', 
+  { id: '1.3.2', 
     title: 'Preliminary Activity List', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'ListTodo', 
     summary: 'An initial list of major project activities required to deliver high-level project outcomes.',
@@ -534,11 +522,11 @@ export const pages: Page[] = [
       outputs: ['high-level-activity-list', 'initial-activity-attributes']
     }
   },
-  { 
-    id: '2.3.1', 
+  { id: '2.3.1', 
     title: 'Detailed Activity Registry', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'List', 
     collectionName: 'activities',
@@ -549,11 +537,11 @@ export const pages: Page[] = [
       outputs: ['detailed-activity-list', 'activity-attributes']
     }
   },
-  { 
-    id: '2.3.2', 
+  { id: '2.3.2', 
     title: 'Project Network Diagram', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'ArrowRightLeft', 
     summary: 'A visual representation of activity dependencies and the logical flow of project work.',
@@ -563,11 +551,11 @@ export const pages: Page[] = [
       outputs: ['project-network-diagram', 'activity-sequencing-data']
     }
   },
-  { 
-    id: '2.3.3', 
+  { id: '2.3.3', 
     title: 'Baseline Master Schedule', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'BarChart3', 
     summary: 'The formal, approved project master schedule including Gantt view and critical path analysis.',
@@ -577,11 +565,11 @@ export const pages: Page[] = [
       outputs: ['Project Schedule', 'Schedule Baseline', 'Schedule Data']
     }
   },
-  { 
-    id: '3.3.2', 
+  { id: '3.3.2', 
     title: 'Current Schedule Status (Gantt)', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Executing', 
     icon: 'TrendingUp', 
     summary: 'A real-time Gantt view showing actual progress against the approved schedule baseline.',
@@ -591,11 +579,11 @@ export const pages: Page[] = [
       outputs: ['Updated Project Schedule']
     }
   },
-  { 
-    id: '2.3.4', 
+  { id: '2.3.4', 
     title: 'Activity Duration Estimates', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'History', 
     summary: 'Formal documentation of time estimates for each activity and the basis for those estimates.',
@@ -605,11 +593,11 @@ export const pages: Page[] = [
       outputs: ['activity-duration-estimates', 'basis-of-estimates']
     }
   },
-  { 
-    id: '2.3.5', 
+  { id: '2.3.5', 
     title: 'Schedule Baseline Document', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Planning', 
     icon: 'CalendarDays', 
     summary: 'The formal document aggregating durations and sequences as the project time baseline.',
@@ -619,11 +607,11 @@ export const pages: Page[] = [
       outputs: ['project-schedule', 'schedule-baseline', 'schedule-model']
     }
   },
-  { 
-    id: '3.3.1', 
+  { id: '3.3.1', 
     title: 'Schedule Execution Log', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Executing', 
     icon: 'Play', 
     summary: 'A record of daily execution data and task tracking against the schedule baseline.',
@@ -633,11 +621,11 @@ export const pages: Page[] = [
       outputs: ['updated-schedule-data', 'work-performance-data', 'progress-reports']
     }
   },
-  { 
-    id: '3.3.3', 
+  { id: '3.3.3', 
     title: 'Daily Progress Report Log', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Executing', 
     icon: 'FileText', 
     summary: 'A repository for all formal daily site logs, manpower data, and weather reports.',
@@ -647,11 +635,11 @@ export const pages: Page[] = [
       outputs: ['Daily Progress Reports', 'Work Performance Data']
     }
   },
-  { 
-    id: '4.3.1', 
+  { id: '4.3.1', 
     title: 'Schedule Performance Report', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Gauge', 
     summary: 'A formal report analyzing schedule variance, trends, and SPI performance metrics.',
@@ -661,11 +649,11 @@ export const pages: Page[] = [
       outputs: ['schedule-performance-reports', 'schedule-variance-reports', 'forecast-updates']
     }
   },
-  { 
-    id: '4.3.2', 
+  { id: '4.3.2', 
     title: 'Schedule Change Log', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'ctrl',
+    domain: 'controls', 
     focusArea: 'Monitoring & Controlling', 
     icon: 'Settings2', 
     summary: 'A formal log tracking all schedule modifications, impact assessments, and approvals.',
@@ -675,11 +663,11 @@ export const pages: Page[] = [
       outputs: ['approved-schedule-changes', 'updated-schedule-baseline', 'schedule-change-log']
     }
   },
-  { 
-    id: '5.3.1', 
+  { id: '5.3.1', 
     title: 'Schedule Evaluation Report', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'handover_hub',
+    domain: 'handover', 
     focusArea: 'Closing', 
     icon: 'CheckCircle2', 
     summary: 'A final evaluation of project schedule performance and formal acceptance record.',
@@ -689,11 +677,11 @@ export const pages: Page[] = [
       outputs: ['final-approved-schedule', 'schedule-closure-report', 'schedule-lessons-learned']
     }
   },
-  { 
-    id: '5.3.2', 
+  { id: '5.3.2', 
     title: 'Schedule Project Archive', 
     type: 'terminal', 
-    domain: 'schedule', 
+    parentId: 'handover_hub',
+    domain: 'handover', 
     focusArea: 'Closing', 
     icon: 'Library', 
     summary: 'The final repository of all schedule artifacts, baselines, and logs archived for record.',
@@ -703,8 +691,7 @@ export const pages: Page[] = [
       outputs: ['archived-schedule-records', 'schedule-archive-drive', 'final-schedule-documentation']
     }
   },
-  { 
-    id: '1.2.1', 
+  { id: '1.2.1', 
     title: 'Project Scope Statement', 
     type: 'terminal', 
     parentId: 'scope',
@@ -718,8 +705,7 @@ export const pages: Page[] = [
       outputs: ['project-scope-statement', 'deliverables-list', 'exclusions-list']
     }
   },
-  { 
-    id: '2.2.0', 
+  { id: '2.2.0', 
     title: 'Scope Baseline', 
     type: 'terminal', 
     parentId: 'scope',
@@ -733,8 +719,7 @@ export const pages: Page[] = [
       outputs: ['scope-baseline']
     }
   },
-  { 
-    id: '1.2.2', 
+  { id: '1.2.2', 
     title: 'Requirements Documentation', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -747,8 +732,7 @@ export const pages: Page[] = [
       outputs: ['initial-requirements-list', 'stakeholder-needs-matrix']
     }
   },
-  { 
-    id: '2.2.1', 
+  { id: '2.2.1', 
     title: 'Detailed Scope Statement', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -761,8 +745,7 @@ export const pages: Page[] = [
       outputs: ['detailed-scope-statement', 'scope-baseline', 'scope-assumptions-log']
     }
   },
-  { 
-    id: '2.2.2', 
+  { id: '2.2.2', 
     title: 'WBS Dictionary', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -775,8 +758,7 @@ export const pages: Page[] = [
       outputs: ['wbs-structure', 'wbs-dictionary', 'work-packages-list']
     }
   },
-  { 
-    id: '2.2.3', 
+  { id: '2.2.3', 
     title: 'Scope Validation Criteria', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -789,8 +771,7 @@ export const pages: Page[] = [
       outputs: ['acceptance-criteria', 'scope-validation-plan']
     }
   },
-  { 
-    id: '2.2.5', 
+  { id: '2.2.5', 
     title: 'WBS Structure (Zones/Areas)', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -803,8 +784,7 @@ export const pages: Page[] = [
       outputs: ['Spatial-WBS mapping', 'Cost Account Structure']
     }
   },
-  { 
-    id: '2.2.7', 
+  { id: '2.2.7', 
     title: 'Work Package Dictionary', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -817,8 +797,7 @@ export const pages: Page[] = [
       outputs: ['Work Package List', 'Work Package Dictionary']
     }
   },
-  { 
-    id: '3.2.1', 
+  { id: '3.2.1', 
     title: 'Scope Performance Data', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -831,8 +810,7 @@ export const pages: Page[] = [
       outputs: ['completed-deliverables', 'scope-performance-data']
     }
   },
-  { 
-    id: '3.2.2', 
+  { id: '3.2.2', 
     title: 'Deliverable Validation Records', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -845,8 +823,7 @@ export const pages: Page[] = [
       outputs: ['accepted-deliverables', 'validation-records', 'rejected-deliverables']
     }
   },
-  { 
-    id: '4.2.1', 
+  { id: '4.2.1', 
     title: 'Scope Change Log', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -859,8 +836,7 @@ export const pages: Page[] = [
       outputs: ['approved-scope-changes', 'updated-scope-baseline', 'scope-change-log']
     }
   },
-  { 
-    id: '4.2.2', 
+  { id: '4.2.2', 
     title: 'Scope Performance Report', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -873,8 +849,7 @@ export const pages: Page[] = [
       outputs: ['scope-performance-reports', 'scope-variance-reports', 'corrective-actions']
     }
   },
-  { 
-    id: '5.2.1', 
+  { id: '5.2.1', 
     title: 'Scope Acceptance Certificate', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -887,8 +862,7 @@ export const pages: Page[] = [
       outputs: ['final-accepted-scope', 'accepted-deliverables', 'client-sign-off']
     }
   },
-  { 
-    id: '5.2.2', 
+  { id: '5.2.2', 
     title: 'Scope Project Archive', 
     type: 'terminal', 
     domain: 'delivery', 
@@ -901,8 +875,7 @@ export const pages: Page[] = [
       outputs: ['archived-scope-records', 'scope-structured-folder', 'final-scope-documentation']
     }
   },
-  { 
-    id: '1.1.1', 
+  { id: '1.1.1', 
     title: 'Project Charter', 
     type: 'terminal', 
     domain: 'governance', 
@@ -917,8 +890,7 @@ export const pages: Page[] = [
       outputs: ['project-charter', 'signed-approval']
     }
   },
-  { 
-    id: '1.1.3', 
+  { id: '1.1.3', 
     title: 'Assumption Log', 
     type: 'terminal', 
     domain: 'governance', 
@@ -933,8 +905,7 @@ export const pages: Page[] = [
       outputs: ['assumption-log', 'constraint-register', 'risk-inputs']
     }
   },
-  { 
-    id: '1.1.2', 
+  { id: '1.1.2', 
     title: 'Business Case', 
     type: 'terminal', 
     domain: 'governance', 
@@ -948,8 +919,7 @@ export const pages: Page[] = [
       outputs: ['business-case-document', 'value-alignment-map']
     }
   },
-  { 
-    id: '2.1.15', 
+  { id: '2.1.15', 
     title: 'Sourcing Strategy Plan', 
     type: 'terminal', 
     parentId: 'gov',
@@ -963,8 +933,7 @@ export const pages: Page[] = [
       outputs: ['sourcing-strategy-plan', 'vendor-selection-criteria']
     }
   },
-  { 
-    id: '3.1.1', 
+  { id: '3.1.1', 
     title: 'Change Requests', 
     type: 'terminal', 
     domain: 'governance', 
@@ -978,11 +947,11 @@ export const pages: Page[] = [
       outputs: ['minutes-of-meeting', 'action-item-log']
     }
   },
-  { 
-    id: '3.1.2', 
+  { id: '3.1.2', 
     title: 'Official Correspondence Log', 
     type: 'terminal', 
-    domain: 'governance', 
+    parentId: 'comm',
+    domain: 'communications', 
     focusArea: 'Executing', 
     icon: 'FilePlus', 
     collectionName: 'correspondence_log',
@@ -993,8 +962,7 @@ export const pages: Page[] = [
       outputs: ['correspondence-register', 'archived-letters']
     }
   },
-  { 
-    id: '4.1.1', 
+  { id: '4.1.1', 
     title: 'Project Performance Reports', 
     type: 'terminal', 
     domain: 'governance', 
@@ -1007,8 +975,7 @@ export const pages: Page[] = [
       outputs: ['executive-report', 'health-dashboard']
     }
   },
-  { 
-    id: '4.1.2', 
+  { id: '4.1.2', 
     title: 'Change Management Log', 
     type: 'terminal', 
     domain: 'governance', 
@@ -1022,11 +989,11 @@ export const pages: Page[] = [
       outputs: ['change-register', 'approved-changes']
     }
   },
-  { 
-    id: '5.1.1', 
+  { id: '5.1.1', 
     title: 'Lessons Learned Register', 
     type: 'terminal', 
-    domain: 'governance', 
+    parentId: 'handover_hub',
+    domain: 'handover', 
     focusArea: 'Closing', 
     icon: 'Library', 
     collectionName: 'lessons_learned',
@@ -1037,11 +1004,11 @@ export const pages: Page[] = [
       outputs: ['lessons-learned-db', 'final-knowledge-transfer']
     }
   },
-  { 
-    id: '5.1.2', 
+  { id: '5.1.2', 
     title: 'Closure Report', 
     type: 'terminal', 
-    domain: 'governance', 
+    parentId: 'handover_hub',
+    domain: 'handover', 
     focusArea: 'Closing', 
     icon: 'Flag', 
     collectionName: 'closure_reports',
@@ -1054,8 +1021,7 @@ export const pages: Page[] = [
   },
 
   // --- RESOURCES DOMAIN (ARTIFACT-CENTRIC) ---
-  { 
-    id: '1.6.1', 
+  { id: '1.6.1', 
     title: 'High-Level Resource Strategy', 
     type: 'terminal', 
     domain: 'resources', 
@@ -1068,8 +1034,7 @@ export const pages: Page[] = [
       outputs: ['high-level-resource-requirements', 'initial-resource-categories', 'resource-constraints']
     }
   },
-  { 
-    id: '1.6.2', 
+  { id: '1.6.2', 
     title: 'Resource Acquisition Strategy', 
     type: 'terminal', 
     domain: 'resources', 
@@ -1082,8 +1047,7 @@ export const pages: Page[] = [
       outputs: ['resource-strategy-plan', 'sourcing-model', 'resource-acquisition-approach']
     }
   },
-  { 
-    id: '2.6.1', 
+  { id: '2.6.1', 
     title: 'Resource Requirements Matrix', 
     type: 'terminal', 
     parentId: 'res',
@@ -1097,8 +1061,7 @@ export const pages: Page[] = [
       outputs: ['detailed-resource-requirements', 'resource-breakdown-structure-rbs', 'resource-attributes']
     }
   },
-  { 
-    id: '2.6.8', 
+  { id: '2.6.8', 
     title: 'Team Charter', 
     type: 'terminal', 
     parentId: 'res',
@@ -1112,8 +1075,7 @@ export const pages: Page[] = [
       outputs: ['team-charter', 'team-norms']
     }
   },
-  { 
-    id: '2.6.3', 
+  { id: '2.6.3', 
     title: 'Resource Control Framework', 
     type: 'terminal', 
     parentId: 'res',
@@ -1127,8 +1089,7 @@ export const pages: Page[] = [
       outputs: ['resource-control-plan', 'resource-tracking-structure', 'resource-performance-metrics']
     }
   },
-  { 
-    id: '3.6.3', 
+  { id: '3.6.3', 
     title: 'Project Task Manager', 
     type: 'terminal', 
     parentId: 'res',
@@ -1142,8 +1103,7 @@ export const pages: Page[] = [
       outputs: ['Completed Tasks', 'Team Velocity Reports']
     }
   },
-  { 
-    id: '3.6.4', 
+  { id: '3.6.4', 
     title: 'Minutes of Meeting (MOM)', 
     type: 'terminal', 
     parentId: 'res',
@@ -1157,8 +1117,7 @@ export const pages: Page[] = [
       outputs: ['Minutes of Meeting (MOM)', 'Action Items Log']
     }
   },
-  { 
-    id: '3.6.1', 
+  { id: '3.6.1', 
     title: 'Resource Assignment Records', 
     type: 'terminal', 
     parentId: 'res',
@@ -1172,8 +1131,7 @@ export const pages: Page[] = [
       outputs: ['acquired-resources', 'resource-assignment-records', 'contracts']
     }
   },
-  { 
-    id: '3.6.2', 
+  { id: '3.6.2', 
     title: 'Team Performance Assessments', 
     type: 'terminal', 
     parentId: 'res',
@@ -1187,8 +1145,7 @@ export const pages: Page[] = [
       outputs: ['team-performance-improvements', 'resource-utilization-data', 'updated-resource-assignments']
     }
   },
-  { 
-    id: '3.3.4', 
+  { id: '3.3.4', 
     title: 'Supplier Master Register', 
     type: 'terminal', 
     parentId: 'res',
@@ -1203,8 +1160,7 @@ export const pages: Page[] = [
       outputs: ['Supplier Master Database', 'Vendor Performance Index', 'Integrated Ecosystem']
     }
   },
-  { 
-    id: '4.6.1', 
+  { id: '4.6.1', 
     title: 'Resource Performance Reports', 
     type: 'terminal', 
     parentId: 'res',
@@ -1218,8 +1174,7 @@ export const pages: Page[] = [
       outputs: ['resource-performance-reports', 'utilization-reports', 'efficiency-metrics']
     }
   },
-  { 
-    id: '4.6.2', 
+  { id: '4.6.2', 
     title: 'Resource Change Log', 
     type: 'terminal', 
     parentId: 'res',
@@ -1233,8 +1188,7 @@ export const pages: Page[] = [
       outputs: ['updated-resource-allocation', 'resource-change-log', 'corrective-actions']
     }
   },
-  { 
-    id: '5.6.1', 
+  { id: '5.6.1', 
     title: 'Resource Release Records', 
     type: 'terminal', 
     parentId: 'res',
@@ -1248,8 +1202,7 @@ export const pages: Page[] = [
       outputs: ['released-resources', 'resource-release-records', 'contract-closure-documents']
     }
   },
-  { 
-    id: '5.6.2', 
+  { id: '5.6.2', 
     title: 'Resource Project Archive', 
     type: 'terminal', 
     parentId: 'res',
@@ -1265,8 +1218,7 @@ export const pages: Page[] = [
   },
 
   // --- RISK DOMAIN (REFINED PMBOK 8) ---
-  { 
-    id: '1.7.1', 
+  { id: '1.7.1', 
     title: 'Initial Risk Register', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1280,8 +1232,7 @@ export const pages: Page[] = [
       outputs: ['initial-risk-register', 'high-level-risk-list', 'initial-risk-categories']
     }
   },
-  { 
-    id: '1.7.2', 
+  { id: '1.7.2', 
     title: 'Risk Management Strategy', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1295,8 +1246,7 @@ export const pages: Page[] = [
       outputs: ['risk-management-strategy', 'risk-appetite-thresholds', 'risk-categories-rbs']
     }
   },
-  { 
-    id: '2.1.14', 
+  { id: '2.1.14', 
     title: 'Risk Management Plan', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1310,8 +1260,7 @@ export const pages: Page[] = [
       outputs: ['risk-management-plan', 'risk-categories-rbs', 'p-i-matrix']
     }
   },
-  { 
-    id: '2.7.1', 
+  { id: '2.7.1', 
     title: 'Risk Register', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1325,8 +1274,7 @@ export const pages: Page[] = [
       outputs: ['risk-register', 'risk-list', 'identified-potential-responses']
     }
   },
-  { 
-    id: '2.7.6', 
+  { id: '2.7.6', 
     title: 'Risk Report', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1340,8 +1288,7 @@ export const pages: Page[] = [
       outputs: ['risk-report', 'overall-risk-summary']
     }
   },
-  { 
-    id: '2.7.2', 
+  { id: '2.7.2', 
     title: 'Qualitative Risk Analysis Matrix', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1355,8 +1302,7 @@ export const pages: Page[] = [
       outputs: ['prioritized-risk-list', 'risk-scores', 'qualitative-risk-register']
     }
   },
-  { 
-    id: '2.7.3', 
+  { id: '2.7.3', 
     title: 'Quantitative Risk Report', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1370,8 +1316,7 @@ export const pages: Page[] = [
       outputs: ['quant-risk-report', 'probability-of-success', 'cost-schedule-risk-impacts']
     }
   },
-  { 
-    id: '2.7.4', 
+  { id: '2.7.4', 
     title: 'Risk Response Plan', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1385,8 +1330,7 @@ export const pages: Page[] = [
       outputs: ['risk-response-plan', 'risk-action-plans', 'risk-contingency-reserves']
     }
   },
-  { 
-    id: '3.7.1', 
+  { id: '3.7.1', 
     title: 'Risk Response Implementation Log', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1400,8 +1344,7 @@ export const pages: Page[] = [
       outputs: ['implemented-risk-actions', 'active-risk-register', 'residual-risks']
     }
   },
-  { 
-    id: '4.7.1', 
+  { id: '4.7.1', 
     title: 'Risk Performance Reports', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1415,8 +1358,7 @@ export const pages: Page[] = [
       outputs: ['risk-performance-reports', 'new-risks-identified', 'monitored-risk-register']
     }
   },
-  { 
-    id: '4.7.2', 
+  { id: '4.7.2', 
     title: 'Risk Change Log', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1430,8 +1372,7 @@ export const pages: Page[] = [
       outputs: ['updated-risk-responses', 'risk-change-log', 'risk-corrective-actions']
     }
   },
-  { 
-    id: '5.7.1', 
+  { id: '5.7.1', 
     title: 'Risk Management Evaluation Report', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1445,8 +1386,7 @@ export const pages: Page[] = [
       outputs: ['risk-evaluation-report', 'risk-lessons-learned', 'risk-best-practices']
     }
   },
-  { 
-    id: '5.7.2', 
+  { id: '5.7.2', 
     title: 'Risk Project Archive', 
     type: 'terminal', 
     parentId: 'risk',
@@ -1484,16 +1424,6 @@ export const getChildren = (parentId: string) => {
 export const getParent = (id: string) => {
   const page = pages.find(p => p.id === id);
   return pages.find(p => p.id === page?.parentId);
-};
-
-export const getBreadcrumbs = (id: string): Page[] => {
-  const crumbs: Page[] = [];
-  let current = pages.find(p => p.id === id);
-  while (current) {
-    crumbs.unshift(current);
-    current = pages.find(p => p.id === current?.parentId);
-  }
-  return crumbs;
 };
 
 export const masterFormatDivisions = [

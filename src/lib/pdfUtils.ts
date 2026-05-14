@@ -13,6 +13,18 @@ export const loadArabicFont = async (pdf: jsPDF) => {
     );
     pdf.addFileToVFS('Amiri-Regular.ttf', fontBase64);
     pdf.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+
+    const boldFontUrl = 'https://cdn.jsdelivr.net/gh/googlefonts/amiri@main/fonts/ttf/Amiri-Bold.ttf';
+    const boldResponse = await fetch(boldFontUrl);
+    if (boldResponse.ok) {
+      const boldFontBuffer = await boldResponse.arrayBuffer();
+      const boldFontBase64 = btoa(
+        new Uint8Array(boldFontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      pdf.addFileToVFS('Amiri-Bold.ttf', boldFontBase64);
+      pdf.addFont('Amiri-Bold.ttf', 'Amiri', 'bold');
+    }
+
     return true;
   } catch (e) {
     console.error('Failed to load Arabic font:', e);

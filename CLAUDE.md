@@ -14,4 +14,4 @@ const { default: autoTable } = await import('jspdf-autotable');
 
 ## API Guidelines
 - `POST /api/projects/init-drive`: Requires `projectName`, `projectCode`, and `userEmail`.
-- `POST /api/drive/upload-by-path`: Use for uploading generated PDFs to specific Drive paths.
+- `POST /api/drive/upload-by-url`: Preferred method for archiving documents to specific Drive paths (uses Firebase Storage as a buffer to avoid size limits and local file errors).

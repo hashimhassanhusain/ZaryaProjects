@@ -173,13 +173,6 @@ export const ContactsView: React.FC = () => {
     <div className="w-full">
       {view === 'list' ? (
         <div className="space-y-8">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-            <span className="hover:text-slate-600 cursor-pointer transition-colors">Admin Settings</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-slate-900">Contacts & Manpower</span>
-          </nav>
-
           {/* Header */}
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500">
             <div className="space-y-2">

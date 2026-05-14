@@ -16,13 +16,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { EntityConfig } from '../../types';
 
+import { useLanguage } from '../../context/LanguageContext';
+import { useStandardProcessPage } from '../StandardProcessPage';
+import { DriveUploadButton } from './DriveUploadButton';
+import { toast } from 'react-hot-toast';
+
 interface UniversalRecordDetailProps {
   config: EntityConfig;
   initialData?: any;
   onSave: (data: any) => void;
   onSaveAsNew: (data: any) => void;
   onCancel: () => void;
-  onUploadToDrive?: (data: any) => void;
+  onUploadToDrive?: (data: any) => void; // Keeping for legacy or other needs
   onPreviewPDF?: (data: any) => void;
   inputs?: { id: string; title: string; status?: string }[];
 }
@@ -37,16 +42,82 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
   onPreviewPDF,
   inputs = []
 }) => {
+  const { isRtl } = useLanguage();
+  const pageContext = useStandardProcessPage();
   const [formData, setFormData] = useState<any>(initialData || {});
   const [activeSection, setActiveSection] = useState(config.sections?.[0]?.id || 'general');
+
+  // Register actions with parent
+  React.useEffect(() => {
+    if (pageContext) {
+      pageContext.registerSaveAction(() => onSave(formData));
+      pageContext.registerUploadAction((fileId) => {
+        const drivePathValue = getDrivePath();
+        setFormData((prev: any) => ({ ...prev, driveFileId: fileId, drivePath: drivePathValue }));
+        toast.success('File linked to record successfully');
+        // Auto-save the link
+        onSave({ ...formData, driveFileId: fileId, drivePath: drivePathValue });
+      });
+    }
+  }, [formData, onSave, pageContext]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
+  // Determine drive path based on config and focus area numbers
+  const getDrivePath = () => {
+    // Standard mapping: FocusArea/Domain
+    // projectLogs often have id like '3.1.2'
+    const idParts = (config.id || "").split('.');
+    if (idParts.length >= 2) {
+       const focusAreaNum = idParts[0];
+       const domainNum = idParts[1];
+       
+       const focusAreaMap: Record<string, string> = {
+        '1': '1.0_Initiating',
+        '2': '2.0_Planning',
+        '3': '3.0_Executing',
+        '4': '4.0_Monitoring_and_Controlling',
+        '5': '5.0_Closing'
+      };
+      
+      const domainMap: Record<string, string> = {
+        '1': 'Governance_Domain',
+        '2': 'Scope_Domain',
+        '3': 'Schedule_Domain',
+        '4': 'Finance_Domain',
+        '5': 'Stakeholders_Domain',
+        '6': 'Resources_Domain',
+        '7': 'Risk_Domain'
+      };
+
+      const focus = focusAreaMap[focusAreaNum];
+      const domain = domainMap[domainNum];
+
+      if (focus && domain) {
+        return `Business_Initiation_and_Governance_1/${focus}/${focusAreaNum}.${domainNum}_${domain}`;
+      }
+    }
+
+    // Default Fallbacks
+    if (config.collection === 'purchase_orders') return '6_Financials_and_Procurements/FINANCIAL/Purchase_Orders';
+    if (config.collection === 'contracts') return '6_Financials_and_Procurements/LEGAL/Agreements';
+    
+    return '01_PROJECT_MANAGEMENT_FORMS';
+  };
+
+  // Generate a consistent file name for this specific record
+  const getSmartFileName = () => {
+     const titleField = config.columns.find(c => c.key.toLowerCase().includes('name') || c.key.toLowerCase().includes('title'))?.key || 'id';
+     const baseName = formData[titleField] || formData.id || 'Record';
+     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+     return `${config.label}_${baseName}_${dateStr}`.replace(/\s+/g, '_');
+  };
+
   return (
     <div className="flex bg-app-bg dark:bg-slate-950 min-h-0 flex-1">
-      {/* LEFT: INPUT CARDS HUB (PMIS Context) */}
+      {/* ... (rest of left/center) ... */}
       <aside className="w-1/4 border-r border-slate-100 dark:border-white/5 p-8 space-y-6 hidden lg:block overflow-y-auto">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[10px] font-black uppercase text-slate-950 dark:text-slate-400 tracking-[0.2em]">Source Context</h3>
@@ -135,39 +206,7 @@ export const UniversalRecordDetail: React.FC<UniversalRecordDetailProps> = ({
         </div>
       </main>
 
-      {/* ACTION FAB (Unified with StandardProcessPage) */}
-      <div className="fixed bottom-4 right-4 flex flex-col gap-1.5 items-end z-50">
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="flex flex-col gap-1.5"
-          >
-            <button 
-              onClick={() => onSave(formData)}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
-            >
-              <Save className="w-4 h-4" />
-              Commit Updates
-            </button>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={onCancel}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-500 rounded-xl font-black text-[8px] uppercase tracking-widest border border-slate-100 shadow-xl hover:bg-slate-50 transition-all"
-              >
-                <X className="w-3.5 h-3.5" />
-                Disconnect
-              </button>
-              {onPreviewPDF && (
-                <button 
-                  onClick={() => onPreviewPDF(formData)}
-                  className="p-3 bg-slate-900 text-blue-400 rounded-lg shadow-2xl hover:scale-110 transition-all border border-slate-800"
-                >
-                  <FileText className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-      </div>
+      {/* NO INDIVIDUAL FAB HERE - SHARED WITH StandardProcessPage */}
     </div>
   );
 };

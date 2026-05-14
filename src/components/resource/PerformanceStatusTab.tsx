@@ -392,16 +392,21 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Actions</th>
                 <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Date</th>
                 <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Member</th>
                 <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Accomplished</th>
                 <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-center">Variance</th>
-                <th className="px-8 py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {statusReports.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-8 py-6">
+                    <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </td>
                   <td className="px-8 py-6 text-sm font-bold text-slate-900">{r.date}</td>
                   <td className="px-8 py-6">
                     <div className="text-sm font-bold text-slate-900">{r.memberName}</div>
@@ -424,11 +429,6 @@ export const PerformanceStatusTab: React.FC<PerformanceStatusTabProps> = ({ proj
                     ) : (
                       <span className="text-emerald-600 font-semibold text-[10px] uppercase tracking-widest">Normal</span>
                     )}
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
-                      <Download className="w-4 h-4" />
-                    </button>
                   </td>
                 </tr>
               ))}

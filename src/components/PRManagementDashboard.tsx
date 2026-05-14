@@ -49,6 +49,7 @@ export const PRManagementDashboard: React.FC<PRManagementDashboardProps> = ({ pr
   const [newTask, setNewTask] = useState<Partial<any>>({title: '', assigneeName: '', dueDate: '', priority: 'Medium', status: 'TO DO'});
   const [tenderLogEntries, setTenderLogEntries] = useState(pr.tenderLog || []);
   const [newNote, setNewNote] = useState('');
+  const [logView, setLogView] = useState<'audit' | 'append'>('audit');
 
   useEffect(() => {
     getSuppliers().then(setSuppliers);
@@ -137,299 +138,304 @@ export const PRManagementDashboard: React.FC<PRManagementDashboardProps> = ({ pr
   ] as const;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
-      {/* Precision Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={onBack}
-                className="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all active:scale-95 group"
-              >
-                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-              </button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-black text-slate-900 italic uppercase tracking-tight">{pr.prName}</h2>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                    ID: {pr.id?.slice(-8).toUpperCase()}
+    <div className="min-h-screen bg-white">
+      {/* Precision Compact Header */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+             <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    PR #{pr.id?.slice(-6).toUpperCase()}
                   </span>
+                  <h2 className="text-sm font-bold text-slate-900 truncate max-w-md">{pr.prName}</h2>
                 </div>
-                <div className="flex items-center gap-4 mt-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                    <User className="w-3.5 h-3.5" />
-                    PR Manager
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    PR Date: {new Date().toLocaleDateString()}
-                  </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                   <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase">
+                     <User className="w-3 h-3" />
+                     {pr.status}
+                   </div>
+                   <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase">
+                     <Calendar className="w-3 h-3" />
+                     {new Date().toLocaleDateString()}
+                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {pr.status === 'Approved' && (
-                <button 
-                  onClick={() => setIsPOModalOpen(true)}
-                  className="flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-700 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Convert to PO
-                </button>
-              )}
-              
-              {pr.status !== 'Approved' && pr.status !== 'Archived' ? (
-                 <button 
-                  onClick={async () => { await approvePurchaseRequest(pr.id!, 'admin', 'current-user'); toast.success('PR Approved') }}
-                  className="flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Approve PR
-                </button>
-              ) : null}
-
-              {pr.status === 'Archived' ? (
-                <button 
-                  onClick={onDelete}
-                  className="flex items-center gap-3 px-5 py-3 bg-white border border-red-100 text-red-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-50 transition-all active:scale-95"
-                >
-                  <Trash className="w-4 h-4" />
-                  Delete
-                </button>
-              ) : (
-                <button 
-                  onClick={onArchive}
-                  className="flex items-center gap-3 px-5 py-3 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-all active:scale-95"
-                >
-                  <Archive className="w-4 h-4" />
-                  Archive
-                </button>
-              )}
-            </div>
+             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex gap-1 p-1 bg-slate-100/50 rounded-3xl mt-8 w-fit border border-slate-100 items-center">
-            {TABS.map(tab => (
+          <div className="flex items-center gap-2">
+            {pr.status === 'Approved' && (
               <button 
-                key={tab.id} 
-                onClick={() => setActiveTab(tab.id as any)} 
-                className={cn(
-                  "flex items-center gap-3 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300",
-                  activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-100" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                )}
+                onClick={() => setIsPOModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 transition-all"
               >
-                <tab.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{tab.id}</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                Convert
               </button>
-            ))}
+            )}
+            
+            {pr.status !== 'Approved' && pr.status !== 'Archived' && (
+               <button 
+                onClick={async () => { await approvePurchaseRequest(pr.id!, 'admin', 'current-user'); toast.success('PR Approved') }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 shadow-lg shadow-blue-500/10 transition-all focus:ring-2 focus:ring-blue-500/50"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Approve
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 pl-2 border-l border-slate-200 ml-2">
+              <button 
+                onClick={onArchive}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                title="Archive"
+              >
+                <Archive className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={onDelete}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                title="Delete"
+              >
+                <Trash className="w-4 h-4" />
+              </button>
+            </div>
           </div>
+        </div>
+
+        {/* Navigation Tabs - Super Compact */}
+        <div className="max-w-7xl mx-auto px-6 flex gap-6">
+          {TABS.map(tab => (
+            <button 
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id as any)} 
+              className={cn(
+                "flex items-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest transition-all border-b-2",
+                activeTab === tab.id ? "text-[#FF5F00] border-[#FF5F00]" : "text-slate-400 border-transparent hover:text-slate-700"
+              )}
+            >
+              <tab.icon className="w-3 h-3" />
+              <span>{tab.id}</span>
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <AnimatePresence mode="wait">
-          {activeTab === 'Tender Log & Notes' && (
-            <motion.div 
-              key="tender-log"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-            >
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 opacity-50 pointer-events-none" />
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8 flex items-center gap-3 italic">
-                    <History className="w-6 h-6 text-blue-600" />
-                    Transaction Audit Trail
-                  </h3>
-                  
-                  <div className="space-y-6 relative ml-3 border-l-2 border-slate-100 pl-8">
-                    {tenderLogEntries.length === 0 ? (
-                      <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-300">
-                        <MessageSquare className="w-16 h-16 opacity-50" strokeWidth={1} />
-                        <p className="font-black uppercase tracking-[0.2em] text-xs">Lifecycle empty</p>
-                      </div>
-                    ) : (
-                      tenderLogEntries.map((log, i) => (
-                        <div key={i} className="relative group">
-                          <div className="absolute -left-10 top-2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-sm z-10 group-hover:scale-125 transition-transform" />
-                          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 group-hover:bg-white group-hover:shadow-xl transition-all">
-                            <p className="text-xs font-black text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                              <Clock className="w-3 h-3" />
-                              Entry ID: {i + 1}
-                            </p>
-                            <p className="text-sm text-slate-700 leading-relaxed font-semibold italic">{log}</p>
-                          </div>
-                        </div>
-                      )).reverse()
-                    )}
-                  </div>
-                </div>
-              </div>
+           {activeTab === 'Tender Log & Notes' && (
+             <motion.div 
+               key="tender-log"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="grid grid-cols-1 gap-6"
+             >
+               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col">
+                 <div className="flex border-b border-slate-200 bg-slate-50/50">
+                    <button 
+                      onClick={() => setLogView('audit')}
+                      className={cn(
+                        "px-6 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all",
+                        logView === 'audit' ? "text-[#FF5F00] border-[#FF5F00] bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
+                      )}
+                    >
+                      <History className="w-4 h-4" />
+                      Transaction Audit Trail
+                    </button>
+                    <button 
+                      onClick={() => setLogView('append')}
+                      className={cn(
+                        "px-6 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all",
+                        logView === 'append' ? "text-[#FF5F00] border-[#FF5F00] bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
+                      )}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Append Protocol
+                    </button>
+                 </div>
 
-              <div className="lg:col-span-1 space-y-8">
-                <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden backdrop-blur-xl">
-                   <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-6">Append Protocol</h3>
-                   <div className="space-y-6">
-                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Note Payload</label>
-                       <textarea 
-                         value={newNote} 
-                         onChange={e => setNewNote(e.target.value)} 
-                         className="w-full h-48 p-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all outline-none"
-                         placeholder="Describe technical clarification, meeting points, or internal approval comments..."
-                       />
-                     </div>
-                     <button 
-                       onClick={async () => {
-                         if (!newNote.trim()) return;
-                         const timestamp = new Date().toLocaleString();
-                         const note = `[${timestamp}] ${newNote}`;
-                         const updatedLog = [...tenderLogEntries, note];
-                         setTenderLogEntries(updatedLog);
-                         setNewNote('');
-                         await saveUpdates({ tenderLog: updatedLog });
-                       }}
-                       className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all active:scale-95 shadow-[0_20px_40px_-10px_rgba(59,130,246,0.3)]"
-                     >
-                       Commit Entry
-                     </button>
-                   </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
+                 <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+                    {/* Log View */}
+                    <div className="lg:col-span-2 p-0 flex flex-col h-[500px]">
+                       <div className="p-6 relative flex-1 overflow-y-auto no-scrollbar">
+                         <div className="space-y-4 relative ml-2 border-l-2 border-slate-100 pl-6">
+                           {tenderLogEntries.length === 0 ? (
+                             <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+                               <MessageSquare className="w-10 h-10 opacity-50" strokeWidth={1} />
+                               <p className="font-bold uppercase tracking-widest text-[10px]">Lifecycle empty</p>
+                             </div>
+                           ) : (
+                             tenderLogEntries.map((log, i) => (
+                               <div key={i} className="relative group">
+                                 <div className="absolute -left-8 top-1.5 w-3 h-3 bg-white border-2 border-[#FF5F00] rounded-full shadow-sm z-10" />
+                                 <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-100 group-hover:bg-white group-hover:shadow-md transition-all">
+                                   <div className="flex justify-between items-start mb-1">
+                                      <p className="text-[9px] font-bold text-[#FF5F00] uppercase tracking-widest flex items-center gap-1.5">
+                                        <Clock className="w-3 h-3" />
+                                        Entry {i + 1}
+                                      </p>
+                                   </div>
+                                   <p className="text-xs text-[#1A1C1E] leading-relaxed">{log}</p>
+                                 </div>
+                               </div>
+                             )).reverse()
+                           )}
+                         </div>
+                       </div>
+                    </div>
+
+                    {/* Quick Append Panel */}
+                    <div className="p-6 bg-slate-50 relative flex flex-col">
+                       <div className="flex-1 flex flex-col gap-3">
+                         <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-black text-[#4A5568] uppercase tracking-widest">Protocol Injection</label>
+                         </div>
+                         <textarea 
+                           value={newNote} 
+                           onChange={e => setNewNote(e.target.value)} 
+                           className="flex-1 p-4 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-1 focus:ring-[#FF5F00] focus:border-[#FF5F00] transition-all outline-none resize-none shadow-inner"
+                           placeholder="Describe technical clarification, meeting points, or internal approval comments..."
+                         />
+                       </div>
+                       <button 
+                         onClick={async () => {
+                           if (!newNote.trim()) return;
+                           const timestamp = new Date().toLocaleString();
+                           const note = `[${timestamp}] ${newNote}`;
+                           const updatedLog = [...tenderLogEntries, note];
+                           setTenderLogEntries(updatedLog);
+                           setNewNote('');
+                           await saveUpdates({ tenderLog: updatedLog });
+                         }}
+                         className="w-full mt-4 py-4 bg-[#1A1C1E] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-[#FF5F00] transition-all shadow-xl shadow-black/10 active:scale-95"
+                       >
+                         Commit Entry
+                       </button>
+                    </div>
+                 </div>
+               </div>
+             </motion.div>
+           )}
 
           {activeTab === 'BOQ' && (
             <motion.div 
               key="boq-tab"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[3.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-slate-200/50"
+              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm"
             >
-              <div className="p-10 border-b border-slate-100 flex flex-wrap items-center justify-between bg-slate-50/50 gap-6">
+              <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between bg-slate-50/50 gap-4">
                 <div>
-                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight italic">Procurement Line-Items & Specifications</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Definition of Work Packages for Suppliers</p>
+                  <h3 className="text-lg font-bold text-[#1A1C1E] uppercase tracking-tight">Procurement Line-Items</h3>
+                  <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest mt-1">Definition of Work Packages for Suppliers</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
                     <select 
                       value={pr.currency || 'IQD'} 
                       onChange={e => saveUpdates({ currency: e.target.value as 'IQD' | 'USD' })}
-                      className="text-[11px] font-black uppercase text-blue-600 outline-none pr-4 cursor-pointer"
+                      className="text-[11px] font-bold uppercase text-[#1A1C1E] outline-none pr-2 cursor-pointer bg-transparent"
                     >
-                      <option value="IQD">IQD Basis</option>
-                      <option value="USD">USD Global</option>
+                      <option value="IQD">IQD</option>
+                      <option value="USD">USD</option>
                     </select>
-                    <div className="w-px h-4 bg-slate-100 mx-2" />
-                    <div className="flex items-center gap-3">
-                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Ex. Rate</span>
+                    <div className="w-px h-3 bg-slate-200 mx-1" />
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rate</span>
                        <input 
                         type="number" 
                         defaultValue={pr.exchangeRate || 1} 
                         onBlur={e => saveUpdates({ exchangeRate: Number(e.target.value) })}
-                        className="w-16 bg-slate-50 px-2 py-1 rounded text-[11px] font-black text-slate-900 outline-none border border-slate-100 focus:border-blue-500 transition-all text-center"
+                        className="w-16 bg-slate-50 px-2 py-1 rounded text-[11px] font-bold text-[#1A1C1E] outline-none border border-slate-200 focus:border-[#FF5F00] transition-colors text-center"
                        />
                     </div>
                   </div>
                   <button 
                     onClick={() => {
-                      const newItem: BOQItem = { id: Date.now().toString(), description: 'New Line Item Entry', unit: 'EA', quantity: 1, rate: 0, amount: 0, division: '01', workPackage: '', location: '', completion: 0 };
+                      const newItem: BOQItem = { id: Date.now().toString(), description: 'New Line Item', unit: 'EA', quantity: 1, rate: 0, amount: 0, division: '01', workPackage: '', location: '', completion: 0 };
                       const updated = [...boqItems, newItem];
                       setBoqItems(updated);
                       saveUpdates({ boqItems: updated });
                     }}
-                    className="flex items-center gap-3 px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 active:scale-95 transition-all shadow-xl shadow-blue-500/20 group"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#1A1C1E] hover:bg-[#FF5F00] text-white rounded-lg font-bold uppercase tracking-widest text-[10px] transition-colors shadow-sm group"
                   >
-                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" strokeWidth={3} />
-                    Add Supply Line
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Item
                   </button>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                  <thead className="bg-[#F8FAFC] border-b border-slate-200">
                     <tr>
-                      <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest w-1/2">Description / MasterFormat Spec</th>
-                      <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Unit</th>
-                      <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Qty</th>
-                      <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Unit Rate</th>
-                      <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Extended Value</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#4A5568] uppercase tracking-widest w-1/2">Description</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#4A5568] uppercase tracking-widest">Unit</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#4A5568] uppercase tracking-widest">Qty</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#4A5568] uppercase tracking-widest">Rate</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#4A5568] uppercase tracking-widest text-right">Value</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-100">
                     {boqItems.map(item => (
-                      <tr key={item.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                        <td className="px-10 py-6">
+                      <tr key={item.id} className="group hover:bg-[#F8FAFC] transition-colors">
+                        <td className="px-4 py-2">
                           <input 
                             value={item.description} 
                             onChange={e => updateBOQItem(item.id, 'description', e.target.value)} 
                             onBlur={() => saveUpdates({boqItems})}
-                            className="w-full bg-transparent border-none focus:ring-0 text-sm font-black text-slate-800 focus:text-blue-600 transition-colors"
+                            className="w-full bg-transparent border-none focus:ring-0 text-xs font-semibold text-[#1A1C1E] focus:text-[#FF5F00]"
                           />
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-4 py-2">
                           <input 
                             value={item.unit} 
                             onChange={e => updateBOQItem(item.id, 'unit', e.target.value)} 
                             onBlur={() => saveUpdates({boqItems})}
-                            className="w-20 bg-slate-100/50 border border-slate-100 rounded-xl px-3 py-2 text-[11px] font-black text-center text-slate-600 uppercase"
+                            className="w-16 bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-center text-[#4A5568] uppercase"
                           />
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-4 py-2">
                           <input 
                             type="number" 
                             value={item.quantity} 
                             onChange={e => updateBOQItem(item.id, 'quantity', Number(e.target.value))} 
                             onBlur={() => saveUpdates({boqItems})}
-                            className="w-24 bg-transparent border-none focus:ring-0 text-sm font-black text-slate-900"
+                            className="w-20 bg-transparent border-none focus:ring-0 text-xs font-semibold text-[#1A1C1E]"
                           />
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-4 py-2">
                           <input 
                             type="number" 
                             value={item.rate} 
                             onChange={e => updateBOQItem(item.id, 'rate', Number(e.target.value))} 
                             onBlur={() => saveUpdates({boqItems})}
-                            className="w-32 bg-transparent border-none focus:ring-0 text-sm font-black text-emerald-600"
+                            className="w-24 bg-transparent border-none focus:ring-0 text-xs font-semibold text-emerald-600"
                           />
                         </td>
-                        <td className="px-10 py-6 text-right font-black text-slate-900 tabular-nums text-base tracking-tight">
+                        <td className="px-4 py-3 text-right font-bold text-[#1A1C1E] tabular-nums text-xs">
                           {(item.quantity * item.rate * (pr.exchangeRate || 1)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-slate-900 text-white relative">
+                  <tfoot className="bg-[#F8FAFC] border-t border-slate-200">
                     <tr>
-                      <td colSpan={5} className="p-0 relative">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="px-10 py-10">
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                             <Calculator className="w-6 h-6 text-blue-400" />
+                      <td colSpan={4} className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 bg-slate-200/50 rounded flex items-center justify-center">
+                             <Calculator className="w-4 h-4 text-[#4A5568]" />
                            </div>
                            <div>
-                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400">Total Net Estimate</p>
-                             <p className="text-[10px] font-bold text-slate-500 mt-0.5">Calculated based on technical specifications</p>
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A5568]">Total Estimate</p>
                            </div>
                         </div>
                       </td>
-                      <td className="px-10 py-10 text-right">
-                         <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Valuation</p>
-                         <p className="text-4xl font-black tracking-tighter">
-                          <span className="text-blue-500 mr-2">{pr.currency || 'IQD'}</span>
-                          {boqItems.reduce((acc, curr) => acc + (curr.quantity * curr.rate * (pr.exchangeRate || 1)), 0).toLocaleString()}
-                        </p>
+                      <td className="px-4 py-4 text-right">
+                        <div className="text-sm font-bold text-[#1A1C1E] tracking-tight tabular-nums">
+                           {pr.currency} {boqItems.reduce((acc, curr) => acc + (curr.quantity * curr.rate * (pr.exchangeRate || 1)), 0).toLocaleString()}
+                        </div>
                       </td>
                     </tr>
                   </tfoot>

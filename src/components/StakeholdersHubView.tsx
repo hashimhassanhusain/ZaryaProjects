@@ -12,7 +12,6 @@ import {
 import { Page } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { BreadcrumbHeader } from './BreadcrumbHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { useLanguage } from '../context/LanguageContext';
@@ -86,37 +85,6 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-app-bg">
-      <div className="bg-white dark:bg-surface border-b border-slate-100 dark:border-white/5 px-6 py-3">
-        <div className="max-w-7xl mx-auto">
-          <div className={cn("flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5", isRtl && "flex-row-reverse")}>
-             <span>{stripNumericPrefix(t(page.domain || 'stakeholders'))}</span>
-             <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />
-             <span className="text-slate-900 dark:text-slate-100">{stripNumericPrefix(t(page.focusArea))}</span>
-             {activeTab !== 'overview' && (
-               <>
-                 <ChevronRight className={cn("w-2.5 h-2.5", isRtl && "rotate-180")} />
-                 <span className="text-brand">{stripNumericPrefix(t(activeTab))}</span>
-               </>
-             )}
-          </div>
-          <h1 className={cn("text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2 uppercase italic", isRtl && "flex-row-reverse")}>
-            {activeTab === 'overview' ? (
-              <>
-                {parentPage && (
-                  <>
-                    <span className="text-slate-400 font-medium text-lg md:text-xl">{stripNumericPrefix(t(parentPage.id) || parentPage.title)}</span>
-                    <ChevronRight className={cn("w-4 h-4 text-slate-300 stroke-[3]", isRtl && "rotate-180")} />
-                  </>
-                )}
-                {stripNumericPrefix(t(page.id) || page.title)}
-              </>
-            ) : (
-              stripNumericPrefix(t(activeTab))
-            )}
-          </h1>
-        </div>
-      </div>
-
       <Ribbon 
         groups={ribbonGroups}
         activeTabId={activeTab}

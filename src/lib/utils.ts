@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isAdminRole(role: string): boolean {
+  const adminRoles = ['super-admin', 'enterprise-admin', 'system-administrator'];
+  return adminRoles.includes(role);
+}
+
 /**
  * Robust date formatting for UI display
  */
@@ -90,15 +95,18 @@ export function getRouteForFile(type: string, division?: string): string {
   const t = type.toUpperCase();
   if (t === 'DRW' || t === 'CAD') {
     const div = division ? division.match(/^\d+/) : null;
-    return div ? `Engineering/AutoCAD/DIV${div[0].padStart(2, '0')}` : 'Engineering/AutoCAD/General';
+    return div ? `Engineering_and_Design_3/AutoCAD/DIV${div[0].padStart(2, '0')}` : 'Engineering_and_Design_3/AutoCAD/General';
   }
   if (t === 'INV' || t === 'BILL') {
-    return 'Finance/Invoices';
+    return 'Financials_and_Procurements_6/Invoices';
   }
   if (t === 'CON' || t === 'AGR') {
-    return 'Subcontractors_Hub/Contracts';
+    return 'Financials_and_Procurements_6/Contracts';
   }
-  return 'General_Archive';
+  if (t === 'RPT' || t === 'WKR') {
+    return 'Monitoring_and_Control_4/Reports';
+  }
+  return 'Financials_and_Procurements_6/General_Documents';
 }
 
 export function formatCurrency(amount: number, currency: string = 'IQD') {
@@ -111,16 +119,22 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
 
 export function stripNumericPrefix(title: string | undefined | null): string {
   if (!title) return '';
-  // Matches "1.0 ", "5.1.1 ", "5.1.1: ", "[5.1.1] " etc. at the start or end
-  // We avoid stripping if followed by underscore as it's likely a technical key (e.g. 1.1.1_summary)
+  // Matches "1.0 ", "5.1.1 ", "5.1.1: ", "[5.1.1] ", "00_ ", "01- " etc. at the start or end
+  // Including underscores as separators if followed by more text
   const stripped = title
-    .replace(/^\[?[\d\.]+\]?[\s-:]+/, '') // Start: [1.0] Title
-    .replace(/[\s-:]+\[?[\d\.]+\]?$/, '')   // End: Title [1.0]
+    .replace(/^\[?[\d\._]+\]?[\s-:_]+/, '') // Start: [1.0] Title or 00_Title
+    .replace(/[\s-:_]+\[?[\d\._]+\]?$/, '')   // End: Title [1.0] or Title_00
     .trim();
+  
+  // Special case for 00_Something -> Something
+  let final = stripped;
+  if (final.match(/^\d+_/)) {
+    final = final.replace(/^\d+_/, '');
+  }
   
   // If we stripped everything, it means it was JUST a numeric identifier.
   // In this case, we return the original string because we don't want to show an empty label.
-  return stripped || title;
+  return final || title;
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {
@@ -224,4 +238,60 @@ export function getFullWBSCode(levelId: string, allLevels: { id: string, parentI
   }
   
   return fullCode;
+}
+
+/**
+ * Determines the logical Google Drive path for a given PMIS page or domain component.
+ */
+export function getDrivePathForPage(pageId: string, focusArea?: string, collectionName?: string): string {
+  // Special collection overrides
+  if (collectionName === 'purchase_orders') return '6_Financials_and_Procurements/FINANCIAL/Purchase_Orders';
+  if (collectionName === 'contracts') return '6_Financials_and_Procurements/LEGAL/Agreements';
+
+  const idParts = (pageId || "").split('.');
+  
+  if (idParts.length >= 2) {
+    const focusAreaNum = idParts[0];
+    const domainNum = idParts[1];
+    
+    const focusAreaMap: Record<string, string> = {
+      '1': '1.0_Initiating',
+      '2': '2.0_Planning',
+      '3': '3.0_Executing',
+      '4': '4.0_Monitoring_and_Controlling',
+      '5': '5.0_Closing'
+    };
+    
+    const domainMap: Record<string, string> = {
+      '1': 'Governance_Domain',
+      '2': 'Scope_Domain',
+      '3': 'Schedule_Domain',
+      '4': 'Finance_Domain',
+      '5': 'Stakeholders_Domain',
+      '6': 'Resources_Domain',
+      '7': 'Risk_Domain'
+    };
+
+    const focus = focusAreaMap[focusAreaNum] || (focusArea ? focusArea.replace(/\s+/g, '_') : 'General');
+    const domain = domainMap[domainNum] || 'Support_Domain';
+
+    return `Business_Initiation_and_Governance_1/${focus}/${focusAreaNum}.${domainNum}_${domain}`;
+  }
+
+  // Fallbacks for non-numeric pages or common components
+  if (pageId === 'purchase_orders' || pageId === 'procurement') return 'Financials_and_Procurements_6/FINANCIAL/Purchase_Orders';
+  if (pageId === 'contracts' || pageId === 'agreements') return 'Financials_and_Procurements_6/LEGAL/Agreements';
+  if (pageId === 'design' || pageId === 'cad') return 'Engineering_and_Design_3/AutoCAD/General';
+  if (pageId === 'daily_reports') return 'Monitoring_and_Control_4/Daily_Reports';
+  
+  return '01_PROJECT_MANAGEMENT_FORMS';
+}
+
+/**
+ * Generates a clean, date-stamped filename for PMIS artifacts.
+ */
+export function getSmartFileNameForRecord(typeLabel: string, recordTitle: string): string {
+   const baseName = recordTitle || 'Record';
+   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+   return `${typeLabel}_${baseName}_${dateStr}`.replace(/\s+/g, '_');
 }

@@ -429,13 +429,13 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
                   />
                 </th>
+                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-left">Actions</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">ID</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Issue</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Urgency</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Responsible</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Due Date</th>
-                <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -456,12 +456,22 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     onClick={() => handleEdit(issue)}
                   >
                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                      <input 
+                    <input 
                         type="checkbox" 
                         checked={selectedIds.includes(issue.id)}
                         onChange={() => toggleSelect(issue.id)}
                         className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
                       />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleEdit(issue); }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
@@ -501,16 +511,6 @@ export const IssueLogTab: React.FC<IssueLogTabProps> = ({ issues, users, project
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-600">{formatDate(issue.dueDate || (issue as any).dateIdentified)}</span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEdit(issue); }}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))

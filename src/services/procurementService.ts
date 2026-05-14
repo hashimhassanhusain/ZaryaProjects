@@ -38,11 +38,20 @@ export const convertToPurchaseOrder = async (prId: string) => {
         
         // Create PO
         await addDoc(collection(db, 'purchase_orders'), {
+            projectId: prData.projectId, // Crucial: Fixes empty PO table issue
             prId: prId,
             prName: prData.prName,
-            vendorName: prData.bidders?.find(b => b.status === 'Selected')?.companyName || 'Not Selected',
-            items: prData.boqItems || [],
-            status: 'Draft',
+            supplier: prData.bidders?.find(b => b.status === 'Selected')?.companyName || 'Not Selected',
+            lineItems: prData.boqItems?.map(item => ({
+                ...item,
+                id: crypto.randomUUID(),
+                status: 'Pending',
+                completion: 0
+            })) || [],
+            amount: prData.amount || 0,
+            status: 'Approved',
+            workflowStatus: 'Approved',
+            date: new Date().toISOString().split('T')[0],
             driveFolderId: prData.driveFolderId || null,
             createdAt: serverTimestamp()
         });

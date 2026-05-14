@@ -252,9 +252,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                       </div>
                       
                       <div className="flex-1 space-y-3">
-                        <div className="text-[10px] text-brand font-black uppercase tracking-[0.2em] opacity-60">
-                          {child.focusArea || ''}
-                        </div>
                         <h3 className="text-xl font-black text-text-primary dark:text-white leading-tight group-hover:text-brand transition-colors uppercase italic tracking-tighter">
                           {displayTitle}
                         </h3>

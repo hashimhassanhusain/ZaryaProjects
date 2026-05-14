@@ -23,7 +23,8 @@ import {
   Printer
 } from 'lucide-react';
 import { Project, WBSLevel, Activity, User, LessonEntry, PurchaseOrder } from '../types';
-import { db, OperationType, handleFirestoreError, auth } from '../firebase';
+import { db, storage, OperationType, handleFirestoreError, auth } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs, orderBy } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
 import { cn } from '../lib/utils';
@@ -316,7 +317,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
     const fileName = `${projectCode}-PMIS-VARIANCE-ANALYSIS-${dateStr}.pdf`;
     
     // Path as per project structure
-    const path = `MONITORING_CONTROLLING_06/06.2_VARIANCE_ANALYSIS_REPORTS`;
+    const path = `Performance_Reports_Quality_and_Communications_7/07.1_Variance_Analysis_Reports`;
 
     doc.setFontSize(22);
     doc.setTextColor(30, 64, 175);
@@ -402,18 +403,29 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
 
     setIsUploadingToDrive(true);
     try {
-      const formData = new FormData();
-      formData.append('file', pdfPreviewBlob, pdfFileName);
-      formData.append('projectRootId', project?.driveFolderId || '');
-      formData.append('path', pendingDrivePath);
+      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      
+      // 1. Upload to Firebase Storage first (buffer)
+      const storagePath = `buffer/${project.id}/${Date.now()}_${pdfFileName}`;
+      const storageRef = ref(storage, storagePath);
+      const uploadResult = await uploadBytes(storageRef, pdfPreviewBlob);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-      const response = await fetch('/api/drive/upload-by-path', {
+      // 2. Upload to Drive by URL
+      const response = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: downloadUrl,
+          fileName: pdfFileName,
+          projectRootId: ROOT_FOLDER_ID,
+          projectCode: project.code || '16314',
+          path: pendingDrivePath
+        })
       });
 
       if (!response.ok) {
-        const errData = await response.json();
+        const errData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
         throw new Error(errData.error || 'Upload failed');
       }
 
@@ -498,7 +510,7 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
             Submit Analysis
           </button>
           <DriveUploadButton
-            drivePath="6_Financials_and_Procurements/6.20_Cost_Control_Reports"
+            drivePath="Financials_and_Procurements_6/Cost_Control_Reports"
             label="Upload External Report"
           />
         </div>

@@ -10,7 +10,7 @@ import {
   User,
   Building
 } from 'lucide-react';
-import { cn, stripNumericPrefix } from '../lib/utils';
+import { cn, stripNumericPrefix, isAdminRole } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -24,13 +24,16 @@ import { signOut } from 'firebase/auth';
 import { useProject } from '../context/ProjectContext';
 
 const HUB_IDS: Record<string, string> = {
+  'communications': 'comm',
   'governance': 'gov',
-  'schedule': 'sched',
+  'delivery': 'scope',
+  'controls': 'ctrl',
   'finance': 'fin',
-  'stakeholders': 'stak',
   'resources': 'res',
+  'stakeholders': 'stak',
   'risk': 'risk',
-  'delivery': 'scope'
+  'handover': 'handover_hub',
+  'administration': 'admin_hub'
 };
 
 export const Sidebar: React.FC = () => {
@@ -234,7 +237,9 @@ export const Sidebar: React.FC = () => {
                       )}>
                         <AreaIcon className="w-4 h-4" />
                       </div>
-                      <span className="flex-1 text-left text-[13px] font-black uppercase tracking-wider text-text-primary">{stripNumericPrefix(t(area.id))}</span>
+                      <span className="flex-1 text-left text-[11px] font-black uppercase tracking-wider text-text-primary">
+                        {stripNumericPrefix(t(area.id.toLowerCase().replace(/\s+/g, '_')) || area.title)}
+                      </span>
                       <div className="p-1 rounded-md bg-white border border-neutral-100">
                         {isExpanded ? <ChevronDown className="w-3 h-3 text-text-secondary" /> : <ChevronRight className={cn("w-3 h-3 text-text-secondary", isRtl && "rotate-180")} />}
                       </div>
@@ -248,13 +253,9 @@ export const Sidebar: React.FC = () => {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden space-y-1 relative"
                         >
-                          {/* Main Focus Area vertical tree line - Enhanced for visibility */}
-                          <div className={cn(
-                            "absolute top-0 bottom-4 w-[2px] bg-neutral-200 dark:bg-white/10",
-                            isRtl ? "right-[1.85rem]" : "left-[1.85rem]"
-                          )} />
+                          {/* Main Focus Area content */}
                           
-                          {PERFORMANCE_DOMAINS.map((domain, dIdx) => {
+                          {PERFORMANCE_DOMAINS.filter(domain => !domain.isAdminOnly || (userProfile && isAdminRole(userProfile.role))).map((domain, dIdx) => {
                             const hubId = HUB_IDS[domain.id];
                             // Get ALL pages for this domain and focus area
                             const domainPages = pages.filter(p => p.domain === domain.id && p.focusArea === area.id && p.id !== hubId);
@@ -269,17 +270,17 @@ export const Sidebar: React.FC = () => {
 
                             return (
                               <div key={`${domain.id}-${dIdx}`} className={cn("space-y-0.5 relative z-10", isRtl ? "pr-8" : "pl-8")}>
-                                <div className="flex items-center gap-0 group/domain">
-                                  {/* Connector from Focus Area vertical line to Domain hub */}
-                                  <div className={cn(
-                                    "absolute top-0 bottom-[1.15rem] w-[2px] bg-neutral-200",
-                                    isRtl ? "right-[-1.85rem]" : "left-[-1.85rem]"
-                                  )} />
-                                  <div className={cn(
-                                    "w-4 h-[2px] bg-neutral-200",
-                                    isRtl ? "-mr-[1.85rem]" : "-ml-[1.85rem]"
-                                  )} />
-                                  
+                                <div className="flex items-center gap-0 group/domain relative">
+                                   {/* Domain Connector Line */}
+                                   <div className={cn(
+                                     "absolute top-0 bottom-[1.15rem] w-[1.5px] bg-neutral-200 dark:bg-white/10",
+                                     isRtl ? "right-[-0.72rem]" : "left-[-0.72rem]"
+                                   )} />
+                                   <div className={cn(
+                                     "w-3.5 h-[1.5px] bg-neutral-200 dark:bg-white/10",
+                                     isRtl ? "-mr-[0.72rem]" : "-ml-[0.72rem]"
+                                   )} />
+
                                   <Link
                                     to={path}
                                     onClick={() => setSelectedFocusArea(area.id)}
@@ -294,12 +295,12 @@ export const Sidebar: React.FC = () => {
                                     )}>
                                       <DomainIcon className="w-2.5 h-2.5" />
                                     </div>
-                                    <span className="text-[10px] font-black tracking-widest uppercase opacity-90 leading-none">{stripNumericPrefix(t(domain.id))}</span>
+                                    <span className="text-[10px] font-black tracking-widest uppercase opacity-90 leading-none truncate">{stripNumericPrefix(t(domain.id))}</span>
                                   </Link>
                                 </div>
 
                                 {domainPages.length > 0 && (
-                                  <div className={cn("space-y-0.5 mt-0.5 relative", isRtl ? "pr-6" : "pl-6")}>
+                                  <div className={cn("space-y-0.5 mt-0.5 relative", isRtl ? "pr-4" : "pl-4")}>
                                     {(() => {
                                       const renderPageTree = (parentId: string, depth: number = 0) => {
                                         const children = domainPages.filter(p => p.parentId === parentId || (!p.parentId && parentId === hubId));
@@ -314,15 +315,19 @@ export const Sidebar: React.FC = () => {
 
                                           return (
                                             <div key={`${subPage.id}-${tIdx}`} className="space-y-0.5">
-                                              <div className={cn("flex items-center gap-0 group/terminal relative", depth > 0 && (isRtl ? "pr-4" : "pl-4"))}>
+                                              <div className={cn(
+                                                "flex items-center gap-0 group/terminal relative",
+                                                depth === 0 ? "ml-0" : depth === 1 ? "ml-4" : "ml-8",
+                                                depth > 0 && (isRtl ? "pr-4" : "")
+                                              )}>
                                                  {/* Vertical connector line for sub pages - Enhanced */}
                                                  <div className={cn(
-                                                   "absolute top-0 bottom-[1.15rem] w-[2px] bg-neutral-200",
+                                                   "absolute top-0 bottom-[1.15rem] w-[1.5px] bg-neutral-200 dark:bg-white/10",
                                                    isRtl ? "right-[-0.72rem]" : "left-[-0.72rem]"
                                                  )} />
                                                  {/* Horizontal connector line */}
                                                  <div className={cn(
-                                                   "w-2.5 h-[2px] bg-neutral-200",
+                                                   "w-3.5 h-[1.5px] bg-neutral-200 dark:bg-white/10",
                                                    isRtl ? "-mr-[0.72rem]" : "-ml-[0.72rem]"
                                                  )} />
 
@@ -344,7 +349,7 @@ export const Sidebar: React.FC = () => {
                                                 </Link>
                                               </div>
                                               {hasChildren && (
-                                                <div className={cn("relative", isRtl ? "pr-2" : "pl-2")}>
+                                                <div className={cn("relative", isRtl ? "pr-3" : "pl-1.5")}>
                                                    {renderPageTree(subPage.id, depth + 1)}
                                                 </div>
                                               )}

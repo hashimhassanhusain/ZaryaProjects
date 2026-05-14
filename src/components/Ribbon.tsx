@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { LucideIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,7 +10,6 @@ export interface RibbonTab {
   label: string;
   icon: LucideIcon;
   description?: string;
-  focusArea?: string;
   size?: 'large' | 'small';
 }
 
@@ -25,28 +24,46 @@ interface RibbonProps {
   activeTabId: string;
   onTabChange: (id: string) => void;
   className?: string;
-  focusAreaColors?: Record<string, string>;
 }
 
-export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange, className, focusAreaColors = {} }) => {
+export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange, className }) => {
   const { t, th } = useLanguage();
   const { isRibbonCollapsed, setIsRibbonCollapsed } = useUI();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const getFocusColor = (area?: string) => {
-    if (!area) return 'bg-neutral-200';
-    return focusAreaColors[area] || 'bg-neutral-300';
-  };
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleWheelNative = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      
+      // If we are scrolling vertically, convert it to horizontal scroll
+      if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+        e.preventDefault();
+        // For RTL, positive deltaY should scroll right (which is negative scrollLeft)
+        // For LTR, positive deltaY should scroll right (which is positive scrollLeft)
+        const multiplier = 1;
+        el.scrollLeft += e.deltaY * multiplier;
+      }
+    };
+    
+    el.addEventListener('wheel', handleWheelNative, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheelNative);
+  }, []);
 
   return (
-    <div className={cn(
+    <div 
+      ref={scrollRef}
+      className={cn(
       "bg-ribbon border-b border-neutral-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
-      isRibbonCollapsed ? "h-[32px]" : "h-[105px]",
+      isRibbonCollapsed ? "h-[32px]" : "h-[92px]",
       className
     )}>
       {!isRibbonCollapsed && groups.map((group) => {
         return (
-          <div key={group.id} className="flex flex-col h-full shrink-0 pb-1.5">
-            <div className="flex items-center px-1 flex-1 h-[75px]">
+          <div key={group.id} className="flex flex-col h-full shrink-0">
+            <div className="flex items-center px-1 flex-1">
               {group.tabs.map((tab) => {
                 const isActive = activeTabId === tab.id;
                 return (
@@ -66,9 +83,6 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                           : "text-text-secondary dark:text-neutral-300 hover:bg-white dark:hover:bg-white/5 hover:text-text-primary dark:hover:text-white"
                       )}
                     >
-                      {tab.focusArea && (
-                        <div className={cn("absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm z-10", getFocusColor(tab.focusArea))} />
-                      )}
                       <tab.icon className={cn("w-7 h-7 mb-1 transition-transform group-hover:scale-110", isActive ? "text-brand" : "text-text-secondary opacity-60 group-hover:text-text-primary group-hover:opacity-100")} strokeWidth={1.5} />
                       <span className={cn(
                         "text-[10px] font-black leading-tight text-center max-w-[120px] uppercase tracking-tighter transition-colors break-words italic",
@@ -81,11 +95,6 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                 );
               })}
             </div>
-            {group.label && (
-              <div className="text-[9px] font-black text-text-primary dark:text-neutral-400 uppercase tracking-widest text-center py-1 mt-auto bg-white/40 border border-slate-100/50 dark:bg-white/5 rounded-full shadow-sm mx-1 min-w-[60px]">
-                {group.label}
-              </div>
-            )}
           </div>
         );
       })}

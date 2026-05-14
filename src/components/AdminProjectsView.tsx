@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 
 import { useProject } from '../context/ProjectContext';
-import { Breadcrumbs } from './Breadcrumbs';
 
 export const AdminProjectsView: React.FC = () => {
   const navigate = useNavigate();
@@ -56,11 +55,12 @@ export const AdminProjectsView: React.FC = () => {
       });
 
       if (!driveRes.ok) {
-        const errorData = await driveRes.json();
+        const errorData = await driveRes.json().catch(() => ({ error: 'Invalid response from server' }));
         throw new Error(errorData.error || 'Failed to initialize Drive');
       }
 
-      const { rootFolderId } = await driveRes.json();
+      const driveData = await driveRes.json().catch(() => ({ rootFolderId: null }));
+      const rootFolderId = driveData.rootFolderId;
       
       // Update Firestore
       await updateDoc(doc(db, 'projects', project.id), {
@@ -86,7 +86,9 @@ export const AdminProjectsView: React.FC = () => {
       const res = await fetch('/api/admin/backup-code', {
         method: 'POST'
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data = { error: t('backup_failed'), fileName: '' };
+      try { data = JSON.parse(text); } catch (e) {}
       if (!res.ok) throw new Error(data.error || t('backup_failed'));
       toast.success(`${t('backup_success')}\nFile: ${data.fileName}`);
     } catch (error: any) {
@@ -145,10 +147,12 @@ export const AdminProjectsView: React.FC = () => {
       });
 
       if (!driveRes.ok) {
-        const errData = await driveRes.json().catch(() => ({ error: 'Drive initialization failed' }));
+        let errData;
+        try { errData = await driveRes.json(); } catch(e) { errData = { error: 'Drive initialization failed' }; }
         throw new Error(errData.error || 'Drive initialization failed');
       }
-      const { rootFolderId } = await driveRes.json();
+      const driveData = await driveRes.json().catch(() => ({ rootFolderId: null }));
+      const rootFolderId = driveData.rootFolderId;
 
       const demoProject = {
         name: 'PMIS Demo Project',

@@ -39,15 +39,15 @@ export const LeftRibbonBar: React.FC = () => {
             <button
               onClick={() => openInput(input.id)}
               className={cn(
-                "w-22 h-22 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1.5 border-b-4",
+                "w-18 h-18 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1 border-b-2",
                 isActive 
                   ? "bg-brand text-white shadow-xl shadow-brand/30 scale-105 border-brand-secondary" 
                   : "bg-app-bg dark:bg-white/5 text-text-secondary dark:text-neutral-400 hover:bg-brand/5 hover:text-brand hover:scale-105 border-transparent hover:border-brand/30"
               )}
             >
-              <Icon className="w-6 h-6 mb-1.5" strokeWidth={2.5} />
+              <Icon className="w-5 h-5 mb-1" strokeWidth={2.5} />
               <span className={cn(
-                "text-[11px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
+                "text-[9px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
                 isActive ? "text-white" : "text-text-primary dark:text-neutral-200 group-hover:text-brand"
               )}>
                 {language === 'ar' ? input.nameAr : input.name}

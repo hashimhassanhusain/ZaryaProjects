@@ -154,32 +154,34 @@ export const AdminGroupsView: React.FC = () => {
                 onClick={() => handleEdit(group)}
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                      <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900">{group.name}</h3>
-                      <p className="text-sm text-slate-500">{group.description}</p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                          <Shield className="w-3.5 h-3.5" /> {group.accessiblePages.length} Permissions
-                        </span>
-                        <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" /> {group.memberIds.length} Members
-                        </span>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(group.id);
+                      }}
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 mt-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="flex gap-4">
+                      <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900">{group.name}</h3>
+                        <p className="text-sm text-slate-500">{group.description}</p>
+                        <div className="flex items-center gap-4 mt-3">
+                          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                            <Shield className="w-3.5 h-3.5" /> {group.accessiblePages.length} Permissions
+                          </span>
+                          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" /> {group.memberIds.length} Members
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(group.id);
-                    }}
-                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             ))}

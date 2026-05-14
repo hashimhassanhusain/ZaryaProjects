@@ -111,7 +111,10 @@ export const DriveFolderView: React.FC = () => {
       setError(null);
       try {
         const response = await fetch(`/api/drive/files/${folderId}?details=true`);
-        const data = await response.json();
+        if (!response.ok) {
+           throw new Error('Server returned an error');
+        }
+        const data = await response.json().catch(() => ({}));
         if (data.files) {
           setFiles(data.files);
         } else {
