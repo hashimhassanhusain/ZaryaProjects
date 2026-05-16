@@ -64,7 +64,8 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [rmp, setRmp] = useState<RMPData>({
     projectTitle: '',
@@ -124,12 +125,12 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
         validation: 'Stakeholder sign-off and UAT',
         configurationManagement: 'SharePoint version control'
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setRmp({ ...rmp, ...record });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -189,6 +190,20 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
       toast.success('Plan deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'requirementsManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = planRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'requirementsManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'requirementsManagementPlans');
     }
   };
 
@@ -255,7 +270,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
         }
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -263,16 +278,22 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
             <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
-                data={planRecords}
+                data={planRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
             <motion.div key="edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 pb-10">
               <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-8 text-slate-900 relative overflow-hidden">
-                {isArchived && (
+                {isArchivedState && (
                   <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-2 px-4 flex items-center gap-2 z-10">
                     <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                     <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">Archived Snapshot - V{rmp.version} - Read Only</span>
@@ -286,7 +307,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
                         type="text" 
                         value={rmp.projectTitle} 
                         onChange={(e) => setRmp({ ...rmp, projectTitle: e.target.value })} 
-                        disabled={isArchived}
+                        disabled={isArchivedState}
                         className="w-full px-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-50"
                       />
                     </div>
@@ -296,7 +317,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
                         type="date" 
                         value={rmp.datePrepared} 
                         onChange={(e) => setRmp({ ...rmp, datePrepared: e.target.value })} 
-                        disabled={isArchived}
+                        disabled={isArchivedState}
                         className="w-full px-5 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-50"
                       />
                     </div>
@@ -326,7 +347,7 @@ export const RequirementsManagementPlanView: React.FC<RequirementsManagementPlan
                          <textarea 
                            value={(rmp as any)[field.key]} 
                            onChange={(e) => setRmp({...rmp, [field.key]: e.target.value})} 
-                           disabled={isArchived}
+                           disabled={isArchivedState}
                            className="w-full h-32 px-5 py-4 bg-white/50 border border-slate-100 rounded-2xl text-sm leading-relaxed outline-none focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-50 resize-none" 
                            placeholder={`Define ${field.label.toLowerCase()}...`}
                          />

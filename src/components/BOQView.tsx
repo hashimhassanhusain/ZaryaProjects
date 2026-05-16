@@ -45,14 +45,14 @@ import { rollupToParent } from '../services/rollupService';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { BOQItem, WBSLevel, WorkPackage, EntityConfig, BOQVersion } from '../types';
+import { BOQItem, WBSLevel, WorkPackage, EntityConfig, BOQVersion, Page } from '../types';
 import { masterFormatDivisions } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { GoogleGenAI, Type } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { loadArabicFont } from '../lib/pdfService';
+import { loadArabicFont } from '../lib/pdfUtils';
 import { cn, stripNumericPrefix, formatDate } from '../lib/utils';
 import { Ribbon, RibbonGroup } from './Ribbon';
 import { HelpTooltip } from './HelpTooltip';
@@ -60,7 +60,7 @@ import { StandardProcessPage } from './StandardProcessPage';
 import { UniversalDataTable } from './common/UniversalDataTable';
 import { DataImportModal } from './DataImportModal';
 
-export const BOQView: React.FC = () => {
+export const BOQView: React.FC<{ page?: Page; costCenterId?: string | null }> = ({ page, costCenterId }) => {
   const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
@@ -71,7 +71,7 @@ export const BOQView: React.FC = () => {
   const [wbsLevels, setWbsLevels] = useState<WBSLevel[]>([]);
   const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'versions' | 'list' | 'form' | 'import' | 'preview'>('list');
+  const [view, setView] = useState<'versions' | 'list' | 'form' | 'import' | 'preview' | 'version_form'>('list');
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [editingVersion, setEditingVersion] = useState<BOQVersion | null>(null);
@@ -82,6 +82,33 @@ export const BOQView: React.FC = () => {
   const [unmappedWorkPackages, setUnmappedWorkPackages] = useState<string[]>([]);
   const [packageMappings, setPackageMappings] = useState<Record<string, string>>({});
   const [isMappingMode, setIsMappingMode] = useState(false);
+  const [showArchivedVersions, setShowArchivedVersions] = useState(false);
+  const [showArchivedItems, setShowArchivedItems] = useState(false);
+
+  // Filtered BOQ items based on costCenterId and archive status
+  const filteredBoqItems = useMemo(() => {
+    let result = boqItems;
+    if (costCenterId) {
+      const normalizedPropId = String(costCenterId).replace(/^CC-/, '').replace(/^0+/, '');
+      result = result.filter(item => {
+        const cc = item.division || (item as any).costCenterId || '';
+        const normalizedCc = String(cc).replace(/^CC-/, '').replace(/^0+/, '');
+        return normalizedCc === normalizedPropId || normalizedCc.startsWith(normalizedPropId + '.');
+      });
+    }
+    
+    return result.filter(item => {
+      const isArchived = (item as any).archived || false;
+      return showArchivedItems ? isArchived : !isArchived;
+    });
+  }, [boqItems, costCenterId, showArchivedItems]);
+
+  const filteredVersions = useMemo(() => {
+    return boqVersions.filter(v => {
+      const isArchived = (v as any).archived || false;
+      return showArchivedVersions ? isArchived : !isArchived;
+    });
+  }, [boqVersions, showArchivedVersions]);
   
   const [newVersion, setNewVersion] = useState<Partial<BOQVersion>>({
     title: '',
@@ -214,6 +241,7 @@ export const BOQView: React.FC = () => {
           issuedBy: auth.currentUser?.displayName || auth.currentUser?.email
         });
       }
+      setView('list');
       setIsVersionModalOpen(false);
       toast.success(editingVersion ? "Version updated" : "Version created");
     } catch (err) {
@@ -306,6 +334,32 @@ export const BOQView: React.FC = () => {
       }
     } catch (err) {
       console.error('Error during inline save:', err);
+      handleFirestoreError(err, OperationType.UPDATE, 'boq');
+    }
+  };
+
+  const handleArchiveVersion = async (version: BOQVersion) => {
+    try {
+      const isArchived = (version as any).archived || false;
+      await updateDoc(doc(db, 'boq_versions', version.id), {
+        archived: !isArchived,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(!isArchived ? 'Version archived' : 'Version restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'boq_versions');
+    }
+  };
+
+  const handleArchiveItem = async (item: BOQItem) => {
+    try {
+      const isArchived = (item as any).archived || false;
+      await updateDoc(doc(db, 'boq', item.id), {
+        archived: !isArchived,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(!isArchived ? 'Item archived' : 'Item restored');
+    } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, 'boq');
     }
   };
@@ -673,7 +727,7 @@ export const BOQView: React.FC = () => {
       const finalY = (doc as any).lastAutoTable.finalY || 150;
       doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
-      doc.text(isArabic ? `الإجمالي الكلي: ${formatCurrency(totals, baseCurrency)}` : `Grand Total: ${formatCurrency(totals, baseCurrency)}`, isArabic ? 190 : 20, finalY + 15, { align: isArabic ? 'right' : 'left' });
+      doc.text(isArabic ? `الإجمالي الكلي: ${formatCurrency(filteredTotals, baseCurrency)}` : `Grand Total: ${formatCurrency(filteredTotals, baseCurrency)}`, isArabic ? 190 : 20, finalY + 15, { align: isArabic ? 'right' : 'left' });
 
       doc.save(`BOQ_${activeVersion.title.replace(/\s+/g, '_')}_v${activeVersion.versionNumber}.pdf`);
       toast.success(isArabic ? 'تم تصدير ملف PDF' : 'PDF exported successfully');
@@ -685,12 +739,12 @@ export const BOQView: React.FC = () => {
     }
   };
 
-  const totals = useMemo(() => boqItems.reduce((acc, item) => acc + (item.amount || 0), 0), [boqItems]);
+  const filteredTotals = useMemo(() => filteredBoqItems.reduce((acc, item) => acc + (item.amount || 0), 0), [filteredBoqItems]);
 
     return (
       <StandardProcessPage
       page={{ id: '2.4.1', title: activeVersion ? `${stripNumericPrefix(t('bill_of_quantities'))} — ${activeVersion.versionNumber}` : stripNumericPrefix(t('boq_versions')), type: 'Process' } as any}
-      viewMode={view === 'form' ? 'edit' : 'grid'}
+      viewMode={view === 'form' || view === 'version_form' || view === 'preview' ? 'edit' : 'grid'}
       onViewModeChange={(mode) => setView(mode === 'edit' ? 'form' : 'list')}
       isSaving={isSaving}
     >
@@ -736,32 +790,6 @@ export const BOQView: React.FC = () => {
       
       <input id="boq-upload" type="file" className="hidden" accept=".pdf,.xlsx,.csv" onChange={handleFileUpload} />
 
-      {createPortal(
-        <AnimatePresence>
-          {isVersionModalOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 border border-slate-200 dark:border-white/5">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black italic uppercase text-text-primary dark:text-white">{t('new_version')}</h3>
-                  <button onClick={() => setIsVersionModalOpen(false)}><X className="w-6 h-6 text-slate-400" /></button>
-                </div>
-                <div className="space-y-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-text-secondary tracking-widest">{t('title')}</label>
-                    <input value={newVersion.title} onChange={e => setNewVersion({...newVersion, title: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold" />
-                  </div>
-                  <div className="pt-4 flex gap-3">
-                    <button onClick={() => setIsVersionModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl font-bold uppercase text-xs text-text-secondary">{t('cancel')}</button>
-                    <button onClick={handleSaveVersion} className="flex-[2] py-4 bg-brand text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-brand/20">{t('create_version')}</button>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-
       <div className="pb-8 space-y-6">
         {activeVersion && view === 'list' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
@@ -772,7 +800,7 @@ export const BOQView: React.FC = () => {
             >
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('total_boq_value') || 'Total BOQ Value'}</p>
-                <div className="text-2xl font-black italic text-brand tracking-tight">{formatAmount(totals, baseCurrency)}</div>
+                <div className="text-2xl font-black italic text-brand tracking-tight">{formatAmount(filteredTotals, baseCurrency)}</div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-brand/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-6 h-6 text-brand" />
@@ -787,7 +815,7 @@ export const BOQView: React.FC = () => {
             >
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('item_count') || 'Item Count'}</p>
-                <div className="text-2xl font-black italic text-text-primary dark:text-white tracking-tight">{boqItems.length}</div>
+                <div className="text-2xl font-black italic text-text-primary dark:text-white tracking-tight">{filteredBoqItems.length}</div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-blue-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <LayoutGrid className="w-6 h-6 text-blue-500" />
@@ -856,6 +884,143 @@ export const BOQView: React.FC = () => {
                   </div>
                </div>
             </motion.div>
+          ) : view === 'version_form' ? (
+            <motion.div key="version_form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-xl mx-auto">
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black italic uppercase text-text-primary dark:text-white">{t('new_version')}</h3>
+                  <button onClick={() => setView('list')}><X className="w-6 h-6 text-slate-400" /></button>
+                </div>
+                <div className="space-y-6">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-text-secondary tracking-widest">{t('title')}</label>
+                    <input value={newVersion.title} onChange={e => setNewVersion({...newVersion, title: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-text-primary dark:text-white font-bold outline-none focus:ring-4 focus:ring-brand/10 transition-all" />
+                  </div>
+                  <div className="pt-4 flex gap-3">
+                    <button onClick={() => setView('list')} className="flex-1 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl font-bold uppercase text-xs text-text-secondary">{t('cancel')}</button>
+                    <button onClick={handleSaveVersion} className="flex-[2] py-4 bg-brand text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-brand/20">{t('create_version')}</button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : view === 'preview' && previewItems ? (
+            <motion.div key="preview" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 flex flex-col bg-white dark:bg-slate-950 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-white/5 overflow-hidden">
+                <div className="p-10 border-b border-slate-200 dark:border-white/5 flex items-center justify-between shrink-0">
+                  <div>
+                    <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">AI Analysis Preview</h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                      {isMappingMode ? (language === 'ar' ? 'يرجى ربط حزم العمل الجديدة' : 'Mapping required for new work packages') : `Review ${previewItems.length} extracted line items`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setView('list');
+                        setIsMappingMode(false);
+                        setPackageMappings({});
+                      }} 
+                      disabled={isSaving}
+                      className="px-8 py-3 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl font-bold text-xs uppercase disabled:opacity-50"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button 
+                      onClick={confirmImport} 
+                      disabled={isSaving}
+                      className="px-10 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl shadow-blue-600/20 disabled:scale-95 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('confirm_import')}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-10">
+                    {isMappingMode ? (
+                      <div className="max-w-3xl mx-auto space-y-8">
+                           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 p-6 rounded-[2rem] flex items-start gap-4">
+                            <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+                            <div className="flex-1 space-y-1">
+                               <h4 className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight">
+                                  {language === 'ar' ? 'حزم عمل غير معروفة' : 'Unmapped Work Packages Found'}
+                               </h4>
+                               <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
+                                  {language === 'ar' 
+                                    ? 'تم العثور على حزم عمل في الملف لم يتم تعريفها مسبقاً. يرجى اختيار مركز التكلفة (Cost Account) الذي تتبع له كل حزمة.'
+                                    : 'We found work packages in your file that aren\'t defined in your WBS. Please map each one to an existing WBS Node (Cost Account).'}
+                               </p>
+                            </div>
+                            <button 
+                              onClick={handleAutoMapAllToGeneral}
+                              className="px-4 py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            >
+                              {language === 'ar' ? 'ربط الجميع بالعام' : 'Auto-Map All to General'}
+                            </button>
+                         </div>
+
+                         <div className="space-y-4">
+                                {unmappedWorkPackages.map((pkgName) => (
+                                  <div key={pkgName} className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 p-6 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5">
+                                     <div className="flex-1">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">{language === 'ar' ? 'اسم الحزمة من الملف' : 'Package Name from File'}</span>
+                                        <span className="text-sm font-bold text-slate-900 dark:text-white">{pkgName}</span>
+                                     </div>
+                                     <div className="hidden md:block">
+                                        <ArrowRight className="w-4 h-4 text-slate-300" />
+                                     </div>
+                                     <div className="flex-1">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">{language === 'ar' ? 'ربط بمركز التكلفة / حزمة العمل' : 'Map to Cost Account / Work Package'}</span>
+                                        <select 
+                                          value={packageMappings[pkgName] || ''} 
+                                          onChange={(e) => setPackageMappings({...packageMappings, [pkgName]: e.target.value})}
+                                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-blue-600 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                        >
+                                          <option value="">{language === 'ar' ? 'اختر الهدف...' : 'Select Target...'}</option>
+                                          <option value="master">{language === 'ar' ? 'مركز التكلفة العام' : 'General / Master Cost Account'}</option>
+                                          <optgroup label={language === 'ar' ? 'مراكز التكلفة (لإنشاء حزمة جديدة)' : 'Cost Accounts (Create New Package)'}>
+                                            {wbsLevels.filter(l => l.type === 'Cost Account').map(l => (
+                                              <option key={l.id} value={l.id}>{l.code} - {l.title}</option>
+                                            ))}
+                                          </optgroup>
+                                          <optgroup label={language === 'ar' ? 'حزم العمل الحالية (دمج)' : 'Existing Work Packages (Merge)'}>
+                                            {workPackages.filter(l => l.type === 'Work Package').map(l => (
+                                              <option key={l.id} value={l.id}>{l.title}</option>
+                                            ))}
+                                          </optgroup>
+                                        </select>
+                                     </div>
+                                  </div>
+                                ))}
+                         </div>
+                      </div>
+                    ) : (
+                      <table className="w-full">
+                         <thead>
+                            <tr className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-white/5 pb-4">
+                               <th className="text-left pb-4">Area</th>
+                               <th className="text-left pb-4">{t('work_package')}</th>
+                               <th className="text-left pb-4">Description</th>
+                               <th className="text-right pb-4">Qty</th>
+                               <th className="text-left pb-4">Unit</th>
+                               <th className="text-right pb-4">Rate</th>
+                               <th className="text-right pb-4">Total</th>
+                            </tr>
+                         </thead>
+                         <tbody className="divide-y divide-white/5">
+                            {previewItems.map((item, idx) => (
+                              <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                 <td className="py-4 text-blue-500 font-bold italic text-xs">{item.division}</td>
+                                 <td className="py-4 text-emerald-500 font-black italic text-[10px] uppercase truncate max-w-[100px]">{item.workPackage || 'N/A'}</td>
+                                 <td className="py-4 text-slate-900 dark:text-slate-100 text-sm font-semibold">{item.description}</td>
+                                 <td className="py-4 text-right text-slate-900 dark:text-slate-300 font-bold">{item.quantity}</td>
+                                 <td className="py-4 text-xs font-black text-slate-400 uppercase">{item.unit}</td>
+                                 <td className="py-4 text-right text-xs font-bold text-slate-500">{formatCurrency(item.inputRate || 0, item.inputCurrency || 'IQD')}</td>
+                                 <td className="py-4 text-right text-sm font-black text-blue-500">{formatCurrency(item.amount || 0, baseCurrency)}</td>
+                              </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                    )}
+                </div>
+            </motion.div>
           ) : (
             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
                <AnimatePresence mode="wait">
@@ -873,10 +1038,18 @@ export const BOQView: React.FC = () => {
                         </h3>
                         <UniversalDataTable 
                           config={versionConfig} 
-                          data={boqVersions} 
+                          data={filteredVersions} 
                           onRowClick={handleVersionClick} 
                           onDeleteRecord={handleDeleteVersion} 
-                          showAddButton={false} 
+                          onArchiveRecord={handleArchiveVersion}
+                          showArchived={showArchivedVersions}
+                          onToggleArchived={() => setShowArchivedVersions(!showArchivedVersions)}
+                          showAddButton={true}
+                          onNewClick={() => {
+                            setEditingVersion(null);
+                            setNewVersion({ title: '', versionNumber: '1.0', status: 'Draft' });
+                            setView('version_form');
+                          }}
                           title={
                             <div className="flex items-center gap-2">
                               <span className="opacity-40">{stripNumericPrefix(t('cost_management'))} ›</span>
@@ -890,7 +1063,7 @@ export const BOQView: React.FC = () => {
                             onClick: () => {
                               setEditingVersion(null);
                               setNewVersion({ title: '', versionNumber: '1.0', status: 'Draft' });
-                              setIsVersionModalOpen(true);
+                              setView('version_form');
                             }
                           }}
                           extraActions={
@@ -913,47 +1086,50 @@ export const BOQView: React.FC = () => {
                     >
                       <UniversalDataTable 
                         config={boqConfig} 
-                        data={boqItems} 
+                        data={filteredBoqItems} 
                         onRowClick={handleEditItem} 
                         onDeleteRecord={handleDeleteItem} 
+                        onArchiveRecord={handleArchiveItem}
+                        showArchived={showArchivedItems}
+                        onToggleArchived={() => setShowArchivedItems(!showArchivedItems)}
                         onBulkDelete={handleBulkDeleteItems}
                         onInlineSave={handleInlineSave}
-                        showAddButton={false} 
+                        onNewClick={() => {
+                          setEditingItem(null);
+                          setNewItem({
+                             description: '', unit: 'm3', quantity: 0, inputRate: 0, division: '01',
+                             inputCurrency: baseCurrency, exchangeRateUsed: globalExchangeRate, wbsId: 'master'
+                          });
+                          setView('form');
+                        }}
                         title={
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3">
                             <button 
                               onClick={() => setActiveVersion(null)}
-                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all group"
+                              className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/5 hover:bg-brand hover:text-white flex items-center justify-center transition-all group"
                             >
-                              <ChevronRight className={cn("w-5 h-5 text-slate-400 group-hover:text-brand rotate-180")} />
+                              <ChevronRight className={cn("w-5 h-5 text-slate-400 group-hover:text-white rotate-180")} />
                             </button>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <span className="opacity-40 text-[10px]">{stripNumericPrefix(t('bill_of_quantities'))} ›</span>
-                                <span className="text-sm font-black uppercase tracking-tight">{activeVersion.title} (v{activeVersion.versionNumber})</span>
-                              </div>
-                              <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-blue-700 dark:text-blue-400 font-black italic text-[9px]">TOTAL</span>
-                                <span className="text-xl font-black text-black dark:text-white tracking-tighter">{formatCurrency(totals, baseCurrency)}</span>
+                            <div className="flex flex-col text-left">
+                              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter leading-none">
+                                {activeVersion.title} (v{activeVersion.versionNumber})
+                              </h2>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
+                                  {isRtl ? 'سجل بنود جدول الكميات' : 'BOQ Itemized Registry'}
+                                </span>
                               </div>
                             </div>
                           </div>
                         }
-                        description={activeVersion.description}
-                        primaryAction={{
-                          label: t('add_item'),
-                          icon: Plus,
-                          onClick: () => {
-                            setEditingItem(null);
-                            setNewItem({
-                              description: '', unit: 'm3', quantity: 0, inputRate: 0, division: '01',
-                              inputCurrency: baseCurrency, exchangeRateUsed: globalExchangeRate, wbsId: 'master'
-                            });
-                            setView('form');
-                          }
-                        }}
                         extraActions={
                           <div className="flex items-center gap-2">
+                             <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30 mr-2">
+                               <div className="flex items-baseline gap-2">
+                                 <span className="text-blue-700 dark:text-blue-400 font-black italic text-[9px]">TOTAL</span>
+                                 <span className="text-xl font-black text-black dark:text-white tracking-tighter">{formatCurrency(filteredTotals, baseCurrency)}</span>
+                               </div>
+                             </div>
                              <button 
                                onClick={handleExportPDF}
                                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-600"
@@ -965,7 +1141,7 @@ export const BOQView: React.FC = () => {
                                 {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} {t('import_pdf')}
                              </button>
                              <DriveUploadButton 
-                               drivePath="Financials_and_Procurements_6/BOQ_Baselines_and_Versions/Revised_BOQ_Versions"
+                               drivePath={`Financials_and_Procurements_6/BOQ_Baselines_and_Versions/Revised_BOQ_Versions/${costCenterId || 'General'}`}
                                label="Archive"
                              />
                           </div>
@@ -978,11 +1154,15 @@ export const BOQView: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {createPortal(
-          <AnimatePresence>
-            {view === 'preview' && previewItems && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-6">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-950 rounded-[3rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-white/5">
+        <AnimatePresence>
+          {view === 'preview' && previewItems && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6"
+            >
+              <motion.div initial={{ scale: 0.98, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-white dark:bg-slate-950 rounded-[3rem] w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl overflow-hidden border border-white/5">
                   <div className="p-10 border-b border-white/5 flex items-center justify-between">
                     <div>
                       <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">AI Analysis Preview</h2>
@@ -1017,7 +1197,7 @@ export const BOQView: React.FC = () => {
                              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 p-6 rounded-[2rem] flex items-start gap-4">
                               <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
                               <div className="flex-1 space-y-1">
-                                 <h4 className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight">
+                                 <h4 className="text-sm font-black text-slate-900 dark:text-amber-100 uppercase tracking-tight">
                                     {language === 'ar' ? 'حزم عمل غير معروفة' : 'Unmapped Work Packages Found'}
                                  </h4>
                                  <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
@@ -1099,11 +1279,9 @@ export const BOQView: React.FC = () => {
                       )}
                   </div>
                 </motion.div>
-              </div>
+              </motion.div>
             )}
-          </AnimatePresence>,
-          document.body
-        )}
+          </AnimatePresence>
       </div>
     </StandardProcessPage>
   );

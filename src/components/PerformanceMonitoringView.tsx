@@ -326,14 +326,14 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          {data.governanceKPIs.map((kpi: any, idx: number) => (
-                            <div key={idx} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-6 hover:bg-white/10 transition-all group relative overflow-hidden">
-                               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 blur-xl group-hover:bg-blue-500/10 transition-all" />
+                            <div key={idx} className="sticky-note p-8 space-y-6 transition-all group relative overflow-hidden h-48 w-full">
+                               <div className="absolute top-0 right-0 w-24 h-24 bg-white/50 rounded-full -mr-12 -mt-12 blur-xl transition-all" />
                                <div className="flex items-center justify-between relative z-10">
-                                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-blue-400 transition-colors">{kpi.name}</span>
+                                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-brand transition-colors text-center w-full">{kpi.name}</span>
                                   {kpi.actual > kpi.planned ? (
-                                     <ArrowUpRight className="w-5 h-5 text-red-500" />
+                                     <ArrowUpRight className="w-4 h-4 text-rose-500" />
                                   ) : (
-                                     <Zap className="w-5 h-5 text-emerald-500" />
+                                     <Zap className="w-4 h-4 text-emerald-500" />
                                   )}
                                </div>
                                <div className="flex items-end gap-3 relative z-10">
@@ -345,19 +345,19 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                                       newKPIs[idx].actual = Number(e.target.value);
                                       setData({ ...data, governanceKPIs: newKPIs });
                                     }}
-                                    className="bg-transparent text-5xl font-black text-white outline-none w-28 tracking-tighter"
+                                    className="bg-transparent text-5xl font-black text-slate-900 outline-none w-28 tracking-tighter"
                                   />
-                                  <span className="text-sm font-bold text-slate-500 mb-2 italic">{kpi.unit}</span>
+                                  <span className="text-sm font-bold text-slate-400 mb-2 italic group-hover:text-brand transition-colors">{kpi.unit}</span>
                                </div>
                                <div className="space-y-4 relative z-10">
                                   <div className="flex items-center gap-4">
-                                     <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                     <div className="flex-1 h-2 bg-slate-200/50 rounded-full overflow-hidden">
                                         <motion.div 
                                            initial={{ width: 0 }}
                                            animate={{ width: `${Math.min(100, (kpi.actual / Math.max(kpi.planned, 1)) * 100)}%` }}
                                            className={cn(
                                               "h-full rounded-full transition-all duration-1000",
-                                              kpi.actual > kpi.planned ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                                              kpi.actual > kpi.planned ? "bg-rose-500" : "bg-emerald-500"
                                            )}
                                         />
                                      </div>
@@ -369,7 +369,7 @@ export const PerformanceMonitoringView: React.FC<PerformanceMonitoringViewProps>
                                           newKPIs[idx].planned = Number(e.target.value);
                                           setData({ ...data, governanceKPIs: newKPIs });
                                         }}
-                                        className="bg-white/5 text-[10px] font-bold text-slate-400 p-2 rounded-lg w-16 text-center outline-none focus:bg-white/10"
+                                        className="bg-white/50 text-[10px] font-bold text-slate-800 p-2 rounded-lg w-16 text-center outline-none focus:bg-white/80"
                                      />
                                   </div>
                                </div>

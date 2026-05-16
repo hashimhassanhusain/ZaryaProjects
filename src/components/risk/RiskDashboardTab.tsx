@@ -153,7 +153,7 @@ export const RiskDashboardTab: React.FC<RiskDashboardTabProps> = ({ risks, issue
           <div className="p-6 rounded-3xl bg-amber-50 border border-amber-100">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <span className="text-sm font-bold text-amber-900">Emergent Risks</span>
+              <span className="text-sm font-bold text-slate-900">Emergent Risks</span>
             </div>
             <p className="text-xs text-amber-700 leading-relaxed">
               3 new risks identified this month. Most related to supply chain volatility.

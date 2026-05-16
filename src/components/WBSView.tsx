@@ -39,10 +39,20 @@ export const WBSView: React.FC = () => {
   const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showAddWbs, setShowAddWbs] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
+  const [view, setView] = useState<'hierarchy' | 'costaccount' | 'packages' | 'milestones' | 'activities'>('hierarchy');
+  // Sub-views for Hierarchy to avoid floating modals
+  const [hierarchySubView, setHierarchySubView] = useState<'list' | 'edit_wbs' | 'add_package' | 'add_level'>('list');
+  const [newLevelData, setNewLevelData] = useState({
+    title: '',
+    type: 'Zone' as any,
+    parentId: '',
+    costCenterId: '',
+    standardItemId: ''
+  });
+  
   const [selectedWbsIds, setSelectedWbsIds] = useState<string[]>([]);
   const [editingWbs, setEditingWbs] = useState<WBSLevel | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -111,11 +121,11 @@ export const WBSView: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'packages') setActiveTab('packages');
-    if (tab === 'hierarchy') setActiveTab('hierarchy');
-    if (tab === 'costaccount') setActiveTab('costaccount');
-    if (tab === 'milestones') setActiveTab('milestones');
-    if (tab === 'activities') setActiveTab('activities');
+    if (tab === 'packages') setView('packages');
+    if (tab === 'hierarchy') setView('hierarchy');
+    if (tab === 'costaccount') setView('costaccount');
+    if (tab === 'milestones') setView('milestones');
+    if (tab === 'activities') setView('activities');
   }, [location.search]);
 
   const toggleSelectWbs = (id: string, e: React.MouseEvent) => {
@@ -351,7 +361,8 @@ export const WBSView: React.FC = () => {
     if (!selectedProject || !newPackage.title) return;
     try {
       const id = crypto.randomUUID();
-      const division = masterFormatDivisions.find(d => d.id === newPackage.divisionId);
+      const divCode = newPackage.divisionId || '01';
+      const division = masterFormatDivisions.find(d => d.id === divCode);
       const parentWbs = wbsLevels.find(l => l.id === newPackage.wbsId);
       
       const wp: WBSLevel = {
@@ -363,6 +374,7 @@ export const WBSView: React.FC = () => {
         level: (parentWbs?.level || 0) + 1,
         status: 'Not Started',
         code: `${division?.id || '00'}-${parentWbs?.code || 'GEN'}-${wbsLevels.filter(l => l.type === 'Work Package').length + 1}`,
+        costCenterId: divCode, // Crucial for filtering
       };
 
       await setDoc(doc(db, 'wbs', id), cleanObject(wp));
@@ -372,6 +384,7 @@ export const WBSView: React.FC = () => {
         await rollupToParent('division', wp.parentId);
       }
       
+      setHierarchySubView('list');
       setShowAddPackage(false);
       setIsManualTitle(false);
       setNewPackage({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
@@ -384,7 +397,14 @@ export const WBSView: React.FC = () => {
     try {
       const wp = wbsLevels.find(p => p.id === id);
       if (!wp) return;
-      await setDoc(doc(db, 'wbs', id), cleanObject({ ...wp, ...updates }));
+      
+      // Ensure costCenterId is kept in sync if title or division changes (if applicable)
+      const finalUpdates = { ...updates };
+      if ((updates as any).divisionId) {
+        finalUpdates.costCenterId = (updates as any).divisionId;
+      }
+
+      await setDoc(doc(db, 'wbs', id), cleanObject({ ...wp, ...finalUpdates }));
       
       // Trigger rollup to parent
       if (wp.parentId) {
@@ -392,6 +412,7 @@ export const WBSView: React.FC = () => {
       }
       
       setEditingPackage(null);
+      setHierarchySubView('list');
       setIsManualTitle(false);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'wbs');
@@ -499,6 +520,7 @@ export const WBSView: React.FC = () => {
   const handleEditWbs = (level: WBSLevel) => {
     if (draggedId) return; // Prevent edit while dragging
     setEditingWbs(level);
+    setHierarchySubView('edit_wbs');
     // Determine if it's a manual title
     if (level.type === 'Work Package') {
       setIsManualWbsTitle(!masterFormatSections.some(s => s.title === level.title));
@@ -509,6 +531,7 @@ export const WBSView: React.FC = () => {
 
   const handleEditPackage = (wp: WBSLevel) => {
     setEditingPackage(wp as any);
+    setHierarchySubView('add_package');
     const isStandard = masterFormatSections.some(s => s.title === wp.title);
     setIsManualTitle(!isStandard);
   };
@@ -587,11 +610,37 @@ export const WBSView: React.FC = () => {
     }
   };
 
+  const handleArchiveWbs = async (level: WBSLevel) => {
+    try {
+      const isArchived = (level as any).archived || false;
+      await updateDoc(doc(db, 'wbs', level.id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Record archived' : 'Record restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'wbs');
+    }
+  };
+
+  const handleArchiveActivity = async (act: Activity) => {
+    try {
+      const isArchived = (act as any).archived || false;
+      await updateDoc(doc(db, 'activities', act.id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Record archived' : 'Record restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'activities');
+    }
+  };
+
   const getWbsIcon = (type: string, size: string = "w-5 h-5", name: string = "") => {
     const n = name.toLowerCase();
     
     if (type === 'Division' || type === 'Cost Account') {
-      if (n.includes('concrete')) return <Boxes className={cn(size, "text-orange-900")} />;
+      if (n.includes('concrete')) return <Boxes className={cn(size, "text-slate-900")} />;
       if (n.includes('electrical')) return <Zap className={cn(size, "text-yellow-500")} />;
       if (n.includes('mechanical')) return <Cog className={cn(size, "text-blue-600")} />;
       if (n.includes('plumbing') || n.includes('sanitary')) return <Droplets className={cn(size, "text-sky-500")} />;
@@ -829,512 +878,582 @@ export const WBSView: React.FC = () => {
       ribbon={
         <Ribbon 
           groups={ribbonGroups}
-          activeTabId={activeTab}
-          onTabChange={(id) => setActiveTab(id as any)}
+          activeTabId={view}
+          onTabChange={(id) => {
+             setView(id as any);
+             setHierarchySubView('list');
+          }}
         />
       }
     >
-      <div className="space-y-6">
-        {activeTab === 'hierarchy' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-12 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="relative flex-1 max-w-md">
-                  <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
-                  <input 
-                    type="text"
-                    placeholder={t('search_hierarchy')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={cn(
-                      "w-full py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all",
-                      isRtl ? "pr-12 pl-4 text-right" : "pl-12 pr-4 text-left"
-                    )}
-                  />
-                </div>
-                <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
-                  <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept=".pdf,.doc,.docx,.txt"
-                      onChange={(e) => e.target.files?.[0] && handleAiGenerateWbs(e.target.files[0])}
-                    />
-                    {isGenerating ? (
-                      <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 text-blue-600" />
-                    )}
-                    <span className="text-sm font-semibold text-slate-700">{t('ai_generate_wbs')}</span>
-                  </label>
-                  <button 
-                    onClick={() => setShowAddWbs(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {t('add_level')}
+      <div className="pb-12">
+        <AnimatePresence mode="wait">
+          {view === 'hierarchy' && hierarchySubView === 'add_level' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 overflow-auto bg-white">
+              <div className="max-w-3xl mx-auto p-12">
+                <div className="flex items-center justify-between mb-12">
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">{isRtl ? 'إضافة مستوى جديد' : 'Add New Level'}</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{isRtl ? 'تعريف هيكل تقسيم العمل' : 'Define WBS structure'}</p>
+                  </div>
+                  <button onClick={() => setHierarchySubView('list')} className="p-3 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200">
+                    <X className="w-6 h-6 text-slate-900" />
                   </button>
                 </div>
-              </div>
-              
-              <div className="bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl p-8 min-h-[400px]">
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                  </div>
-                ) : wbsLevels.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
-                      <LayoutGrid className="w-8 h-8 text-slate-200" />
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_hierarchy_defined')}</h4>
-                    <p className="text-sm text-slate-400 max-w-xs">{t('no_hierarchy_hint')}</p>
-                  </div>
-                ) : renderWbsTree()}
-              </div>
-            </div>
-          </div>
-        ) : activeTab === 'costaccount' ? (
-          <UniversalDataTable 
-            config={costGridConfig}
-            data={wbsLevels.filter(l => l.type === 'Cost Account')}
-            onRowClick={handleEditWbs}
-            onDeleteRecord={handleDeleteWbs}
-            onInlineSave={handleInlineSaveWbs}
-            title={stripNumericPrefix(t('cost_accounts'))}
-            favoriteControl={null}
-          />
-        ) : activeTab === 'packages' ? (
-          <UniversalDataTable 
-            config={packagesGridConfig}
-            data={wbsLevels.filter(l => l.type === 'Work Package')}
-            onRowClick={handleEditWbs}
-            onDeleteRecord={handleDeleteWbs}
-            onInlineSave={handleInlineSaveWbs}
-            title={stripNumericPrefix(t('work_packages'))}
-            favoriteControl={null}
-            primaryAction={{
-              label: t('add_work_package'),
-              icon: Plus,
-              onClick: () => setShowAddPackage(true)
-            }}
-          />
-        ) : activeTab === 'milestones' ? (
-          <UniversalDataTable 
-            config={{
-              id: 'milestones',
-              label: t('milestones'),
-              icon: Flag,
-              collection: 'activities',
-              columns: [
-                { key: 'description', label: t('milestone_title'), type: 'string' },
-                { key: 'plannedFinish', label: t('date'), type: 'date' },
-                { key: 'status', label: t('status'), type: 'badge' }
-              ]
-            }}
-            data={milestones}
-            onRowClick={(m) => setEditingActivity(m as any)}
-            onDeleteRecord={async (id) => {
-              try {
-                await deleteDoc(doc(db, 'activities', id));
-                toast.success('Milestone deleted');
-              } catch (err) {
-                handleFirestoreError(err, OperationType.DELETE, 'activities');
-              }
-            }}
-            title={stripNumericPrefix(t('milestones'))}
-            favoriteControl={null}
-            primaryAction={{
-              label: t('add_milestone'),
-              icon: Plus,
-              onClick: () => setShowAddMilestone(true)
-            }}
-          />
-        ) : null}
 
-      {/* Add/Edit Milestone Modal */}
-      <AnimatePresence>
-        {(showAddMilestone || editingActivity) && (
-          <ActivityAttributesModal 
-            activity={editingActivity || {
-              id: `milestone-${Date.now()}`,
-              projectId: selectedProject?.id || '',
-              wbsId: '',
-              workPackage: '',
-              description: '',
-              unit: 'EA',
-              quantity: 1,
-              rate: 0,
-              amount: 0,
-              status: 'Not Started',
-              activityType: 'Milestone'
-            }}
-            allActivities={activities}
-            boqItems={boqItems}
-            wbsLevels={wbsLevels}
-            onClose={() => {
-              setShowAddMilestone(false);
-              setEditingActivity(null);
-            }}
-            onSave={async (updatedActivity) => {
-              try {
-                if (editingActivity) {
-                  await setDoc(doc(db, 'activities', updatedActivity.id), updatedActivity);
-                } else {
-                  await addDoc(collection(db, 'activities'), updatedActivity);
-                }
-                setShowAddMilestone(false);
-                setEditingActivity(null);
-              } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, 'activities');
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Edit WBS Modal (Dictionary Info) */}
-      <AnimatePresence>
-        {editingWbs && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
-            >
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex-shrink-0">WBS Dictionary Details</h3>
-              <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
-                  <input 
-                    type="text" 
-                    value={editingWbs.title}
-                    onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
-                    <select 
-                      value={editingWbs.type}
-                      onChange={e => setEditingWbs({...editingWbs, type: e.target.value as any})}
-                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
-                    >
-                      <option value="Zone">Zone</option>
-                      <option value="Area">Area</option>
-                      <option value="Building">Building</option>
-                      <option value="Cost Account">Cost Account</option>
-                      <option value="Work Package">Work Package</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Status</label>
-                    <select 
-                      value={editingWbs.status || 'Not Started'}
-                      onChange={e => setEditingWbs({...editingWbs, status: e.target.value as any})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="Not Started">Not Started</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Delayed">Delayed</option>
-                    </select>
-                  </div>
-                </div>
-                {editingWbs.type === 'Work Package' && (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account (Division)</label>
-                    <select 
-                      value={editingWbs.divisionCode || '01'}
-                      onChange={e => setEditingWbs({...editingWbs, divisionCode: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    >
-                      {masterFormatData.map(div => (
-                        <optgroup key={`grp-${div.number}`} label={`${div.number} - ${div.title}`}>
-                          <option value={div.number}>{div.number} - {div.title}</option>
-                          {div.items.map(item => (
-                            <option key={item.code} value={item.code}>
-                              &nbsp;&nbsp;{item.code} - {item.title}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {editingWbs.type === 'Cost Account' ? (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account Title</label>
+                <div className="space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-2">
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={editingWbs.title}
-                            onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="Enter custom cost account title..."
-                            autoFocus
-                          />
-                        </div>
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">{isRtl ? 'نوع المستوى' : 'Level Type'}</label>
+                      <select 
+                        value={newLevelData.type}
+                        onChange={(e) => {
+                          const type = e.target.value as any;
+                          setNewLevelData({ ...newLevelData, type, parentId: '' });
+                        }}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-930 outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand"
+                      >
+                        <option value="Zone">Zone</option>
+                        <option value="Area">Area</option>
+                        <option value="Building">Building</option>
+                        <option value="Floor">Floor</option>
+                        <option value="Deliverable">Deliverable</option>
+                        <option value="Phase">Phase</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
-                  </div>
-                ) : editingWbs.type === 'Work Package' ? (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Package Title</label>
-                    <div className="space-y-2">
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={editingWbs.title}
-                            onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="Enter work package title..."
-                            autoFocus
-                          />
-                        </div>
-                    </div>
-                  </div>
-                ) : null}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                    {editingWbs.type === 'Work Package' ? 'Parent Cost Account' : 'Parent Level'}
-                  </label>
-                  <select 
-                    value={editingWbs.parentId || ''}
-                    onChange={e => {
-                      if (e.target.value === 'new') {
-                        setEditingWbs(null);
-                        setShowAddWbs(true);
-                        return;
-                      }
-                      setEditingWbs({...editingWbs, parentId: e.target.value});
-                    }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    {editingWbs.type !== 'Work Package' && <option value="">None (Root Level)</option>}
-                    {wbsLevels
-                      .filter(l => l.id !== editingWbs.id && (hierarchyRules[editingWbs.type] || []).includes(l.type))
-                      .map(l => (
-                        <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                      ))
-                    }
-                    <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
-                  </select>
-                  {editingWbs.type === 'Work Package' && wbsLevels.filter(l => l.type === 'Cost Account').length === 0 && (
-                    <p className="mt-1 text-[10px] text-blue-500 font-bold uppercase tracking-wider opacity-60">
-                      Note: You can also create a dedicated "Cost Account" level in the hierarchy for advanced grouping.
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    onClick={() => { setEditingWbs(null); setIsManualWbsTitle(false); }}
-                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      try {
-                        let updatedWbs = { ...editingWbs };
-                        if (updatedWbs.type === 'Cost Account') {
-                          const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === updatedWbs.title || d.title === updatedWbs.title);
-                          updatedWbs.divisionCode = div ? div.id : (updatedWbs.title.match(/\d+/)?.[0] || '01');
-                        } else if (updatedWbs.type === 'Work Package') {
-                          const parent = wbsLevels.find(l => l.id === updatedWbs.parentId);
-                          // Inherit division code from parent if parent is a Cost Account and no division code is set locally
-                          if (!updatedWbs.divisionCode && parent && parent.divisionCode) {
-                            updatedWbs.divisionCode = parent.divisionCode;
-                          } else if (!updatedWbs.divisionCode) {
-                             updatedWbs.divisionCode = '01';
-                          }
-                        } else {
-                          delete updatedWbs.divisionCode;
-                        }
-                        await setDoc(doc(db, 'wbs', editingWbs.id), updatedWbs);
-                        
-                        // Trigger rollup to parent if exists
-                        if (updatedWbs.parentId) {
-                          await rollupToParent('division', updatedWbs.parentId);
-                        }
-                        
-                        setEditingWbs(null);
-                        setIsManualWbsTitle(false);
-                      } catch (err) {
-                        handleFirestoreError(err, OperationType.WRITE, 'wbs');
-                      }
-                    }}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
-      {/* Add Work Package Modal */}
-      <AnimatePresence>
-        {(showAddPackage || editingPackage) && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
-            >
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex-shrink-0">
-                {editingPackage ? 'Edit Work Package' : 'Add Work Package'}
-              </h3>
-              <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
-                    <div className="relative">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">{isRtl ? 'المستوى الأب' : 'Parent Level'}</label>
+                      <select 
+                        value={newLevelData.parentId}
+                        onChange={(e) => setNewLevelData({ ...newLevelData, parentId: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-930 outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand"
+                      >
+                        <option value="">{isRtl ? 'مستوى رئيسي' : 'Root Level'}</option>
+                        {wbsLevels
+                          .filter(l => l.type !== 'Work Package' && (hierarchyRules[newLevelData.type] || []).includes(l.type))
+                          .map(l => (
+                            <option key={l.id} value={l.id}>{l.code} - {l.title}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">{isRtl ? 'العنوان' : 'Title'}</label>
                       <input 
-                        type="text" 
-                        value={editingPackage ? editingPackage.title : newPackage.title}
-                        onChange={e => editingPackage ? setEditingPackage({...editingPackage, title: e.target.value}) : setNewPackage({...newPackage, title: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Enter work package title..."
-                        autoFocus
+                        type="text"
+                        value={newLevelData.title}
+                        onChange={(e) => setNewLevelData({ ...newLevelData, title: e.target.value })}
+                        placeholder={isRtl ? 'أدخل عنوان المستوى' : 'Enter level title'}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-930 outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand"
                       />
                     </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
-                  <textarea 
-                    value={editingPackage ? editingPackage.description : newPackage.description}
-                    onChange={e => editingPackage ? setEditingPackage({...editingPackage, description: e.target.value}) : setNewPackage({...newPackage, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"
-                    placeholder="Describe the scope of this work package..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cost Account</label>
-                    <select 
-                      value={editingPackage ? editingPackage.divisionId : newPackage.divisionId}
-                      onChange={e => {
-                        if (e.target.value === 'new') {
-                          window.location.href = '/page/2.2.1';
-                          return;
-                        }
-                        editingPackage ? setEditingPackage({...editingPackage, divisionId: e.target.value}) : setNewPackage({...newPackage, divisionId: e.target.value})
-                      }}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      {masterFormatDivisions.map(div => (
-                        <option key={div.id} value={div.id}>{div.id} - {div.title}</option>
-                      ))}
-                      <option value="new" className="text-blue-600 font-bold">+ Add New Cost Account...</option>
-                    </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">WBS Level</label>
-                    <select 
-                      value={editingPackage ? editingPackage.wbsId : newPackage.wbsId}
-                      onChange={e => {
-                        if (e.target.value === 'new') {
-                          setShowAddWbs(true);
-                          return;
-                        }
-                        const selectedWbs = wbsLevels.find(l => l.id === e.target.value);
-                        if (selectedWbs && selectedWbs.type === 'Cost Account' && selectedWbs.divisionCode) {
-                          if (editingPackage) {
-                            setEditingPackage({...editingPackage, wbsId: e.target.value, divisionId: selectedWbs.divisionCode});
-                          } else {
-                            setNewPackage({...newPackage, wbsId: e.target.value, divisionId: selectedWbs.divisionCode});
-                          }
-                        } else {
-                          editingPackage ? setEditingPackage({...editingPackage, wbsId: e.target.value}) : setNewPackage({...newPackage, wbsId: e.target.value})
+
+                  <div className="flex gap-4 pt-12">
+                    <button onClick={() => setHierarchySubView('list')} className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-3xl font-black uppercase text-[11px] tracking-widest">{isRtl ? 'إلغاء' : 'Cancel'}</button>
+                    <button 
+                      onClick={async () => {
+                        if (!selectedProject || !newLevelData.title) return;
+                        try {
+                          const id = crypto.randomUUID();
+                          const parent = wbsLevels.find(l => l.id === newLevelData.parentId);
+                          const code = generateCode(newLevelData.type, newLevelData.parentId, wbsLevels);
+                          
+                          const level: WBSLevel = {
+                            id,
+                            projectId: selectedProject.id,
+                            title: newLevelData.title,
+                            type: newLevelData.type,
+                            level: parent ? parent.level + 1 : 1,
+                            code,
+                            status: 'Not Started',
+                            parentId: newLevelData.parentId || ''
+                          };
+                          await setDoc(doc(db, 'wbs', id), cleanObject(level));
+                          toast.success(isRtl ? 'تمت إضافة المستوى بنجاح' : 'Level added successfully');
+                          setHierarchySubView('list');
+                        } catch (err) {
+                          handleFirestoreError(err, OperationType.WRITE, 'wbs');
                         }
                       }}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="flex-[2] py-5 bg-brand text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-brand/20 active:scale-95 transition-all"
                     >
-                      <option value="">General / Project Wide</option>
-                      {wbsLevels.map(l => (
-                        <option key={l.id} value={l.id}>{l.title} ({l.type})</option>
-                      ))}
-                      <option value="new" className="text-blue-600 font-bold">+ Add New Level...</option>
-                    </select>
+                      {isRtl ? 'حفظ المستوى' : 'Save Level'}
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    onClick={() => { setShowAddPackage(false); setEditingPackage(null); setIsManualTitle(false); }}
-                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={editingPackage ? () => handleUpdateWorkPackage(editingPackage.id, editingPackage) : handleAddWorkPackage}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                  >
-                    {editingPackage ? 'Save Changes' : 'Create Package'}
-                  </button>
                 </div>
               </div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
 
-      {/* Add WBS Modal */}
-      <AddWBSLevelModal 
-        isOpen={showAddWbs}
-        onClose={() => setShowAddWbs(false)}
-        selectedProject={selectedProject}
-        wbsLevels={wbsLevels}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteConfirmation && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          {view === 'hierarchy' && hierarchySubView === 'list' && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl"
+              key="hierarchy-list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
             >
-              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4 mx-auto">
-                <Trash2 className="w-6 h-6 text-red-500" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2 text-center">Confirm Deletion</h3>
-              <p className="text-xs text-slate-500 text-center mb-6">
-                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>?
-                {deleteConfirmation.type === 'wbs' && " This will also delete all its sub-levels, work packages, and activities."}
-                {deleteConfirmation.type === 'package' && " This action cannot be undone."}
-              </p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setDeleteConfirmation(null)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => {
-                    if (deleteConfirmation.type === 'wbs') {
-                      executeDeleteWbs(deleteConfirmation.id);
-                    } else {
-                      executeDeleteWorkPackage(deleteConfirmation.id);
-                    }
-                  }}
-                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
-                >
-                  Delete
-                </button>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-12 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRtl ? "right-4" : "left-4")} />
+                      <input 
+                        type="text"
+                        placeholder={t('search_hierarchy')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={cn(
+                          "w-full py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all",
+                          isRtl ? "pr-12 pl-4 text-right" : "pl-12 pr-4 text-left"
+                        )}
+                      />
+                    </div>
+                    <div className={cn("flex items-center gap-3", isRtl && "flex-row-reverse")}>
+                      <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={(e) => e.target.files?.[0] && handleAiGenerateWbs(e.target.files[0])}
+                        />
+                        {isGenerating ? (
+                          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-blue-600" />
+                        )}
+                        <span className="text-sm font-semibold text-slate-700">{t('ai_generate_wbs')}</span>
+                      </label>
+                      <button 
+                        onClick={() => setHierarchySubView('add_level')}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {t('add_level')}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl p-8 min-h-[400px]">
+                    {loading ? (
+                      <div className="flex items-center justify-center h-64">
+                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                      </div>
+                    ) : wbsLevels.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
+                          <LayoutGrid className="w-8 h-8 text-slate-200" />
+                        </div>
+                        <h4 className="text-lg font-bold text-slate-900 mb-1">{t('no_hierarchy_defined')}</h4>
+                        <p className="text-sm text-slate-400 max-w-xs">{t('no_hierarchy_hint')}</p>
+                      </div>
+                    ) : renderWbsTree()}
+                  </div>
+                </div>
               </div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {view === 'hierarchy' && hierarchySubView === 'edit_wbs' && editingWbs && (
+              <motion.div 
+                 key="edit-wbs"
+                 initial={{ opacity: 0, scale: 0.98 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 exit={{ opacity: 0, scale: 0.98 }}
+                 className="bg-white rounded-3xl p-8 max-w-4xl mx-auto shadow-xl border border-slate-200"
+              >
+                 <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">WBS Dictionary: {editingWbs.code}</h3>
+                    <button onClick={() => setHierarchySubView('list')} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-6 h-6 text-slate-400" /></button>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Technical Title</label>
+                        <input 
+                          type="text" 
+                          value={editingWbs.title}
+                          onChange={e => setEditingWbs({...editingWbs, title: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-base font-bold transition-all"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Classification Type</label>
+                          <select 
+                            value={editingWbs.type}
+                            onChange={e => setEditingWbs({...editingWbs, type: e.target.value as any})}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold transition-all appearance-none cursor-pointer"
+                          >
+                            <option value="Zone">Zone</option>
+                            <option value="Area">Area</option>
+                            <option value="Building">Building</option>
+                            <option value="Floor">Floor</option>
+                            <option value="Cost Account">Cost Account</option>
+                            <option value="Work Package">Work Package</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Current Status</label>
+                          <select 
+                            value={editingWbs.status || 'Not Started'}
+                            onChange={e => setEditingWbs({...editingWbs, status: e.target.value as any})}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold transition-all appearance-none cursor-pointer"
+                          >
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Delayed">Delayed</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {editingWbs.type === 'Work Package' && (
+                        <div>
+                          <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Associated Cost Account (Division)</label>
+                          <select 
+                            value={editingWbs.divisionCode || '01'}
+                            onChange={e => setEditingWbs({...editingWbs, divisionCode: e.target.value, costCenterId: e.target.value})}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold transition-all"
+                          >
+                            {masterFormatData.map(div => (
+                              <optgroup key={`edit-grp-${div.number}`} label={`${div.number} - ${div.title}`}>
+                                <option value={div.number}>{div.number} - {div.title}</option>
+                                {div.items.map(item => (
+                                  <option key={item.code} value={item.code}>
+                                    &nbsp;&nbsp;{item.code} - {item.title}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Parent Reference</label>
+                        <select 
+                          value={editingWbs.parentId || ''}
+                          onChange={e => setEditingWbs({...editingWbs, parentId: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
+                        >
+                          {editingWbs.type !== 'Work Package' && <option value="">None (Root Level)</option>}
+                          {wbsLevels
+                            .filter(l => l.id !== editingWbs.id && (hierarchyRules[editingWbs.type] || []).includes(l.type))
+                            .map(l => (
+                              <option key={`parent-${l.id}`} value={l.id}>{l.code} - {l.title} ({l.type})</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="flex gap-4 mt-12 pt-8 border-t border-slate-100">
+                    <button 
+                      onClick={() => setHierarchySubView('list')}
+                      className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={async () => {
+                         try {
+                           let updatedWbs = { ...editingWbs };
+                           if (updatedWbs.type === 'Cost Account') {
+                             const div = masterFormatDivisions.find(d => `${d.id} - ${d.title}` === updatedWbs.title || d.title === updatedWbs.title);
+                             const divCode = div ? div.id : (updatedWbs.title.match(/\d+/)?.[0] || '01');
+                             updatedWbs.divisionCode = divCode;
+                             updatedWbs.costCenterId = divCode;
+                           } else if (updatedWbs.type === 'Work Package') {
+                              const parent = wbsLevels.find(l => l.id === updatedWbs.parentId);
+                              if (!updatedWbs.divisionCode && parent && parent.divisionCode) {
+                                 updatedWbs.divisionCode = parent.divisionCode;
+                                 updatedWbs.costCenterId = parent.divisionCode;
+                              }
+                           }
+                           await setDoc(doc(db, 'wbs', editingWbs.id), updatedWbs);
+                           if (updatedWbs.parentId) await rollupToParent('division', updatedWbs.parentId);
+                           setHierarchySubView('list');
+                           setEditingWbs(null);
+                         } catch (err) {
+                           handleFirestoreError(err, OperationType.WRITE, 'wbs');
+                         }
+                      }}
+                      className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20"
+                    >
+                      Apply Changes
+                    </button>
+                 </div>
+              </motion.div>
+          )}
+
+          {view === 'costaccount' && (
+            <motion.div key="costaccount-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <UniversalDataTable 
+                config={costGridConfig}
+                data={wbsLevels.filter(l => {
+                  if (l.type !== 'Cost Account') return false;
+                  const isArchived = (l as any).archived || false;
+                  return showArchived ? isArchived : !isArchived;
+                })}
+                onRowClick={handleEditWbs}
+                onDeleteRecord={handleDeleteWbs}
+                onArchiveRecord={handleArchiveWbs}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
+                onInlineSave={handleInlineSaveWbs}
+                title={stripNumericPrefix(t('cost_accounts'))}
+                favoriteControl={null}
+              />
+            </motion.div>
+          )}
+
+          {view === 'packages' && hierarchySubView === 'list' && (
+            <motion.div key="packages-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <UniversalDataTable 
+                config={packagesGridConfig}
+                data={wbsLevels.filter(l => {
+                  if (l.type !== 'Work Package') return false;
+                  const isArchived = (l as any).archived || false;
+                  return showArchived ? isArchived : !isArchived;
+                })}
+                onRowClick={handleEditPackage}
+                onDeleteRecord={handleDeleteWbs}
+                onArchiveRecord={handleArchiveWbs}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
+                onInlineSave={handleInlineSaveWbs}
+                title={stripNumericPrefix(t('work_packages'))}
+                favoriteControl={null}
+                primaryAction={{
+                  label: t('add_work_package'),
+                  icon: Plus,
+                  onClick: () => {
+                     setNewPackage({ title: '', description: '', divisionId: '01', wbsId: '', status: 'Active' });
+                     setEditingPackage(null);
+                     setHierarchySubView('add_package');
+                  }
+                }}
+              />
+            </motion.div>
+          )}
+
+          {(view === 'packages' || view === 'hierarchy') && hierarchySubView === 'add_package' && (
+              <motion.div 
+                 key="add-package-form"
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 exit={{ opacity: 0, x: -20 }}
+                 className="bg-white rounded-[2.5rem] p-10 max-w-4xl mx-auto border border-slate-200 shadow-2xl"
+              >
+                 <div className="flex items-center justify-between mb-10">
+                    <div>
+                      <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">
+                        {editingPackage ? 'Edit Work Package' : 'New Work Package'}
+                      </h3>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">Define scope and association for this terminal node</p>
+                    </div>
+                    <button onClick={() => setHierarchySubView('list')} className="p-3 hover:bg-slate-50 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-6 h-6 text-slate-400" /></button>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-8">
+                       <div>
+                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Package Title</label>
+                          <input 
+                             type="text" 
+                             value={editingPackage ? editingPackage.title : newPackage.title}
+                             onChange={e => editingPackage ? setEditingPackage({...editingPackage, title: e.target.value}) : setNewPackage({...newPackage, title: e.target.value})}
+                             className="w-full px-8 py-5 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none focus:ring-8 focus:ring-brand/5 focus:border-brand transition-all font-bold text-lg"
+                             placeholder="Enter work package title..."
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Detailed Scope</label>
+                          <textarea 
+                             value={editingPackage ? editingPackage.description : newPackage.description}
+                             onChange={e => editingPackage ? setEditingPackage({...editingPackage, description: e.target.value}) : setNewPackage({...newPackage, description: e.target.value})}
+                             className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none focus:ring-8 focus:ring-brand/5 focus:border-brand transition-all min-h-[160px] font-medium text-slate-700"
+                             placeholder="What is included in this package?"
+                          />
+                       </div>
+                    </div>
+
+                    <div className="space-y-8">
+                       <div className="grid grid-cols-1 gap-8">
+                          <div>
+                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Division (Cost Center)</label>
+                             <select 
+                               value={editingPackage ? (editingPackage as any).divisionId : newPackage.divisionId}
+                               onChange={e => {
+                                  editingPackage ? setEditingPackage({...editingPackage, divisionId: e.target.value as any, costCenterId: e.target.value}) : setNewPackage({...newPackage, divisionId: e.target.value});
+                               }}
+                               className="w-full px-8 py-5 bg-white border-2 border-slate-100 rounded-[2rem] outline-none focus:border-brand transition-all font-bold appearance-none cursor-pointer"
+                             >
+                               {masterFormatDivisions.map(div => (
+                                 <option key={`div-${div.id}`} value={div.id}>{div.id} - {div.title}</option>
+                               ))}
+                             </select>
+                          </div>
+                          <div>
+                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">WBS Anchor Point</label>
+                             <select 
+                               value={editingPackage ? editingPackage.parentId : newPackage.wbsId}
+                               onChange={e => {
+                                 const sid = e.target.value;
+                                 const selectedWbs = wbsLevels.find(l => l.id === sid);
+                                 if (editingPackage) {
+                                    setEditingPackage({...editingPackage, parentId: sid, divisionId: (selectedWbs?.divisionCode || (editingPackage as any).divisionId) as any});
+                                 } else {
+                                    setNewPackage({...newPackage, wbsId: sid, divisionId: selectedWbs?.divisionCode || '01'});
+                                 }
+                               }}
+                               className="w-full px-8 py-5 bg-white border-2 border-slate-100 rounded-[2rem] outline-none focus:border-brand transition-all font-bold appearance-none cursor-pointer"
+                             >
+                               <option value="">General / Project Wide</option>
+                               {wbsLevels.map(l => (
+                                 <option key={`wbs-${l.id}`} value={l.id}>{l.code} - {l.title} ({l.type})</option>
+                               ))}
+                             </select>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="flex gap-4 mt-16">
+                    <button 
+                      onClick={() => { setHierarchySubView('list'); setEditingPackage(null); }}
+                      className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-[1.5rem] font-black uppercase text-[11px] tracking-[0.3em] hover:bg-slate-200 transition-all border border-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={editingPackage ? () => handleUpdateWorkPackage(editingPackage.id, editingPackage) : handleAddWorkPackage}
+                      className="flex-[2] py-5 bg-brand text-white rounded-[1.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-2xl shadow-brand/20 hover:bg-brand/90 transition-all"
+                    >
+                      {editingPackage ? 'Update Package' : 'Initialize Package'}
+                    </button>
+                 </div>
+              </motion.div>
+          )}
+
+          {view === 'milestones' && (
+            <motion.div key="milestones-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <UniversalDataTable 
+                config={{
+                  id: 'milestones',
+                  label: t('milestones'),
+                  icon: Flag,
+                  collection: 'activities',
+                  columns: [
+                    { key: 'description', label: t('milestone_title'), type: 'string' },
+                    { key: 'plannedFinish', label: t('date'), type: 'date' },
+                    { key: 'status', label: t('status'), type: 'badge' }
+                  ]
+                }}
+                data={milestones.filter(m => {
+                  const isArchived = (m as any).archived || false;
+                  return showArchived ? isArchived : !isArchived;
+                })}
+                onRowClick={(m) => setEditingActivity(m as any)}
+                onDeleteRecord={async (id) => {
+                  try {
+                    await deleteDoc(doc(db, 'activities', id));
+                    toast.success('Milestone deleted');
+                  } catch (err) {
+                    handleFirestoreError(err, OperationType.DELETE, 'activities');
+                  }
+                }}
+                onArchiveRecord={handleArchiveActivity}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
+                title={stripNumericPrefix(t('milestones'))}
+                favoriteControl={null}
+                primaryAction={{
+                  label: t('add_milestone'),
+                  icon: Plus,
+                  onClick: () => setShowAddMilestone(true)
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Modals for specific complex data types */}
+        {/* Removed Floating AddWBSLevelModal - Now inline */}
+
+        <AnimatePresence>
+          {deleteConfirmation && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setDeleteConfirmation(null)}
+            >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-white rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col items-center text-center overflow-hidden relative"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16" />
+                <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mb-6 relative">
+                  <Trash2 className="w-10 h-10 text-red-500" />
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-4 border-white flex items-center justify-center">
+                    <X className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic mb-3">
+                  {t('confirm_deletion')}
+                </h3>
+                
+                <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
+                  {isRtl ? (
+                    <>هل أنت متأكد من حذف <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>؟ هذا الإجراء لا يمكن التراجع عنه.</>
+                  ) : (
+                    <>Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteConfirmation.title}"</span>? This action cannot be undone.</>
+                  )}
+                  {deleteConfirmation.type === 'wbs' && (
+                    <span className="block mt-2 text-[10px] text-red-500 font-bold uppercase tracking-widest bg-red-50 py-1 rounded">
+                      {isRtl ? 'سيتم حذف جميع المستويات الفرعية والحزم والأنشطة' : 'Will delete all child levels & packages'}
+                    </span>
+                  )}
+                </p>
+
+                <div className="flex flex-col w-full gap-3">
+                  <button 
+                    onClick={() => {
+                      if (deleteConfirmation.type === 'wbs') executeDeleteWbs(deleteConfirmation.id);
+                      else executeDeleteWorkPackage(deleteConfirmation.id);
+                      setDeleteConfirmation(null);
+                    }}
+                    className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-red-600/20 active:scale-95 transition-all"
+                  >
+                    {isRtl ? 'تأكيد الحذف' : 'Confirm Delete'}
+                  </button>
+                  <button 
+                    onClick={() => setDeleteConfirmation(null)} 
+                    className="w-full py-4 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all"
+                  >
+                    {isRtl ? 'إلغاء' : 'Cancel'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </StandardProcessPage>
   );

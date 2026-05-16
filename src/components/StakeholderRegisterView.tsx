@@ -64,6 +64,7 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
   const [editingStakeholder, setEditingStakeholder] = useState<Stakeholder | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showConfidential, setShowConfidential] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<Stakeholder>>({
@@ -150,6 +151,20 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
       toast.success(t('entry_deleted'));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'stakeholders');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = stakeholders.find(s => s.id === id);
+      const isArchived = (record as any)?.archived || false;
+      await updateDoc(doc(db, 'stakeholders', id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? t('record_archived') : t('record_restored'));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'stakeholders');
     }
   };
 
@@ -518,10 +533,16 @@ export const StakeholderRegisterView: React.FC<StakeholderRegisterViewProps> = (
           {activeView === 'list' ? (
             <UniversalDataTable 
               config={gridConfig}
-              data={stakeholders}
+              data={stakeholders.filter(s => {
+                const isArchived = (s as any).archived || false;
+                return showArchived ? isArchived : !isArchived;
+              })}
               onRowClick={handleEdit}
               onNewClick={handleAdd}
               onDeleteRecord={(id) => handleDelete(id)}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={useStandardProcessPage()?.pageHeader}
               favoriteControl={useStandardProcessPage()?.favoriteControl}
             />

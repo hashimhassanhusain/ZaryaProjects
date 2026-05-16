@@ -71,6 +71,7 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
   const [versions, setVersions] = useState<ClosureReportVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<ClosureReportEntry>>({
     reportId: '',
@@ -91,6 +92,8 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
     finalApprovalStatus: 'Pending',
     version: 1.0
   });
+
+  const isArchivedState = formData.status === 'Archived';
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -207,6 +210,20 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const entry = entries.find(e => e.id === id);
+      const isRecordArchived = entry?.status === 'Archived';
+      await updateDoc(doc(db, 'closure_reports', id), {
+        status: isRecordArchived ? 'Final' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Report restored' : 'Report archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'closure_reports');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject || !formData.reportId) return;
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -288,7 +305,10 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={entries}
+                data={entries.filter(e => {
+                  const isArchived = e.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(row) => {
                   setSelectedRecordId(row.id);
                   setViewMode('edit');
@@ -298,6 +318,9 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
@@ -321,8 +344,13 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div className="lg:col-span-2 space-y-10">
                   {/* Canvas Header */}
-                  <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                  <section className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden relative">
+                    {isArchivedState && (
+                      <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
+                        <ShieldCheck className="w-4 h-4" /> ARCHIVED PROJECT CLOSURE REPORT
+                      </div>
+                    )}
+                    <div className={cn("p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between", isArchivedState && "pt-12")}>
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center">
                           <Flag className="w-6 h-6 text-white" />
@@ -353,7 +381,8 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
                             type="text"
                             value={formData.reportId}
                             onChange={(e) => setFormData({ ...formData, reportId: e.target.value })}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all"
+                            disabled={isArchivedState}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold outline-none focus:ring-4 focus:ring-slate-500/5 transition-all disabled:opacity-50"
                           />
                         </div>
                         <div className="space-y-2">
@@ -361,8 +390,9 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
                           <textarea 
                             value={formData.summaryOfProject}
                             onChange={(e) => setFormData({ ...formData, summaryOfProject: e.target.value })}
+                            disabled={isArchivedState}
                             rows={3}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-slate-500/5 transition-all resize-none"
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-slate-500/5 transition-all resize-none disabled:opacity-50"
                             placeholder="Final overview..."
                           />
                         </div>
@@ -386,8 +416,9 @@ export const ClosureReportView: React.FC<ClosureReportViewProps> = ({ page }) =>
                         <textarea 
                           value={(formData as any)[sect.field]}
                           onChange={(e) => setFormData({ ...formData, [sect.field]: e.target.value })}
+                          disabled={isArchivedState}
                           rows={4}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/5 transition-all resize-none"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm font-medium outline-none focus:ring-4 focus:ring-blue-500/5 transition-all resize-none disabled:opacity-50"
                         />
                       </div>
                     ))}

@@ -119,22 +119,20 @@ export function formatCurrency(amount: number, currency: string = 'IQD') {
 
 export function stripNumericPrefix(title: string | undefined | null): string {
   if (!title) return '';
-  // Matches "1.0 ", "5.1.1 ", "5.1.1: ", "[5.1.1] ", "00_ ", "01- " etc. at the start or end
-  // Including underscores as separators if followed by more text
+  
+  // Matches patterns like "1.0 ", "5.1.1 ", "5.1.1: ", "[5.1.1] ", "00_ ", "01- ", "09.1 " etc.
+  // We want to remove these from the start and also handle Arabic numbers if they appear
   const stripped = title
-    .replace(/^\[?[\d\._]+\]?[\s-:_]+/, '') // Start: [1.0] Title or 00_Title
-    .replace(/[\s-:_]+\[?[\d\._]+\]?$/, '')   // End: Title [1.0] or Title_00
+    .replace(/^\[?[\d\._\-\s]+\]?[\s\-:_]+/, '') // Start patterns
+    .replace(/[\s\-:_]+\[?[\d\._\-\s]+\]?$/, '')   // End patterns (less common but handled)
     .trim();
   
-  // Special case for 00_Something -> Something
-  let final = stripped;
-  if (final.match(/^\d+_/)) {
-    final = final.replace(/^\d+_/, '');
-  }
+  // Handle double prefixing or legacy 00_ patterns
+  let final = stripped.replace(/^\d+[\._]/, '').trim();
   
   // If we stripped everything, it means it was JUST a numeric identifier.
   // In this case, we return the original string because we don't want to show an empty label.
-  return final || title;
+  return final || stripped || title;
 }
 
 export function sortDomainPages(items: any[], domainKey: string) {

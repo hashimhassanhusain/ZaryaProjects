@@ -406,13 +406,15 @@ export const ActivityAttributesModal: React.FC<ActivityAttributesModalProps> = (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4"
+      className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      onClick={onClose}
     >
       <motion.div 
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        initial={{ scale: 0.98, opacity: 0, y: 10 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        exit={{ scale: 0.98, opacity: 0, y: 10 }}
+        className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[95%]"
+        onClick={e => e.stopPropagation()}
       >
         <div className="flex-shrink-0 px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>

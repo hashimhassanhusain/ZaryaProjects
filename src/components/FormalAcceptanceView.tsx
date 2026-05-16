@@ -74,6 +74,7 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
   const [versions, setVersions] = useState<FormalAcceptanceVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
   const [governanceRoles, setGovernanceRoles] = useState<any[]>([]);
 
@@ -232,6 +233,20 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const acceptance = acceptances.find(a => a.id === id);
+      const isRecordArchived = acceptance?.status === 'Archived';
+      await updateDoc(doc(db, 'formal_acceptances', id), {
+        status: isRecordArchived ? 'Pending' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'formal_acceptances');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject) return;
     const pdfDoc = new jsPDF('p', 'mm', 'a4');
@@ -296,7 +311,10 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={acceptances}
+                data={acceptances.filter(a => {
+                  const isArchived = a.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(row) => {
                   setSelectedRecordId(row.id);
                   setViewMode('edit');
@@ -306,6 +324,9 @@ export const FormalAcceptanceView: React.FC<FormalAcceptanceViewProps> = ({ page
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (

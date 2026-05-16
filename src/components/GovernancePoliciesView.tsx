@@ -95,6 +95,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
   const [policyRecords, setPolicyRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -174,6 +175,18 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
       toast.success(t('policy_deleted_success') || 'Policy deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'projectPolicies');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = policyRecords.find(r => r.id === id);
+      if (!record) return;
+      const newStatus = record.status === 'Archived' ? 'Approved' : 'Archived';
+      await updateDoc(doc(db, 'projectPolicies', id), { status: newStatus });
+      toast.success(record.status === 'Archived' ? 'Policy restored' : 'Policy archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'projectPolicies');
     }
   };
 
@@ -317,7 +330,7 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={policyRecords}
+                data={showArchived ? policyRecords : policyRecords.filter(p => p.status !== 'Archived')}
                 onRowClick={(record) => {
                   setSelectedRecordId(record.id);
                   setViewMode('edit');
@@ -327,6 +340,9 @@ export const GovernancePoliciesView: React.FC<GovernancePoliciesViewProps> = ({ 
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={(record) => handleArchive(record.id)}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (

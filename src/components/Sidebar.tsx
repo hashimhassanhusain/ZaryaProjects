@@ -8,7 +8,8 @@ import {
   ChevronRight,
   LogOut,
   User,
-  Building
+  Building,
+  Target
 } from 'lucide-react';
 import { cn, stripNumericPrefix, isAdminRole } from '../lib/utils';
 import { useAuth } from '../context/UserContext';
@@ -87,11 +88,11 @@ export const Sidebar: React.FC = () => {
         <div className="p-8 shrink-0 flex items-center gap-4 cursor-pointer group" onClick={() => navigate('/')}>
              {/* New Logo */}
              <div className="w-12 h-12 bg-text-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <span className="text-brand font-black text-[10px] tracking-tighter">PMIS</span>
+                <span className="text-[#ff6d00] font-black text-[10px] tracking-tighter">PMIS</span>
              </div>
              <div className="flex flex-col">
                <span className="text-text-primary font-black text-2xl tracking-tighter leading-none italic uppercase">ZARYA</span>
-               <span className="text-[9px] font-black text-brand tracking-[0.4em] leading-none uppercase mt-2 opacity-80">{t('pmo_system')}</span>
+               <span className="text-[9px] font-black text-[#ff6d00] tracking-[0.4em] leading-none uppercase mt-2 opacity-80">{t('pmo_system')}</span>
              </div>
         </div>
 
@@ -111,7 +112,7 @@ export const Sidebar: React.FC = () => {
                    <button
                      onClick={() => setExpandedCompanies(prev => ({ ...prev, _all: !prev._all }))}
                      className={cn(
-                       "w-full flex items-center gap-3 px-4 py-3.5 rounded-[1.5rem] transition-all group bg-surface shadow-sm border border-neutral-100 dark:border-neutral-800",
+                       "w-full flex items-center gap-3 px-4 py-3.5 rounded-lg transition-all group bg-surface shadow-sm border border-neutral-100 dark:border-neutral-800",
                        expandedCompanies._all ? "border-brand-secondary ring-4 ring-brand/10" : "hover:border-brand/20"
                      )}
                    >
@@ -136,7 +137,7 @@ export const Sidebar: React.FC = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden px-1 space-y-1"
                     >
-                       <div className="bg-neutral-50/80 p-2 rounded-2xl border border-neutral-200/50 space-y-1">
+                       <div className="bg-neutral-50/80 p-2 rounded-lg border border-neutral-200/50 space-y-1">
                           {companies.map((company, idx) => (
                              <button
                                 key={`${company.id}-${idx}`}
@@ -172,7 +173,10 @@ export const Sidebar: React.FC = () => {
                          isRtl ? "right-5" : "left-5"
                        )} />
                        
-                       <h4 className="px-2 text-[8px] font-black text-neutral-600 uppercase tracking-[0.2em]">{t('project_vault')}</h4>
+            <h4 className="px-2 text-[8px] font-black text-neutral-600 uppercase tracking-[0.2em] flex items-center justify-between">
+               {t('project_vault')}
+               <FolderOpen className="w-2.5 h-2.5" />
+            </h4>
                        <div className="space-y-1.5">
                           {projects
                             .filter(p => p.companyId === (selectedProject?.companyId || selectedCompanyId))
@@ -215,7 +219,10 @@ export const Sidebar: React.FC = () => {
           
           {/* ── PERFORMANCE DOMAINS (TREE STRUCTURE) ── */}
           <div className="space-y-4">
-            <h3 className="px-4 text-[10px] font-black text-neutral-600 uppercase tracking-[0.3em]">{t('pmp_navigation')}</h3>
+            <h3 className="px-4 text-[10px] font-black text-neutral-600 uppercase tracking-[0.3em] flex items-center justify-between opacity-60">
+              {t('pmp_navigation')}
+              <Target className="w-3 h-3" />
+            </h3>
             
             <div className="space-y-1">
               {FOCUS_AREAS.map((area, idx) => {
@@ -273,25 +280,25 @@ export const Sidebar: React.FC = () => {
                                 <div className="flex items-center gap-0 group/domain relative">
                                    {/* Domain Connector Line */}
                                    <div className={cn(
-                                     "absolute top-0 bottom-[1.15rem] w-[1.5px] bg-neutral-200 dark:bg-white/10",
-                                     isRtl ? "right-[-0.72rem]" : "left-[-0.72rem]"
+                                     "absolute top-0 bottom-[1.15rem] w-px bg-neutral-200 dark:bg-white/10",
+                                     isRtl ? "right-[-0.725rem]" : "left-[-0.725rem]"
                                    )} />
                                    <div className={cn(
-                                     "w-3.5 h-[1.5px] bg-neutral-200 dark:bg-white/10",
-                                     isRtl ? "-mr-[0.72rem]" : "-ml-[0.72rem]"
+                                     "w-3.5 h-px bg-neutral-200 dark:bg-white/10",
+                                     isRtl ? "-mr-[0.725rem]" : "-ml-[0.725rem]"
                                    )} />
 
                                   <Link
                                     to={path}
                                     onClick={() => setSelectedFocusArea(area.id)}
                                     className={cn(
-                                      "flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all",
-                                      isHubActive ? "bg-white text-brand shadow border border-neutral-200 font-black" : "text-neutral-500 font-bold hover:text-text-main"
+                                      "flex-1 flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all",
+                                      isHubActive ? "bg-white/80 dark:bg-white/5 text-brand shadow-sm border border-neutral-200 dark:border-white/10 font-black" : "text-neutral-500 font-bold hover:text-text-main"
                                     )}
                                   >
                                     <div className={cn(
                                       "w-4 h-4 rounded-md flex items-center justify-center transition-colors shrink-0",
-                                      isHubActive ? "bg-brand text-white shadow-sm shadow-brand/20" : "bg-neutral-100 group-hover:domain:bg-brand/10"
+                                      isHubActive ? "bg-brand text-white shadow-sm shadow-brand/20" : "bg-neutral-100 dark:bg-neutral-800"
                                     )}>
                                       <DomainIcon className="w-2.5 h-2.5" />
                                     </div>
@@ -305,7 +312,6 @@ export const Sidebar: React.FC = () => {
                                       const renderPageTree = (parentId: string, depth: number = 0) => {
                                         const children = domainPages.filter(p => p.parentId === parentId || (!p.parentId && parentId === hubId));
                                         
-                                        // Sort children to put parent hubs at top if needed
                                         return children.map((subPage, tIdx) => {
                                           const subPath = selectedProject ? `/project/${selectedProject.id}/page/${subPage.id}` : `/page/${subPage.id}`;
                                           const isSubActive = currentPath === subPath;
@@ -318,38 +324,37 @@ export const Sidebar: React.FC = () => {
                                               <div className={cn(
                                                 "flex items-center gap-0 group/terminal relative",
                                                 depth === 0 ? "ml-0" : depth === 1 ? "ml-4" : "ml-8",
-                                                depth > 0 && (isRtl ? "pr-4" : "")
                                               )}>
-                                                 {/* Vertical connector line for sub pages - Enhanced */}
+                                                 {/* Vertical connector line */}
                                                  <div className={cn(
-                                                   "absolute top-0 bottom-[1.15rem] w-[1.5px] bg-neutral-200 dark:bg-white/10",
-                                                   isRtl ? "right-[-0.72rem]" : "left-[-0.72rem]"
+                                                   "absolute top-0 bottom-[1.15rem] w-px bg-neutral-200 dark:bg-white/10",
+                                                   isRtl ? "right-[-0.725rem]" : "left-[-0.725rem]"
                                                  )} />
                                                  {/* Horizontal connector line */}
                                                  <div className={cn(
-                                                   "w-3.5 h-[1.5px] bg-neutral-200 dark:bg-white/10",
-                                                   isRtl ? "-mr-[0.72rem]" : "-ml-[0.72rem]"
+                                                   "w-3.5 h-px bg-neutral-200 dark:bg-white/10",
+                                                   isRtl ? "-mr-[0.725rem]" : "-ml-[0.725rem]"
                                                  )} />
 
                                                 <Link
                                                   to={subPath}
                                                   className={cn(
-                                                    "flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black transition-all uppercase tracking-tighter relative group/link",
-                                                    isSubActive ? "bg-white text-brand shadow border border-neutral-200 disabled:pointer-events-none" : "text-neutral-500 font-bold hover:text-brand hover:bg-brand/5"
+                                                    "flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black transition-all uppercase tracking-tight relative group/link",
+                                                    isSubActive ? "bg-white dark:bg-white/10 text-brand shadow-sm border border-neutral-200 dark:border-white/10" : "text-neutral-500 font-bold hover:text-brand hover:bg-brand/5"
                                                   )}
                                                 >
                                                   <span className="truncate group-hover/link:translate-x-1 transition-transform">
                                                     {stripNumericPrefix(th(subPage.id))}
                                                   </span>
                                                   {hasChildren && (
-                                                    <div className="ml-auto opacity-40">
+                                                    <div className="ml-auto opacity-30">
                                                       <ChevronDown className="w-2.5 h-2.5" />
                                                     </div>
                                                   )}
                                                 </Link>
                                               </div>
                                               {hasChildren && (
-                                                <div className={cn("relative", isRtl ? "pr-3" : "pl-1.5")}>
+                                                <div className={cn("relative", isRtl ? "pr-3.5" : "pl-3.5")}>
                                                    {renderPageTree(subPage.id, depth + 1)}
                                                 </div>
                                               )}

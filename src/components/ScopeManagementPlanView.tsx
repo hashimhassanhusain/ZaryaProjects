@@ -82,7 +82,8 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [scope, setScope] = useState<ScopePlanData>({
     projectTitle: '',
@@ -133,12 +134,12 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
         deliverableAcceptance: 'QC Inspection Sign-off',
         requirementsIntegration: ''
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = scopeRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setScope({ ...scope, ...record });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, scopeRecords, selectedProject]);
@@ -198,6 +199,20 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
       toast.success(t('scope_plan_deleted_success') || 'Scope Plan deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'scopeManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = scopeRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'scopeManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'scopeManagementPlans');
     }
   };
 
@@ -276,7 +291,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
         }
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -284,16 +299,22 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
             <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
-                data={scopeRecords}
+                data={scopeRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
             <motion.div key="edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 pb-20">
                <div className="bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm space-y-12 relative overflow-hidden">
-                {isArchived && (
+                {isArchivedState && (
                   <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
                      <ShieldCheck className="w-4 h-4" /> ARCHIVED SCOPE BASELINE SNAPSHOT V{scope.version}
                   </div>
@@ -307,7 +328,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                           type="date" 
                           value={getISODate(scope.datePrepared)} 
                           onChange={(e) => setScope({ ...scope, datePrepared: e.target.value })} 
-                          disabled={isArchived}
+                          disabled={isArchivedState}
                           className="w-full px-6 py-5 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-slate-600"
                         />
                      </div>
@@ -336,7 +357,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                           <textarea 
                             value={scope.scopeStatement}
                             onChange={(e) => setScope({...scope, scopeStatement: e.target.value})}
-                            disabled={isArchived}
+                            disabled={isArchivedState}
                             className="w-full h-40 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-blue-500/5 transition-all resize-none shadow-inner"
                             placeholder="Detail the procedural steps to define site boundaries, inclusions, and exclusions..."
                           />
@@ -353,7 +374,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                                   type="text" 
                                   value={scope.wbsStructure} 
                                   onChange={(e) => setScope({...scope, wbsStructure: e.target.value})} 
-                                  disabled={isArchived}
+                                  disabled={isArchivedState}
                                   placeholder="Example: 03-Concrete > 03.1-Foundations..."
                                   className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-500/5"
                                 />
@@ -369,7 +390,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                                   type="text" 
                                   value={scope.wbsDictionary} 
                                   onChange={(e) => setScope({...scope, wbsDictionary: e.target.value})} 
-                                  disabled={isArchived}
+                                  disabled={isArchivedState}
                                   placeholder="WP IDs, Code of Accounts, Acceptance Criteria..."
                                   className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-500/5"
                                 />
@@ -393,7 +414,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                         <textarea 
                           value={scope.baselineMaintenance} 
                           onChange={(e) => setScope({...scope, baselineMaintenance: e.target.value})} 
-                          disabled={isArchived}
+                          disabled={isArchivedState}
                           className="w-full h-48 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-emerald-500/5 transition-all resize-none shadow-inner"
                           placeholder="Document how technical baselines will be audited/maintained..."
                         />
@@ -411,7 +432,7 @@ export const ScopeManagementPlanView: React.FC<ScopeManagementPlanViewProps> = (
                         <textarea 
                           value={scope.scopeChange} 
                           onChange={(e) => setScope({...scope, scopeChange: e.target.value})} 
-                          disabled={isArchived}
+                          disabled={isArchivedState}
                           className="w-full h-48 px-8 py-7 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-8 focus:ring-amber-500/5 transition-all resize-none shadow-inner"
                           placeholder="Detail formal CCB triggers and impact threshold thresholds..."
                         />

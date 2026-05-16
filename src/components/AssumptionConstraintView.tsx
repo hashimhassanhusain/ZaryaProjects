@@ -57,6 +57,7 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingEntry, setEditingEntry] = useState<AssumptionEntry | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<AssumptionEntry>>({
     description: '',
@@ -68,6 +69,8 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
     impactLevel: 'Medium',
     dateIdentified: new Date().toISOString().split('T')[0],
   });
+
+  const isArchivedState = (formData as any).status === 'Archived';
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -151,6 +154,20 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const entry = entries.find(e => e.id === id);
+      const isRecordArchived = entry?.status === 'Archived';
+      await updateDoc(doc(db, 'assumptions', id), {
+        status: isRecordArchived ? 'Open' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Entry restored' : 'Entry archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'assumptions');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject) return;
     
@@ -211,14 +228,20 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
             exit={{ opacity: 0, y: -10 }}
             className="space-y-8 pb-20"
           >
-            <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm relative">
+              {isArchivedState && (
+                <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none rounded-t-[2rem]">
+                   <ShieldAlert className="w-4 h-4" /> ARCHIVED ENTRY Snapshot
+                </div>
+              )}
+              <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isArchivedState && "pt-12")}>
                 <div className="col-span-2 space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('description')}</label>
                   <textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm min-h-[100px] outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    disabled={isArchivedState}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm min-h-[100px] outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
                     placeholder={t('description_placeholder')}
                   />
                 </div>
@@ -228,7 +251,8 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                   <select 
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                    disabled={isArchivedState}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none disabled:opacity-50"
                   >
                     <option value="Assumption">{t('assumption')}</option>
                     <option value="Constraint">{t('constraint')}</option>
@@ -265,11 +289,13 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                   <select 
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                    disabled={isArchivedState}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none disabled:opacity-50"
                   >
                     <option value="Open">{t('open')}</option>
                     <option value="Closed">{t('closed')}</option>
                     <option value="Updated">{t('updated')}</option>
+                    <option value="Archived">{t('archived') || 'Archived'}</option>
                   </select>
                 </div>
 
@@ -308,7 +334,10 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={entries}
+              data={entries.filter(e => {
+                const isArchived = e.status === 'Archived';
+                return showArchived ? isArchived : !isArchived;
+              })}
               onRowClick={(record) => {
                 setEditingEntry(record);
                 setFormData({ ...record });
@@ -329,6 +358,9 @@ export const AssumptionConstraintView: React.FC<AssumptionConstraintViewProps> =
                 setViewMode('edit');
               }}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={useStandardProcessPage()?.pageHeader}
               favoriteControl={useStandardProcessPage()?.favoriteControl}
             />

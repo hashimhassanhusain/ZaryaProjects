@@ -22,8 +22,8 @@ export const DriveFolderPromptModal: React.FC<DriveFolderPromptModalProps> = ({ 
   if (!isOpen || !selectedProject) return null;
 
   const handleSave = async () => {
-    if (!folderId || folderId.trim().length < 5) {
-      toast.error(isRtl ? 'يرجى إدخال آي دي صحيح' : 'Please enter a valid Folder ID');
+    if (!folderId || folderId.trim().length < 5 || folderId.includes('eFit1RP')) {
+      toast.error(isRtl ? 'يرجى إدخال آي دي صحيح (لا يمكن استخدام المجلد العام)' : 'Please enter a valid Folder ID (General folder not allowed)');
       return;
     }
 

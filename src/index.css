@@ -22,15 +22,88 @@ html {
 }
 
 :root {
-  --brand-primary: #ff6d00; /* Safety Orange */
-  --brand-secondary: #ff8533;
+  --brand-primary: #334155; /* Slate 700 */
+  --brand-secondary: #0f172a; /* Slate 900 */
+  --brand-accent: #ff6d00; /* Safety Orange for specific highlights */
   --brand-dark: #1A1C1E; /* Dark Charcoal */
-  --sidebar-bg: #ffffff;
-  --app-bg: #f7f9fb; /* Very Light Gray */
+  --sidebar-bg: #1A1C1E;
+  --app-bg: #121212; /* Dark gray background */
   --surface-bg: #ffffff;
-  --text-primary: #1A1C1E; /* Dark Charcoal for Headings */
-  --text-secondary: #44474E; /* Medium Gray for Body */
-  --ribbon-bg: #ffffff;
+  --text-primary: #1A1C1E; 
+  --text-secondary: #44474E; 
+  --ribbon-bg: #475569; /* Slate 600 */
+}
+
+@layer utilities {
+  .bg-paper {
+    background-color: #fdfdfc;
+    background-image: repeating-linear-gradient(transparent, transparent 31px, #f1f5f9 31px, #f1f5f9 32px);
+    border-radius: 2px;
+    position: relative;
+    box-shadow: -4px 0 10px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.02);
+    border-left: 12px solid #e2e8f0;
+  }
+  .bg-paper::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    background-image: 
+      radial-gradient(circle at 6px 16px, #94a3b8 3px, transparent 4px),
+      radial-gradient(circle at 6px 16px, #e2e8f0 4px, transparent 5px);
+    background-size: 12px 32px;
+    background-position: 0 0;
+  }
+
+  .paper-edge {
+    border-left: 2px solid #ef4444; /* Red margin line like real paper */
+    padding-left: 2rem;
+    margin-left: 1rem;
+  }
+
+  .notebook-dotted-row {
+    background-image: radial-gradient(#cbd5e1 1px, transparent 0);
+    background-size: 20px 20px;
+    background-position: 0 0;
+  }
+
+  .sticky-note {
+    @apply bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    position: relative;
+    width: 130px; /* Small fixed size for consistency */
+  }
+
+  .page-divider-tab-left {
+    @apply flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden px-2 py-4 border-y border-r border-black/10;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    width: 32px;
+    height: 120px;
+  }
+
+  .page-divider-tab-right {
+    @apply flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden px-2 py-4 border-y border-l border-black/10;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    width: 32px;
+    height: 140px;
+  }
+
+  .sticky-note:hover {
+    @apply border-brand/30 shadow-md transform -translate-y-1;
+  }
 }
 
 .dark {
@@ -48,6 +121,8 @@ html {
 @layer base {
   body {
     @apply font-sans text-text-secondary bg-app-bg antialiased transition-colors duration-300;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply text-text-primary tracking-tight;
@@ -56,7 +131,7 @@ html {
 
 @layer components {
   .sidebar-item {
-    @apply flex items-center px-4 py-2.5 text-sm font-medium transition-all duration-200 rounded-xl;
+    @apply flex items-center px-4 py-2.5 text-sm font-medium transition-all duration-200 rounded-md;
   }
   
   .sidebar-item-active {

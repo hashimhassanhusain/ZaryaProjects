@@ -47,6 +47,7 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingComm, setEditingComm] = useState<CommConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<CommConfig>>({
     topic: '',
@@ -117,6 +118,20 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
       toast.success("Item removed");
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'communications_plan');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const comm = comms.find(c => c.id === id);
+      const isArchived = comm?.status === 'Archived';
+      await updateDoc(doc(db, 'communications_plan', id), {
+        status: isArchived ? 'Active' : 'Archived',
+        updatedAt: serverTimestamp()
+      });
+      toast.success(isArchived ? 'Restored' : 'Archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'communications_plan');
     }
   };
 
@@ -218,7 +233,10 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={comms}
+              data={comms.filter(c => {
+                const archived = c.status === 'Archived';
+                return showArchived ? archived : !archived;
+              })}
               onRowClick={(record) => {
                 setEditingComm(record as CommConfig);
                 setFormData(record as CommConfig);
@@ -237,6 +255,9 @@ export const CommunicationsPlanView: React.FC<CommunicationsPlanViewProps> = ({ 
                 setViewMode('edit');
               }}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={context?.pageHeader}
               favoriteControl={context?.favoriteControl}
             />

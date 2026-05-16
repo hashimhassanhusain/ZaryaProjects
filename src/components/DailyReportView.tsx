@@ -55,6 +55,7 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<DailyReport>>({
     date: new Date().toISOString().split('T')[0],
@@ -72,6 +73,8 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
     poProgress: [],
     departmentOutputs: []
   });
+
+  const isArchivedState = formData.status === 'Archived';
 
   useEffect(() => {
     if (!selectedProject?.id) return;
@@ -178,12 +181,26 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Archive this daily report?")) return;
+    if (!window.confirm("Are you sure you want to PERMANENTLY DELETE this daily report?")) return;
     try {
       await deleteDoc(doc(db, 'daily_reports', id));
-      toast.success("Report archived");
+      toast.success("Report deleted");
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'daily_reports');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const report = reports.find(r => r.id === id);
+      const isRecordArchived = report?.status === 'Archived';
+      await updateDoc(doc(db, 'daily_reports', id), {
+        status: isRecordArchived ? 'Draft' : 'Archived',
+        updatedAt: serverTimestamp()
+      });
+      toast.success(isRecordArchived ? 'Report restored' : 'Report archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'daily_reports');
     }
   };
 
@@ -827,7 +844,10 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={reports}
+              data={reports.filter(r => {
+                const isArchived = r.status === 'Archived';
+                return showArchived ? isArchived : !isArchived;
+              })}
               onRowClick={(record) => {
                 setEditingReport(record as DailyReport);
                 setFormData(record as DailyReport);
@@ -854,6 +874,9 @@ export const DailyReportView: React.FC<DailyReportViewProps> = ({ page }) => {
                 setViewMode('edit');
               }}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={context?.pageHeader}
               favoriteControl={context?.favoriteControl}
             />

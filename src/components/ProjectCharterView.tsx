@@ -17,6 +17,7 @@ import {
   X,
   ArrowLeft,
   ChevronRight,
+  ShieldCheck,
   User,
   Calendar,
   DollarSign,
@@ -120,6 +121,7 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [charter, setCharter] = useState<CharterData>({
     projectTitle: '',
@@ -156,8 +158,10 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
       pmDate: '',
       sponsorName: '',
       sponsorDate: '',
-    }
+    },
   });
+
+  const isArchivedState = (charter as any).status === 'Archived';
 
   const handleAutoFill = async () => {
     if (!selectedProject) return;
@@ -340,6 +344,20 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const record = charters.find(c => c.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'projectCharters', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Charter restored' : 'Charter archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'projectCharters');
+    }
+  };
+
   const pullStakeholdersFromPolicies = async () => {
     if (!selectedProject) return;
     try {
@@ -509,7 +527,10 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={charters}
+                data={charters.filter(c => {
+                  const isArchived = c.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => {
                   setSelectedRecordId(record.id);
                   setViewMode('edit');
@@ -519,6 +540,9 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
@@ -539,8 +563,13 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                  </button>
               </div>
 
-              <section className="space-y-4">
-                 <div className="flex items-center justify-between px-2">
+              <section className="space-y-4 relative">
+                {isArchivedState && (
+                  <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none rounded-t-3xl">
+                    <ShieldCheck className="w-4 h-4" /> ARCHIVED PROJECT CHARTER SNAPSHOT
+                  </div>
+                )}
+                 <div className={cn("flex items-center justify-between px-2", isArchivedState && "pt-12")}>
                     <div className={cn("space-y-0.5", isRtl && "text-right")}>
                       <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">{t('project_canvas_hub')}</h2>
                       <p className={cn("text-[9px] text-slate-400 font-medium tracking-wide border-l-2 border-brand/50 pl-2", isRtl && "border-l-0 border-r-2 pr-2")}>{t('interactive_workspace')}</p>
@@ -560,7 +589,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectTitle}
                               onChange={(e) => setCharter({ ...charter, projectTitle: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
+                              disabled={isArchivedState}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white disabled:opacity-50", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -569,7 +599,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectManager}
                               onChange={(e) => setCharter({ ...charter, projectManager: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
+                              disabled={isArchivedState}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white disabled:opacity-50", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -578,7 +609,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.pmAuthorityLevel}
                               onChange={(e) => setCharter({ ...charter, pmAuthorityLevel: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
+                              disabled={isArchivedState}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white disabled:opacity-50", isRtl && "text-right")}
                             />
                          </div>
                          <div className="space-y-1">
@@ -587,7 +619,8 @@ export const ProjectCharterView: React.FC<ProjectCharterViewProps> = ({ page, em
                               type="text"
                               value={charter.projectSponsor}
                               onChange={(e) => setCharter({ ...charter, projectSponsor: e.target.value })}
-                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white", isRtl && "text-right")}
+                              disabled={isArchivedState}
+                              className={cn("w-full px-3 py-2 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-brand/20 dark:text-white disabled:opacity-50", isRtl && "text-right")}
                             />
                          </div>
                       </div>

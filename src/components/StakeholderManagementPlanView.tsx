@@ -74,6 +74,7 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [isArchived, setIsArchived] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [smp, setSmp] = useState<SMPData>({
     projectTitle: '',
@@ -191,6 +192,20 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const record = planRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'stakeholderManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'stakeholderManagementPlans');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject) return;
     const docObj = new jsPDF('p', 'mm', 'a4');
@@ -257,10 +272,16 @@ export const StakeholderManagementPlanView: React.FC<StakeholderManagementPlanVi
             <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
-                data={planRecords}
+                data={planRecords.filter(r => {
+                  const archived = r.status === 'Archived';
+                  return showArchived ? archived : !archived;
+                })}
                 onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (

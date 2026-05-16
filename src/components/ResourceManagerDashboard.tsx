@@ -46,7 +46,7 @@ interface ResourceManagerDashboardProps {
 
 export const ResourceManagerDashboard: React.FC<ResourceManagerDashboardProps> = ({ page }) => {
   const { selectedProject } = useProject();
-  const { formatCurrency } = useCurrency();
+  const { formatAmount: formatCurrency } = useCurrency();
   const [resources, setResources] = useState<Resource[]>([]);
   const [filter, setFilter] = useState<'All' | 'Labor' | 'Material' | 'Equipment'>('All');
 

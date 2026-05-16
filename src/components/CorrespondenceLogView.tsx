@@ -73,6 +73,7 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [records, setRecords] = useState<CorrespondenceEntry[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
 
@@ -143,6 +144,24 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
       setVersions([]);
     }
   }, [selectedRecordId, viewMode, records]);
+
+  const handleArchive = async (record: CorrespondenceEntry) => {
+    try {
+      const isArchived = (record as any).archived || false;
+      await updateDoc(doc(db, 'correspondence_log', record.id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Record archived' : 'Record restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'correspondence_log');
+    }
+  };
+
+  const filteredRecords = records.filter(r => {
+    const isArchived = (r as any).archived || false;
+    return showArchived ? isArchived : !isArchived;
+  });
 
   const handleSave = async (isNew: boolean = false) => {
     if (!selectedProject) return;
@@ -302,7 +321,7 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={records}
+                data={filteredRecords}
                 onRowClick={(record) => {
                   setSelectedRecordId(record.id);
                   setViewMode('edit');
@@ -312,6 +331,9 @@ export const CorrespondenceLogView: React.FC<CorrespondenceLogViewProps> = ({ pa
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (

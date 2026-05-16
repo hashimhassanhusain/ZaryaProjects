@@ -79,6 +79,7 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<LessonEntry>>({
     lessonId: '',
@@ -230,6 +231,21 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
       handleFirestoreError(err, editingEntry ? OperationType.UPDATE : OperationType.CREATE, 'lessons_learned');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = entries.find(e => e.id === id);
+      if (!record) return;
+      const newStatus = record.status === 'Archived' ? 'Published' : 'Archived';
+      await updateDoc(doc(db, 'lessons_learned', id), {
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(record.status === 'Archived' ? 'Lesson restored' : 'Lesson archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'lessons_learned');
     }
   };
 
@@ -612,10 +628,13 @@ export const LessonsLearnedView: React.FC<LessonsLearnedViewProps> = ({ page }) 
 
             <UniversalDataTable 
               config={gridConfig}
-              data={entries}
+              data={showArchived ? entries.filter(e => e.status === 'Archived') : entries.filter(e => e.status !== 'Archived')}
               onRowClick={(record) => handleEdit(record as LessonEntry)}
               onNewClick={handleAdd}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={(record) => handleArchive(record.id)}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={context?.pageHeader}
               favoriteControl={context?.favoriteControl}
             />

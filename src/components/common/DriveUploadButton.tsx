@@ -41,8 +41,8 @@ export const DriveUploadButton: React.FC<DriveUploadButtonProps> = ({
       let firebaseUrl = '';
       let driveFileId = '';
       
-      const overriddenDrivePath = '.'; // Ignore folder hierarchies according to use request
-
+      const actualDrivePath = drivePath || '.';
+      
       // 1. Try Firebase Storage Upload (Bypass Nginx limit)
       try {
         console.log(`🚀 [Drive Protocol] Step 1: Uploading buffer ${finalName}`);
@@ -50,26 +50,87 @@ export const DriveUploadButton: React.FC<DriveUploadButtonProps> = ({
         const storageRef = ref(storage, bufferPath);
         const uploadResult = await uploadBytes(storageRef, file);
         firebaseUrl = await getDownloadURL(uploadResult.ref);
-      } catch (storageErr) {
+      } catch (storageErr: any) {
         console.warn('⚠️ [Firebase Storage] Buffer failed. Attempting direct fallback...', storageErr);
         
         toast.loading(isRtl ? '🔄 جاري الرفع المباشر...' : '🔄 Direct Upload Fallback...', { id: toastId });
         const directFormData = new FormData();
         directFormData.append('file', file);
         directFormData.append('projectRootId', projectRootId);
-        directFormData.append('path', overriddenDrivePath);
+        directFormData.append('path', actualDrivePath);
         directFormData.append('fileName', finalName);
         directFormData.append('projectCode', selectedProject?.code || '16314');
 
-        const directRes = await fetch('/api/drive/upload-by-path', {
-          method: 'POST',
-          body: directFormData
-        });
+        let directRes;
+        try {
+          toast.loading(isRtl ? '🔄 جاري إنشاء جلسة الرفع...' : '🔄 Creating Upload Session...', { id: toastId });
+          const sessionRes = await fetch('/api/drive/create-resumable-upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectRootId,
+              path: actualDrivePath,
+              fileName: finalName,
+              mimeType: file.type || 'application/octet-stream',
+              fileSize: file.size,
+              projectCode: selectedProject?.code || '16314'
+            })
+          });
+          
+          if (!sessionRes.ok) throw new Error(await sessionRes.text());
+          const { resumableUrl } = await sessionRes.json();
+
+          toast.loading(isRtl ? '🔄 جاري الرفع بالتقطّع...' : '🔄 Uploading in chunks...', { id: toastId });
+          const CHUNK_SIZE = 512 * 1024;
+          let uploadCompleteData = null;
+          
+          for (let start = 0; start < file.size; start += CHUNK_SIZE) {
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunkBlob = file.slice(start, end);
+            
+            // convert blob to base64
+            const base64Data = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1]);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(chunkBlob);
+            });
+            
+            const contentRange = `bytes ${start}-${end - 1}/${file.size}`;
+            
+            const chunkRes = await fetch('/api/drive/proxy-resumable-chunk', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                resumableUrl,
+                contentRange,
+                base64Data
+              })
+            });
+
+            if (chunkRes.status === 200 || chunkRes.status === 201) {
+              uploadCompleteData = await chunkRes.json();
+              break;
+            } else if (chunkRes.status === 308) {
+              continue;
+            } else {
+              throw new Error(`Chunk upload failed with status ${chunkRes.status}: ${await chunkRes.text()}`);
+            }
+          }
+          
+          if (!uploadCompleteData) throw new Error("Upload did not complete");
+
+          directRes = { ok: true, data: { fileId: uploadCompleteData.id || uploadCompleteData.fileId } }; 
+        } catch (fetchErr: any) {
+          throw new Error(`Firebase Storage Error: ${storageErr.message || 'Unknown'}. AND Resumable fallback failed: ${fetchErr.message}`);
+        }
 
         if (directRes.ok) {
-          const data = await directRes.json();
-          driveFileId = data.fileId;
-          toast.success(isRtl ? '✅ تم الرفع بنجاح!' : '✅ Uploaded successfully!', { id: toastId });
+          driveFileId = directRes.data.fileId;
+          toast.success(isRtl ? `✅ تم الرفع بنجاح! مسار: ${actualDrivePath}` : `✅ Uploaded successfully! Path: ${actualDrivePath}`, { id: toastId });
           onUploadSuccess?.(driveFileId);
           return; // Exit success
         }
@@ -85,7 +146,7 @@ export const DriveUploadButton: React.FC<DriveUploadButtonProps> = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectRootId: projectRootId,
-            path: overriddenDrivePath,
+            path: actualDrivePath,
             projectCode: selectedProject?.code || '16314',
             fileUrl: firebaseUrl,
             fileName: finalName,
@@ -99,7 +160,7 @@ export const DriveUploadButton: React.FC<DriveUploadButtonProps> = ({
         }
 
         const data = await response.json();
-        toast.success(isRtl ? '✅ تم الرفع والمزامنة بنجاح!' : '✅ Uploaded and synced successfully!', { id: toastId, duration: 4000 });
+        toast.success(isRtl ? `✅ تم الرفع والمزامنة بنجاح! المسار: ${actualDrivePath}` : `✅ Uploaded and synced successfully! Path: ${actualDrivePath}`, { id: toastId, duration: 8000 });
         onUploadSuccess?.(data.fileId);
       }
     } catch (err) {
@@ -118,7 +179,7 @@ export const DriveUploadButton: React.FC<DriveUploadButtonProps> = ({
     
     // Drive folder verification First
     let projectRootId = selectedProject.driveFolderId;
-    if (!projectRootId || projectRootId.length < 5 || projectRootId === '.') {
+    if (!projectRootId || projectRootId.length < 5 || projectRootId === '.' || projectRootId.includes('eFit1RP')) {
        if (isAdmin) {
          setPendingFile(file);
          setIsPromptOpen(true);

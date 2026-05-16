@@ -20,40 +20,39 @@ import {
   ArrowDownRight,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
 import { cn, stripNumericPrefix } from '../lib/utils';
 import { AIAssistant } from './AIAssistant';
 import { BOQItem } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
-const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon, color }: any) => {
+const KPICard = ({ title, value, subValue, trend, trendValue, icon: Icon }: any) => {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all group"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="sticky-note w-full p-6 flex flex-col justify-between group h-40"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className={cn("p-2.5 rounded-xl", color)}>
-          <Icon className="w-5 h-5 text-white" />
+      <div className="flex justify-between items-start mb-2">
+        <div className="p-1">
+          <Icon className="w-5 h-5 text-slate-400 group-hover:text-brand transition-colors" />
         </div>
         {trend && (
-          <div className={cn(
-            "flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full",
-            trend === 'up' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-          )}>
+          <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500">
             {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
             {trendValue}
           </div>
         )}
       </div>
       <div className="space-y-1">
-        <h3 className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{stripNumericPrefix(title)}</h3>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stripNumericPrefix(title)}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{value}</span>
-          {subValue && <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">{subValue}</span>}
+          <span className="text-2xl font-black text-slate-900 tracking-tighter">{value}</span>
         </div>
+        {subValue && <span className="block text-[9px] font-black text-slate-400 uppercase mt-0.5">{subValue}</span>}
       </div>
     </motion.div>
   );
@@ -146,7 +145,6 @@ export const ProjectDashboard: React.FC = () => {
       value: complianceRate !== null ? `${complianceRate}%` : '85%', 
       subValue: 'Governance', 
       icon: ShieldCheck, 
-      color: 'bg-emerald-500',
       trend: 'up',
       trendValue: '2.4%'
     },
@@ -155,7 +153,6 @@ export const ProjectDashboard: React.FC = () => {
       value: '-3.2%', 
       subValue: 'Schedule', 
       icon: Clock, 
-      color: 'bg-amber-500',
       trend: 'down',
       trendValue: '1.2%'
     },
@@ -163,15 +160,13 @@ export const ProjectDashboard: React.FC = () => {
       title: 'Budget Utilized', 
       value: formatAmount(boqTotal * 0.42, 'IQD'), 
       subValue: 'Finance', 
-      icon: Banknote, 
-      color: 'bg-blue-600' 
+      icon: Banknote
     },
     { 
       title: 'Total Value', 
       value: formatAmount(boqTotal, 'IQD'), 
       subValue: 'Contracts', 
-      icon: FileText, 
-      color: 'bg-slate-900' 
+      icon: FileText
     },
   ];
 
@@ -185,25 +180,27 @@ export const ProjectDashboard: React.FC = () => {
           <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
           {t('executive_summary')}
         </div>
-        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight italic uppercase leading-[0.9]">
-          {stripNumericPrefix(selectedProject.name)}
-        </h1>
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-5 h-5 text-brand" />
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight italic uppercase leading-[0.9]">
+            {stripNumericPrefix(selectedProject.name)}
+          </h1>
+        </div>
       </div>
           
           <div className="flex flex-wrap items-center gap-3">
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 dark:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand/10">
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 dark:bg-slate-800 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand/10">
                 <Target className="w-3 h-3 text-brand" />
                 {selectedProject.code}
              </div>
              {selectedProject.customer && (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
                   <Building className="w-3 h-3" />
                   {selectedProject.customer}
                </div>
              )}
              {selectedProject.location && (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
-                  <MapPin className="w-3 h-3" />
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest shadow-sm">
                   {selectedProject.location}
                </div>
              )}
@@ -232,7 +229,10 @@ export const ProjectDashboard: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em] flex items-center gap-3">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <ChevronRight className="w-2.5 h-2.5 text-slate-300" />
+              </div>
               Strategic Milestones
             </h2>
           </div>
@@ -280,7 +280,10 @@ export const ProjectDashboard: React.FC = () => {
         <div className="space-y-8">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em] flex items-center gap-3">
-              <AlertTriangle className="w-4 h-4 text-orange-500" />
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-orange-500" />
+                <ChevronRight className="w-2.5 h-2.5 text-slate-300" />
+              </div>
               Critical Insights
             </h2>
           </div>

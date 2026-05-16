@@ -439,7 +439,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
     setIsUploadingPhoto(true);
     try {
-      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      if (!selectedProject?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+      const ROOT_FOLDER_ID = selectedProject.driveFolderId;
       const path = 'Performance_Reports_Quality_and_Communications_7/07.2_Progress_Photos_and_Videos';
       
       // 1. Upload to Firebase Storage first (buffer)
@@ -675,7 +676,8 @@ export const ProgressReportView: React.FC<ProgressReportViewProps> = ({ page }) 
 
     setIsUploadingToDrive(true);
     try {
-      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      if (!selectedProject?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+      const ROOT_FOLDER_ID = selectedProject.driveFolderId;
       
       // 1. Upload to Firebase Storage first (buffer)
       const storagePath = `buffer/${selectedProject.id}/${Date.now()}_${pdfFileName}`;

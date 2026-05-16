@@ -232,7 +232,8 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
     setIsUploadingToDrive(true);
     
     try {
-      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      if (!project?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+      const ROOT_FOLDER_ID = project.driveFolderId;
       
       // 1. Upload to Firebase Storage first (buffer)
       const storagePath = `buffer/${project.id}/${Date.now()}_${pdfFileName}`;
@@ -437,13 +438,12 @@ export const MeetingMinutesForm: React.FC<MeetingMinutesFormProps> = ({ project,
             <div className="space-y-2">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Location (Geo-Linked)</label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input 
                   type="text"
                   value={formData.location || ''}
                   onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="e.g. Site Office - Villa 2"
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
                 />
               </div>
             </div>

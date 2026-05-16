@@ -92,12 +92,17 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden"
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-slate-100 flex flex-col max-h-[95%] overflow-hidden"
           >
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-slate-50">
                 <h3 className="text-base font-bold text-slate-900">Add WBS Level</h3>
@@ -185,7 +190,7 @@ export const AddWBSLevelModal: React.FC<AddWBSLevelModalProps> = ({
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

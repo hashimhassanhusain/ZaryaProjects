@@ -1,0 +1,12 @@
+src/components/common/UniversalDataTable.tsx:690:              title={primaryAction?.label || t('add_new') || 'Add New'}
+src/components/common/UniversalDataTable.tsx:696:          {/* Extra Actions Container - AFTER Add New */}
+src/components/resource/SelectionCriteriaTab.tsx:398:                  {editingId ? 'Edit Criterion' : 'Add New Criterion'}
+src/components/resource/ResourceRequirementsTab.tsx:410:                {editingId ? 'Edit Requirement' : 'Add New Requirement'}
+src/components/resource/RBSTab.tsx:219:                  {editingId ? 'Edit Node' : 'Add New Node'}
+src/components/AdminUsersView.tsx:90:          <UserPlus className="w-4 h-4" /> Add New User
+src/components/WBSView.tsx:869:                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">{isRtl ? 'إضافة مستوى جديد' : 'Add New Level'}</h2>
+src/components/DetailView.tsx:4309:                // Logic to add new issue
+src/components/DetailView.tsx:4670:                      <h3 className="text-lg font-semibold text-slate-900">{editingStakeholder.id ? 'Edit Stakeholder' : 'Add New Stakeholder'}</h3>
+src/components/UserFormView.tsx:842:      {/* Add New Contact Modal */}
+src/components/UserFormView.tsx:862:                    <h2 className="text-2xl font-semibold text-neutral-900 tracking-tight">Add New Contact</h2>
+src/components/ResourcesView.tsx:291:                  <h2 className="text-2xl font-bold text-slate-900">{editingResource ? 'Edit Resource' : 'Add New Resource'}</h2>

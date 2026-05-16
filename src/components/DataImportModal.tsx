@@ -229,24 +229,23 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
 
   if (!isOpen) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-      />
-      
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        initial={{ scale: 0.98, opacity: 0, y: 10 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-200 dark:border-white/10"
+        exit={{ scale: 0.98, opacity: 0, y: 10 }}
+        className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95%] border border-slate-200 dark:border-white/10"
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
+        <div className="px-8 py-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <Upload className="w-4 h-4" />
@@ -444,7 +443,6 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
         </div>
 
       </motion.div>
-    </div>,
-    document.body
+    </motion.div>
   );
 };

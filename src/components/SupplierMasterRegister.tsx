@@ -33,6 +33,7 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isAddingSupplier, setIsAddingSupplier] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -230,11 +231,28 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
     </div>
   );
 
-  const filteredSuppliers = suppliers.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.vendorCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.discipline.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleArchiveSupplier = async (supplier: Supplier) => {
+    try {
+      const isArchived = (supplier as any).archived || false;
+      await updateDoc(doc(db, 'companies', supplier.id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Supplier archived' : 'Supplier restored');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'companies');
+    }
+  };
+
+  const filteredSuppliers = suppliers.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.vendorCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.discipline.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isArchived = (s as any).archived || false;
+    if (showArchived) return matchesSearch && isArchived;
+    return matchesSearch && !isArchived;
+  });
 
   const supplierConfig: EntityConfig = {
     id: 'suppliers',
@@ -341,12 +359,13 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
         <div className="flex-1 bg-white rounded-3xl overflow-hidden border border-slate-200 min-h-[600px]">
           <UniversalDataTable 
             config={supplierConfig}
-            data={suppliers.map(s => ({
+            data={filteredSuppliers.map(s => ({
               ...s,
               email: s.contactDetails?.email,
               phone: s.contactDetails?.phone
             }))}
             onRowClick={(record) => setSelectedSupplier(record)}
+            onNewClick={() => setIsAddingSupplier(true)}
             onDeleteRecord={async (id) => {
               try {
                 await deleteDoc(doc(db, 'companies', id));
@@ -355,7 +374,10 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                 handleFirestoreError(err, OperationType.DELETE, 'companies');
               }
             }}
-            showAddButton={false}
+            onArchiveRecord={handleArchiveSupplier}
+            showArchived={showArchived}
+            onToggleArchived={() => setShowArchived(!showArchived)}
+            showAddButton={true}
             title={
               <div className="flex items-center gap-2">
                 <span className="opacity-40">{stripNumericPrefix(t('procurement_management'))} ›</span>
@@ -438,7 +460,6 @@ export const SupplierMasterRegister: React.FC<SupplierMasterRegisterProps> = ({ 
                       <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Contact ID</div>
                       <div className="space-y-4">
                         <div className="flex items-start gap-4">
-                          <MapPin className="w-5 h-5 text-slate-400 mt-1 shrink-0" />
                           <div className="text-sm text-slate-600 font-medium leading-relaxed">{selectedSupplier.contactDetails.address || 'Address Not Recorded'}</div>
                         </div>
                         <div className="flex items-center gap-4">

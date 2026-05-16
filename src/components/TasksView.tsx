@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles, FileText, ShoppingCart, ShieldAlert } from 'lucide-react';
+import { Layout, List, Plus, Search, Calendar, User, MoreVertical, CheckCircle2, Clock, AlertCircle, AlertTriangle, Users, Filter, Loader2, GripVertical, Settings, Edit2, Trash2, History, Sparkles, FileText, ShoppingCart, ShieldAlert, Box, ChevronRight } from 'lucide-react';
 import { Task, TaskStatus, Workspace, User as UserType } from '../types';
 import { initialTasks, workspaces, users, currentUser } from '../data';
 import { cn, getISODate, formatDate } from '../lib/utils';
@@ -745,10 +745,10 @@ export const TasksView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsAddingTask(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+            className="w-10 h-10 flex items-center justify-center bg-[#ff6d00] text-white rounded-xl hover:bg-[#ff8533] transition-all shadow-lg shadow-[#ff6d00]/20 active:scale-95"
+            title={t('add_task')}
           >
-            <Plus className="w-4 h-4" />
-            {t('add_task')}
+            <Plus className="w-6 h-6" strokeWidth={3} />
           </button>
           <button 
             onClick={() => setIsManagingStatuses(true)}
@@ -761,7 +761,7 @@ export const TasksView: React.FC = () => {
             onClick={() => setShowOnlyMyTasks(!showOnlyMyTasks)}
             className={cn(
               "px-4 py-2 rounded-xl text-sm font-bold transition-all border",
-              showOnlyMyTasks ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              showOnlyMyTasks ? "bg-[#ff6d00] text-white border-[#ff6d00] shadow-lg shadow-[#ff6d00]/20" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
             )}
           >
             {showOnlyMyTasks ? t('all_tasks') : t('my_tasks')}
@@ -793,7 +793,7 @@ export const TasksView: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 min-w-[200px]">
-          <Filter className="w-4 h-4 text-slate-400" />
+          <Box className="w-4 h-4 text-slate-400" />
           <select 
             value={selectedWorkspaceId}
             onChange={(e) => setSelectedWorkspaceId(e.target.value)}
@@ -804,8 +804,12 @@ export const TasksView: React.FC = () => {
             ))}
           </select>
         </div>
-        <div className="h-6 w-[1px] bg-slate-200 hidden md:block"></div>
+        <div className="flex items-center gap-1 hidden md:flex">
+          <div className="h-6 w-[1px] bg-slate-200"></div>
+          <ChevronRight className="w-3 h-3 text-slate-300" />
+        </div>
         <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-400" />
           <select 
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
@@ -863,7 +867,7 @@ export const TasksView: React.FC = () => {
                   <div className="flex gap-2">
                     <button 
                       onClick={handleAddStatus}
-                      className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                      className="flex-1 py-2 bg-[#ff6d00] text-white text-xs font-bold rounded-lg hover:bg-[#ff8533] transition-all"
                     >
                       {t('add')}
                     </button>
@@ -878,7 +882,7 @@ export const TasksView: React.FC = () => {
               ) : (
                 <button 
                   onClick={() => setIsAddingStatus(true)}
-                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-[#ff6d00] hover:text-[#ff6d00] hover:bg-[#ff6d00]/5 transition-all flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   {t('add_status')}
@@ -946,7 +950,7 @@ export const TasksView: React.FC = () => {
                      className="flex-1 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" 
                      onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
                    />
-                   <button onClick={handleAddStatus} className="bg-blue-600 text-white px-4 py-2 font-bold rounded-xl">{t('add')}</button>
+                   <button onClick={handleAddStatus} className="bg-[#ff6d00] text-white px-4 py-2 font-bold rounded-xl">{t('add')}</button>
                 </div>
 
                 <button onClick={() => setIsManagingStatuses(false)} className="w-full p-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200">{t('close')}</button>
@@ -1196,7 +1200,7 @@ export const TasksView: React.FC = () => {
           <button 
             onClick={handleAddTask}
             disabled={!newTask.title}
-            className="px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50"
+            className="px-10 py-4 bg-[#ff6d00] text-white font-bold rounded-2xl hover:bg-[#ff8533] transition-all shadow-xl shadow-[#ff6d00]/20 disabled:opacity-50"
           >
             {t('create_task')}
           </button>
@@ -1224,12 +1228,17 @@ export const TasksView: React.FC = () => {
       {/* Status Delete Confirmation Modal */}
       <AnimatePresence>
         {statusToDelete && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]"
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl flex flex-col max-h-[95%]"
             >
               <div className="flex-shrink-0 space-y-6">
                 <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto">
@@ -1257,7 +1266,7 @@ export const TasksView: React.FC = () => {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

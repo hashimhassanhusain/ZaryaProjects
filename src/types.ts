@@ -118,6 +118,8 @@ export interface PurchaseRequest {
   boqItems?: BOQItem[]; // Add BOQ items support
   currency?: 'USD' | 'IQD';
   exchangeRate?: number;
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  date?: string;
   createdAt?: any;
 }
 
@@ -174,6 +176,7 @@ export interface POActivity {
 
 export interface PurchaseOrder {
   id: string;
+  name?: string;
   projectId: string;
   wbsId?: string;
   activityId?: string;
@@ -192,6 +195,7 @@ export interface PurchaseOrder {
   updatedAt?: string;
   prId?: string;
   prName?: string;
+  isArchived?: boolean;
   // Extra fields for PO Log
   company?: string;
   buyFromPartner?: string;
@@ -287,7 +291,9 @@ export type EntityType =
   | 'packages'
   | 'cost_accounts'
   | 'cost_centers'
-  | 'standard_items';
+  | 'standard_items'
+  | 'contractor_advances'
+  | 'daily_reports';
 
 export interface EntityConfig {
   id: EntityType;

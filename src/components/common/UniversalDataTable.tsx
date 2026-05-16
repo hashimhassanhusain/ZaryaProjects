@@ -19,7 +19,11 @@ import {
   X,
   Archive,
   Printer,
-  Star
+  Star,
+  RefreshCcw,
+  FileText,
+  ChevronUp,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../../context/LanguageContext';
@@ -36,6 +40,7 @@ import autoTable from 'jspdf-autotable';
 import { loadArabicFont, containsArabic } from '../../lib/pdfUtils';
 
 import { useProject } from '../../context/ProjectContext';
+import { useDriveSync } from '../../context/DriveSyncContext';
 
 interface UniversalDataTableProps {
   config: EntityConfig;
@@ -59,6 +64,9 @@ interface UniversalDataTableProps {
   density?: 'normal' | 'compact';
   description?: string;
   extraActions?: React.ReactNode;
+  onArchiveRecord?: (record: any) => void;
+  showArchived?: boolean;
+  onToggleArchived?: () => void;
 }
 
 export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
@@ -78,12 +86,17 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   onInlineSave,
   density = 'compact',
   description,
-  extraActions
+  extraActions,
+  onArchiveRecord,
+  showArchived,
+  onToggleArchived
 }) => {
   const { selectedProject } = useProject();
+  const { isSyncing, triggerGlobalSync } = useDriveSync();
   const { t, isRtl } = useLanguage();
   const { formatAmount, currency: baseCurrency } = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'kanban'>('table');
   const [kanbanGroupField, setKanbanGroupField] = useState<string>(() => {
     const statusCol = config.columns.find(c => c.type === 'status' || c.key.toLowerCase().includes('status'));
@@ -92,6 +105,12 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     config.columns.filter(c => c.visible !== false).map(c => c.key)
+  );
+  const [columnOrder, setColumnOrder] = useState<string[]>(
+    config.columns.map(c => c.key)
+  );
+  const [columnLabels, setColumnLabels] = useState<Record<string, string>>(
+    Object.fromEntries(config.columns.map(c => [c.key, c.label]))
   );
   const [showColumnControls, setShowColumnControls] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
@@ -226,22 +245,27 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       const drivePath = '.'; // Export to root since trees are ignored
       
       let projectRootId = selectedProject.driveFolderId;
-      if (!projectRootId || projectRootId.length < 5 || projectRootId === '.') {
-         projectRootId = '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6'; // fallback to general if nothing else
+      if (!projectRootId || projectRootId.length < 5 || projectRootId === '.' || projectRootId.includes('eFit1RP')) {
+         throw new Error('Project Main Folder not found. Please verify Google Drive settings.');
       }
 
-      const driveRes = await fetch('/api/drive/upload-by-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectRootId,
-          path: drivePath,
-          projectCode: selectedProject.code || '16314',
-          fileUrl: url,
-          fileName: fileName,
-          mimeType: 'application/pdf'
-        })
-      });
+      let driveRes;
+      try {
+        driveRes = await fetch('/api/drive/upload-by-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectRootId,
+            path: drivePath,
+            projectCode: selectedProject.code || '16314',
+            fileUrl: url,
+            fileName: fileName,
+            mimeType: 'application/pdf'
+          })
+        });
+      } catch (fetchErr: any) {
+        throw new Error('Network error during Drive upload: ' + fetchErr.message);
+      }
 
       if (!driveRes.ok) throw new Error('Drive API rejected the upload');
 
@@ -304,22 +328,27 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       const drivePath = '.'; // Export to root since trees are ignored
       
       let projectRootId = selectedProject.driveFolderId;
-      if (!projectRootId || projectRootId.length < 5 || projectRootId === '.') {
-         projectRootId = '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+      if (!projectRootId || projectRootId.length < 5 || projectRootId === '.' || projectRootId.includes('eFit1RP')) {
+         throw new Error('Project Main Folder not found. Please verify Google Drive settings.');
       }
 
-      const driveRes = await fetch('/api/drive/upload-by-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectRootId,
-          path: drivePath,
-          projectCode: selectedProject.code || '16314',
-          fileUrl: url,
-          fileName: fileName,
-          mimeType: 'application/pdf'
-        })
-      });
+      let driveRes;
+      try {
+        driveRes = await fetch('/api/drive/upload-by-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectRootId,
+            path: drivePath,
+            projectCode: selectedProject.code || '16314',
+            fileUrl: url,
+            fileName: fileName,
+            mimeType: 'application/pdf'
+          })
+        });
+      } catch (fetchErr: any) {
+        throw new Error('Network error during Drive upload: ' + fetchErr.message);
+      }
 
       if (!driveRes.ok) throw new Error('Drive API rejected the upload');
 
@@ -327,6 +356,18 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
     } catch (err: any) {
       console.error(err);
       toast.error('Failed to export and upload record PDF: ' + err.message, { id: toastId });
+    }
+  };
+
+  const handleRowClickWithActionPrompt = (record: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    if (onEditRecord) {
+      onEditRecord(record);
+    } else {
+      onRowClick(record);
     }
   };
 
@@ -395,7 +436,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
 
     if (isEditing) {
       if (col.type === 'status') {
-        const statusOptions = ['Active', 'Draft', 'Closed', 'Pending', 'Approved', 'Not Started', 'In Progress', 'Completed'];
+        const statusOptions = ['Active', 'Draft', 'Closed', 'Pending', 'Approved', 'Not Started', 'In Progress', 'Completed', 'TO DO', 'PLANNING', 'RFP', 'TENDERING', 'AT RISK', 'UPDATE REQUIRED', 'PO Issued'];
         return (
           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
             <select
@@ -411,11 +452,28 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
         );
       }
 
+      if (col.type === 'priority') {
+        const priorityOptions = ['Low', 'Medium', 'High', 'Critical'];
+        return (
+          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+            <select
+              ref={editInputRef as any}
+              value={editValue || ''}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleInlineSave}
+              className="px-2 py-1 bg-white border border-brand text-[10px] font-black uppercase rounded-lg outline-none"
+            >
+              {priorityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+        );
+      }
+
       return (
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
           <input
             ref={editInputRef as any}
-            type={col.type === 'currency' || col.type === 'number' ? 'number' : 'text'}
+            type={col.type === 'date' ? 'date' : (col.type === 'currency' || col.type === 'number' ? 'number' : 'text')}
             value={editValue ?? ''}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleInlineSave}
@@ -428,7 +486,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
 
     return (
       <div 
-        className={cn("cursor-text hover:bg-brand/5 px-2 py-1 rounded-lg transition-all group/cell flex items-center justify-between", col.render && "pointer-events-none hover:bg-transparent")}
+        className={cn("cursor-text hover:bg-brand/5 px-2 py-1 rounded-lg transition-all group/cell flex items-center justify-between", col.render ? "hover:bg-transparent" : "")}
         onClick={col.render ? undefined : (e) => startEditing(record.id, col.key, value, e)}
       >
         {col.render ? col.render(value, record) : renderCellValue(value, col.type)}
@@ -442,7 +500,7 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-surface rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden min-h-[500px]">
+    <div className="flex flex-col h-full bg-transparent rounded-none border-0 shadow-none overflow-hidden min-h-[500px]">
       {/* Selection Banner */}
       <AnimatePresence>
         {selectedIds.size > 0 && (
@@ -510,247 +568,345 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       {/* Table Header / Action Bar - Unified Single Row */}
       <div 
         dir="ltr"
-        className="px-5 py-3 border-b border-slate-300 dark:border-white/10 flex items-center justify-between gap-6 bg-white dark:bg-surface sticky top-0 z-40 shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
+        className="pb-4 border-b-2 border-slate-300 flex items-center justify-between gap-6 bg-white dark:bg-surface sticky top-0 z-40 mb-4 px-4 py-3 rounded-lg shadow-sm"
       >
         {/* Left Side: Title & Description */}
-        <div className="flex items-center gap-4 shrink-0 overflow-hidden">
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Favorite Star Icon integrated as requested */}
-            {favoriteControl ? (
-              favoriteControl
-            ) : (
-              <button 
-                onClick={(e) => { e.stopPropagation(); /* Add favorite logic if needed */ }}
-                className="p-1.5 text-amber-400 hover:scale-110 transition-transform"
-              >
-                <Star className="w-4 h-4 fill-current" />
-              </button>
-            )}
-
+        <div className="flex items-center gap-5 shrink-0 min-w-0">
+          {typeof title !== 'string' && title ? (
+            <div className="flex-1 min-w-0">{title}</div>
+          ) : (
             <div className={cn("flex flex-col text-left min-w-0", isRtl && "text-right")}>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none mb-1 truncate" id="table-header-title">
-                {typeof title === 'string' ? stripNumericPrefix(title) : (title || stripNumericPrefix(config.label))}
+              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none mb-1 truncate flex items-center gap-2" id="table-header-title">
+                <FileSpreadsheet className="w-4 h-4 text-brand" />
+                {typeof title === 'string' ? stripNumericPrefix(title) : stripNumericPrefix(config.label)}
               </h3>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none opacity-60">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none opacity-60">
                 {config.collection || 'Registry'}
               </p>
             </div>
-            
-            {description && (
-              <>
-                <div className="h-6 w-px bg-slate-200 dark:bg-white/10 shrink-0 hidden md:block" />
-                <p className="text-[11px] font-medium text-slate-400 truncate max-w-[300px] hidden lg:block italic">
-                  {description}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: Grouped Actions (Search, Toggles, Extra, Primary) */}
-        <div className="flex items-center gap-1.5 shrink-0 flex-row">
-          {/* Search bar inside header - Now First of the group as in Image 2 */}
-          <div className="relative group w-[180px] xl:w-[240px] transition-all focus-within:w-[220px] xl:focus-within:w-[300px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-brand transition-colors" />
-            <input 
-              type="text" 
-              placeholder={t('search') || "Search..."}
-              className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-700 dark:text-white focus:bg-white dark:focus:bg-surface focus:ring-4 focus:ring-brand/5 focus:border-brand/30 outline-none transition-all placeholder:text-slate-400 uppercase tracking-widest"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              id="table-search-input"
-            />
-          </div>
-
-          <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-0.5" />
-
-          {/* Kanban Group Selector - Visible only in Kanban mode */}
-          {viewMode === 'kanban' && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg">
-              <span className="text-[9px] font-black uppercase text-slate-400">By:</span>
-              <select 
-                value={kanbanGroupField}
-                onChange={(e) => setKanbanGroupField(e.target.value)}
-                className="bg-transparent text-[9px] font-black uppercase text-brand outline-none cursor-pointer"
-              >
-                {config.columns.filter(c => c.type === 'status' || c.type === 'badge' || c.type === 'date' || c.key.toLowerCase().includes('status')).map(col => (
-                  <option key={col.key} value={col.key}>{col.label}</option>
-                ))}
-              </select>
-            </div>
           )}
-
-          {/* View Toggles - Extra Compact */}
-          <div className="flex p-0.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 shrink-0">
-            <button
-              onClick={() => setViewMode('table')}
-              className={cn("p-1.5 rounded-md transition-all", viewMode === 'table' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
-              title="Table View"
-              id="view-toggle-table"
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
-              title="Grid View"
-              id="view-toggle-grid"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={cn("p-1.5 rounded-md transition-all", viewMode === 'kanban' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
-              title="Kanban View"
-              id="view-toggle-kanban"
-            >
-              <Kanban className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-0.5" />
-
-          <button 
-            onClick={() => {/* Archive Logic */}}
-            className="p-1.5 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-amber-600 transition-all shadow-sm active:translate-y-0.5"
-            title="Archive"
-            id="action-archive"
-          >
-            <Archive className="w-3.5 h-3.5" />
-          </button>
-
-          <button 
-            onClick={handleExportPDFToDrive}
-            className="p-1.5 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-sm active:translate-y-0.5"
-            title="Print PDF & Save to Drive"
-            id="action-print"
-          >
-            <Printer className="w-3.5 h-3.5" />
-          </button>
-
-          <button 
-            onClick={handleExportExcel}
-            className="p-1.5 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-emerald-600 transition-all shadow-sm active:translate-y-0.5"
-            title="Export Excel"
-            id="action-excel"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-          </button>
-
-          <button 
-            onClick={() => setShowColumnControls(!showColumnControls)}
-            className={cn(
-              "p-1.5 rounded-lg transition-all border border-slate-200 dark:border-white/10 shadow-sm",
-              showColumnControls ? "bg-brand text-white border-brand" : "bg-white dark:bg-surface text-slate-400 hover:text-brand"
-            )}
-            title="Columns"
-            id="action-columns"
-          >
-            <Settings2 className="w-3.5 h-3.5" />
-          </button>
-
-          {extraActions && (
+          
+          {description && typeof title === 'string' && (
             <>
-              <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-0.5" />
-              <div className="flex items-center gap-1.5">
-                {extraActions}
-              </div>
+              <p className="text-xs font-medium text-slate-400 truncate max-w-[300px] hidden lg:block italic ml-4 border-l pl-4 border-slate-200">
+                {description}
+              </p>
             </>
           )}
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-0.5" />
+          {favoriteControl && (
+            <div className="hidden sm:block">
+              {favoriteControl}
+            </div>
+          )}
+        </div>
 
-          {/* Add Button - Now Last of the group as in Image 2 */}
-          {showAddButton && (onNewClick || primaryAction) && (
+        {/* Right Side: Grouped Actions (Search, Toggles, Extra, Primary) */}
+        <div className="flex items-center gap-4 shrink ml-auto flex-row">
+          {/* Search bar inside header - Expandable Transition */}
+          <div className={cn(
+            "relative group transition-all duration-300 ease-in-out flex items-center",
+            isSearchExpanded ? "w-[220px] sm:w-[260px] md:w-[320px]" : "w-10 h-10"
+          )}>
+            <AnimatePresence mode="wait">
+              {isSearchExpanded ? (
+                 <motion.div 
+                   key="search-input"
+                   initial={{ opacity: 0, scale: 0.95 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   exit={{ opacity: 0, scale: 0.95 }}
+                   className="w-full relative flex items-center"
+                 >
+                    <Search className="absolute left-3 w-4 h-4 text-brand" />
+                    <input 
+                      autoFocus
+                      type="text" 
+                      placeholder={t('search') || "Search..."}
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-white/5 border border-brand rounded-lg text-xs font-bold text-slate-700 dark:text-white focus:bg-white dark:focus:bg-surface focus:ring-4 focus:ring-brand/10 outline-none transition-all placeholder:text-slate-400 uppercase tracking-wider"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onBlur={() => !searchTerm && setIsSearchExpanded(false)}
+                      onKeyDown={(e) => e.key === 'Escape' && setIsSearchExpanded(false)}
+                      id="table-search-input"
+                    />
+                    <button 
+                      onClick={() => { setSearchTerm(''); setIsSearchExpanded(false); }}
+                      className="absolute right-3 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                 </motion.div>
+              ) : (
+                <motion.button
+                  key="search-button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsSearchExpanded(true)}
+                  className="w-10 h-10 flex items-center justify-center bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-brand hover:border-brand/40 transition-all shadow-sm"
+                  title={t('search') || "Search"}
+                >
+                  <Search className="w-5 h-5" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* View Toggles */}
+          <div className="flex items-center gap-2">
+            {viewMode === 'kanban' && (
+              <div className="flex items-center gap-1 bg-slate-50 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 shrink-0">
+                <span className="text-[8px] font-black uppercase text-slate-900 px-1">Group:</span>
+                <select 
+                  value={kanbanGroupField}
+                  onChange={(e) => setKanbanGroupField(e.target.value)}
+                  className="bg-transparent text-[9px] font-black uppercase text-slate-900 dark:text-white outline-none cursor-pointer pr-4"
+                >
+                  {config.columns.map(col => (
+                    <option key={`group-${col.key}`} value={col.key}>{columnLabels[col.key] || col.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 shrink-0">
+              <button
+                onClick={() => setViewMode('table')}
+                className={cn("p-1.5 rounded-md transition-all", viewMode === 'table' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
+                title="Table View"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
+                title="Grid View"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={cn("p-1.5 rounded-md transition-all", viewMode === 'kanban' ? "bg-white dark:bg-surface shadow-sm text-brand" : "text-slate-400 hover:text-slate-600")}
+                title="Kanban View"
+              >
+                <Kanban className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Action Buttons Section */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Add Button - Orange Icon with + ONLY */}
+            {showAddButton && (onNewClick || primaryAction) && (
+              <button 
+                onClick={primaryAction?.onClick || onNewClick}
+                className="w-10 h-10 bg-[#ff6d00] border border-[#ff6d00] rounded-lg text-white hover:scale-105 transition-all shadow-lg shadow-[#ff6d00]/20 active:translate-y-0.5 flex items-center justify-center shrink-0"
+                title={primaryAction?.label || t('add_new') || 'Add New'}
+              >
+                <Plus className="w-6 h-6" strokeWidth={3.5} />
+              </button>
+            )}
+
+            {onToggleArchived && (
+              <button 
+                onClick={onToggleArchived}
+                className={cn(
+                  "h-8 w-8 flex items-center justify-center rounded-lg border transition-all shadow-sm",
+                  showArchived ? "bg-amber-500 text-white border-amber-600" : "bg-white dark:bg-surface text-slate-400 border-slate-200 hover:border-amber-400 hover:text-amber-500"
+                )}
+                title={showArchived ? "Hide Archived" : "Show Archived"}
+              >
+                <div className="relative">
+                  <Archive className="w-4 h-4" />
+                  {showArchived && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border border-amber-500" />}
+                </div>
+              </button>
+            )}
+
             <button 
-              onClick={primaryAction?.onClick || onNewClick}
-              className="p-1.5 bg-brand dark:bg-brand border border-brand/20 rounded-lg text-white hover:bg-brand-secondary transition-all shadow-sm active:translate-y-0.5 flex items-center gap-1.5 px-3"
-              title={primaryAction?.label || t('add_new') || 'Add New'}
-              id="action-add-new"
+              onClick={() => setShowColumnControls(!showColumnControls)}
+              className={cn(
+                "w-10 h-10 flex items-center justify-center rounded-lg transition-all border border-slate-200 dark:border-white/10 shadow-sm",
+                showColumnControls ? "bg-brand text-white border-brand" : "bg-white dark:bg-surface text-slate-400 hover:text-brand"
+              )}
+              title="Columns"
             >
-              {primaryAction?.icon ? <primaryAction.icon className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              <span className="text-[9px] font-black uppercase tracking-widest hidden sm:block">
-                {primaryAction?.label || t('add_new') || 'ADD'}
-              </span>
+              <Settings2 className="w-4 h-4" />
             </button>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={triggerGlobalSync}
+              disabled={isSyncing}
+              className="w-10 h-10 flex items-center justify-center bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-blue-500 transition-all shadow-sm active:translate-y-0.5"
+              title="Sync"
+            >
+              <RefreshCcw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+            </button>
+
+            <button 
+              onClick={handleExportPDFToDrive}
+              className="w-10 h-10 flex items-center justify-center bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-sm"
+              title="Print to Drive"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Extra Actions Container - AFTER Add New */}
+          {extraActions && (
+            <div className="flex items-center gap-2 shrink-0 ml-2 border-l border-slate-200 pl-4">
+              {extraActions}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Column Visibility Controls */}
+      {/* Column Visibility/Settings Controls */}
       <AnimatePresence>
         {showColumnControls && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 p-4"
+            className="bg-slate-100 dark:bg-slate-900 border-b-2 border-slate-200 dark:border-white/10 p-6"
           >
-            <div className="flex flex-wrap gap-2">
-              {config.columns.map((col, idx) => (
-                <button
-                  key={`col-vis-${col.key}-${idx}`}
-                  onClick={() => setVisibleColumns(prev => 
-                    prev.includes(col.key) ? prev.filter(k => k !== col.key) : [...prev, col.key]
-                  )}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border",
-                    visibleColumns.includes(col.key) 
-                      ? "bg-brand border-brand text-white" 
-                      : "bg-white dark:bg-surface border-slate-300 dark:border-white/20 text-slate-500 hover:border-slate-400 dark:hover:border-white/30"
-                  )}
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{isRtl ? 'إعدادات الأعمدة (تغيير المسمى والترتيب)' : 'Column Settings (Rename & Reorder)'}</h4>
+                  <p className="text-[9px] text-slate-400 mt-0.5">{isRtl ? 'تحكم في ظهور الأعمدة وسحبها لترتيبها' : 'Control visibility and drag/order columns'}</p>
+                </div>
+                <button 
+                  onClick={() => setShowColumnControls(false)}
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/5 rounded-lg transition-colors"
                 >
-                  {col.label}
+                  <X className="w-4 h-4 text-slate-400" />
                 </button>
-              ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {columnOrder.map((key, idx) => {
+                  const col = config.columns.find(c => c.key === key);
+                  if (!col) return null;
+                  const isVisible = visibleColumns.includes(key);
+                  return (
+                    <div 
+                      key={`col-settings-${key}`}
+                      className={cn(
+                        "flex flex-col gap-2 p-4 bg-white dark:bg-surface border-2 transition-all rounded-xl",
+                        isVisible ? "border-slate-200 scale-100 shadow-sm" : "border-transparent opacity-50 scale-95 grayscale"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox"
+                            checked={isVisible}
+                            onChange={() => setVisibleColumns(prev => 
+                              prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+                            )}
+                            className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand cursor-pointer"
+                          />
+                          <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest truncate max-w-[120px]">{key}</span>
+                        </div>
+                        
+                        <div className="flex gap-1">
+                          <button 
+                            disabled={idx === 0}
+                            onClick={() => {
+                              const next = [...columnOrder];
+                              [next[idx-1], next[idx]] = [next[idx], next[idx-1]];
+                              setColumnOrder(next);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded-md disabled:opacity-20 text-slate-400 hover:text-brand"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            disabled={idx === columnOrder.length - 1}
+                            onClick={() => {
+                              const next = [...columnOrder];
+                              [next[idx+1], next[idx]] = [next[idx], next[idx+1]];
+                              setColumnOrder(next);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded-md disabled:opacity-20 text-slate-400 hover:text-brand"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <input 
+                        type="text"
+                        value={columnLabels[key]}
+                        onChange={(e) => setColumnLabels(prev => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-white/5 rounded-lg text-xs font-black text-slate-900 dark:text-white outline-none focus:border-brand transition-all font-mono"
+                        placeholder="Label"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Data Section */}
-      <div className={cn("flex-1 overflow-auto", viewMode === 'table' ? "" : "p-6 bg-slate-50 border-t border-slate-200 w-full rounded-b-[2rem] h-full dark:bg-transparent")}>
+      <div className={cn("flex-1 overflow-auto", viewMode === 'table' ? "" : "p-6 w-full h-full")}>
         {viewMode === 'table' && (
           <table className="w-full border-collapse text-left">
-            <thead className={cn("sticky top-0 bg-white dark:bg-slate-950 z-10", density === 'compact' ? "h-auto" : "")}>
-            <tr className="border-b border-slate-200 dark:border-white/10">
-              <th className={cn("px-5 py-4", density === 'compact' ? "py-2 w-10" : "w-12")}>
+            <thead className={cn("sticky top-0 bg-slate-950 border-b-2 border-brand z-10 shadow-xl", density === 'compact' ? "h-auto" : "")}>
+            <tr className="border-b border-white/10">
+              <th className={cn("px-5 py-4", density === 'compact' ? "py-3 w-10 text-[#ff6d00]" : "w-12 text-[#ff6d00]")}>
                 <input 
                   type="checkbox" 
-                  className={cn("rounded-md border-slate-400 dark:border-white/20 text-brand focus:ring-brand cursor-pointer", density === 'compact' ? "w-4 h-4" : "w-5 h-5")} 
+                  className={cn("rounded border-white/20 text-[#ff6d00] focus:ring-[#ff6d00] cursor-pointer", density === 'compact' ? "w-4 h-4" : "w-5 h-5")} 
                   checked={selectedIds.size === sortedData.length && sortedData.length > 0}
                   onChange={toggleAll}
                 />
               </th>
-              <th className={cn("px-4 py-4 text-left text-[10px] font-black text-brand dark:text-brand uppercase tracking-widest border-r border-slate-100 last:border-0", density === 'compact' ? "py-2 text-[9px] w-14" : "w-16")}>{t('actions') || 'Actions'}</th>
-              {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
+              <th className={cn("px-4 py-4 text-left text-[11px] font-black text-[#ff6d00] uppercase tracking-[0.2em] border-r border-white/10 last:border-0", density === 'compact' ? "py-3 w-16" : "w-20")}>{t('actions') || 'Actions'}</th>
+              {columnOrder.filter(k => visibleColumns.includes(k)).map((k) => (
                 <th 
-                  key={`th-${col.key}-${idx}`}
-                  className={cn("px-4 py-4 text-[10px] font-black text-text-primary dark:text-white uppercase tracking-widest group cursor-pointer hover:text-brand dark:hover:text-brand transition-colors border-r border-slate-100 last:border-0", density === 'compact' ? "py-2 text-[9px] px-3" : "")}
-                  onClick={() => toggleSort(col.key)}
+                  key={`th-${k}`}
+                  className={cn("px-4 py-4 text-[11px] font-black text-white uppercase tracking-[0.2em] group cursor-pointer hover:bg-white/10 transition-colors border-r border-white/10 last:border-0", density === 'compact' ? "py-3 px-4" : "")}
+                  onClick={() => toggleSort(k)}
                 >
                   <div className="flex items-center gap-2">
-                    {col.label}
-                    <ArrowUpDown className={cn("w-3 h-3 transition-opacity", sortConfig?.key === col.key ? "opacity-100 text-brand" : "opacity-0 group-hover:opacity-100")} />
+                    {columnLabels[k]}
+                    <ArrowUpDown className={cn("w-3 h-3 transition-opacity", sortConfig?.key === k ? "opacity-100 text-[#ff6d00]" : "opacity-0 group-hover:opacity-100")} />
                   </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sortedData.map((record, idx) => (
+            {sortedData.length === 0 ? (
+              <tr>
+                <td colSpan={visibleColumns.length + 2} className="px-6 py-12 text-center text-slate-400">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <FileText className="w-12 h-12 text-slate-200" />
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-widest text-slate-400">No Records Found</p>
+                      <p className="text-xs font-bold text-slate-400 mt-1">The system found no matching data for this view.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              sortedData.map((record, idx) => (
               <motion.tr
                 key={`tr-${record.id || 'record'}-${idx}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.01 }}
-                onClick={() => onRowClick(record)}
+                onClick={(e) => handleRowClickWithActionPrompt(record, e)}
                 className={cn(
-                  "group border-b border-slate-200 dark:border-white/5 transition-all cursor-pointer",
-                  selectedIds.has(record.id) ? "bg-brand/10 dark:bg-brand/20" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                  "group transition-all cursor-pointer h-[40px] border-b border-dashed border-slate-300",
+                  selectedIds.has(record.id) ? "bg-[#ff6d00]/10" : "hover:bg-slate-200/50"
                 )}
               >
-                <td className={cn("px-5 py-4", density === 'compact' ? "py-1.5 px-4" : "")} onClick={e => e.stopPropagation()}>
+                <td className={cn("px-5 py-0 h-[40px] border-b border-transparent leading-[40px]", density === 'compact' ? "px-4" : "")} onClick={e => e.stopPropagation()}>
                   <input 
                     type="checkbox" 
                     className={cn("rounded-md border-slate-400 dark:border-white/20 text-brand focus:ring-brand cursor-pointer", density === 'compact' ? "w-4 h-4" : "w-5 h-5")} 
@@ -758,14 +914,29 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                     onChange={() => toggleSelection(record.id)}
                   />
                 </td>
-                <td className={cn("px-4 py-4 text-left bg-slate-50/30 dark:bg-white/2", density === 'compact' ? "py-1.5 px-3" : "")} onClick={e => e.stopPropagation()}>
+                <td className={cn("px-4 py-0 h-[40px] text-left bg-transparent", density === 'compact' ? "px-3" : "")} onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-start gap-1.5 transition-all">
                     <button 
                       onClick={() => onEditRecord ? onEditRecord(record) : onRowClick(record)}
                       className={cn("text-brand hover:text-white hover:bg-brand rounded-lg transition-all shadow-sm bg-white dark:bg-surface border border-brand/20", density === 'compact' ? "p-1.5" : "p-2")}
+                      title="Edit Record"
                     >
                       <Edit2 className={cn("w-4 h-4", density === 'compact' ? "w-3 h-3" : "w-4 h-4")} />
                     </button>
+
+                    {onArchiveRecord && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onArchiveRecord(record);
+                        }}
+                        className={cn("text-amber-500 hover:text-white hover:bg-amber-500 rounded-lg transition-all shadow-sm bg-white dark:bg-surface border border-amber-100 dark:border-amber-500/20", density === 'compact' ? "p-1.5" : "p-2")}
+                        title="Archive Record"
+                      >
+                        <Archive className={cn("w-4 h-4", density === 'compact' ? "w-3 h-3" : "w-4 h-4")} />
+                      </button>
+                    )}
+
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -816,12 +987,12 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                   </div>
                 </td>
                 {config.columns.filter(c => visibleColumns.includes(c.key)).map((col, idx) => (
-                  <td key={`td-${col.key}-${idx}`} className={cn("text-text-secondary font-black whitespace-nowrap leading-normal min-w-[120px]", density === 'compact' ? "px-3 py-1.5 text-[11px]" : "px-4 py-4")}>
+                  <td key={`td-${col.key}-${idx}`} className={cn("text-[#1A1C1E] font-medium whitespace-nowrap leading-normal min-w-[120px] h-[40px] py-0", density === 'compact' ? "px-3 text-[11px]" : "px-4")}>
                     {renderEditableCell(record, col)}
                   </td>
                 ))}
               </motion.tr>
-            ))}
+            )))}
           </tbody>
         </table>
       )}
@@ -834,9 +1005,9 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
               layout
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              onClick={() => onRowClick(record)}
+              onClick={(e) => handleRowClickWithActionPrompt(record, e)}
               className={cn(
-                "bg-white dark:bg-surface rounded-2xl p-5 border shadow-sm transition-all cursor-pointer hover:shadow-md",
+                "bg-white dark:bg-surface rounded-lg p-5 border shadow-sm transition-all cursor-pointer hover:shadow-md",
                 selectedIds.has(record.id) ? "border-brand ring-2 ring-brand/20" : "border-slate-200 dark:border-white/10 hover:border-brand/30"
               )}
             >
@@ -861,6 +1032,11 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                   {onEditRecord && (
                     <button onClick={() => onEditRecord(record)} className="p-1.5 text-slate-400 hover:text-brand hover:bg-brand/10 rounded-lg">
                       <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {onArchiveRecord && (
+                    <button onClick={() => onArchiveRecord(record)} className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg">
+                      <Archive className="w-3.5 h-3.5" />
                     </button>
                   )}
                   <button onClick={() => onDeleteRecord(record.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
@@ -899,26 +1075,31 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
               const kanbanRecs = kanbanRecsByGroup[groupName];
               return (
                 <div key={`kanban-${groupName}`} className="flex-shrink-0 w-[320px] flex flex-col gap-4">
-                  <div className="flex items-center justify-between p-3 bg-white dark:bg-surface rounded-xl shadow-sm border border-slate-200 dark:border-white/10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-brand"></div>
-                      <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest">{groupName}</span>
+                  <div className="flex items-center justify-between p-3 bg-slate-900 text-white rounded-lg shadow-md border border-slate-700">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                        {columnLabels[kanbanGroupField] || kanbanGroupField}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#ff6d00] animate-pulse"></div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">{groupName}</span>
+                      </div>
                     </div>
-                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-white/10">
+                    <span className="px-2 py-0.5 bg-white/10 text-white text-[10px] font-bold rounded-md border border-white/10">
                       {kanbanRecs.length}
                     </span>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto space-y-3 min-h-[100px] rounded-xl p-1">
+                  <div className="flex-1 overflow-y-auto space-y-3 min-h-[100px] rounded-lg p-1">
                     {kanbanRecs.map((record, idx) => (
                       <motion.div
                         key={`k-card-${record.id}-${idx}`}
                         layoutId={`kcard-${record.id}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        onClick={() => onRowClick(record)}
+                        onClick={(e) => handleRowClickWithActionPrompt(record, e)}
                         className={cn(
-                          "bg-white dark:bg-surface p-4 rounded-xl border shadow-sm cursor-pointer transition-all hover:shadow-md",
+                          "bg-white dark:bg-surface p-4 rounded-lg border shadow-sm cursor-pointer transition-all hover:shadow-md",
                           selectedIds.has(record.id) ? "border-brand ring-2 ring-brand/20" : "border-slate-200 dark:border-white/10 hover:border-brand/30"
                         )}
                       >
@@ -947,6 +1128,11 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
                           {onEditRecord && (
                             <button onClick={() => onEditRecord(record)} className="p-1 hover:text-brand hover:bg-brand/10 rounded text-slate-400 transition-colors">
                               <Edit2 className="w-3 h-3" />
+                            </button>
+                          )}
+                          {onArchiveRecord && (
+                            <button onClick={() => onArchiveRecord(record)} className="p-1 hover:text-amber-500 hover:bg-amber-50 rounded text-slate-400 transition-colors">
+                              <Archive className="w-3 h-3" />
                             </button>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); handlePrintSingleRecordToDrive(record); }} className="p-1 hover:text-emerald-500 hover:bg-emerald-50 rounded text-slate-400 transition-colors" title="Print to Drive">
@@ -980,9 +1166,8 @@ export const UniversalDataTable: React.FC<UniversalDataTableProps> = ({
       {/* Pagination / Status Bar */}
       <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between text-[11px] font-black text-slate-600 dark:text-white uppercase tracking-widest">
         <div className="flex items-center gap-4">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 px-3 py-1 rounded-full text-brand shadow-sm">
-            {sortedData.length} RECORDS
-          </div>
+          <Database className="w-3.5 h-3.5 text-slate-400" />
+          <span>{data.length} {t('records')}</span>
         </div>
         <div className="flex items-center gap-6">
           <button className="hover:text-brand transition-colors flex items-center gap-2">Previous</button>

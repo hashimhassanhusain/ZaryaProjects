@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Page, Activity, BOQItem, WBSLevel, PurchaseOrder, User, Stakeholder, EntityConfig } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc, doc, query, where, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -42,6 +42,7 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -130,6 +131,20 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const activity = activities.find(a => a.id === id);
+      const isRecordArchived = activity?.status === 'Archived';
+      await updateDoc(doc(db, 'activities', id), {
+        status: isRecordArchived ? 'Planned' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Activity restored' : 'Activity archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'activities');
+    }
+  };
+
   const gridConfig: EntityConfig = {
     id: 'activities' as any,
     label: page.title,
@@ -172,7 +187,10 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
       <div className="flex-1 flex flex-col">
         <UniversalDataTable 
           config={gridConfig}
-          data={activities}
+          data={activities.filter(a => {
+            const isArchived = a.status === 'Archived';
+            return showArchived ? isArchived : !isArchived;
+          })}
           onRowClick={(record) => {
             setEditingActivity(record as Activity);
           }}
@@ -191,6 +209,9 @@ export const ActivityListView: React.FC<ActivityListViewProps> = ({ page }) => {
             } as Activity);
           }}
           onDeleteRecord={handleDelete}
+          onArchiveRecord={handleArchive}
+          showArchived={showArchived}
+          onToggleArchived={() => setShowArchived(!showArchived)}
           title={context?.pageHeader}
           favoriteControl={context?.favoriteControl}
           extraActions={extraActions}

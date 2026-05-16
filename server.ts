@@ -66,7 +66,7 @@ const getDriveClient = () => {
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
     const docs = google.docs({ version: 'v1', auth: oauth2Client });
     lastDriveError = null; // Clear error on success initialization (though we haven't tested connection yet)
-    return { drive, docs, clientEmail: 'OAuth2 Integration' };
+    return { drive, docs, auth: oauth2Client, clientEmail: 'OAuth2 Integration' };
   } catch (e: any) {
     lastDriveError = e.message;
     console.error('CRITICAL Drive Init Error:', e.message);
@@ -305,8 +305,8 @@ function generateProjectCharterPDF(projectName: string, projectCode: string, cha
 async function findOrCreateFolderByPath(drive: any, rootFolderId: string, pathParts: string[]): Promise<string | null> {
   let cleanRootId = (rootFolderId || '').trim();
   if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
-    console.log(`⚠️ [Root ID Protocol] Invalid or legacy Root ID: "${rootFolderId}". Falling back.`);
-    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+    console.log(`⚠️ [Root ID Protocol] Invalid or legacy Root ID: "${rootFolderId}". Returning error.`);
+    return null; // Don't fall back, error out to make it obvious
   }
 
   const fullPathKey = `${cleanRootId}/${pathParts.join('/')}`;
@@ -437,6 +437,106 @@ async function archiveExistingFile(drive: any, folderId: string, fileName: strin
   }
 }
 
+app.post('/api/drive/create-resumable-upload', async (req: any, res: any) => {
+  const { projectRootId, path: drivePath, fileName, mimeType, projectCode, fileSize } = req.body;
+  
+  if (!projectRootId || !fileName || !mimeType || !fileSize) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const { drive, auth, error } = getDriveClient();
+    if (error || !drive || !auth) throw new Error(error || 'Drive client not initialized');
+
+    let cleanRootId = (projectRootId || '').trim();
+    const finalPath = drivePath || '.';
+    const pathParts = finalPath === '.' || finalPath === '/' ? [] : finalPath.split('/').filter((p: string) => p.trim().length > 0);
+    const targetFolderId = await findOrCreateFolderByPath(drive, cleanRootId, pathParts);
+    if (!targetFolderId) throw new Error('Could not traverse or create folder path in Google Drive.');
+
+    try {
+      await archiveExistingFile(drive, targetFolderId, fileName);
+    } catch (e) {}
+
+    // Get an access token
+    const tokenResponse = await auth.getAccessToken();
+    if (!tokenResponse || !tokenResponse.token) throw new Error('Failed to get access token');
+
+    // Initiate resumable upload session
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tokenResponse.token}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': mimeType,
+      },
+      body: JSON.stringify({
+        name: fileName,
+        parents: [targetFolderId],
+        description: `Project: ${projectCode || 'N/A'}`
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google API returned ${response.status}: ${await response.text()}`);
+    }
+
+    const resumableUrl = response.headers.get('location');
+    if (!resumableUrl) throw new Error('No location header returned from Google API');
+
+    res.json({ resumableUrl, targetFolderId });
+  } catch (e: any) {
+    console.error('Error creating resumable upload:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/drive/proxy-resumable-chunk', async (req: any, res: any) => {
+  try {
+    const { resumableUrl, contentRange, base64Data } = req.body;
+    
+    if (!resumableUrl || !contentRange || !base64Data) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { auth, error } = getDriveClient();
+    if (error || !auth) throw new Error('Drive client not initialized');
+
+    const tokenResponse = await auth.getAccessToken();
+    if (!tokenResponse || !tokenResponse.token) throw new Error('Failed to get access token');
+
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const googleRes = await fetch(resumableUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${tokenResponse.token}`,
+        'Content-Range': contentRange,
+        'Content-Length': buffer.length.toString(),
+      },
+      body: buffer
+    });
+
+    const isSuccess = googleRes.status === 200 || googleRes.status === 201;
+    const isResume = googleRes.status === 308;
+
+    if (!isSuccess && !isResume) {
+       throw new Error(`Google Drive API chunk error: ${googleRes.status} - ${await googleRes.text()}`);
+    }
+
+    let data = {};
+    if (isSuccess) {
+       const text = await googleRes.text();
+       data = text ? JSON.parse(text) : {};
+    }
+
+    res.status(googleRes.status).json(data);
+  } catch (e: any) {
+    console.error('Proxy chunk error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // API Routes
 app.post('/api/drive/upload-by-url', async (req: any, res: any) => {
   const { projectRootId, path, projectCode, fileName, mimeType } = req.body;
@@ -463,8 +563,8 @@ app.post('/api/drive/upload-by-url', async (req: any, res: any) => {
   // Root ID Repair Logic: Standardize common project root IDs if they are using the default shared one
   let cleanRootId = (projectRootId || '').trim();
   if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
-    log(`🔧 Standardizing Root ID from "${cleanRootId}" to shared production Root ID or environment var.`);
-    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+    log(`❌ Invalid Root ID: "${cleanRootId}". Must provide a valid project-specific Drive Folder ID.`);
+    return res.status(400).json({ error: 'Invalid or missing project Drive Folder ID. Files must be saved to the project directory.'});
   }
 
   let drivePath = path || '.';
@@ -558,7 +658,7 @@ app.post('/api/drive/upload-by-path', upload.single('file'), async (req: any, re
   
   let cleanRootId = (projectRootId || '').trim();
   if (!cleanRootId || cleanRootId === '.' || cleanRootId === 'undefined' || cleanRootId.toLowerCase().includes('efit1rp')) {
-    cleanRootId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+    return res.status(400).json({ error: 'Invalid or missing project Drive Folder ID. Files must be saved to the project directory.'});
   }
 
   let drivePath = path || '.';

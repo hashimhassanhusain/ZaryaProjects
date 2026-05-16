@@ -89,6 +89,7 @@ export const StakeholdersHubView: React.FC<StakeholdersHubViewProps> = ({ page }
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as TabType)}
+        isCompactMode={activeTab === 'overview'}
       />
 
       {/* Tab Content */}

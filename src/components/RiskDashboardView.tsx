@@ -43,7 +43,7 @@ interface RiskDashboardViewProps {
 
 export const RiskDashboardView: React.FC<RiskDashboardViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
-  const { formatCurrency } = useCurrency();
+  const { formatAmount: formatCurrency } = useCurrency();
   const [risks, setRisks] = useState<Risk[]>([]);
 
   useEffect(() => {

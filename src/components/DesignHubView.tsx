@@ -18,7 +18,8 @@ import {
   Image as ImageIcon,
   HardDrive,
   Loader2,
-  X
+  X,
+  Folder
 } from "lucide-react";
 import { Page } from "../types";
 import { useProject } from "../context/ProjectContext";
@@ -116,6 +117,7 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   // Deletion Confirmation State
   const [fileToDelete, setFileToDelete] = useState<DesignFile | null>(null);
@@ -296,7 +298,8 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
         // 2. Google Drive Sync (via Buffer URL to bypass 10MB limit)
       let driveFileId = "";
       try {
-        const ROOT_FOLDER_ID = selectedProject.driveFolderId || process.env.VITE_GOOGLE_DRIVE_PARENT_FOLDER_ID || '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+        if (!selectedProject?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+        const ROOT_FOLDER_ID = selectedProject.driveFolderId;
         
         const drivePath = "."; // Export to root since trees are ignored
         console.log(`📡 [Project Sync] Initiating Drive Upload-by-URL protocol: ${drivePath}`);
@@ -496,6 +499,20 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const design = designs.find((d) => d.id === id);
+      const isArchived = design?.status === "Archived";
+      await updateDoc(doc(db, "project_designs", id), {
+        status: isArchived ? "Pending" : "Archived",
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success(isArchived ? "Design restored" : "Design archived");
+    } catch (err) {
+      toast.error("Failed to archive design");
+    }
+  };
+
   const handleApprove = async (id: string) => {
     try {
       await updateDoc(doc(db, "project_designs", id), {
@@ -560,7 +577,11 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
     const matchesSearch =
       d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesDisc && matchesSub && matchesSearch;
+    
+    const isArchived = d.status === "Archived";
+    const matchesArchive = showArchived ? isArchived : !isArchived;
+
+    return matchesType && matchesDisc && matchesSub && matchesSearch && matchesArchive;
   });
 
   const handleDownload = (file: DesignFile) => {
@@ -624,6 +645,10 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
                         <Clock className="w-3 h-3" />
                         {new Date(record.uploadedAt).toLocaleDateString()}
                       </span>
+                      <span className="text-[9px] font-mono text-slate-500 flex items-center gap-1">
+                        <Folder className="w-3 h-3" />
+                        Root
+                      </span>
                     </div>
                   </div>
                 )
@@ -647,6 +672,9 @@ export const DesignHubView: React.FC<DesignHubViewProps> = ({ page }) => {
               setShowDeleteConfirm(true);
             }
           }}
+          onArchiveRecord={handleArchive}
+          showArchived={showArchived}
+          onToggleArchived={() => setShowArchived(!showArchived)}
           primaryAction={{
             label: t('upload_asset') || 'UPLOAD ASSET',
             icon: Upload,

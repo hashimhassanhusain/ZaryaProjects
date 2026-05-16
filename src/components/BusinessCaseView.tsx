@@ -87,6 +87,7 @@ export const BusinessCaseView: React.FC<BusinessCaseViewProps> = ({ page, embedd
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [businessCase, setBusinessCase] = useState<BusinessCaseData>({
     projectTitle: '',
@@ -106,6 +107,8 @@ export const BusinessCaseView: React.FC<BusinessCaseViewProps> = ({ page, embedd
     paybackPeriod: '',
     recommendation: ''
   });
+
+  const isArchivedState = (businessCase as any).status === 'Archived';
 
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,6 +205,20 @@ export const BusinessCaseView: React.FC<BusinessCaseViewProps> = ({ page, embedd
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const record = records.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'business_cases', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Case restored' : 'Case archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'business_cases');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject) return;
     const docObj = new jsPDF('p', 'mm', 'a4');
@@ -268,10 +285,16 @@ export const BusinessCaseView: React.FC<BusinessCaseViewProps> = ({ page, embedd
             <motion.div key="grid" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
               <UniversalDataTable 
                 config={gridConfig} 
-                data={records} 
+                data={records.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })} 
                 onRowClick={(r) => { setSelectedRecordId(r.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (

@@ -60,7 +60,7 @@ const getWbsIcon = (type: string, size: string = "w-3.5 h-3.5", name: string = "
   const n = name.toLowerCase();
   
   if (type === 'Division' || type === 'Cost Account') {
-    if (n.includes('concrete')) return <Boxes className={cn(size, "text-orange-900 mr-2")} />;
+    if (n.includes('concrete')) return <Boxes className={cn(size, "text-slate-900 mr-2")} />;
     if (n.includes('electrical')) return <Zap className={cn(size, "text-yellow-500 mr-2")} />;
     if (n.includes('mechanical')) return <Cog className={cn(size, "text-blue-600 mr-2")} />;
     if (n.includes('plumbing') || n.includes('sanitary')) return <Droplets className={cn(size, "text-sky-500 mr-2")} />;

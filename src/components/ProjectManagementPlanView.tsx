@@ -104,7 +104,8 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [pmp, setPmp] = useState<PMPData>({
     projectTitle: '',
@@ -177,7 +178,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
         },
         projectReviews: 'Monthly Progress Reviews'
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = pmpRecords.find(r => r.id === selectedRecordId);
        if (record) {
@@ -185,7 +186,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
            ...pmp,
            ...record
          });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, pmpRecords, selectedProject]);
@@ -247,6 +248,20 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
       toast.success(t('pmp_deleted_success') || 'PMP deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'projectManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = pmpRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'projectManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'projectManagementPlans');
     }
   };
 
@@ -328,7 +343,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
         setViewMode('edit');
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
        <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -342,7 +357,10 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={pmpRecords}
+                data={pmpRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => {
                   setSelectedRecordId(record.id);
                   setViewMode('edit');
@@ -352,6 +370,9 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
@@ -372,17 +393,17 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                  </button>
               </div>
 
-              {isArchived && (
+              {isArchivedState && (
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
                   <Clock className="w-5 h-5 text-amber-500" />
                   <div>
-                    <h4 className="text-sm font-bold text-amber-900 leading-none">Archived Snapshot</h4>
+                    <h4 className="text-sm font-bold text-slate-900 leading-none">Archived Snapshot</h4>
                     <p className="text-xs text-amber-600 mt-1 font-medium">This is a historical record and cannot be edited. Create a new version to make changes.</p>
                   </div>
                 </div>
               )}
 
-              <fieldset disabled={isArchived} className="space-y-6">
+              <fieldset disabled={isArchivedState} className="space-y-6">
                 <section className="space-y-4">
                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -409,7 +430,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Project Life Cycle Phases</h3>
-                           {!isArchived && (
+                           {!isArchivedState && (
                              <button onClick={() => setPmp({...pmp, lifeCycle: [...pmp.lifeCycle, { id: Date.now().toString(), phase: '', deliverables: '' }]})} className="p-1.5 bg-slate-900 text-white rounded-lg">
                                <Plus className="w-3.5 h-3.5" />
                              </button>
@@ -418,7 +439,7 @@ export const ProjectManagementPlanView: React.FC<ProjectManagementPlanViewProps>
                         <div className="space-y-3">
                            {pmp.lifeCycle.map((l, idx) => (
                              <div key={`${l.id}-${idx}`} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl relative group">
-                                {!isArchived && (
+                                {!isArchivedState && (
                                   <button 
                                     onClick={() => setPmp({...pmp, lifeCycle: pmp.lifeCycle.filter(item => item.id !== l.id)})}
                                     className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"

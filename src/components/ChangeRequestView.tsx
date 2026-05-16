@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -27,7 +27,8 @@ import {
   DollarSign,
   Box,
   LayoutDashboard,
-  Shield
+  Shield,
+  GitBranch
 } from 'lucide-react';
 import { Page, Stakeholder, Project, EntityConfig } from '../types';
 import { toast } from 'react-hot-toast';
@@ -58,6 +59,7 @@ import { UniversalDataTable } from './common/UniversalDataTable';
 
 interface ChangeRequestViewProps {
   page: Page;
+  costCenterId?: string | null;
 }
 
 interface ChangeRequest {
@@ -119,7 +121,7 @@ interface ChangeRequestVersion {
   data: ChangeRequest;
 }
 
-export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) => {
+export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page, costCenterId }) => {
   const { selectedProject } = useProject();
   const { t, isRtl } = useLanguage();
   const [entries, setEntries] = useState<ChangeRequest[]>([]);
@@ -130,7 +132,28 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
+
+  // Filtered entries based on costCenterId
+  const filteredEntries = useMemo(() => {
+    let result = entries;
+    if (costCenterId) {
+      result = result.filter(e => {
+        const cc = (e as any).costCenterId || (e as any).costAccount;
+        return cc === costCenterId || (cc && String(cc).startsWith(costCenterId + ' '));
+      });
+    }
+    if (searchQuery) {
+        result = result.filter(e => e.requestId.toLowerCase().includes(searchQuery.toLowerCase()) || e.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    // Archive filtering
+    result = result.filter(e => {
+      const isArchived = (e as any).archived || false;
+      return showArchived ? isArchived : !isArchived;
+    });
+    return result;
+  }, [entries, costCenterId, searchQuery, showArchived]);
 
   const [formData, setFormData] = useState<Partial<ChangeRequest>>({
     requestId: '',
@@ -265,6 +288,20 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
         </div>
       </div>
     ), { duration: 5000 });
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const entry = entries.find(e => e.id === id);
+      const isArchived = (entry as any)?.archived || false;
+      await updateDoc(doc(db, 'change_requests', id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Record archived' : 'Record restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'change_requests');
+    }
   };
 
   const calculateTotal = (summary: any) => {
@@ -880,10 +917,28 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={entries}
+              data={filteredEntries}
               onRowClick={(record) => handleEdit(record as ChangeRequest)}
               onNewClick={handleAdd}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
+              title={
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-brand/10 flex items-center justify-center">
+                    <GitBranch className="w-5 h-5 text-brand" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">
+                      {isRtl ? 'سجل طلبات التغيير' : 'Change Registry'}
+                    </h2>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                      {isRtl ? 'إدارة واعتماد أوامر التغيير والمطالبات' : 'Manage and track project change requests & claims'}
+                    </p>
+                  </div>
+                </div>
+              }
             />
           </motion.div>
         )}
@@ -891,12 +946,17 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
 
       <AnimatePresence>
         {showPrompt && (
-          <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
+          >
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[95%]"
             >
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
@@ -924,7 +984,7 @@ export const ChangeRequestView: React.FC<ChangeRequestViewProps> = ({ page }) =>
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </StandardProcessPage>

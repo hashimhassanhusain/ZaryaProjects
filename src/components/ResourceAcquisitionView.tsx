@@ -33,7 +33,7 @@ interface ResourceAcquisitionViewProps {
 
 export const ResourceAcquisitionView: React.FC<ResourceAcquisitionViewProps> = ({ page }) => {
   const { selectedProject } = useProject();
-  const { formatCurrency } = useCurrency();
+  const { formatAmount: formatCurrency } = useCurrency();
   const [resources, setResources] = useState<Resource[]>([]);
   const [tasks, setTasks] = useState<{id: string, title: string}[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);

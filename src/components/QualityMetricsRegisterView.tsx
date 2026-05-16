@@ -79,6 +79,9 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [editingMetric, setEditingMetric] = useState<Partial<QualityMetricEntry> | null>(null);
   const [showPrompt, setShowPrompt] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const isArchivedState = editingMetric?.status === 'Archived';
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -185,6 +188,20 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
     }
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const metric = metrics.find(m => m.id === id);
+      const isRecordArchived = metric?.status === 'Archived';
+      await updateDoc(doc(db, 'quality_metrics', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Metric restored' : 'Metric archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'quality_metrics');
+    }
+  };
+
   const generatePDF = () => {
     if (!selectedProject) return;
     const pdfDoc = new jsPDF('p', 'mm', 'a4');
@@ -265,13 +282,19 @@ export const QualityMetricsRegisterView: React.FC<QualityMetricsRegisterViewProp
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={metrics}
+              data={metrics.filter(m => {
+                const isArchived = m.status === 'Archived';
+                return showArchived ? isArchived : !isArchived;
+              })}
               onRowClick={(record) => {
                 setEditingMetric(record as QualityMetricEntry);
                 setViewMode('edit');
               }}
               onNewClick={handleAddNew}
               onDeleteRecord={handleDeleteMetric}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={useStandardProcessPage()?.pageHeader}
               favoriteControl={useStandardProcessPage()?.favoriteControl}
             />

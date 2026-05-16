@@ -4,8 +4,9 @@ import { X, Calendar, User, History, Sparkles } from 'lucide-react';
 import { Task, TaskStatus, User as UserType } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { handleFirestoreError, OperationType, db, auth } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { SearchableSelect } from './common/SearchableSelect';
+import { toast } from 'react-hot-toast';
 
 interface TaskDetailPanelProps {
   task: Task;
@@ -136,6 +137,22 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                             onChange={(id, name) => {
                                 onUpdate('supplierId', id);
                                 onUpdate('supplierName', name);
+                            }}
+                            onAddClick={async () => {
+                              const name = window.prompt('Enter New Supplier Name:');
+                              if (name) {
+                                try {
+                                  await addDoc(collection(db, 'suppliers'), {
+                                    name,
+                                    status: 'Active',
+                                    createdAt: serverTimestamp()
+                                  });
+                                  toast.success('Supplier added. Please re-open the dropdown.');
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error('Failed to add supplier');
+                                }
+                              }
                             }}
                             placeholder="Select Vendor..."
                         />

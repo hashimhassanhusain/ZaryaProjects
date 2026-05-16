@@ -17,21 +17,14 @@ export const LeftRibbonBar: React.FC = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: isRtl ? -20 : -20 }}
+      initial={{ opacity: 0, x: isRtl ? 20 : -20 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        "fixed top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2 p-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-neutral-200 dark:border-white/10 rounded-2xl shadow-2xl",
-        "left-4"
+        "fixed top-[20%] z-40 flex flex-col gap-0.5",
+        "left-0"
       )}
     >
-      <div className="absolute -top-7 left-0 right-0 text-center">
-        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-text-primary dark:text-neutral-200 whitespace-nowrap bg-white/60 px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/40 shadow-sm">
-          {language === 'ar' ? 'المدخلات التشغيلية' : 'OPERATIONAL INPUTS'}
-        </span>
-      </div>
-      
-      {inputs.map((input) => {
-        const Icon = input.icon;
+      {inputs.map((input, idx) => {
         const isActive = activeInputId === input.id;
         
         return (
@@ -39,26 +32,20 @@ export const LeftRibbonBar: React.FC = () => {
             <button
               onClick={() => openInput(input.id)}
               className={cn(
-                "w-18 h-18 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1 border-b-2",
+                "page-divider-tab-left transition-all duration-300 flex items-center gap-2",
                 isActive 
-                  ? "bg-brand text-white shadow-xl shadow-brand/30 scale-105 border-brand-secondary" 
-                  : "bg-app-bg dark:bg-white/5 text-text-secondary dark:text-neutral-400 hover:bg-brand/5 hover:text-brand hover:scale-105 border-transparent hover:border-brand/30"
+                  ? "bg-slate-700 text-[#ff6d00] shadow-lg z-10" 
+                  : "bg-slate-300 text-slate-600 hover:bg-slate-400 hover:text-slate-900"
               )}
+              style={{ 
+                marginTop: idx > 0 ? '-8px' : '0',
+                zIndex: isActive ? 20 : 10 - idx
+              }}
             >
-              <Icon className="w-5 h-5 mb-1" strokeWidth={2.5} />
-              <span className={cn(
-                "text-[9px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
-                isActive ? "text-white" : "text-text-primary dark:text-neutral-200 group-hover:text-brand"
-              )}>
+              {input.icon && <input.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-[#ff6d00]" : "text-slate-500 opacity-60")} />}
+              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
                 {language === 'ar' ? input.nameAr : input.name}
               </span>
-              
-              {isActive && (
-                <motion.div 
-                  layoutId="active-input-glow"
-                  className="absolute inset-0 bg-white/20 blur-md pointer-events-none"
-                />
-              )}
             </button>
 
             <div className={cn(

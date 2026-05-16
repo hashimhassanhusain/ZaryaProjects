@@ -148,20 +148,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ page, overrideChil
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm group hover:border-brand/30 transition-all hover:shadow-xl hover:shadow-brand/5 border-b-4"
+                    className="sticky-note group"
                   >
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex justify-between items-start mb-4">
                       <div className={cn(
-                        "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                        loc.type === 'Zone' ? "bg-purple-50 text-purple-600" :
+                        "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                        loc.type === 'Zone' ? "bg-purple-100 text-purple-600" :
                         loc.type === 'Building' ? "bg-brand/10 text-brand" :
-                        "bg-amber-50 text-amber-600"
+                        "bg-amber-100 text-amber-600"
                       )}>
                         {t(loc.type.toLowerCase())}
                       </div>
                     </div>
-                    <div className="text-lg font-black text-text-primary mb-2 group-hover:text-brand transition-colors uppercase italic tracking-tighter">{loc.title}</div>
-                    <div className="text-sm font-bold text-emerald-600 font-mono tracking-tight">{formatAmount(loc.total, 'IQD')}</div>
+                    <div>
+                      <div className="text-sm font-black text-slate-900 group-hover:text-brand transition-colors uppercase italic tracking-tighter line-clamp-1 mb-1">{loc.title}</div>
+                      <div className="text-xs font-black text-emerald-600 font-mono tracking-tight">{formatAmount(loc.total, 'IQD')}</div>
+                    </div>
                   </motion.div>
                 ))}
               </div>

@@ -94,7 +94,8 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [hrmp, setHrmp] = useState<HRMPData>({
     projectTitle: '',
@@ -150,12 +151,12 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
         policyCompliance: 'Global Ethics & Regional Labor Laws',
         safety: 'Zero-Harm Policy Enforcement'
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setHrmp({ ...hrmp, ...record });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -211,10 +212,24 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('confirm_delete'))) return;
     try {
-      await deleteDoc(doc(db, 'humanResourceManagementPlans', id));
+      await deleteDoc(doc(db, 'resourceManagementPlans', id));
       toast.success(t('hr_plan_deleted_success') || 'HR Management Plan deleted successfully');
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'humanResourceManagementPlans');
+      handleFirestoreError(err, OperationType.DELETE, 'resourceManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = planRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'resourceManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'resourceManagementPlans');
     }
   };
 
@@ -292,7 +307,7 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
         }
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
        <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -306,7 +321,10 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
             >
               <UniversalDataTable 
                 config={gridConfig}
-                data={planRecords}
+                data={planRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => {
                   setSelectedRecordId(record.id);
                   setViewMode('edit');
@@ -316,6 +334,9 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
                   setViewMode('edit');
                 }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
@@ -327,7 +348,7 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
               className="space-y-6 pb-20"
             >
               <div className="bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm space-y-12 relative overflow-hidden">
-                {isArchived && (
+                {isArchivedState && (
                   <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
                      <ShieldCheck className="w-4 h-4" /> ARCHIVED RESOURCE CALENDAR SNAPSHOT V{hrmp.version}
                   </div>
@@ -341,7 +362,7 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
                         type="date"
                         value={hrmp.datePrepared}
                         onChange={(e) => setHrmp({ ...hrmp, datePrepared: e.target.value })}
-                        disabled={isArchived}
+                        disabled={isArchivedState}
                         className="w-full px-6 py-5 bg-slate-50/50 border border-slate-100 rounded-2xl text-base font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all disabled:opacity-50"
                       />
                     </div>
@@ -374,7 +395,7 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
                           <textarea 
                             value={(hrmp as any)[field.key]} 
                             onChange={(e) => setHrmp({...hrmp, [field.key]: e.target.value})} 
-                            disabled={isArchived}
+                            disabled={isArchivedState}
                             className="w-full h-32 px-6 py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm leading-relaxed font-bold text-slate-700 outline-none focus:bg-white focus:shadow-2xl focus:shadow-slate-200/50 focus:border-indigo-200 transition-all disabled:opacity-50 resize-none px-6"
                             placeholder={`Define ${field.title.toLowerCase()}...`}
                           />
@@ -395,7 +416,7 @@ export const ResourceManagementPlanView: React.FC<ResourceManagementPlanViewProp
                      <textarea 
                        value={hrmp.orgStructurePlaceholder}
                        onChange={(e) => setHrmp({ ...hrmp, orgStructurePlaceholder: e.target.value })}
-                       disabled={isArchived}
+                       disabled={isArchivedState}
                        className="w-full h-40 px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-sm leading-relaxed font-medium outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all disabled:opacity-50 resize-none text-slate-500 italic"
                      />
                   </div>

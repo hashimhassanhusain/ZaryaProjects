@@ -58,7 +58,8 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [commPlan, setCommPlan] = useState<CommPlanData>({
     projectTitle: '',
@@ -103,12 +104,12 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
         constraints: 'Time zone differences (UTC-5 to UTC+3)',
         glossary: 'PMIS: Project Management Info System'
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setCommPlan({ ...commPlan, ...record });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -168,6 +169,20 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
       toast.success('Plan deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'communicationsManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = planRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'communicationsManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'communicationsManagementPlans');
     }
   };
 
@@ -250,7 +265,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
         }
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -258,16 +273,22 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
             <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
-                data={planRecords}
+                data={planRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
             <motion.div key="edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 pb-20">
               <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm space-y-12 relative overflow-hidden">
-                {isArchived && (
+                {isArchivedState && (
                   <div className="absolute top-0 left-0 right-0 bg-amber-500/10 border-b border-amber-500/20 py-4 px-8 flex items-center gap-3 z-10 font-bold uppercase text-[10px] text-amber-600 tracking-widest leading-none">
                      <ShieldCheck className="w-4 h-4" /> ARCHIVED COMMUNICATIONS SNAPSHOT V{commPlan.version}
                   </div>
@@ -281,7 +302,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                           type="date" 
                           value={getISODate(commPlan.datePrepared)} 
                           onChange={(e) => setCommPlan({ ...commPlan, datePrepared: e.target.value })} 
-                          disabled={isArchived}
+                          disabled={isArchivedState}
                           className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 transition-all text-slate-600"
                         />
                      </div>
@@ -304,7 +325,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                             <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Multi-Channel Stakeholder Routing</p>
                           </div>
                        </div>
-                       {!isArchived && (
+                       {!isArchivedState && (
                           <button 
                             onClick={handleAddMatrixRow}
                             className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all group shadow-lg shadow-indigo-500/5"
@@ -325,7 +346,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                                     type="text" 
                                     value={row.stakeholderName} 
                                     onChange={(e) => handleMatrixChange(row.id, 'stakeholderName', e.target.value)} 
-                                    disabled={isArchived}
+                                    disabled={isArchivedState}
                                     placeholder="Target Stakeholder"
                                     className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all"
                                   />
@@ -336,7 +357,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                                     type="text" 
                                     value={row.information} 
                                     onChange={(e) => handleMatrixChange(row.id, 'information', e.target.value)} 
-                                    disabled={isArchived}
+                                    disabled={isArchivedState}
                                     placeholder="Type of communication content"
                                     className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all"
                                   />
@@ -348,7 +369,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                                        type="text" 
                                        value={row.method} 
                                        onChange={(e) => handleMatrixChange(row.id, 'method', e.target.value)} 
-                                       disabled={isArchived}
+                                       disabled={isArchivedState}
                                        placeholder="e.g. Email"
                                        className="w-full bg-white px-3 py-3 rounded-xl text-xs font-bold border border-slate-100 outline-none"
                                      />
@@ -356,7 +377,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                                        type="text" 
                                        value={row.frequency} 
                                        onChange={(e) => handleMatrixChange(row.id, 'frequency', e.target.value)} 
-                                       disabled={isArchived}
+                                       disabled={isArchivedState}
                                        placeholder="Daily"
                                        className="w-full bg-white px-3 py-3 rounded-xl text-xs font-bold border border-slate-100 outline-none"
                                      />
@@ -369,11 +390,11 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                                        type="text" 
                                        value={row.sender} 
                                        onChange={(e) => handleMatrixChange(row.id, 'sender', e.target.value)} 
-                                       disabled={isArchived}
+                                       disabled={isArchivedState}
                                        placeholder="Role/Owner"
                                        className="w-full bg-white px-4 py-3 rounded-xl text-sm font-bold border border-slate-100 outline-none"
                                      />
-                                     {!isArchived && (
+                                     {!isArchivedState && (
                                        <button 
                                          onClick={() => handleRemoveMatrixRow(row.id)}
                                          className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
@@ -403,7 +424,7 @@ export const CommunicationsManagementPlanView: React.FC<CommunicationsManagement
                           <textarea 
                             value={(commPlan as any)[field.key]} 
                             onChange={(e) => setCommPlan({...commPlan, [field.key]: e.target.value})} 
-                            disabled={isArchived}
+                            disabled={isArchivedState}
                             className="w-full h-40 px-6 py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm leading-relaxed font-medium text-slate-600 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-200 transition-all disabled:opacity-50 resize-none"
                             placeholder={`Define ${field.label.toLowerCase()}...`}
                           />

@@ -820,7 +820,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ page }) => {
         }
         
         // 1. Upload to Firebase Storage first (buffer)
-        const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+        if (!selectedProject?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+        const ROOT_FOLDER_ID = selectedProject.driveFolderId;
         const storageRef = ref(storage, `buffer/${selectedProject.id}/${Date.now()}_${fileName}`);
         const uploadResult = await uploadBytes(storageRef, pdfBlob);
         const downloadUrl = await getDownloadURL(uploadResult.ref);

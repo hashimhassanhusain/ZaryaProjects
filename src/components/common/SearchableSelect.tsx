@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search, Check } from 'lucide-react';
+import { ChevronDown, Search, Check, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -16,10 +16,11 @@ interface SearchableSelectProps {
   valueIsName?: boolean; // If true, value is matched against name, else id
   className?: string;
   disabled?: boolean;
+  onAddClick?: () => void;
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
-  options, value, onChange, placeholder = "Select...", valueIsName = false, className, disabled
+  options, value, onChange, placeholder = "Select...", valueIsName = false, className, disabled, onAddClick
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -65,17 +66,31 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             exit={{ opacity: 0, y: -10 }}
             className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden"
           >
-            <div className="p-2 border-b border-slate-50/50 relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-8 pr-4 py-2 bg-slate-50 rounded-xl text-xs font-bold outline-none focus:bg-slate-100 transition-colors"
-                onClick={e => e.stopPropagation()}
-              />
+            <div className="p-2 border-b border-slate-50/50 relative flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full pl-8 pr-4 py-2 bg-slate-50 rounded-xl text-xs font-bold outline-none focus:bg-slate-100 transition-colors"
+                  onClick={e => e.stopPropagation()}
+                />
+              </div>
+              {onAddClick && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddClick();
+                  }}
+                  className="p-1 px-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  title="Add New"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
             </div>
             
             <div className="max-h-60 overflow-y-auto p-1">

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Page, EntityConfig, Project } from '../types';
 import { pages } from '../data';
 import { cn, stripNumericPrefix } from '../lib/utils';
-import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface StandardProcessPageContextType {
@@ -41,7 +41,11 @@ import {
   X,
   Plus,
   ChevronDown,
-  Upload
+  Upload,
+  LayoutDashboard,
+  FolderOpen,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -126,22 +130,21 @@ const QuickViewModal: React.FC<{
     }
   }, [isOpen, id, selectedProject]);
 
-  return createPortal(
+  return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]"
+            onClick={e => e.stopPropagation()}
           >
                <div className="px-4 py-2.5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
                <div className="flex items-center gap-3">
@@ -222,10 +225,9 @@ const QuickViewModal: React.FC<{
                </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 };
 
@@ -254,12 +256,19 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
   drivePathOverride,
   customFileName,
   onUploadSuccess: onUploadSuccessProp,
-  onSync
+  onSync,
+  onArchiveRecord,
+  showArchived: showArchivedProp,
+  onToggleArchived
 }) => {
   const { t, th, language, isRtl } = useLanguage();
   const navigate = useNavigate();
   const { selectedProject } = useProject();
   const { setActiveOutput } = useProjectTools();
+
+  const [internalShowArchived, setInternalShowArchived] = useState(false);
+  const showArchived = showArchivedProp !== undefined ? showArchivedProp : internalShowArchived;
+  const toggleArchived = onToggleArchived || (() => setInternalShowArchived(!internalShowArchived));
 
   useEffect(() => {
     // Map page IDs to Tool Output IDs
@@ -326,8 +335,12 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
       const q = query(collection(db, collectionName), where('projectId', '==', selectedProject.id));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setGridData(data);
-        if (data.length === 0) {
+        // Filter based on isArchived field if present
+        const filteredData = data.filter((item: any) => 
+          showArchived ? item.isArchived === true : !item.isArchived
+        );
+        setGridData(filteredData);
+        if (data.length === 0 && !showArchived) {
           setViewMode('edit');
         }
       });
@@ -335,7 +348,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
     } else if (!collectionName && !controlledViewMode) {
       setViewMode('edit');
     }
-  }, [collectionName, selectedProject, viewMode, controlledViewMode]);
+  }, [collectionName, selectedProject, viewMode, controlledViewMode, showArchived]);
 
   useEffect(() => {
     const saved = localStorage.getItem('pmis_favorites');
@@ -401,8 +414,9 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         <div className={cn("flex items-center gap-2 mb-2", isRtl && "flex-row-reverse")}>
           <button 
             onClick={() => navigate('/')}
-            className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+            className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
           >
+            <LayoutDashboard className="w-3 h-3" />
             {t('performance_domains')}
           </button>
           
@@ -411,8 +425,9 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
               <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
               <button 
                 onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${grandParentPage.id}` : `/page/${grandParentPage.id}`)}
-                className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+                className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
               >
+                <FolderOpen className="w-3 h-3" />
                 {stripNumericPrefix(grandParentTitle)}
               </button>
             </>
@@ -423,20 +438,23 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
               <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
               <button 
                 onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${parentPage.id}` : `/page/${parentPage.id}`)}
-                className="text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
+                className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand transition-colors uppercase tracking-widest cursor-pointer"
               >
+                <Layers className="w-3 h-3" />
                 {stripNumericPrefix(parentTitle)}
               </button>
             </>
           )}
 
           <ArrowRight className={cn("w-3 h-3 text-slate-300", isRtl && "rotate-180")} />
-          <span className="text-[10px] font-black text-brand uppercase tracking-widest">
+          <span className="flex items-center gap-1.5 text-[10px] font-black text-brand uppercase tracking-widest">
+            <FileText className="w-3 h-3" />
             {stripNumericPrefix(displayTitle)}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-brand" />
           <h1 className="text-sm md:text-lg font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">
             {parentPage && (
               <span className="opacity-30">{stripNumericPrefix(parentTitle)} <span className="mx-1 italic font-light">›</span> </span>
@@ -504,7 +522,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
           <section className="col-span-12 space-y-4 flex flex-col">
             <div className={cn("flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[700px] print:border-none relative", embedded && "rounded-none border-none shadow-none min-h-0")}>
-               <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
+               <div className="flex-1 relative flex flex-col min-h-0 overflow-y-auto">
                   {!embedded && (viewMode !== 'grid' || !collectionName) && (
                     <div className="shrink-0 border-b border-slate-100 dark:border-white/5">
                       {pageHeader}
@@ -540,6 +558,19 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                               }
                             }
                           }}
+                          onArchiveRecord={onArchiveRecord || (async (row) => {
+                            if (collectionName) {
+                              try {
+                                const currentStatus = row.isArchived || false;
+                                await updateDoc(doc(db, collectionName, row.id), { isArchived: !currentStatus });
+                                toast.success(currentStatus ? 'Restored from archive' : 'Archived successfully');
+                              } catch (err) {
+                                toast.error('Failed to update archive status');
+                              }
+                            }
+                          })}
+                          showArchived={showArchived}
+                          onToggleArchived={toggleArchived}
                           favoriteControl={favoriteControl}
                           showAddButton={true}
                           title={stripNumericPrefix(displayTitle)}
@@ -592,40 +623,6 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                               {/* HUB DASHBOARD VIEW */}
                               {page.type === 'hub' && (
                                 <div className="space-y-8">
-                                  {/* Hub Summary Cards */}
-                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-4">
-                                     <div className="p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm space-y-6 border-b-4">
-                                        <div className="flex items-center gap-3 text-text-secondary opacity-40">
-                                           <CheckCircle2 className="w-4 h-4" />
-                                           <span className="text-[10px] font-black uppercase tracking-widest">{t('compliance')}</span>
-                                        </div>
-                                        <div className="text-3xl font-black text-text-primary dark:text-white uppercase italic tracking-tighter">94.2%</div>
-                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                           <div className="h-full bg-brand w-[94%]" />
-                                        </div>
-                                     </div>
-
-                                     <div className="p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm space-y-6 border-b-4">
-                                        <div className="flex items-center gap-3 text-text-secondary opacity-40">
-                                           <Loader2 className="w-4 h-4 text-brand" />
-                                           <span className="text-[10px] font-black uppercase tracking-widest">{t('in_progress')}</span>
-                                        </div>
-                                        <div className="text-3xl font-black text-text-primary dark:text-white italic tracking-tighter">{pages.filter(p => p.parentId === page.id).length}</div>
-                                        <div className="text-[9px] font-bold text-brand uppercase tracking-widest italic">{t('active_tools')}</div>
-                                     </div>
-
-                                     <div className="col-span-2 bg-text-primary p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex items-center justify-between border-b-4 border-brand">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16" />
-                                        <div className="relative z-10 space-y-2">
-                                           <h4 className="text-white/40 text-[9px] font-black uppercase tracking-[0.3em]">{t('domain_performance')}</h4>
-                                           <div className="text-4xl font-black text-white italic tracking-tighter">Gold Standard</div>
-                                        </div>
-                                        <div className="w-24 h-12 bg-white/10 rounded-xl backdrop-blur-sm flex items-center justify-center">
-                                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                                        </div>
-                                     </div>
-                                  </div>
-
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8">
                                     {pages
                                       .filter(p => p.parentId === page.id || (p.domain === page.domain && p.focusArea === page.focusArea && p.id !== page.id && !p.parentId))
@@ -636,7 +633,7 @@ export const StandardProcessPage: React.FC<StandardProcessPageProps> = ({
                                           animate={{ opacity: 1, y: 0 }}
                                           transition={{ delay: 0.05 * childIdx }}
                                           onClick={() => navigate(selectedProject ? `/project/${selectedProject.id}/page/${childPage.id}` : `/page/${childPage.id}`)}
-                                          className="group p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] shadow-sm hover:border-brand/40 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border-b-4 hover:border-brand"
+                                          className="group p-8 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-lg shadow-sm hover:border-brand/40 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border-b-4 hover:border-brand"
                                         >
                                           <div className="flex items-start justify-between mb-8">
                                             <div className="w-12 h-12 bg-app-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-text-secondary group-hover:bg-text-primary group-hover:text-white transition-colors">

@@ -17,21 +17,14 @@ export const RightRibbonBar: React.FC = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: isRtl ? 20 : 20 }}
+      initial={{ opacity: 0, x: isRtl ? -20 : 20 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        "fixed top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2 p-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-neutral-200 dark:border-white/10 rounded-2xl shadow-2xl",
-        "right-4"
+        "fixed top-[30%] z-40 flex flex-col gap-0.5",
+        "right-0"
       )}
     >
-      <div className="absolute -top-6 left-0 right-0 text-center">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-900 dark:text-neutral-200 whitespace-nowrap">
-          {language === 'ar' ? 'الأدوات والأساليب' : 'Tools & Techniques'}
-        </span>
-      </div>
-      
-      {tools.map((tool) => {
-        const Icon = tool.icon;
+      {tools.map((tool, idx) => {
         const isActive = activeToolId === tool.id;
         
         return (
@@ -39,26 +32,20 @@ export const RightRibbonBar: React.FC = () => {
             <button
               onClick={() => openTool(tool.id)}
               className={cn(
-                "w-18 h-18 rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden p-1",
+                "page-divider-tab-right transition-all duration-300 flex items-center gap-2",
                 isActive 
-                  ? "bg-brand text-white shadow-lg shadow-brand/20 scale-105" 
-                  : "bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 hover:bg-brand/10 hover:text-brand hover:scale-105"
+                  ? "bg-slate-700 text-[#ff6d00] shadow-lg z-10" 
+                  : "bg-slate-300 text-slate-600 hover:bg-slate-400 hover:text-slate-900"
               )}
+              style={{ 
+                marginTop: idx > 0 ? '-8px' : '0',
+                zIndex: isActive ? 20 : 10 - idx
+              }}
             >
-              <Icon className="w-5 h-5 mb-1" strokeWidth={2.5} />
-              <span className={cn(
-                "text-[9px] font-black uppercase text-center leading-[1.1] px-0.5 line-clamp-2 transition-colors",
-                isActive ? "text-white" : "text-neutral-900 dark:text-neutral-200 group-hover:text-brand"
-              )}>
+              {tool.icon && <tool.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-[#ff6d00]" : "text-slate-500 opacity-60")} />}
+              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
                 {language === 'ar' ? tool.nameAr : tool.name}
               </span>
-              
-              {isActive && (
-                <motion.div 
-                  layoutId="active-tool-glow"
-                  className="absolute inset-0 bg-white/20 blur-md pointer-events-none"
-                />
-              )}
             </button>
 
             {/* Tooltip */}

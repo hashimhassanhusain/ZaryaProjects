@@ -32,6 +32,7 @@ import {
 import { Page, PurchaseOrder, Project } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -113,6 +114,7 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
     totalImpact: 0
   });
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
 
   useEffect(() => {
@@ -217,6 +219,19 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
     }
   };
 
+  const handleArchiveRequest = async (request: ChangeRequest) => {
+    try {
+      const isArchived = (request as any).archived || false;
+      await updateDoc(doc(db, 'change_requests', request.id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Request archived' : 'Request restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'change_requests');
+    }
+  };
+
   const handleRequestClick = (request: ChangeRequest) => {
     setSelectedRequest(request);
     setIsEditing(false);
@@ -277,10 +292,14 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
     { label: 'Total Cost Impact', value: formatCurrency(stats.totalImpact), icon: DollarSign, color: 'text-red-600', bg: 'bg-red-50' }
   ];
 
-  const filteredRequests = requests.filter(r => 
-    (r.requestId || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
-    (r.description || '').toLowerCase().includes((searchQuery || '').toLowerCase())
-  );
+  const filteredRequests = requests.filter(r => {
+    const matchesSearch = (r.requestId || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+      (r.description || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+    
+    const isArchived = (r as any).archived || false;
+    if (showArchived) return matchesSearch && isArchived;
+    return matchesSearch && !isArchived;
+  });
 
   if (view === 'new') {
     return (
@@ -716,53 +735,65 @@ export const ChangeManagementHubView: React.FC<ChangeManagementHubViewProps> = (
         </div>
         
         <div className="overflow-x-auto">
-          <UniversalDataTable
-            config={{
-              collection: 'change_requests',
-              label: 'Change Request',
-              columns: [
-                { key: 'action', label: 'Action', type: 'text', render: () => (
-                    <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                ) },
-                { key: 'requestId', label: 'ID', type: 'text', render: (_, cr) => (
-                    <>
-                      <div className="text-sm font-semibold text-slate-900">{cr.requestId}</div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">v{(cr.version ?? 1.0).toFixed(1)}</div>
-                    </>
-                ) },
-                { key: 'description', label: 'Description', type: 'text', render: (_, cr) => (
-                    <>
-                      <div className="text-sm font-medium text-slate-700 line-clamp-1">{cr.description}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{cr.contractor}</div>
-                    </>
-                ) },
-                { key: 'status', label: 'Status', type: 'status', render: (val) => (
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border",
-                      val === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                      val === 'Pending' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                      "bg-blue-50 text-blue-600 border-blue-100"
-                    )}>
-                      {val}
-                    </span>
-                ) },
-                { key: 'impact', label: 'Impact', type: 'text', render: (_, cr) => (
-                    <div className={cn(
-                      "text-sm font-semibold",
-                      (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
-                    )}>
-                      {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
-                    </div>
-                ) }
-              ]
-            }}
-            data={filteredRequests}
-            onRowClick={(row) => handleRequestClick(row as ChangeRequest)}
-            showAddButton={false}
-            title={<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Total Change Requests: {filteredRequests.length}</span>}
-          />
+            <UniversalDataTable
+              config={{
+                collection: 'change_requests',
+                label: 'Change Request',
+                columns: [
+                  { key: 'action', label: 'Action', type: 'text', render: () => (
+                      <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                  ) },
+                  { key: 'requestId', label: 'ID', type: 'text', render: (_, cr) => (
+                      <>
+                        <div className="text-sm font-semibold text-slate-900">{cr.requestId}</div>
+                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">v{(cr.version ?? 1.0).toFixed(1)}</div>
+                      </>
+                  ) },
+                  { key: 'description', label: 'Description', type: 'text', render: (_, cr) => (
+                      <>
+                        <div className="text-sm font-medium text-slate-700 line-clamp-1">{cr.description}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{cr.contractor}</div>
+                      </>
+                  ) },
+                  { key: 'status', label: 'Status', type: 'status', render: (val) => (
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border",
+                        val === 'Approved' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                        val === 'Pending' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                        "bg-blue-50 text-blue-600 border-blue-100"
+                      )}>
+                        {val}
+                      </span>
+                  ) },
+                  { key: 'impact', label: 'Impact', type: 'text', render: (_, cr) => (
+                      <div className={cn(
+                        "text-sm font-semibold",
+                        (cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0) > 0 ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        {formatCurrency(cr.financialSummary?.currentChangeValue || cr.financials?.netImpact || 0)}
+                      </div>
+                  ) }
+                ]
+              }}
+              data={filteredRequests}
+              onRowClick={(row) => handleRequestClick(row as ChangeRequest)}
+              onNewClick={handleAdd}
+              onDeleteRecord={async (id) => {
+                try {
+                  await deleteDoc(doc(db, 'change_requests', id));
+                  toast.success('Deleted successfully');
+                } catch (err) {
+                  handleFirestoreError(err, OperationType.DELETE, 'change_requests');
+                }
+              }}
+              onArchiveRecord={handleArchiveRequest}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
+              showAddButton={true}
+              title={<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Total Change Requests: {filteredRequests.length}</span>}
+            />
         </div>
       </div>
 

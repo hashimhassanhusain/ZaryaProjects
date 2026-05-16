@@ -48,6 +48,7 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (!selectedProject || !page.id) return;
@@ -112,6 +113,20 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
     ), { duration: 5000 });
   };
 
+  const handleArchive = async (id: string) => {
+    try {
+      const entry = entries.find(e => e.id === id);
+      const isArchived = (entry as any)?.archived || false;
+      await updateDoc(doc(db, 'project_records', id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'Record archived' : 'Record restored');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `project_records/${id}`);
+    }
+  };
+
   const gridConfig: EntityConfig = {
     id: page.id as any,
     label: page.title,
@@ -124,11 +139,17 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
     }))
   };
 
-  const flattenedData = entries.map(entry => ({
-    id: entry.id,
-    status: entry.status,
-    ...entry.data
-  }));
+  const flattenedData = entries
+    .filter(entry => {
+      const isArchived = (entry as any).archived || false;
+      return showArchived ? isArchived : !isArchived;
+    })
+    .map(entry => ({
+      id: entry.id,
+      status: entry.status,
+      archived: (entry as any).archived || false,
+      ...entry.data
+    }));
 
   return (
     <StandardProcessPage
@@ -160,6 +181,9 @@ export const LogManagementView: React.FC<LogManagementViewProps> = ({ page }) =>
               onRowClick={(row) => handleEdit(entries.find(e => e.id === row.id)!)}
               onNewClick={handleAdd}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={context?.pageHeader}
               favoriteControl={context?.favoriteControl}
             />

@@ -69,7 +69,8 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
   
   const [viewMode, setViewMode] = useState<'grid' | 'edit'>('grid');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [isArchived, setIsArchived] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [procPlan, setProcPlan] = useState<ProcurementPlanData>({
     projectTitle: '',
@@ -120,12 +121,12 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         selectionCriteria: [],
         assumptionsConstraints: ''
       });
-      setIsArchived(false);
+      setIsArchivedState(false);
     } else if (selectedRecordId) {
        const record = planRecords.find(r => r.id === selectedRecordId);
        if (record) {
          setProcPlan({ ...procPlan, ...record });
-         setIsArchived(record.status === 'Archived');
+         setIsArchivedState(record.status === 'Archived');
        }
     }
   }, [selectedRecordId, viewMode, planRecords, selectedProject]);
@@ -185,6 +186,20 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
       toast.success('Plan deleted successfully');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, 'procurementManagementPlans');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const record = planRecords.find(r => r.id === id);
+      const isRecordArchived = record?.status === 'Archived';
+      await updateDoc(doc(db, 'procurementManagementPlans', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'procurementManagementPlans');
     }
   };
 
@@ -251,7 +266,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
         }
       }}
       onNewVersion={handleCreateNewVersion}
-      isArchived={isArchived}
+      isArchived={isArchivedState}
     >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
@@ -259,16 +274,22 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
             <motion.div key="grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <UniversalDataTable 
                 config={gridConfig}
-                data={planRecords}
+                data={planRecords.filter(r => {
+                  const isArchived = r.status === 'Archived';
+                  return showArchived ? isArchived : !isArchived;
+                })}
                 onRowClick={(record) => { setSelectedRecordId(record.id); setViewMode('edit'); }}
                 onNewClick={() => { setSelectedRecordId(null); setViewMode('edit'); }}
                 onDeleteRecord={handleDelete}
+                onArchiveRecord={handleArchive}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
               />
             </motion.div>
           ) : (
             <motion.div key="edit" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-8 pb-20">
                <div className="bg-white rounded-[4rem] p-16 border border-slate-200 shadow-2xl shadow-slate-200/50 space-y-16 relative overflow-hidden">
-                {isArchived && (
+                {isArchivedState && (
                   <div className="absolute top-0 left-0 right-0 bg-slate-900 py-4 px-10 flex items-center gap-4 z-10 font-black uppercase text-[10px] text-white tracking-[0.2em]">
                      <ShieldCheck className="w-5 h-5 text-emerald-400" /> HISTORICAL PROCUREMENT BASELINE V{procPlan.version} — READ ONLY
                   </div>
@@ -283,7 +304,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                              type="date" 
                              value={getISODate(procPlan.datePrepared)} 
                              onChange={(e) => setProcPlan({ ...procPlan, datePrepared: e.target.value })} 
-                             disabled={isArchived}
+                             disabled={isArchivedState}
                              className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-lg font-bold outline-none focus:ring-8 focus:ring-slate-900/5 transition-all text-slate-700"
                            />
                         </div>
@@ -311,7 +332,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                        <textarea 
                          value={procPlan.authority} 
                          onChange={(e) => setProcPlan({...procPlan, authority: e.target.value})} 
-                         disabled={isArchived}
+                         disabled={isArchivedState}
                          className="w-full h-40 bg-transparent border-none text-base font-semibold text-slate-600 outline-none resize-none px-2 leading-relaxed"
                          placeholder="Define procurement authority limits..."
                        />
@@ -330,7 +351,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                        <textarea 
                          value={procPlan.contractType} 
                          onChange={(e) => setProcPlan({...procPlan, contractType: e.target.value})} 
-                         disabled={isArchived}
+                         disabled={isArchivedState}
                          className="w-full h-40 bg-transparent border-none text-base font-semibold text-slate-600 outline-none resize-none px-2 leading-relaxed"
                          placeholder="Detail contract types (Fixed Price, Cost-Plus, etc.)..."
                        />
@@ -351,7 +372,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                        <textarea 
                          value={procPlan.bondingInsurance} 
                          onChange={(e) => setProcPlan({...procPlan, bondingInsurance: e.target.value})} 
-                         disabled={isArchived}
+                         disabled={isArchivedState}
                          className="w-full h-40 bg-transparent border-none text-base font-semibold text-slate-600 outline-none resize-none px-2 leading-relaxed"
                          placeholder="Define bonding, insurance, and selection criteria..."
                        />
@@ -370,7 +391,7 @@ export const ProcurementManagementPlanView: React.FC<ProcurementManagementPlanVi
                        <textarea 
                          value={procPlan.assumptionsConstraints} 
                          onChange={(e) => setProcPlan({...procPlan, assumptionsConstraints: e.target.value})} 
-                         disabled={isArchived}
+                         disabled={isArchivedState}
                          className="w-full h-40 bg-transparent border-none text-base font-semibold text-slate-600 outline-none resize-none px-2 leading-relaxed"
                          placeholder="List procurement assumptions and constraints..."
                        />

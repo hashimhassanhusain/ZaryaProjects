@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
  */
 export const loadArabicFont = async (pdf: jsPDF) => {
   try {
-    const fontUrl = 'https://cdn.jsdelivr.net/gh/googlefonts/amiri@main/fonts/ttf/Amiri-Regular.ttf';
+    const fontUrl = 'https://fonts.gstatic.com/s/amiri/v30/J7aRnpd8CGxBHqUp.ttf';
     const response = await fetch(fontUrl);
     const fontBuffer = await response.arrayBuffer();
     const fontBase64 = btoa(
@@ -14,7 +14,7 @@ export const loadArabicFont = async (pdf: jsPDF) => {
     pdf.addFileToVFS('Amiri-Regular.ttf', fontBase64);
     pdf.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
 
-    const boldFontUrl = 'https://cdn.jsdelivr.net/gh/googlefonts/amiri@main/fonts/ttf/Amiri-Bold.ttf';
+    const boldFontUrl = 'https://fonts.gstatic.com/s/amiri/v30/J7acnpd8CGxBHp2VkZY4.ttf';
     const boldResponse = await fetch(boldFontUrl);
     if (boldResponse.ok) {
       const boldFontBuffer = await boldResponse.arrayBuffer();

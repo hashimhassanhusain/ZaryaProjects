@@ -604,6 +604,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
 
   const activeHubId = null;
 
+  const isWBSPage = activeTab === '2.2.5';
+  const isBOQPage = activeTab === '2.4.1';
+  const hasNestedRibbon = isWBSPage || isBOQPage;
+
   return (
     <div className="w-full flex flex-col h-full bg-app-bg transition-colors duration-300">
       {/* ── Office-Style Ribbon ── */}
@@ -611,6 +615,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={handleTabChange}
+        isCompactMode={hasNestedRibbon}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -624,7 +629,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
             className="w-full h-full"
           >
             {activeTab === 'overview' ? (
-              <div className="p-10 space-y-12">
+              <div className="p-10 space-y-12 bg-paper min-h-screen">
                 {/* Domain Breadcrumbs */}
                 <div className={cn("flex items-center gap-2 mb-4", isRtl && "flex-row-reverse")}>
                    <button 
@@ -640,10 +645,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                 </div>
 
                 {/* Domain Header Card */}
-                <div className="bg-white dark:bg-surface p-8 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between border-b-8 border-app-bg">
+                <div className="bg-white dark:bg-surface p-8 rounded-lg border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex items-center justify-between border-b-4 border-slate-100">
                    <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full blur-3xl -mr-28 -mt-28" />
                    <div className="relative z-10 flex items-center gap-8">
-                       <div className="w-16 h-16 rounded-[2.5rem] bg-text-primary dark:bg-brand-dark flex items-center justify-center text-white shadow-xl">
+                       <div className="w-16 h-16 rounded-lg bg-text-primary dark:bg-brand-dark flex items-center justify-center text-white shadow-xl">
                            <Icon className="w-8 h-8" strokeWidth={1} />
                        </div>
                       <div className="space-y-1">
@@ -652,7 +657,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                            <button 
                              onClick={toggleFavorite}
                              className={cn(
-                               "p-2 rounded-xl transition-all shadow-sm border",
+                               "p-2 rounded-lg transition-all shadow-sm border",
                                isFavorite ? "bg-amber-50 border-amber-200 text-amber-500" : "bg-white dark:bg-neutral-800 border-slate-100 text-slate-300 hover:text-slate-400"
                              )}
                            >
@@ -665,45 +670,41 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                       </div>
                    </div>
                    <div className="relative z-10 hidden sm:flex items-center gap-3">
-                      <div className="px-5 py-2 bg-brand text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand/20 italic">
+                      <div className="px-5 py-2 bg-brand text-white rounded-lg text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand/20 italic">
                          {t('enterprise_standard')}
                       </div>
                    </div>
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                   <div className="bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm space-y-6 border-b-4">
-                      <div className="flex items-center gap-3 text-text-secondary opacity-40">
-                         <Activity className="w-4 h-4" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">{t('status')}</span>
+                {/* Summary Cards (KPIs as Sticky Notes) */}
+                <div className="flex flex-wrap gap-4">
+                   <div className="sticky-note">
+                      <Activity className="w-5 h-5 text-brand" />
+                      <div className="space-y-0.5 text-center px-1">
+                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block leading-none">{t('status')}</span>
+                         <div className="text-[14px] font-black text-slate-900 uppercase italic tracking-tighter leading-none">{t('healthy')}</div>
                       </div>
-                      <div className="text-3xl font-black text-text-primary dark:text-white uppercase italic tracking-tighter">{t('healthy')}</div>
-                      <div className="h-2 w-full bg-app-bg rounded-full overflow-hidden">
+                      <div className="h-1 w-16 bg-slate-200 rounded-full overflow-hidden mt-1">
                          <div className="h-full bg-emerald-500 w-[94%]" />
                       </div>
                    </div>
                    
-                   <div className="bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm space-y-6 border-b-4">
-                      <div className="flex items-center gap-3 text-text-secondary opacity-40">
-                         <CheckCircle2 className="w-4 h-4" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">{t('compliance')}</span>
+                   <div className="sticky-note text-center">
+                      <CheckCircle2 className="w-5 h-5 text-brand" />
+                      <div className="space-y-0.5 mt-1">
+                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block leading-none">{t('compliance')}</span>
+                         <div className="text-xl font-black text-slate-900 italic tracking-tighter leading-none">98.2%</div>
+                         <div className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">↑ 2.1%</div>
                       </div>
-                      <div className="text-3xl font-black text-text-primary dark:text-white italic tracking-tighter">98.2%</div>
-                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">↑ 2.1% {t('this_month')}</div>
                    </div>
 
-                    <div className="col-span-2 bg-text-primary dark:bg-brand-dark p-10 rounded-[3rem] shadow-xl relative overflow-hidden border-b-4 border-brand">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
-                      <div className="relative z-10 flex items-center justify-between h-full">
-                         <div className="space-y-3">
-                            <h4 className="text-white text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{t('domain_kpi_index')}</h4>
-                            <div className="text-5xl font-black text-white tracking-tighter italic">A+ <span className="text-[10px] font-black opacity-40 not-italic ml-4 uppercase tracking-widest">{t('standard_compliance')}</span></div>
-                         </div>
-                         <div className="w-40 h-20 opacity-80">
-                            {getChartData()}
-                         </div>
-                      </div>
+                    <div className="sticky-note">
+                       <div className="absolute top-0 right-0 w-12 h-12 bg-brand/5 rounded-full blur-lg" />
+                       <div className="relative z-10 flex flex-col items-center gap-1">
+                             <h4 className="text-slate-400 text-[8px] font-black uppercase tracking-[0.2em]">{t('domain_kpi_index')}</h4>
+                             <div className="text-2xl font-black text-slate-900 tracking-tighter italic leading-none">A+</div>
+                             <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-1">STANDARD</p>
+                       </div>
                    </div>
                 </div>
 
@@ -718,10 +719,10 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                         <button 
                           key={child.id}
                           onClick={() => handleTabChange(child.id)}
-                          className="w-full p-6 bg-white dark:bg-surface border border-slate-100 dark:border-white/5 rounded-[2rem] text-[12px] font-black text-text-primary dark:text-neutral-300 text-left hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 transition-all flex items-center justify-between group border-b-4 hover:border-brand"
+                          className="w-full p-6 bg-white dark:bg-surface border border-slate-200 dark:border-white/5 rounded-lg text-[12px] font-black text-text-primary dark:text-neutral-300 text-left hover:border-brand hover:shadow-xl hover:shadow-brand/5 transition-all flex items-center justify-between group border-b-2 hover:border-brand"
                         >
                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-brand transition-colors">
+                              <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-brand transition-colors">
                                  {React.createElement(ICON_MAP[child.icon || 'FileText'] || FileText, { className: "w-5 h-5" })}
                               </div>
                               <span className="italic uppercase tracking-tighter line-clamp-1">{stripNumericPrefix(t(child.id)) === child.id ? child.title : t(child.id)}</span>
@@ -730,7 +731,7 @@ export const DomainDashboard: React.FC<DomainDashboardProps> = ({ page, children
                         </button>
                       ))}
                       {filteredChildren.length === 0 && (
-                        <div className="col-span-full p-12 border-2 border-dashed border-slate-100 rounded-[3rem] text-[10px] font-black text-slate-200 text-center uppercase tracking-widest">
+                        <div className="col-span-full p-12 border-2 border-dashed border-slate-200 rounded-lg text-[10px] font-black text-slate-300 text-center uppercase tracking-widest">
                            {t('no_processes')}
                         </div>
                       )}

@@ -403,7 +403,8 @@ export const VarianceAnalysisView: React.FC<VarianceAnalysisViewProps> = ({ proj
 
     setIsUploadingToDrive(true);
     try {
-      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3KQ5SgGYv9IN7VV65Jt6';
+      if (!project?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+      const ROOT_FOLDER_ID = project.driveFolderId;
       
       // 1. Upload to Firebase Storage first (buffer)
       const storagePath = `buffer/${project.id}/${Date.now()}_${pdfFileName}`;

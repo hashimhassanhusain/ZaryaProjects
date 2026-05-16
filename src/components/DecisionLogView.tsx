@@ -73,6 +73,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [versions, setVersions] = useState<DecisionLogVersion[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState<Partial<DecisionLogEntry>>({
     decisionId: '',
@@ -81,8 +82,11 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     responsibleParty: '',
     date: new Date().toISOString().split('T')[0],
     comments: '',
-    version: 1.0
+    version: 1.0,
+    status: 'Active'
   });
+
+  const isArchivedState = formData.status === 'Archived';
 
   useEffect(() => {
     if (!selectedProject?.id) return;
@@ -90,7 +94,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
     const entriesQuery = query(
       collection(db, 'decision_log'),
       where('projectId', '==', selectedProject.id),
-      orderBy('decisionId', 'desc')
+      orderBy('decisionId', 'asc')
     );
 
     const unsubEntries = onSnapshot(entriesQuery, (snap) => {
@@ -156,6 +160,7 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
         ...formData,
         projectId: selectedProject.id,
         version: isNewVersion ? (editingEntry?.version || 1.0) + 0.1 : (editingEntry?.version || 1.0),
+        status: formData.status || 'Active',
         updatedAt: timestamp,
         updatedBy: user,
         createdAt: editingEntry?.createdAt || timestamp,
@@ -193,12 +198,26 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Retire this decision record?")) return;
+    if (!window.confirm("Permanently delete this decision record? This cannot be undone.")) return;
     try {
       await deleteDoc(doc(db, 'decision_log', id));
-      toast.success('Decision record retired');
+      toast.success('Decision record deleted permanently');
     } catch (error) {
        toast.error("Deletion failed");
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const entry = entries.find(e => e.id === id);
+      const isRecordArchived = entry?.status === 'Archived';
+      await updateDoc(doc(db, 'decision_log', id), {
+        status: isRecordArchived ? 'Active' : 'Archived',
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(isRecordArchived ? 'Record restored' : 'Record archived');
+    } catch (err) {
+      toast.error("Archive operation failed");
     }
   };
 
@@ -447,10 +466,16 @@ export const DecisionLogView: React.FC<DecisionLogViewProps> = ({ page }) => {
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={entries}
+              data={entries.filter(e => {
+                const isArchived = e.status === 'Archived';
+                return showArchived ? isArchived : !isArchived;
+              })}
               onRowClick={handleEdit}
               onNewClick={handleAdd}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={useStandardProcessPage()?.pageHeader}
               favoriteControl={useStandardProcessPage()?.favoriteControl}
             />

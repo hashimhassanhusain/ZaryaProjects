@@ -32,7 +32,8 @@ import {
   Info,
   GraduationCap,
   ListChecks,
-  Database
+  Database,
+  Sparkles
 } from 'lucide-react';
 import { Page } from '../types';
 import { pages } from '../data';
@@ -162,7 +163,10 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                   <Gavel className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{t('governance_hub')}</h2>
+                   <div className="flex items-center gap-2">
+                       <Sparkles className="w-4 h-4 text-brand" />
+                       <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase">{t('governance_hub')}</h2>
+                   </div>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">PMO Performance Standards</p>
                 </div>
               </div>
@@ -174,18 +178,18 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                 onClick={() => setActiveTab('eefs')}
                 className="group bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl shadow-slate-900/20 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500 rounded-full translate-x-16 -translate-y-16 opacity-10 blur-3xl animate-pulse" />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#ff6d00] rounded-full translate-x-16 -translate-y-16 opacity-10 blur-3xl animate-pulse" />
                 <div className="relative z-10 space-y-6">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-600/30">
+                  <div className="w-14 h-14 rounded-2xl bg-[#ff6d00] flex items-center justify-center text-white shadow-xl shadow-[#ff6d00]/30">
                     <Database className="w-7 h-7" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white italic tracking-tight uppercase">{t('foundation_center') || 'Foundation Center'}</h3>
-                    <p className="text-[10px] text-blue-200 mt-2 font-black leading-relaxed opacity-60 uppercase tracking-[0.2em]">
+                    <p className="text-[10px] text-white/60 mt-2 font-black leading-relaxed opacity-60 uppercase tracking-[0.2em]">
                        Project Master Data • EEFs & OPAs • PMBOK 8
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#ff6d00]">
                     {t('open_center')} <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -195,17 +199,17 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                 <div 
                   key={plan.id}
                   onClick={() => setActiveTab(plan.id)}
-                  className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
+                  className="group bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-[#ff6d00]/10 hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-blue-50 transition-colors" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-16 -translate-y-16 group-hover:bg-[#ff6d00]/10 transition-colors" />
                   
                   <div className="relative z-10 space-y-6">
-                    <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-blue-600/30 transition-all duration-500">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#ff6d00] group-hover:text-white group-hover:shadow-xl group-hover:shadow-[#ff6d00]/30 transition-all duration-500">
                       <plan.icon className="w-7 h-7" />
                     </div>
 
                     <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-xl font-semibold text-slate-900 group-hover:text-[#ff6d00] transition-colors">
                         {stripNumericPrefix(t(plan.id) === plan.id ? plan.title : t(plan.id))}
                       </h3>
                       <p className="text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
@@ -218,7 +222,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600">Active</span>
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
+                      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 group-hover:text-[#ff6d00] transition-colors">
                         {t('view_details')} <ChevronRight className="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
@@ -267,6 +271,7 @@ export const GovernanceHubView: React.FC<GovernanceHubViewProps> = ({ page }) =>
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as string)}
+        isCompactMode={activeTab === 'contract-management' || activeTab === 'foundation' || activeTab === 'eefs' || activeTab === 'opas'}
       />
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">

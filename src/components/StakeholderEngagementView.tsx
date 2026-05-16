@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Page } from '../types';
 import { StandardProcessPage } from './StandardProcessPage';
 import { Target, Activity, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2, Brain, Send, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, where, updateDoc, doc, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, updateDoc, doc, addDoc, deleteDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 import { useProject } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -34,8 +35,10 @@ interface StakeholderEngagementViewProps {
 
 export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps> = ({ page, defaultTab = 'engagement' }) => {
   const { selectedProject } = useProject();
+  const navigate = useNavigate();
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [activeSubTab, setActiveSubTab] = useState(defaultTab);
+  const [showArchived, setShowArchived] = useState(false);
   const [logs, setLogs] = useState<SentimentLog[]>([]);
   const [newNote, setNewNote] = useState('');
   const [selectedSh, setSelectedSh] = useState<string>('');
@@ -141,6 +144,23 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
     return 'bg-emerald-50 border-emerald-200 text-emerald-700'; // Aligned
   };
 
+  const handleArchiveStakeholder = async (sh: Stakeholder) => {
+    try {
+      const isArchived = (sh as any).archived || false;
+      await updateDoc(doc(db, 'stakeholders', sh.id), {
+        archived: !isArchived,
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Archive failed:", err);
+    }
+  };
+
+  const filteredStakeholders = stakeholders.filter(sh => {
+    const isArchived = (sh as any).archived || false;
+    return showArchived ? isArchived : !isArchived;
+  });
+
   return (
     <StandardProcessPage
       page={page}
@@ -224,9 +244,20 @@ export const StakeholderEngagementView: React.FC<StakeholderEngagementViewProps>
                     ) }
                   ]
                }}
-               data={stakeholders}
+               data={filteredStakeholders}
                onRowClick={console.log}
-               showAddButton={false}
+               onNewClick={() => navigate('/page/1.5.1')}
+               onDeleteRecord={async (id) => {
+                 try {
+                   await deleteDoc(doc(db, 'stakeholders', id));
+                 } catch (err) {
+                   console.error("Delete failed:", err);
+                 }
+               }}
+               onArchiveRecord={handleArchiveStakeholder}
+               showArchived={showArchived}
+               onToggleArchived={() => setShowArchived(!showArchived)}
+               showAddButton={true}
                title={<span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Engagement Matrix (C vs D)</span>}
              />
           </section>

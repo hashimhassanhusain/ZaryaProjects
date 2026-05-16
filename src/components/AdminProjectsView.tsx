@@ -292,7 +292,7 @@ export const AdminProjectsView: React.FC = () => {
         </button>
         <button 
           onClick={() => navigate('/admin/projects/new')}
-          className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
+          className="px-8 py-3.5 bg-[#ff6d00] text-white rounded-2xl text-sm font-bold shadow-xl shadow-orange-200 hover:bg-[#ff6d00]/90 hover:shadow-orange-300 transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> {t('create_new_project')}
         </button>

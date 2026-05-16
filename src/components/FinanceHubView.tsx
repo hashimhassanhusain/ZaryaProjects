@@ -57,16 +57,16 @@ const EstimatesContainer: React.FC<{ page: Page }> = ({ page }) => {
       <div className="flex items-center gap-4 p-4 border-b border-slate-100 bg-slate-50">
         <button 
           onClick={() => setSubTab('boq')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'boq' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'boq' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <List className="w-4 h-4 inline-block mr-2" />
+          <List className="w-4 h-4" />
           جدول الكميات (BOQ)
         </button>
         <button 
           onClick={() => setSubTab('estimates')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'estimates' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'estimates' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <Calculator className="w-4 h-4 inline-block mr-2" />
+          <Calculator className="w-4 h-4" />
           تقديرات التكلفة
         </button>
       </div>
@@ -104,16 +104,16 @@ const FundingContainer: React.FC<{ page: Page }> = ({ page }) => {
       <div className="flex items-center gap-4 p-4 border-b border-slate-100 bg-slate-50">
         <button 
           onClick={() => setSubTab('feasibility')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'feasibility' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'feasibility' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <PieChart className="w-4 h-4 inline-block mr-2" />
+          <PieChart className="w-4 h-4" />
           الجدوى المالية
         </button>
         <button 
           onClick={() => setSubTab('strategy')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'strategy' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'strategy' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <TrendingUp className="w-4 h-4 inline-block mr-2" />
+          <TrendingUp className="w-4 h-4" />
           استراتيجية التمويل
         </button>
       </div>
@@ -193,23 +193,23 @@ const LedgerContainer: React.FC<{ page: Page }> = ({ page }) => {
       <div className="flex items-center gap-4 p-4 border-b border-slate-100 bg-slate-50">
         <button 
           onClick={() => setSubTab('ledger')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'ledger' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'ledger' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <BookOpen className="w-4 h-4 inline-block mr-2" />
+          <BookOpen className="w-4 h-4" />
           دفتر التكاليف
         </button>
         <button 
           onClick={() => setSubTab('disbursements')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'disbursements' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'disbursements' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <ArrowRightLeft className="w-4 h-4 inline-block mr-2" />
+          <ArrowRightLeft className="w-4 h-4" />
           سجلات الصرف
         </button>
         <button 
           onClick={() => setSubTab('advances')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'advances' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'advances' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <Banknote className="w-4 h-4 inline-block mr-2" />
+          <Banknote className="w-4 h-4" />
           سلف المقاولين
         </button>
       </div>
@@ -231,16 +231,16 @@ const PerformanceContainer: React.FC<{ page: Page }> = ({ page }) => {
       <div className="flex items-center gap-4 p-4 border-b border-slate-100 bg-slate-50">
         <button 
           onClick={() => setSubTab('evm')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'evm' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'evm' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <TrendingUp className="w-4 h-4 inline-block mr-2" />
+          <TrendingUp className="w-4 h-4" />
           مؤشرات EVM
         </button>
         <button 
           onClick={() => setSubTab('changes')}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", subTab === 'changes' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
+          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2", subTab === 'changes' ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white text-slate-500 hover:text-slate-900 border border-slate-200")}
         >
-          <List className="w-4 h-4 inline-block mr-2" />
+          <List className="w-4 h-4" />
           تغييرات الميزانية
         </button>
       </div>
@@ -399,6 +399,7 @@ export const FinanceHubExecutiveDashboard: React.FC<FinanceHubViewProps> = ({ pa
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as string)}
+        isCompactMode={activeTab === 'boq'}
       />
 
       <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">

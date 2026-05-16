@@ -88,15 +88,16 @@ export const POConversionModal: React.FC<POConversionModalProps> = ({ pr, select
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+    <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto custom-scrollbar bg-slate-950/40 backdrop-blur-sm">
       <motion.div 
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+        className="absolute inset-0"
       />
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative bg-white rounded-[3rem] p-10 w-full max-w-4xl shadow-2xl overflow-hidden"
+        initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 10 }}
+        className="relative bg-white rounded-[3rem] p-10 w-full max-w-4xl shadow-2xl overflow-hidden my-auto"
+        onClick={e => e.stopPropagation()}
       >
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-50 rounded-full -mr-48 -mt-48 blur-3xl opacity-50 pointer-events-none" />
         
@@ -125,6 +126,22 @@ export const POConversionModal: React.FC<POConversionModalProps> = ({ pr, select
                   options={suppliers}
                   value={formData.supplierId}
                   onChange={(id, name) => setFormData({...formData, supplierId: id, supplierName: name || ''})}
+                  onAddClick={async () => {
+                    const name = window.prompt('Enter New Supplier Name:');
+                    if (name) {
+                      try {
+                        const docRef = await addDoc(collection(db, 'suppliers'), {
+                          name,
+                          status: 'Active',
+                          createdAt: new Date().toISOString()
+                        });
+                        toast.success('Supplier added. Please select it from the list.');
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Failed to add supplier');
+                      }
+                    }
+                  }}
                   placeholder="Search and attach vendor from Master Database..."
               />
             </div>

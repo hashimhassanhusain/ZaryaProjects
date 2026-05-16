@@ -122,6 +122,7 @@ export const ResourcesHubView: React.FC<ResourcesHubViewProps> = ({ page }) => {
         groups={ribbonGroups}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as TabType)}
+        isCompactMode={activeTab === 'overview'}
       />
 
       {/* Tab Content */}

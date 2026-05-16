@@ -411,8 +411,8 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
         )}
 
        {/* Tabs Navigation */}
-       <div className={cn("flex flex-wrap items-center justify-between gap-4 p-2 bg-slate-100 rounded-[2rem]", isRtl && "flex-row-reverse")}>
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+       <div className={cn("flex flex-wrap items-center justify-between gap-1 p-1 bg-[#101217] rounded-t-lg", isRtl && "flex-row-reverse")}>
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
             {[
               { id: 'eefs', label: 'EEFs', icon: Shield },
               { id: 'opas', label: 'OPAs', icon: Library },
@@ -424,10 +424,10 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  "flex items-center gap-3 px-6 py-4 rounded-t-md text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-t border-x",
                   activeTab === tab.id 
-                    ? "bg-white text-blue-600 shadow-md shadow-blue-500/10" 
-                    : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
+                    ? "bg-slate-600 text-[#ff6d00] border-slate-600 shadow-lg z-10" 
+                    : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
                 )}
               >
                  <tab.icon className="w-4 h-4" />
@@ -445,7 +445,7 @@ export const FoundationCenterView: React.FC<FoundationCenterViewProps> = ({ page
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-[2rem] md:rounded-[3.5rem] border border-slate-200 shadow-sm overflow-hidden min-h-[600px] flex flex-col"
+            className="bg-paper rounded-b-lg border border-slate-200 shadow-sm overflow-hidden min-h-[600px] flex flex-col"
           >
              {activeTab === 'business' && (
                <div className="p-6 md:p-12 space-y-12">

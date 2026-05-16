@@ -105,38 +105,38 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[48px] bg-white dark:bg-[#1A1C1E] border-b border-slate-200 dark:border-white/5 flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
+    <header className="h-[48px] bg-[#101217] border-b border-transparent flex items-center px-6 shrink-0 z-50 sticky top-0 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2 w-full h-full">
         {/* Project & Company Selector */}
         <div className="relative group shrink-0" ref={projectMenuRef}>
            <button 
              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
              className={cn(
-               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-slate-200 hover:bg-slate-50",
-               isProjectMenuOpen && "border-brand/20 bg-brand/5 shadow-sm"
+               "flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:bg-white/5",
+               isProjectMenuOpen && "bg-white/5 shadow-sm"
              )}
            >
               {/* New Logo Replacement for Blue Icon */}
-              <div className="w-8 h-8 rounded-lg bg-text-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
-                 <span className="text-brand font-black text-[7px] tracking-tighter italic">PMIS</span>
+              <div className="w-8 h-8 rounded-lg bg-[#2A2A2A] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform border border-white/10 shrink-0">
+                 <span className="text-[#ff6d00] font-black text-[7px] tracking-tighter italic">PMIS</span>
               </div>
               <div className="flex flex-col text-left">
-                 <span className="hidden sm:block text-[8px] font-black text-brand uppercase tracking-widest leading-none mb-0.5 opacity-80 italic">Precision Tool</span>
+                 <span className="hidden sm:block text-[8px] font-black text-[#ff6d00] uppercase tracking-widest leading-none mb-0.5 italic">Precision Tool</span>
                  <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-[10px] sm:text-[11px] font-black text-text-primary uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-tight truncate max-w-[80px] sm:max-w-[130px]">
                        {selectedProject?.name || selectedCompany?.name || t('select_project')}
                     </span>
-                    <ChevronDown className={cn("w-3 h-3 text-text-secondary transition-transform", isProjectMenuOpen && "rotate-180")} />
+                    <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform", isProjectMenuOpen && "rotate-180")} />
                  </div>
               </div>
               {/* Mobile View: Show only code if available */}
               {!selectedProject && !selectedCompany && (
-                <ChevronDown className="w-3 h-3 text-text-secondary sm:hidden" />
+                <ChevronDown className="w-3 h-3 text-slate-400 sm:hidden" />
               )}
               {selectedProject && (
                 <div className="sm:hidden flex items-center gap-1 ml-1">
-                   <span className="text-[10px] font-black text-text-primary bg-slate-100 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
-                   <ChevronDown className="w-2.5 h-2.5 text-text-secondary" />
+                   <span className="text-[10px] font-bold text-white bg-white/10 px-1.5 py-0.5 rounded uppercase">{selectedProject.code}</span>
+                   <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
                 </div>
               )}
            </button>
@@ -158,7 +158,7 @@ export const Header: React.FC = () => {
                                className={cn(
                                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left",
                                  (selectedProject?.companyId === company.id || selectedCompanyId === company.id)
-                                   ? "bg-brand/10 text-brand font-bold"
+                                   ? "bg-brand/10 text-[#ff6d00] font-bold"
                                    : "text-neutral-600 hover:bg-neutral-50"
                                )}
                              >
@@ -200,50 +200,54 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Global Hubs Navigation */}
-        <nav className="flex items-center h-full gap-0.5 flex-1 px-1 lg:px-4 overflow-x-auto no-scrollbar min-w-0">
-           {PERFORMANCE_DOMAINS.filter(domain => !domain.isAdminOnly || (appUser && isAdminRole(appUser.role))).map((domain, idx) => {
-             const Icon = domain.icon || Info;
-             const hubId = hubIds[domain.id] || 'gov';
-             const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
-             
-             const fullTitle = stripNumericPrefix(t(domain.id) === domain.id ? domain.title : t(domain.id));
-             const displayWord = fullTitle.split(/[\s,&]+/)[0] || fullTitle;
+        <div className="flex flex-1 items-center justify-center h-full min-w-0 px-2 lg:px-4">
+          <nav className="flex items-center gap-4 lg:gap-6 overflow-x-auto no-scrollbar py-1">
+            {PERFORMANCE_DOMAINS.filter(domain => !domain.isAdminOnly || (appUser && isAdminRole(appUser.role))).map((domain, idx) => {
+              const Icon = domain.icon || Info;
+              const hubId = hubIds[domain.id] || 'gov';
+              const isActive = activePageId === domain.id || activePageId === hubId || (currentDomain?.id === domain.id);
+              
+              const fullTitle = stripNumericPrefix(t(domain.id) === domain.id ? domain.title : t(domain.id));
+              const displayWord = fullTitle.split(/[\s,&]+/)[0] || fullTitle;
 
-             return (
-               <Link 
-                 key={`${domain.id}-${idx}`} 
-                 to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
-                 className={cn(
-                   "flex items-center gap-1.5 px-2 lg:px-4 h-9 rounded-xl transition-all relative group shrink-0 min-w-[40px] sm:min-w-0 border border-transparent",
-                   isActive 
-                    ? "bg-brand/10 text-brand border-brand/20 shadow-sm shadow-brand/5" 
-                    : "text-slate-950 dark:text-neutral-100 hover:text-brand hover:bg-slate-100 dark:hover:bg-white/10 font-bold"
-                 )}
-               >
-                 <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-900 group-hover:text-brand dark:group-hover:text-brand")} strokeWidth={isActive ? 2.5 : 2} />
-                 <span className="text-[10px] lg:text-[12px] font-black uppercase tracking-widest leading-none whitespace-nowrap transition-colors">
-                    {displayWord}
-                 </span>
-                 
-                 {/* Tooltip */}
-                 <div className={cn(
-                   "absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-3 bg-neutral-900 dark:bg-surface text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[200] min-w-[200px] border border-white/10 scale-95 group-hover:scale-100",
-                   isRtl ? "text-right" : "text-left"
-                 )}>
-                    <div className="font-extrabold text-[10px] uppercase tracking-wider mb-1 text-brand">{fullTitle}</div>
-                    {domain.description && (
-                      <div className="text-[9px] text-white/60 font-medium leading-tight whitespace-normal">{domain.description}</div>
+              return (
+                <div key={`${domain.id}-${idx}`} className="relative flex items-center group shrink-0">
+                  <Link 
+                    to={selectedProject ? `/project/${selectedProject.id}/page/${hubId}` : `/page/${hubId}`}
+                    className={cn(
+                      "flex items-center gap-2.5 transition-all duration-300 relative py-2",
+                      isActive 
+                        ? "text-brand hover:text-brand-secondary scale-105" 
+                        : "text-slate-400/80 hover:text-white"
                     )}
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-900 dark:bg-surface rotate-45 border-t border-l border-white/10" />
-                 </div>
+                  >
+                    <Icon className={cn("w-4 h-4 transition-transform group-hover:scale-110", isActive ? "text-brand" : "text-slate-500 group-hover:text-white")} />
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.15em] leading-none transition-all", isActive ? "italic" : "")}>
+                      {fullTitle}
+                    </span>
+                    
+                    {/* Active Indicator Dot */}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeTab"
+                        className="absolute -bottom-1 left-1.2 right-0 h-0.5 bg-brand rounded-full"
+                      />
+                    )}
+                  </Link>
 
-                 {isActive && (
-                    <motion.div layoutId="nav-glow" className="absolute inset-0 bg-brand/5 rounded-xl -z-10" />
-                 )}
-               </Link>
-             );
-           })}
-        </nav>
+                  {/* Enhanced Hover Tooltip */}
+                  <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 z-[100] translate-y-2 group-hover:translate-y-0">
+                    <div className="bg-[#1A1C1E] border border-white/10 rounded-xl px-4 py-3 shadow-2xl backdrop-blur-md min-w-[200px] text-center">
+                       <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1">{fullTitle}</div>
+                       <div className="text-[8px] font-medium text-slate-400 italic leading-relaxed">{domain.description}</div>
+                       <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1A1C1E] border-l border-t border-white/10 rotate-45" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Global Actions */}
         <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
@@ -324,7 +328,7 @@ export const Header: React.FC = () => {
                                  onClick={() => handlePageNavigate(p.id)}
                                  className="w-full flex items-center gap-3 p-2 hover:bg-neutral-50 rounded-lg transition-all group"
                                >
-                                  <div className="w-7 h-7 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-brand">
+                                  <div className="w-7 h-7 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-[#ff6d00]">
                                      <FileIcon className="w-3.5 h-3.5" />
                                   </div>
                                   <div className="flex flex-col text-left">
@@ -373,7 +377,7 @@ export const Header: React.FC = () => {
                            <img src={appUser?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=PMIS"} alt="Profile" className="w-full h-full rounded-[1rem] object-cover" />
                         </div>
                         <div className="text-[13px] font-black text-neutral-900 uppercase tracking-tight leading-none mb-1">{appUser?.name || 'Authorized User'}</div>
-                        <div className="text-[8px] font-black text-brand uppercase tracking-widest">{appUser?.role}</div>
+                        <div className="text-[8px] font-black text-[#ff6d00] uppercase tracking-widest">{appUser?.role}</div>
                      </div>
                      <div className="space-y-0.5">
                         <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-2.5 hover:bg-neutral-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-all">
@@ -386,7 +390,7 @@ export const Header: React.FC = () => {
                           onClick={() => {
                             navigate('/admin/users#drive');
                           }} 
-                          className="w-full flex items-center gap-3 p-2.5 hover:bg-brand/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-brand transition-all"
+                          className="w-full flex items-center gap-3 p-2.5 hover:bg-brand/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#ff6d00] transition-all"
                         >
                            <Database className="w-3.5 h-3.5" /> {t('drive_status')}
                         </button>

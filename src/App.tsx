@@ -72,6 +72,7 @@ import { PERFORMANCE_DOMAINS } from './constants/navigation';
 import { MatrixDashboard } from './components/MatrixDashboard';
 import { Loader2, ShieldAlert, ChevronRight, LayoutDashboard, TrendingUp } from 'lucide-react';
 import { cn, sortDomainPages, stripNumericPrefix, getISODate } from './lib/utils';
+import { Breadcrumbs } from './components/common/Breadcrumbs';
 
 import { DomainDashboard } from './components/DomainDashboard';
 import { DriveFolderView } from './components/DriveFolderView';
@@ -84,6 +85,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { UserProvider, useAuth } from './context/UserContext';
 import { ToolsProvider } from './context/ToolsContext';
+import { DriveSyncProvider } from './context/DriveSyncContext';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { RightRibbonBar } from './components/RightRibbonBar';
 import { LeftRibbonBar } from './components/LeftRibbonBar';
@@ -118,7 +120,8 @@ const PageRenderer = () => {
 
   const pageTitle = getDisplayTitle(page);
   const parentTitle = getDisplayTitle(parent);
-  const grandParentTitle = getDisplayTitle(grandParent);
+
+  const displayHeaderTitle = parentTitle && pageTitle ? `${parentTitle} > ${pageTitle}` : pageTitle;
 
   useEffect(() => {
     if (!pageTitle) return;
@@ -168,31 +171,31 @@ const PageRenderer = () => {
   // Domain-specific custom Hub bypasses
   const isSchedulePage = page.domain === 'controls' || page.id === 'ctrl';
   if (isSchedulePage) {
-    return <div className="w-full"><ScheduleHubView page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><ScheduleHubView page={page} /></div>;
   }
   
   if (page.domain === 'finance' || page.id === 'fin') {
-    return <div className="w-full"><FinanceHubExecutiveDashboard page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><FinanceHubExecutiveDashboard page={page} /></div>;
   }
 
   if (page.domain === 'governance' || page.id === 'gov') {
-    return <div className="w-full"><GovernanceHubView page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><GovernanceHubView page={page} /></div>;
   }
 
   if (page.domain === 'resources' || page.id === 'res') {
-    return <div className="w-full"><ResourcesHubView page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><ResourcesHubView page={page} /></div>;
   }
 
   if (page.domain === 'stakeholders' || page.id === 'stak') {
-    return <div className="w-full"><StakeholdersHubView page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><StakeholdersHubView page={page} /></div>;
   }
 
   if (page.domain === 'risk' || page.id === 'risk') {
-    return <div className="w-full"><RiskOpportunityHub page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><RiskOpportunityHub page={page} /></div>;
   }
 
   if (page.domain === 'administration' || page.id === 'admin_hub') {
-    return <div className="w-full"><PMISAdministrationView page={page} /></div>;
+    return <div className="w-full h-full flex flex-col min-h-0"><PMISAdministrationView page={page} /></div>;
   }
 
   // Handle remaining generic Hub pages
@@ -206,7 +209,7 @@ const PageRenderer = () => {
     const children = sortDomainPages(accessibleChildren, page.domain || '');
 
     return (
-      <div className="w-full">
+      <div className="w-full h-full flex flex-col min-h-0">
         <DomainDashboard 
           page={page} 
           childrenPages={children} 
@@ -228,7 +231,7 @@ const PageRenderer = () => {
     const children = sortDomainPages(accessibleChildren, parentHub.domain || '');
 
     return (
-      <div className="w-full">
+      <div className="w-full h-full flex flex-col min-h-0">
         <DomainDashboard 
           page={parentHub} 
           childrenPages={children} 
@@ -461,7 +464,8 @@ const AppLayout = () => {
             "p-0 print:overflow-visible printable-content"
           )}
         >
-          <div className="max-w-[1600px] mx-auto w-full">
+          <Breadcrumbs />
+          <div className="max-w-[1600px] mx-auto w-full h-full flex flex-col min-h-0 relative">
             <Routes>
               <Route path="/page/:id" element={<PageRenderer />} />
           <Route path="/project/:projectId/page/:id" element={<PageRenderer />} />
@@ -476,7 +480,7 @@ const AppLayout = () => {
             <Route path="/project/:projectId" element={<ProjectDashboard />} />
             <Route path="/" element={
               !selectedProject ? <ProjectSelectorView /> : (
-              <div className="min-h-full bg-app-bg p-6 lg:p-10 space-y-10 transition-colors duration-300">
+              <div className="min-h-full bg-paper p-6 lg:p-10 space-y-10 transition-colors duration-300 rounded-lg shadow-xl m-4">
                 {/* AI Assistant Section - Expanded */}
                 <div className="max-w-full mx-auto">
                   <AIAssistant />
@@ -485,7 +489,7 @@ const AppLayout = () => {
                 {/* Dashboard Grid - Real KPIs */}
                 <div className="max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                    {/* Progress Tracker */}
-                   <div className="lg:col-span-2 bg-white dark:bg-surface p-8 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
+                   <div className="lg:col-span-2 bg-white dark:bg-surface p-8 rounded-lg border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
                       <div className="flex items-center justify-between">
                          <h3 className="text-sm font-black text-text-primary dark:text-neutral-100 uppercase tracking-widest italic">Project Health Index</h3>
                          <div className="flex gap-2">
@@ -494,24 +498,21 @@ const AppLayout = () => {
                          </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                         {[
-                           { label: 'Overall Progress', value: '68%', color: 'brand' },
-                           { label: 'Schedule Variance', value: '+4 Days', color: 'emerald' },
-                           { label: 'Cost Variance', value: '-12%', color: 'emerald' },
-                           { label: 'Quality Index', value: '98.5%', color: 'charcoal' }
-                         ].map(stat => (
-                           <div key={stat.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
-                              <div className="text-[9px] font-bold text-text-secondary dark:text-neutral-500 uppercase tracking-widest mb-1">{stat.label}</div>
-                              <div className={cn(
-                                "text-xl font-black tracking-tighter",
-                                stat.color === 'brand' ? 'text-brand' : stat.color === 'charcoal' ? 'text-text-primary' : `text-${stat.color}-600 dark:text-${stat.color}-400`
-                              )}>{stat.value}</div>
-                           </div>
-                         ))}
-                      </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {[
+                            { label: 'Overall Progress', value: '68%', color: 'brand' },
+                            { label: 'Schedule Variance', value: '+4 Days', color: 'emerald' },
+                            { label: 'Cost Variance', value: '-12%', color: 'emerald' },
+                            { label: 'Quality Index', value: '98.5%', color: 'charcoal' }
+                          ].map(stat => (
+                            <div key={stat.label} className="sticky-note group h-32 w-full">
+                               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1 group-hover:text-brand transition-colors text-center">{stat.label}</div>
+                               <div className="text-2xl font-black tracking-tighter text-slate-900 text-center">{stat.value}</div>
+                            </div>
+                          ))}
+                       </div>
 
-                      <div className="h-48 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 flex items-center justify-center relative overflow-hidden">
+                      <div className="h-48 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 flex items-center justify-center relative overflow-hidden">
                          <div className="absolute inset-x-8 bottom-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                             <motion.div 
                                initial={{ width: '0%' }}
@@ -524,7 +525,7 @@ const AppLayout = () => {
                    </div>
 
                    {/* Quick Actions / Recent Activity */}
-                   <div className="bg-text-primary dark:bg-[#1a1a1a] p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden transition-colors border border-white/5">
+                   <div className="bg-text-primary dark:bg-[#1a1a1a] p-8 rounded-lg text-white shadow-2xl relative overflow-hidden transition-colors border border-white/5">
                       <div className="absolute top-0 right-0 w-48 h-48 bg-brand/10 rounded-full blur-3xl -mr-24 -mt-24" />
                       <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-brand">Critical System Alerts</h3>
                       <div className="space-y-4">
@@ -533,7 +534,7 @@ const AppLayout = () => {
                            { msg: 'Daily report missing for Zone A', type: 'error' },
                            { msg: 'New blueprint uploaded (Div 05)', type: 'info' }
                          ].map((alert, i) => (
-                           <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3">
+                           <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-lg flex items-center gap-3">
                               <div className={cn(
                                 "w-2 h-2 rounded-full",
                                  alert.type === 'error' ? 'bg-rose-500 animate-pulse' :
@@ -543,7 +544,7 @@ const AppLayout = () => {
                             </div>
                          ))}
                       </div>
-                      <button className="w-full mt-8 py-4 bg-brand hover:opacity-90 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-brand/20">
+                      <button className="w-full mt-8 py-4 bg-brand hover:opacity-90 rounded-lg font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-brand/20">
                         View Audit Log
                       </button>
                    </div>
@@ -578,10 +579,10 @@ const AppLayout = () => {
                         <Link 
                           key={d.id} 
                           to={`/page/${hubId}`}
-                          className="group bg-white dark:bg-surface p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all text-left flex flex-col justify-between h-[220px]"
+                          className="group bg-white dark:bg-surface p-8 rounded-lg border border-slate-200 dark:border-white/5 shadow-sm hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all text-left flex flex-col justify-between h-[220px]"
                         >
                            <div className="flex justify-between items-start">
-                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-white/5 shadow-inner group-hover:bg-brand/10 transition-colors">
+                             <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-slate-50 dark:bg-white/5 shadow-inner group-hover:bg-brand/10 transition-colors">
                                <d.icon className="w-7 h-7 transition-all group-hover:scale-110 group-hover:text-brand text-text-secondary dark:text-neutral-400" />
                              </div>
                              <div className="p-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
@@ -602,7 +603,7 @@ const AppLayout = () => {
 
                 {/* Quick Stats Banner */}
                 <div className="max-w-full mx-auto">
-                   <div className="bg-text-primary dark:bg-ribbon rounded-[3rem] p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-text-primary/20 relative overflow-hidden transition-colors border border-white/5">
+                   <div className="bg-text-primary dark:bg-ribbon rounded-lg p-10 flex flex-wrap items-center justify-around gap-8 shadow-2xl shadow-text-primary/20 relative overflow-hidden transition-colors border border-white/5">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
                       
                       <div className="text-center space-y-1 relative z-10">
@@ -733,21 +734,23 @@ export default function App() {
             <Login />
           ) : (
             <ProjectProvider>
-              <UIProvider>
-                <CurrencyProvider>
-                  <ToolsProvider>
-                    <Router>
-                      <AppLayout />
-                      <div className="no-print">
-                        <LeftRibbonBar />
-                        <RightRibbonBar />
-                        <ToolWorkspace />
-                      </div>
-                      <Toaster position="top-right" />
-                    </Router>
-                  </ToolsProvider>
-                </CurrencyProvider>
-              </UIProvider>
+              <DriveSyncProvider>
+                <UIProvider>
+                  <CurrencyProvider>
+                    <ToolsProvider>
+                      <Router>
+                        <AppLayout />
+                        <div className="no-print">
+                          <LeftRibbonBar />
+                          <RightRibbonBar />
+                          <ToolWorkspace />
+                        </div>
+                        <Toaster position="top-right" />
+                      </Router>
+                    </ToolsProvider>
+                  </CurrencyProvider>
+                </UIProvider>
+              </DriveSyncProvider>
             </ProjectProvider>
           )}
         </UserProvider>

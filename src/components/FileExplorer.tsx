@@ -274,7 +274,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       toast.loading(isRtl ? '🔄 جاري المزامنة مع جوجل درايف...' : '🔄 Syncing with Google Drive...', { id: toastId });
 
       // 2. Drive Sync via URL
-      const ROOT_FOLDER_ID = '1-eFit1RPNDMZ3kQ5SgGYv9IN7VV65Jt6';
+      if (!project?.driveFolderId) throw new Error('Project Google Drive folder is not configured');
+      const ROOT_FOLDER_ID = project.driveFolderId;
       const res = await fetch('/api/drive/upload-by-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

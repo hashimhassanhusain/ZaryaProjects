@@ -40,6 +40,7 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({
   const [data, setData] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   const config = ENTITY_REGISTRY[entityType];
 
@@ -55,13 +56,19 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Client side archive filtering if not toggled
+      if (!showArchived) {
+        items = items.filter((i: any) => i.status !== 'Archived' && i.status !== 'archived');
+      }
+      
       setData(items);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [entityType, selectedProject?.id]);
+  }, [entityType, selectedProject?.id, showArchived]);
 
   const handleSave = async (recordData: any) => {
     if (!selectedProject) return;
@@ -195,6 +202,17 @@ export const UniversalManager: React.FC<UniversalManagerProps> = ({
             onRecordSelect?.({});
           }}
           onDeleteRecord={handleDelete}
+          showArchived={showArchived}
+          onToggleArchived={() => setShowArchived(!showArchived)}
+          onArchiveRecord={async (record) => {
+            const loadingToast = toast.loading('Archiving record...');
+            try {
+              await updateDoc(doc(db, config.collection, record.id), { status: 'Archived' });
+              toast.success('Record archived', { id: loadingToast });
+            } catch (err) {
+              toast.error('Failed to archive', { id: loadingToast });
+            }
+          }}
         />
       ) : (
         <UniversalRecordDetail 

@@ -19,16 +19,16 @@ export interface RibbonGroup {
   tabs: RibbonTab[];
 }
 
-interface RibbonProps {
+export interface RibbonProps {
   groups: RibbonGroup[];
   activeTabId: string;
   onTabChange: (id: string) => void;
   className?: string;
+  isCompactMode?: boolean;
 }
 
-export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange, className }) => {
+export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange, className, isCompactMode = false }) => {
   const { t, th } = useLanguage();
-  const { isRibbonCollapsed, setIsRibbonCollapsed } = useUI();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,8 +41,6 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
       // If we are scrolling vertically, convert it to horizontal scroll
       if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
         e.preventDefault();
-        // For RTL, positive deltaY should scroll right (which is negative scrollLeft)
-        // For LTR, positive deltaY should scroll right (which is positive scrollLeft)
         const multiplier = 1;
         el.scrollLeft += e.deltaY * multiplier;
       }
@@ -52,20 +50,61 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
     return () => el.removeEventListener('wheel', handleWheelNative);
   }, []);
 
+  const getTabColors = (isActive: boolean, index: number) => {
+    if (isActive) return "bg-white text-slate-900 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] border-t border-x border-slate-200 z-10 font-bold";
+    
+    const shades = [
+      "bg-slate-200 text-slate-600 hover:bg-slate-50 border-slate-300",
+      "bg-slate-300 text-slate-700 hover:bg-slate-100 border-slate-400",
+      "bg-slate-100 text-slate-500 hover:bg-white border-slate-200",
+      "bg-slate-400 text-slate-800 hover:bg-slate-200 border-slate-500"
+    ];
+    return `${shades[index % shades.length]} hover:text-slate-900 border-t border-x`;
+  };
+
   return (
     <div 
       ref={scrollRef}
       className={cn(
-      "bg-ribbon border-b border-neutral-200 dark:border-white/10 flex items-stretch gap-6 px-6 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-30 select-none relative",
-      isRibbonCollapsed ? "h-[32px]" : "h-[92px]",
+      "bg-transparent flex items-end gap-1 px-4 lg:px-8 overflow-x-auto no-scrollbar shrink-0 transition-all duration-300 z-40 relative",
+      isCompactMode ? "h-[42px]" : "h-[54px]",
       className
     )}>
-      {!isRibbonCollapsed && groups.map((group) => {
+      {groups.map((group) => {
         return (
-          <div key={group.id} className="flex flex-col h-full shrink-0">
-            <div className="flex items-center px-1 flex-1">
-              {group.tabs.map((tab) => {
+          <div key={group.id} className={cn("flex shrink-0 items-end flex-row h-full")}>
+            <div className={cn("flex flex-1 items-end gap-1 px-1")}>
+              {group.tabs.map((tab, idx) => {
                 const isActive = activeTabId === tab.id;
+                const fullLabel = tab.label;
+                const displayWord = fullLabel.split(/[\s,&]+/)[0] || fullLabel;
+                
+                if (isCompactMode) {
+                  const Icon = tab.icon;
+                  return (
+                     <div key={tab.id} className="relative flex items-end group shrink-0 h-full" style={{ width: 'min-content' }}>
+                       <button
+                         onClick={() => onTabChange(tab.id)}
+                         className={cn(
+                           "flex flex-col items-center justify-center rounded-t-[10px] transition-all duration-300 ease-out z-10 overflow-hidden",
+                           "h-[32px] px-4",
+                           getTabColors(isActive, idx)
+                         )}
+                       >
+                         {/* Compact visible state */}
+                         <div className="flex items-center justify-center transition-all duration-300 pointer-events-none px-1 whitespace-nowrap gap-2">
+                           {Icon && <Icon className={cn("w-3.5 h-3.5", isActive ? "text-brand" : "text-slate-400")} />}
+                           <span className={cn("text-[10px] lg:text-[11px] font-black uppercase tracking-widest leading-none", isActive ? "text-slate-900" : "")}>
+                             {displayWord}
+                           </span>
+                         </div>
+                       </button>
+                     </div>
+                  );
+                }
+
+                const Icon = tab.icon;
+
                 return (
                   <HelpTooltip 
                     key={tab.id} 
@@ -77,19 +116,19 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
                     <button
                       onClick={() => onTabChange(tab.id)}
                       className={cn(
-                        "flex flex-col items-center justify-center min-w-[72px] h-[72px] mt-0.5 px-2 rounded-xl transition-all relative group",
-                        isActive 
-                          ? "bg-text-primary text-white shadow-xl shadow-brand/10 border-b-4 border-brand" 
-                          : "text-text-secondary dark:text-neutral-300 hover:bg-white dark:hover:bg-white/5 hover:text-text-primary dark:hover:text-white"
+                        "flex flex-col items-center justify-center min-w-[72px] h-[40px] px-4 rounded-t-[10px] transition-all relative group",
+                        getTabColors(isActive, idx)
                       )}
                     >
-                      <tab.icon className={cn("w-7 h-7 mb-1 transition-transform group-hover:scale-110", isActive ? "text-brand" : "text-text-secondary opacity-60 group-hover:text-text-primary group-hover:opacity-100")} strokeWidth={1.5} />
-                      <span className={cn(
-                        "text-[10px] font-black leading-tight text-center max-w-[120px] uppercase tracking-tighter transition-colors break-words italic",
-                        isActive ? "text-white" : "text-text-primary group-hover:text-brand"
-                      )}>
-                        {tab.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {Icon && <Icon className={cn("w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110", isActive ? "text-brand" : "text-slate-400 group-hover:text-slate-600")} />}
+                        <span className={cn(
+                          "text-[10px] sm:text-xs font-black leading-tight text-center max-w-[120px] uppercase tracking-tighter transition-colors break-words",
+                          isActive ? "text-[#ff6d00]" : "group-hover:text-slate-900"
+                        )}>
+                          {tab.label}
+                        </span>
+                      </div>
                     </button>
                   </HelpTooltip>
                 );
@@ -98,29 +137,6 @@ export const Ribbon: React.FC<RibbonProps> = ({ groups, activeTabId, onTabChange
           </div>
         );
       })}
-
-      {isRibbonCollapsed && (
-         <div className="flex items-center gap-4 h-full">
-            {groups.flatMap(g => g.tabs).filter(t => t.id === activeTabId).map(tab => (
-              <div key={tab.id} className="flex items-center gap-2 text-brand font-bold text-[10px] uppercase tracking-widest">
-                 <tab.icon className="w-4 h-4" />
-                 {tab.label}
-              </div>
-            ))}
-         </div>
-      )}
-
-      {/* Toggle button */}
-      <button 
-        onClick={() => setIsRibbonCollapsed(!isRibbonCollapsed)}
-        className={cn(
-          "absolute right-2 flex items-center justify-center hover:bg-neutral-100 rounded transition-colors z-50 text-neutral-400",
-          isRibbonCollapsed ? "bottom-1/2 translate-y-1/2 p-0.5" : "bottom-1 p-1"
-        )}
-        title={isRibbonCollapsed ? "Expand Ribbon" : "Collapse Ribbon"}
-      >
-        {isRibbonCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-      </button>
     </div>
   );
 };

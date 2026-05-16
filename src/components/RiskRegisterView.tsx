@@ -46,6 +46,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
   const [risks, setRisks] = useState<Risk[]>([]);
   const [team, setTeam] = useState<{id: string, name: string}[]>([]);
   const [view, setView] = useState<'list' | 'form'>('list');
+  const [showArchived, setShowArchived] = useState(false);
   const [editingRisk, setEditingRisk] = useState<Risk | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [newRisk, setNewRisk] = useState<Partial<Risk>>({
@@ -68,6 +69,24 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
     
     return () => { unsub(); unsubTeam(); };
   }, [selectedProject?.id]);
+
+  const handleArchive = async (risk: Risk) => {
+    try {
+      const isArchived = (risk as any).archived || false;
+      await updateDoc(doc(db, 'risks', risk.id), {
+        archived: !isArchived,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(!isArchived ? 'Risk archived' : 'Risk restored');
+    } catch (err) {
+      console.error("Archive failed:", err);
+    }
+  };
+
+  const filteredRisks = risks.filter(r => {
+    const isArchived = (r as any).archived || false;
+    return showArchived ? isArchived : !isArchived;
+  });
 
   const handleCreate = async () => {
     if (!newRisk.title || !selectedProject) {
@@ -458,7 +477,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
           >
             <UniversalDataTable 
               config={gridConfig}
-              data={risks}
+              data={filteredRisks}
               onRowClick={handleEdit}
               onNewClick={() => {
                 setEditingRisk(null);
@@ -466,6 +485,9 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                 setView('form');
               }}
               onDeleteRecord={handleDelete}
+              onArchiveRecord={handleArchive}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
               title={useStandardProcessPage()?.pageHeader}
               favoriteControl={useStandardProcessPage()?.favoriteControl}
             />
@@ -511,7 +533,7 @@ export const RiskRegisterView: React.FC<RiskRegisterViewProps> = ({ page }) => {
                       <Info className="w-6 h-6 text-amber-600" />
                     </div>
                     <div className="space-y-4">
-                      <h4 className="text-lg font-black uppercase tracking-tighter italic text-amber-900 leading-none">Predictive Analytics<br/>Engaged</h4>
+                      <h4 className="text-lg font-black uppercase tracking-tighter italic text-slate-900 leading-none">Predictive Analytics<br/>Engaged</h4>
                       <p className="text-[10px] font-bold text-amber-800/60 leading-relaxed uppercase tracking-widest">
                         PMIS cross-references the Assumption Log (2.1.5). Unvalidated assumptions are tagged here as "Shadow Risks" until formally closed.
                       </p>

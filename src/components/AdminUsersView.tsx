@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserPlus, Search, Trash2, Shield, Mail, User, ArrowLeft, Building2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { User as UserType } from '../types';
 import { toast } from 'react-hot-toast';
 import { UniversalDataTable } from './common/UniversalDataTable';
@@ -66,11 +66,30 @@ export const AdminUsersView: React.FC = () => {
     ), { duration: 5000 });
   };
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.companyName && u.companyName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleArchiveUser = async (user: UserType) => {
+    try {
+      const isArchived = (user as any).archived || false;
+      await updateDoc(doc(db, 'users', user.uid || (user as any).id), {
+        archived: !isArchived,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(!isArchived ? 'User archived' : 'User restored');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'users');
+    }
+  };
+
+  const [showArchived, setShowArchived] = useState(false);
+
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.companyName && u.companyName.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const isArchived = (u as any).archived || false;
+    if (showArchived) return matchesSearch && isArchived;
+    return matchesSearch && !isArchived;
+  });
 
   if (isLoading) {
     return (
@@ -82,15 +101,6 @@ export const AdminUsersView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end items-center mb-6">
-        <button 
-          onClick={handleAddUser}
-          className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all flex items-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" /> Add New User
-        </button>
-      </div>
-
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
           <div className="relative w-96">
@@ -143,11 +153,15 @@ export const AdminUsersView: React.FC = () => {
           }}
           data={filteredUsers}
           onRowClick={(row) => handleEditUser(row.uid || row.id)}
+          onNewClick={handleAddUser}
           onDeleteRecord={(id) => {
             const e = new Event('click') as unknown as React.MouseEvent;
             handleDeleteUser(id, e);
           }}
-          showAddButton={false}
+          onArchiveRecord={handleArchiveUser}
+          showArchived={showArchived}
+          onToggleArchived={() => setShowArchived(!showArchived)}
+          showAddButton={true}
           title={<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Total Users: {users.length}</span>}
         />
       </div>
